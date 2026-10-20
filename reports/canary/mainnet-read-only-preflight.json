@@ -1,0 +1,124 @@
+{
+  "scope": "READ_ONLY_BSC_SNAPSHOT",
+  "chainId": 56,
+  "block": "128769794",
+  "blockHash": "0x3a069bb6a8194259d055b2338bd2ce2df44361e46a3bbef9c8e4dae78b43cad3",
+  "timestamp": "1792509965",
+  "owner": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+  "checks": {
+    "miningImplementation": true,
+    "miningCode": true,
+    "beacon": true,
+    "collectionImplementation": true,
+    "bemDecimals": true,
+    "ownerIsEOA": true,
+    "bemRuntime": true,
+    "miningRuntime": true,
+    "minerCollectionRuntime": true,
+    "collectionImplementationCode": true,
+    "miner3204": true,
+    "miner12485": true
+  },
+  "protocol": {
+    "minerCollection": {
+      "address": "0xb1024b89886B9a34Aa4ff5F31C411D708b20a14C",
+      "codeHash": "0xd8c4b0216e0aadd615fbd134465b6af060a11769edc7c844d8f14d1b8a783992"
+    },
+    "mining": {
+      "address": "0x7E2E0DC66a3bD9103E69b766afA62d9f7b697b46",
+      "codeHash": "0xed6b710a769987f50494d713f278817992e3266e45898a990be878efc2fcbbce"
+    },
+    "bem": {
+      "address": "0x5ce033B2bFCa3Af30b3e8C8457DeaF776A8b695a",
+      "codeHash": "0x982ba79538b51e54ee1382f57522098af0635b0f67f2574d393b29ed0958b344"
+    }
+  },
+  "miningImplementation": "0xa3dbe873da37cd4e4a13c7cef23a7db6ca60f898",
+  "collectionImplementation": "0x8E1D125Def6d3826C278299273a0760D47626068",
+  "miners": [
+    {
+      "id": "3204",
+      "key": "0xb0e5b7d325dead6144886258056fb8e27ff5f6192aaa90fd0b45682c297c1c0d",
+      "owner": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+      "record": {
+        "circuits": "0xb1024b89886B9a34Aa4ff5F31C411D708b20a14C",
+        "circuitId": "3204",
+        "taskId": 1,
+        "gateCount": 2,
+        "stateCount": 0,
+        "depth": 2,
+        "area": "2",
+        "mult": 1,
+        "since": "1789703832",
+        "status": 1,
+        "registrant": "0x27D9672FBc61d5e47E2000863C1645ad406c1EB5",
+        "nandBurn": 2,
+        "latchBurn": 0,
+        "bstar": "2",
+        "bonus": "0",
+        "optimal": false,
+        "commitBlock": "0",
+        "firstUnusedId": "0",
+        "stopBlock": "0",
+        "verifWeight": "2",
+        "unverWeight": "0",
+        "debt": "82557168"
+      },
+      "cachedBurn": [
+        true,
+        2,
+        0
+      ],
+      "circuitBurn": [
+        2,
+        0
+      ],
+      "pendingRaw": "46054",
+      "approved": "0x0000000000000000000000000000000000000000"
+    },
+    {
+      "id": "12485",
+      "key": "0x1eab22e4977aa21abc69cf940272969e412c3e3e085180b3e4b30e37f299ca0b",
+      "owner": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+      "record": {
+        "circuits": "0xb1024b89886B9a34Aa4ff5F31C411D708b20a14C",
+        "circuitId": "12485",
+        "taskId": 74,
+        "gateCount": 2,
+        "stateCount": 1,
+        "depth": 1,
+        "area": "8",
+        "mult": 1,
+        "since": "1788230460",
+        "status": 1,
+        "registrant": "0xBc01D306B919614e66a43b176796F2116cFdA9A0",
+        "nandBurn": 1,
+        "latchBurn": 1,
+        "bstar": "2",
+        "bonus": "0",
+        "optimal": false,
+        "commitBlock": "0",
+        "firstUnusedId": "0",
+        "stopBlock": "0",
+        "verifWeight": "2",
+        "unverWeight": "0",
+        "debt": "82534787"
+      },
+      "cachedBurn": [
+        true,
+        1,
+        1
+      ],
+      "circuitBurn": [
+        1,
+        1
+      ],
+      "pendingRaw": "68435",
+      "approved": "0x0000000000000000000000000000000000000000"
+    }
+  ],
+  "bnbRaw": "53799532700000000",
+  "bemRaw": "9259723",
+  "bemDecimals": 8,
+  "warning": "pending is an observation, not a promise of claim payout"
+}

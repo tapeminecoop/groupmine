@@ -1,0 +1,468 @@
+No files changed, compilation skipped
+
+Ran 1 test for test/unit/PoolAdmission.t.sol:PoolUnsupportedCategoryTest
+[PASS] testCategoryWithoutReceiptsCannotGainCompositionOrIncome() (gas: 1214034)
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 12.16ms (2.15ms CPU time)
+
+Ran 5 tests for test/unit/EntitlementReceipt.t.sol:EntitlementReceiptTest
+[PASS] testFinalizationFixesSupplyForever() (gas: 565546)
+[PASS] testIndependentDeploymentsShareOneVerifiableRuntime() (gas: 2005169)
+[PASS] testIssuanceIsSequentialBatchedAndIssuerOnly() (gas: 366385)
+[PASS] testRetractOnlyUndoesTheIssuersOwnTopIdsBeforeFinalization() (gas: 316865)
+[PASS] testTransfersKeepUnitSupplyAndTheHolderIndex() (gas: 241151)
+Suite result: ok. 5 passed; 0 failed; 0 skipped; finished in 12.80ms (2.59ms CPU time)
+
+Ran 8 tests for test/unit/PoolHarvest.t.sol:PoolHarvestTest
+[PASS] testBalanceDecreaseAndTransferFeeRevertWithoutRewritingHistory() (gas: 858544)
+[PASS] testHarvestAlwaysCallsClaimEvenWhenPendingIsZero() (gas: 576550)
+[PASS] testHarvestCountsOnlyActualReceiptsOfTheSelectedMiners() (gas: 1139651)
+[PASS] testHarvestIncomeBelongsToTheCompositionCurrentWhenItArrives() (gas: 560568)
+[PASS] testHarvestIsolatesFailingMiners() (gas: 1126505)
+[PASS] testMinerRegistryViews() (gas: 752137)
+[PASS] testThirdPartyMiningClaimsAndDirectTransfersAreIncome() (gas: 618641)
+[PASS] testUnknownMinerAndEmptyHarvests() (gas: 504966)
+Suite result: ok. 8 passed; 0 failed; 0 skipped; finished in 15.40ms (4.98ms CPU time)
+
+Ran 11 tests for test/unit/PoolClaims.t.sol:PoolClaimsTest
+[PASS] testApprovedOperatorCannotClaimUntilItHoldsTheId() (gas: 347259)
+[PASS] testClaimFromReceiveHookPaysTheNewHolderOnce() (gas: 967765)
+[PASS] testClaimableViewsPredictPayouts() (gas: 373388)
+[PASS] testClaimedHistoryStaysWithTheIdAcrossTransfers() (gas: 314216)
+[PASS] testClaimsDoNotDependOnMiningOrAdmissions() (gas: 472918)
+[PASS] testIndividualAndBatchClaimsPayOnlyTheCallersIds() (gas: 486122)
+[PASS] testInvalidEmptyForeignAndDuplicateClaims() (gas: 522357)
+[PASS] testRecipientPaymentsAreIndependentOfEachOtherAndOfClaims() (gas: 670055)
+[PASS] testRepeatedClaimsPayOnlyNewIncome() (gas: 267030)
+[PASS] testSameNumberedIdsInBothCollectionsAreIndependent() (gas: 422351)
+[PASS] testUnclaimedIncomeFollowsTheReceiptAndTheFormerHolderLosesIt() (gas: 396615)
+Suite result: ok. 11 passed; 0 failed; 0 skipped; finished in 15.50ms (4.71ms CPU time)
+
+Ran 12 tests for test/unit/CanaryRecovery.t.sol:CanaryRecoveryTest
+[PASS] testBoundaryAndUnrecognizedBEMKeepHistoryAndFinalAttribution() (gas: 1502629)
+[PASS] testEmergencyHasNoMiningOrBEMCallsEvenWhenTheyConsumeAllGas() (gas: 1126795)
+[PASS] testHelperControlAndBindingAreNarrow() (gas: 85669)
+[PASS] testMiningFailureAndBEMBalanceFailureDoNotBlockRecovery() (gas: 1176527)
+[PASS] testNormalHarvestShutdownBothReturnsAfterRenunciation() (gas: 1482380)
+[PASS] testPartialReturnDoesNotPreventOtherAndRetriesAreIdempotent() (gas: 1137695)
+[PASS] testShutdownBeforeActivationCannotReopen() (gas: 40097)
+[PASS] testShutdownIsPermanentAndScopeCannotExpand() (gas: 909111)
+[PASS] testTransferFailurePreservesUnpaidLedgerAndRetryAfterReturn() (gas: 1409823)
+[PASS] testUnauthorizedCallerAndDestinationSelectorRejected() (gas: 896969)
+[PASS] testUnexpectedIDAndCompositionMismatchReject() (gas: 573971)
+[PASS] testUnregisteredNFTBeforeActivationAndBeforeDistributionCanReturn() (gas: 105182)
+Suite result: ok. 12 passed; 0 failed; 0 skipped; finished in 16.17ms (6.07ms CPU time)
+
+Ran 9 tests for test/unit/PoolSetup.t.sol:PoolSetupTest
+[PASS] testActivationRejectsTwoEmptyCollections() (gas: 87000)
+[PASS] testActivationRequiresFinalizedSuppliesTheReviewedCountsAndOwner() (gas: 859529)
+[PASS] testDeploymentBindsProtocolReceiptsRecipientsAndWhitelist() (gas: 75914)
+[PASS] testDepositorWhitelistIsValidatedAndRequired() (gas: 985446)
+[PASS] testPoolKeepsWorkingAfterOwnershipIsRenounced() (gas: 2384964)
+[PASS] testPreActivationEntryPointsAreClosed() (gas: 47070)
+[PASS] testReceiptsMustBeThisExactImplementationWithTheRightCategories() (gas: 3396391)
+[PASS] testRecipientsMoveOnlyThemselves() (gas: 1847120)
+[PASS] testRecipientsProtocolAndNameAreValidated() (gas: 4501963)
+Suite result: ok. 9 passed; 0 failed; 0 skipped; finished in 3.09ms (2.17ms CPU time)
+
+Ran 6 tests for test/unit/PoolAccounting.t.sol:PoolAccountingTest
+[PASS] testCheckpointFreezesCategoryTotalsAndCarriesAtMostOneUnit() (gas: 914089)
+[PASS] testFuzzMathProperties(uint96,uint96,uint32,uint32,uint32,uint32,uint16,uint16) (runs: 512, μ: 22176, ~: 22230)
+[PASS] testOuterFloorsAndTheirResidueAtSmallTotals() (gas: 11649)
+[PASS] testOuterSplitIsOneOneAndOneHundredOf102() (gas: 1452762)
+[PASS] testPathIndependenceWithinACompositionPeriod() (gas: 1562133)
+[PASS] testRoundingResidueStaysBoundedOverManyPeriodsAndHarvests() (gas: 6052777)
+Suite result: ok. 6 passed; 0 failed; 0 skipped; finished in 32.78ms (35.59ms CPU time)
+
+Ran 1 test for test/unit/AdmissionGas.t.sol:AdmissionGasTest
+[PASS] testAdmissionGasGrowsLinearlyWithRegisteredMiners() (gas: 131354249)
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 159.52ms (149.59ms CPU time)
+
+Ran 18 tests for test/unit/PoolAdmission.t.sol:PoolAdmissionTest
+[PASS] testAMiningOutageBlocksAdmissionButNotClaimsOfHeldIncome() (gas: 965454)
+[PASS] testActiveOldMinerSettlementFailureRollsBackTheWholeAdmission() (gas: 1209194)
+[PASS] testAdmissionsRequireActivation() (gas: 4277998)
+[PASS] testBatchOrderDoesNotChangeTheOutcome() (gas: 1507022)
+[PASS] testBatchUsesOnePostBatchCompositionForAllCarriedIncome() (gas: 1119172)
+[PASS] testCarriedIncomeIsNotPaidBackToTheDepositor() (gas: 562812)
+[PASS] testCompositionMustComeFromAValidActiveMinerRecord() (gas: 738697)
+[PASS] testCoolingOrUnstartedOldMinerBlocksAdmission() (gas: 1189054)
+[PASS] testDuplicateAndAlreadyRegisteredMinersAreRejected() (gas: 542385)
+[PASS] testEntitlementsNeverDecreaseAcrossCompositionChanges() (gas: 2183857)
+[PASS] testFirstAdmissionRecognizesIncomeHeldBeforeAnyComposition() (gas: 599716)
+[PASS] testIncomingMinerClaimFailureRollsBack() (gas: 722892)
+[PASS] testOldIncomeHiddenFromPendingIsStillSettledUnderTheOldRatio() (gas: 871233)
+[PASS] testOnlyWhitelistedDepositorsAdmitAndOnlyTheirOwnMiners() (gas: 432094)
+[PASS] testPlainTransferNeitherRegistersNorBypassesTheWhitelistOrSettlement() (gas: 899954)
+[PASS] testRevokedOldMinerIsSkippedExplicitly() (gas: 1160570)
+[PASS] testSafeTransferIntoThePoolIsRefused() (gas: 127708)
+[PASS] testSpecificationAcceptanceExample() (gas: 1776393)
+Suite result: ok. 18 passed; 0 failed; 0 skipped; finished in 4.52s (11.67ms CPU time)
+
+Ran 15 tests for test/unit/Distributor.t.sol:DistributorTest
+[PASS] testABeneficiaryThatCannotReceiveIsNeverRedirected() (gas: 4886803)
+[PASS] testAfterFinalizationAllocationsAndInventoryAreFrozen() (gas: 3169523)
+[PASS] testDeliverAlwaysGoesToTheRecordedBeneficiary() (gas: 3051468)
+[PASS] testDeliveryIsExactlyOnceAndKeepsTheAttachedBem() (gas: 4496331)
+[PASS] testDistributedReceiptsCanNeverReturnAsInventory() (gas: 3165073)
+[PASS] testFinalizationRequiresFullInventoryCoverage() (gas: 3096667)
+[PASS] testFragmentedAllocationIsDeliveredAcrossSeveralTransactions() (gas: 3513458)
+[PASS] testFundingAcceptsSingleAndBatchTransfersOfTheBoundReceiptsOnly() (gas: 2509252)
+[PASS] testImportValidatesInventoryConflictsWalletsAndCaller() (gas: 751014)
+[PASS] testIssuingDirectlyToTheDistributorCountsAsInventory() (gas: 9919848)
+[PASS] testLateClaimsKeepTheBemAccumulatedWhileHeldByTheDistributor() (gas: 3976045)
+[PASS] testNoAdministrativeRouteToHeldReceiptsOrTheirBem() (gas: 3483523)
+[PASS] testReceiptsWithConsumedRewardHistoryAreRefused() (gas: 795496)
+[PASS] testReceiverRefusalRollsBackTheWholeDelivery() (gas: 3252028)
+[PASS] testUsersClaimOnlyTheirOwnReceiptsAndOnlyOnce() (gas: 3241628)
+Suite result: ok. 15 passed; 0 failed; 0 skipped; finished in 7.71s (22.60ms CPU time)
+
+Ran 10 tests for test/unit/GasModel.t.sol:GasModelTest
+[PASS] testAllocationModelCoversManySmallRangesAndOneLargeRange() (gas: 47001041)
+[PASS] testCallsRunAsSeparateTransactions() (gas: 60203)
+[PASS] testClaimModelCoversTheLargestPlannedBatch() (gas: 31826084)
+[PASS] testDeliveryModelCoversOneLargeAndManySmallRanges() (gas: 39784341)
+[PASS] testDeploymentModelsCoverTheLargestConfigurations() (gas: 18205455)
+[PASS] testFragmentedWalletDeliversInPlannedTransactions() (gas: 28764157)
+[PASS] testFundBatchModelCoversMovingReceiptsIntoTheDistributor() (gas: 25578200)
+[PASS] testIssueBatchModelCoversIssuingToTheOperatorAndToTheDistributor() (gas: 22434478)
+[PASS] testRevokeModelCoversLargeAndFragmentedWallets() (gas: 128598739)
+[PASS] testSingleCallsFitTheirBounds() (gas: 3426068)
+Suite result: ok. 10 passed; 0 failed; 0 skipped; finished in 7.72s (144.86ms CPU time)
+
+Ran 5 tests for test/invariant/PoolInvariant.t.sol:PoolInvariantTest
+[PASS] invariantCompositionAndCustody() (runs: 256, calls: 16384, reverts: 0)
+
+╭---------------+------------------+-------+---------+----------╮
+| Contract      | Selector         | Calls | Reverts | Discards |
++===============================================================+
+| SystemHandler | accrueRegistered | 1377  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | admit            | 1415  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | breakKey         | 1298  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | claim            | 1381  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | coolMiner        | 1377  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | donate           | 1360  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | harvestAll       | 1365  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | prepareMiner     | 1354  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | release          | 1376  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | revokeMiner      | 1396  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | thirdPartyClaim  | 1315  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | transfer         | 1370  | 0       | 0        |
+╰---------------+------------------+-------+---------+----------╯
+
+[PASS] invariantEntitlementsNeverDecrease() (runs: 256, calls: 16384, reverts: 0)
+
+╭---------------+------------------+-------+---------+----------╮
+| Contract      | Selector         | Calls | Reverts | Discards |
++===============================================================+
+| SystemHandler | accrueRegistered | 1363  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | admit            | 1321  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | breakKey         | 1348  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | claim            | 1396  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | coolMiner        | 1276  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | donate           | 1314  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | harvestAll       | 1345  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | prepareMiner     | 1434  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | release          | 1382  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | revokeMiner      | 1387  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | thirdPartyClaim  | 1428  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | transfer         | 1390  | 0       | 0        |
+╰---------------+------------------+-------+---------+----------╯
+
+[PASS] invariantFourAccountConservation() (runs: 256, calls: 16384, reverts: 0)
+
+╭---------------+------------------+-------+---------+----------╮
+| Contract      | Selector         | Calls | Reverts | Discards |
++===============================================================+
+| SystemHandler | accrueRegistered | 1339  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | admit            | 1341  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | breakKey         | 1381  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | claim            | 1426  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | coolMiner        | 1344  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | donate           | 1440  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | harvestAll       | 1358  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | prepareMiner     | 1364  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | release          | 1360  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | revokeMiner      | 1301  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | thirdPartyClaim  | 1379  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | transfer         | 1351  | 0       | 0        |
+╰---------------+------------------+-------+---------+----------╯
+
+[PASS] invariantModelMatchesTheLedger() (runs: 256, calls: 16384, reverts: 0)
+
+╭---------------+------------------+-------+---------+----------╮
+| Contract      | Selector         | Calls | Reverts | Discards |
++===============================================================+
+| SystemHandler | accrueRegistered | 1414  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | admit            | 1345  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | breakKey         | 1432  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | claim            | 1382  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | coolMiner        | 1368  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | donate           | 1321  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | harvestAll       | 1331  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | prepareMiner     | 1278  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | release          | 1352  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | revokeMiner      | 1413  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | thirdPartyClaim  | 1343  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | transfer         | 1405  | 0       | 0        |
+╰---------------+------------------+-------+---------+----------╯
+
+[PASS] invariantPerIdHistories() (runs: 256, calls: 16384, reverts: 0)
+
+╭---------------+------------------+-------+---------+----------╮
+| Contract      | Selector         | Calls | Reverts | Discards |
++===============================================================+
+| SystemHandler | accrueRegistered | 1402  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | admit            | 1391  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | breakKey         | 1331  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | claim            | 1353  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | coolMiner        | 1393  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | donate           | 1382  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | harvestAll       | 1384  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | prepareMiner     | 1359  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | release          | 1356  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | revokeMiner      | 1338  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | thirdPartyClaim  | 1372  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | transfer         | 1323  | 0       | 0        |
+╰---------------+------------------+-------+---------+----------╯
+
+Suite result: ok. 5 passed; 0 failed; 0 skipped; finished in 7.72s (29.17s CPU time)
+
+Ran 6 tests for test/invariant/PoolInvariantCoverage.t.sol:PoolInvariantCoverageTest
+[PASS] invariantCompositionAndCustody() (runs: 256, calls: 16384, reverts: 0)
+
+╭---------------+------------------+-------+---------+----------╮
+| Contract      | Selector         | Calls | Reverts | Discards |
++===============================================================+
+| SystemHandler | accrueRegistered | 1404  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | admit            | 1340  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | breakKey         | 1362  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | claim            | 1318  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | coolMiner        | 1354  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | donate           | 1422  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | harvestAll       | 1323  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | prepareMiner     | 1387  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | release          | 1393  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | revokeMiner      | 1337  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | thirdPartyClaim  | 1386  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | transfer         | 1358  | 0       | 0        |
+╰---------------+------------------+-------+---------+----------╯
+
+[PASS] invariantEntitlementsNeverDecrease() (runs: 256, calls: 16384, reverts: 0)
+
+╭---------------+------------------+-------+---------+----------╮
+| Contract      | Selector         | Calls | Reverts | Discards |
++===============================================================+
+| SystemHandler | accrueRegistered | 1333  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | admit            | 1384  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | breakKey         | 1372  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | claim            | 1410  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | coolMiner        | 1371  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | donate           | 1386  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | harvestAll       | 1328  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | prepareMiner     | 1369  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | release          | 1372  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | revokeMiner      | 1289  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | thirdPartyClaim  | 1356  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | transfer         | 1414  | 0       | 0        |
+╰---------------+------------------+-------+---------+----------╯
+
+[PASS] invariantFourAccountConservation() (runs: 256, calls: 16384, reverts: 0)
+
+╭---------------+------------------+-------+---------+----------╮
+| Contract      | Selector         | Calls | Reverts | Discards |
++===============================================================+
+| SystemHandler | accrueRegistered | 1380  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | admit            | 1422  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | breakKey         | 1332  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | claim            | 1393  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | coolMiner        | 1346  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | donate           | 1357  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | harvestAll       | 1396  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | prepareMiner     | 1358  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | release          | 1386  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | revokeMiner      | 1343  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | thirdPartyClaim  | 1314  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | transfer         | 1357  | 0       | 0        |
+╰---------------+------------------+-------+---------+----------╯
+
+[PASS] invariantModelMatchesTheLedger() (runs: 256, calls: 16384, reverts: 0)
+
+╭---------------+------------------+-------+---------+----------╮
+| Contract      | Selector         | Calls | Reverts | Discards |
++===============================================================+
+| SystemHandler | accrueRegistered | 1419  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | admit            | 1384  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | breakKey         | 1386  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | claim            | 1324  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | coolMiner        | 1333  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | donate           | 1348  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | harvestAll       | 1378  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | prepareMiner     | 1387  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | release          | 1375  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | revokeMiner      | 1338  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | thirdPartyClaim  | 1371  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | transfer         | 1341  | 0       | 0        |
+╰---------------+------------------+-------+---------+----------╯
+
+[PASS] invariantPerIdHistories() (runs: 256, calls: 16384, reverts: 0)
+
+╭---------------+------------------+-------+---------+----------╮
+| Contract      | Selector         | Calls | Reverts | Discards |
++===============================================================+
+| SystemHandler | accrueRegistered | 1436  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | admit            | 1328  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | breakKey         | 1319  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | claim            | 1344  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | coolMiner        | 1291  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | donate           | 1364  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | harvestAll       | 1356  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | prepareMiner     | 1422  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | release          | 1450  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | revokeMiner      | 1326  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | thirdPartyClaim  | 1365  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | transfer         | 1383  | 0       | 0        |
+╰---------------+------------------+-------+---------+----------╯
+
+[PASS] invariantRecognizedTotalMatchesModel() (runs: 256, calls: 16384, reverts: 0)
+
+╭---------------+------------------+-------+---------+----------╮
+| Contract      | Selector         | Calls | Reverts | Discards |
++===============================================================+
+| SystemHandler | accrueRegistered | 1416  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | admit            | 1332  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | breakKey         | 1379  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | claim            | 1352  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | coolMiner        | 1381  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | donate           | 1354  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | harvestAll       | 1322  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | prepareMiner     | 1403  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | release          | 1308  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | revokeMiner      | 1347  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | thirdPartyClaim  | 1393  | 0       | 0        |
+|---------------+------------------+-------+---------+----------|
+| SystemHandler | transfer         | 1397  | 0       | 0        |
+╰---------------+------------------+-------+---------+----------╯
+
+Suite result: ok. 6 passed; 0 failed; 0 skipped; finished in 7.83s (32.39s CPU time)
+
+Ran 13 test suites in 7.83s (35.77s CPU time): 107 tests passed, 0 failed, 0 skipped (107 total tests)

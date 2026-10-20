@@ -1,0 +1,448 @@
+{
+  "schema": "recoverable-canary-proposal/1",
+  "runId": "canary-d8f17592-7fa6-4d9a-b62e-56ea713e5547",
+  "mode": "mainnet",
+  "candidateDigest": "41f430c2fece186a0ef86f9e75f722e4c1176a235115af87720556e9685bfb42",
+  "owner": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+  "recoveryDestination": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+  "miners": [
+    3204,
+    12485
+  ],
+  "initialNonce": 16,
+  "predictedContracts": {
+    "nand": "0xA246aB1715B8D0c66072Dc0db934906516a96229",
+    "latch": "0xf6133735fA93c6042F3BF84eB47894E23566cc62",
+    "helper": "0xa93CB7A0aF86Af3a15bba3732564c9405e9CCf57",
+    "pool": "0x5904D00d2990c8734051b5d0e7AAEbA636DC591e",
+    "distributor": "0x47F09Bb7a2361F8E2341d046441Aea0321e2b612"
+  },
+  "source": {
+    "scope": "READ_ONLY_BSC_SNAPSHOT",
+    "chainId": 56,
+    "block": "128768634",
+    "blockHash": "0xa4a5629b029c90fbd7fef3cefd8d60588ba52cc5ac85223ac6b12192d6d8b438",
+    "timestamp": "1792509442",
+    "owner": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+    "checks": {
+      "miningImplementation": true,
+      "miningCode": true,
+      "beacon": true,
+      "collectionImplementation": true,
+      "bemDecimals": true,
+      "ownerIsEOA": true,
+      "bemRuntime": true,
+      "miningRuntime": true,
+      "minerCollectionRuntime": true,
+      "collectionImplementationCode": true,
+      "miner3204": true,
+      "miner12485": true
+    },
+    "protocol": {
+      "minerCollection": {
+        "address": "0xb1024b89886B9a34Aa4ff5F31C411D708b20a14C",
+        "codeHash": "0xd8c4b0216e0aadd615fbd134465b6af060a11769edc7c844d8f14d1b8a783992"
+      },
+      "mining": {
+        "address": "0x7E2E0DC66a3bD9103E69b766afA62d9f7b697b46",
+        "codeHash": "0xed6b710a769987f50494d713f278817992e3266e45898a990be878efc2fcbbce"
+      },
+      "bem": {
+        "address": "0x5ce033B2bFCa3Af30b3e8C8457DeaF776A8b695a",
+        "codeHash": "0x982ba79538b51e54ee1382f57522098af0635b0f67f2574d393b29ed0958b344"
+      }
+    },
+    "miningImplementation": "0xa3dbe873da37cd4e4a13c7cef23a7db6ca60f898",
+    "collectionImplementation": "0x8E1D125Def6d3826C278299273a0760D47626068",
+    "miners": [
+      {
+        "id": "3204",
+        "key": "0xb0e5b7d325dead6144886258056fb8e27ff5f6192aaa90fd0b45682c297c1c0d",
+        "owner": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+        "record": {
+          "circuits": "0xb1024b89886B9a34Aa4ff5F31C411D708b20a14C",
+          "circuitId": "3204",
+          "taskId": 1,
+          "gateCount": 2,
+          "stateCount": 0,
+          "depth": 2,
+          "area": "2",
+          "mult": 1,
+          "since": "1789703832",
+          "status": 1,
+          "registrant": "0x27D9672FBc61d5e47E2000863C1645ad406c1EB5",
+          "nandBurn": 2,
+          "latchBurn": 0,
+          "bstar": "2",
+          "bonus": "0",
+          "optimal": false,
+          "commitBlock": "0",
+          "firstUnusedId": "0",
+          "stopBlock": "0",
+          "verifWeight": "2",
+          "unverWeight": "0",
+          "debt": "82557168"
+        },
+        "cachedBurn": [
+          true,
+          2,
+          0
+        ],
+        "circuitBurn": [
+          2,
+          0
+        ],
+        "pendingRaw": "42455",
+        "approved": "0x0000000000000000000000000000000000000000"
+      },
+      {
+        "id": "12485",
+        "key": "0x1eab22e4977aa21abc69cf940272969e412c3e3e085180b3e4b30e37f299ca0b",
+        "owner": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+        "record": {
+          "circuits": "0xb1024b89886B9a34Aa4ff5F31C411D708b20a14C",
+          "circuitId": "12485",
+          "taskId": 74,
+          "gateCount": 2,
+          "stateCount": 1,
+          "depth": 1,
+          "area": "8",
+          "mult": 1,
+          "since": "1788230460",
+          "status": 1,
+          "registrant": "0xBc01D306B919614e66a43b176796F2116cFdA9A0",
+          "nandBurn": 1,
+          "latchBurn": 1,
+          "bstar": "2",
+          "bonus": "0",
+          "optimal": false,
+          "commitBlock": "0",
+          "firstUnusedId": "0",
+          "stopBlock": "0",
+          "verifWeight": "2",
+          "unverWeight": "0",
+          "debt": "82534787"
+        },
+        "cachedBurn": [
+          true,
+          1,
+          1
+        ],
+        "circuitBurn": [
+          1,
+          1
+        ],
+        "pendingRaw": "64836",
+        "approved": "0x0000000000000000000000000000000000000000"
+      }
+    ],
+    "bnbRaw": "53799532700000000",
+    "bemRaw": "9259723",
+    "bemDecimals": 8,
+    "warning": "pending is an observation, not a promise of claim payout"
+  },
+  "maxRunFee": "3441297850000000",
+  "maxTxFee": "607961700000000",
+  "recoveryReserve": "74497000000000",
+  "feePriceCeiling": "100000000",
+  "maxWaitSeconds": 300,
+  "accrualIntervalSeconds": 60,
+  "minConfirmations": 3,
+  "estimate": {
+    "rehearsedGasLimits": "22445339",
+    "observedGasUsed": "16973348",
+    "currentGasPrice": "50000000",
+    "estimatedAtCurrentPriceBNB": "0.00112226695",
+    "maxRunFeeBNB": "0.00344129785",
+    "maxTxFeeBNB": "0.0006079617",
+    "recoveryReserveBNB": "0.000074497",
+    "walletBNB": "0.0537995327",
+    "funded": true
+  },
+  "operations": [
+    {
+      "action": "deploy-nand",
+      "function": "constructor",
+      "rehearsedGasLimit": "2602540",
+      "rehearsedGasUsed": "2066032"
+    },
+    {
+      "action": "deploy-latch",
+      "function": "constructor",
+      "rehearsedGasLimit": "2602602",
+      "rehearsedGasUsed": "2066082"
+    },
+    {
+      "action": "deploy-helper",
+      "function": "constructor",
+      "rehearsedGasLimit": "1047557",
+      "rehearsedGasUsed": "822046"
+    },
+    {
+      "action": "deploy-pool",
+      "function": "constructor",
+      "rehearsedGasLimit": "6079617",
+      "rehearsedGasUsed": "4847694"
+    },
+    {
+      "action": "deploy-distributor",
+      "function": "constructor",
+      "rehearsedGasLimit": "2234015",
+      "rehearsedGasUsed": "1771212"
+    },
+    {
+      "action": "bindPool",
+      "function": "bindPool",
+      "rehearsedGasLimit": "93132",
+      "rehearsedGasUsed": "58506"
+    },
+    {
+      "action": "issue",
+      "function": "issue",
+      "rehearsedGasLimit": "320913",
+      "rehearsedGasUsed": "240731"
+    },
+    {
+      "action": "issue",
+      "function": "issue",
+      "rehearsedGasLimit": "205030",
+      "rehearsedGasUsed": "148024"
+    },
+    {
+      "action": "finalizeIssuance",
+      "function": "finalizeIssuance",
+      "rehearsedGasLimit": "81135",
+      "rehearsedGasUsed": "48908"
+    },
+    {
+      "action": "finalizeIssuance",
+      "function": "finalizeIssuance",
+      "rehearsedGasLimit": "81135",
+      "rehearsedGasUsed": "48908"
+    },
+    {
+      "action": "safeBatchTransferFrom",
+      "function": "safeBatchTransferFrom",
+      "rehearsedGasLimit": "288340",
+      "rehearsedGasUsed": "195247"
+    },
+    {
+      "action": "safeBatchTransferFrom",
+      "function": "safeBatchTransferFrom",
+      "rehearsedGasLimit": "192927",
+      "rehearsedGasUsed": "128625"
+    },
+    {
+      "action": "allocate",
+      "function": "allocate",
+      "rehearsedGasLimit": "655086",
+      "rehearsedGasUsed": "508069"
+    },
+    {
+      "action": "finalizeAllocation",
+      "function": "finalizeAllocation",
+      "rehearsedGasLimit": "106903",
+      "rehearsedGasUsed": "69523"
+    },
+    {
+      "action": "activate",
+      "function": "activate",
+      "rehearsedGasLimit": "159435",
+      "rehearsedGasUsed": "111548"
+    },
+    {
+      "action": "renounce-nand",
+      "function": "renounceOwnership",
+      "rehearsedGasLimit": "58110",
+      "rehearsedGasUsed": "25688"
+    },
+    {
+      "action": "renounce-latch",
+      "function": "renounceOwnership",
+      "rehearsedGasLimit": "58110",
+      "rehearsedGasUsed": "25688"
+    },
+    {
+      "action": "renounce-distributor",
+      "function": "renounceOwnership",
+      "rehearsedGasLimit": "57928",
+      "rehearsedGasUsed": "25543"
+    },
+    {
+      "action": "renounce-pool",
+      "function": "renounceOwnership",
+      "rehearsedGasLimit": "58533",
+      "rehearsedGasUsed": "26027"
+    },
+    {
+      "action": "approve-3204-only",
+      "function": "approve",
+      "rehearsedGasLimit": "90935",
+      "rehearsedGasUsed": "56352"
+    },
+    {
+      "action": "phase-A-deposit-3204",
+      "function": "depositMiners",
+      "rehearsedGasLimit": "564170",
+      "rehearsedGasUsed": "425562"
+    },
+    {
+      "action": "phase-A-bounded-harvest",
+      "function": "harvest",
+      "rehearsedGasLimit": "205613",
+      "rehearsedGasUsed": "143514"
+    },
+    {
+      "action": "deliver-original-wallet-receipts",
+      "function": "deliver",
+      "rehearsedGasLimit": "363168",
+      "rehearsedGasUsed": "250349"
+    },
+    {
+      "action": "phase-A-subset-claim",
+      "function": "claimBatch",
+      "rehearsedGasLimit": "241933",
+      "rehearsedGasUsed": "172561"
+    },
+    {
+      "action": "old-miner-income-held-before-admission",
+      "function": "claim",
+      "rehearsedGasLimit": "152523",
+      "rehearsedGasUsed": "104805"
+    },
+    {
+      "action": "approve-12485-only",
+      "function": "approve",
+      "rehearsedGasLimit": "90935",
+      "rehearsedGasUsed": "56352"
+    },
+    {
+      "action": "phase-B-deposit-12485",
+      "function": "depositMiners",
+      "rehearsedGasLimit": "536322",
+      "rehearsedGasUsed": "398484"
+    },
+    {
+      "action": "phase-C-harvest-3-1",
+      "function": "harvest",
+      "rehearsedGasLimit": "249960",
+      "rehearsedGasUsed": "178991"
+    },
+    {
+      "action": "late-deliver-helper-receipts",
+      "function": "deliver",
+      "rehearsedGasLimit": "239666",
+      "rehearsedGasUsed": "161147"
+    },
+    {
+      "action": "helper-initial-receipt-claim",
+      "function": "claim",
+      "rehearsedGasLimit": "268295",
+      "rehearsedGasUsed": "188613"
+    },
+    {
+      "action": "original-selected-claim",
+      "function": "claimBatch",
+      "rehearsedGasLimit": "187501",
+      "rehearsedGasUsed": "129015"
+    },
+    {
+      "action": "transfer-unpaid-nand-1-to-helper",
+      "function": "safeTransferFrom",
+      "rehearsedGasLimit": "101077",
+      "rehearsedGasUsed": "60062"
+    },
+    {
+      "action": "helper-claims-transferred-nand-1",
+      "function": "claim",
+      "rehearsedGasLimit": "157853",
+      "rehearsedGasUsed": "101638"
+    },
+    {
+      "action": "helper-repeat-claim",
+      "function": "claim",
+      "rehearsedGasLimit": "127267",
+      "rehearsedGasUsed": "77551"
+    },
+    {
+      "action": "release-A-separately",
+      "function": "releaseA",
+      "rehearsedGasLimit": "150640",
+      "rehearsedGasUsed": "99526"
+    },
+    {
+      "action": "release-B-separately",
+      "function": "releaseB",
+      "rehearsedGasLimit": "149017",
+      "rehearsedGasUsed": "98228"
+    },
+    {
+      "action": "phase-D-orderly-final-harvest",
+      "function": "harvest",
+      "rehearsedGasLimit": "249960",
+      "rehearsedGasUsed": "178991"
+    },
+    {
+      "action": "permanent-shutdown",
+      "function": "shutdown",
+      "rehearsedGasLimit": "77378",
+      "rehearsedGasUsed": "45903"
+    },
+    {
+      "action": "return-3204",
+      "function": "emergencyReturn",
+      "rehearsedGasLimit": "158225",
+      "rehearsedGasUsed": "105579"
+    },
+    {
+      "action": "return-12485",
+      "function": "emergencyReturn",
+      "rehearsedGasLimit": "136882",
+      "rehearsedGasUsed": "83705"
+    },
+    {
+      "action": "final-wallet-receipt-claims",
+      "function": "claimBatch",
+      "rehearsedGasLimit": "201020",
+      "rehearsedGasUsed": "139830"
+    },
+    {
+      "action": "final-helper-receipt-claims",
+      "function": "claim",
+      "rehearsedGasLimit": "195176",
+      "rehearsedGasUsed": "131034"
+    },
+    {
+      "action": "final-release-A",
+      "function": "releaseA",
+      "rehearsedGasLimit": "102653",
+      "rehearsedGasUsed": "61137"
+    },
+    {
+      "action": "final-release-B",
+      "function": "releaseB",
+      "rehearsedGasLimit": "101031",
+      "rehearsedGasUsed": "59839"
+    },
+    {
+      "action": "helper-forwards-BEM-to-original",
+      "function": "forwardBEM",
+      "rehearsedGasLimit": "76570",
+      "rehearsedGasUsed": "35458"
+    },
+    {
+      "action": "post-return-owner-income-3204",
+      "function": "claim",
+      "rehearsedGasLimit": "152523",
+      "rehearsedGasUsed": "104805"
+    },
+    {
+      "action": "post-return-owner-income-12485",
+      "function": "claim",
+      "rehearsedGasLimit": "133998",
+      "rehearsedGasUsed": "90216"
+    }
+  ],
+  "recovery": "Permanent shutdown; independent emergencyReturn(3204), emergencyReturn(12485), fixed wallet only. Finish existing BEM entitlements and forward helper BEM. No Mining/BEM call required for NFT return.",
+  "humanApproval": "REQUIRED_BEFORE_ANY_MAINNET_TRANSACTION"
+}

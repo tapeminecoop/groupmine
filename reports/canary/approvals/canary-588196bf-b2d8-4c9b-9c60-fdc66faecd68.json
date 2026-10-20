@@ -1,0 +1,22 @@
+{
+  "schema": "recoverable-canary-human-approval/1",
+  "approved": true,
+  "approvedAt": "2026-10-20T15:24:41.920Z",
+  "runId": "canary-588196bf-b2d8-4c9b-9c60-fdc66faecd68",
+  "candidateDigest": "a4003a06dca0164c89852cb65b137d45fa24665fa8cf21f33cab220af2c9385f",
+  "proposalDigest": "625c2ff5985917dcebd59d3aea88bdb5ca60b9b754dde12c6225cde1efd417d6",
+  "owner": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+  "recoveryDestination": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+  "miners": [
+    3204,
+    12485
+  ],
+  "maxRunFee": "3419038600000000",
+  "maxTxFee": "607961700000000",
+  "recoveryReserve": "74497000000000",
+  "feePriceCeiling": "100000000",
+  "maxWaitSeconds": 300,
+  "minConfirmations": 3,
+  "feePolicy": "Execution retains the original exact proposal caps and recovery reserve; no additional gas headroom is used unless separately recorded within the human authorization.",
+  "humanApprovalText": "批准 run canary-588196bf-b2d8-4c9b-9c60-fdc66faecd68，按上述费用上限(因为gas波动的问题可以适当调高，最高不超过计算的100%)和恢复预留执行完整主网测试。最后务必确认 3204、12485 都已返还原钱包，完成对账和英语报告，继续用中文汇报。"
+}

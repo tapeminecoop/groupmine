@@ -1,0 +1,578 @@
+{
+  "scope": "ACTUAL_BSC_MAINNET_READ_ONLY_FINAL_AUDIT",
+  "status": "ASSETS_AND_ACCOUNTING_PASS_ORIGINAL_AUTOMATION_FAILED",
+  "assetAndAccountingStatus": "PASS",
+  "originalAutomationStatus": "FAIL_OR_INCOMPLETE",
+  "auditedAt": "2026-10-20T15:47:23.826Z",
+  "head": "128772563",
+  "confirmedBlock": "128772561",
+  "blockHash": "0x6f89f3fd00b45d01a2bafdccf60e47117e8104195cc00a2b795cd121eabaf8a2",
+  "timestamp": "1792511210",
+  "minConfirmations": 3,
+  "originalWallet": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+  "canary": "0x5904d00d2990c8734051b5d0e7aaeba636dc591e",
+  "checks": {
+    "businessAssertionsPassed": false,
+    "bothActualOwnersAreOriginalWallet": true,
+    "neitherNFTInCanary": true,
+    "bothMiningStatusesActive": true,
+    "bothReturnFlags": true,
+    "noRemainingTokenApproval": true,
+    "permanentlyClosed": true,
+    "ordinaryOwnerRenounced": true,
+    "recoveryWalletFixed": true,
+    "fixedSupplies": true,
+    "finalCompositionRetained": true,
+    "noOutstandingReceiptEntitlements": true,
+    "rolesFullyPaid": true,
+    "noDeficitOrUnrecognized": true,
+    "onlyRoundingResidueRemains": true,
+    "allHelperBEMForwarded": true,
+    "postReturnBothPaidPositive": true,
+    "receiptFeesMatchJournal": true,
+    "walletBNBReconciles": true,
+    "walletBEMReconciles": true,
+    "feeCapRespected": true,
+    "noUnrelatedNFTsTargetsOrGlobalApprovals": true,
+    "receivedBEMPayoutContinuationPassed": true,
+    "negativeGuardsConfirmedFromStructuredRevertData": true
+  },
+  "miners": [
+    {
+      "id": "3204",
+      "owner": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+      "approved": "0x0000000000000000000000000000000000000000",
+      "record": {
+        "circuits": "0xb1024b89886B9a34Aa4ff5F31C411D708b20a14C",
+        "circuitId": "3204",
+        "taskId": 1,
+        "gateCount": 2,
+        "stateCount": 0,
+        "depth": 2,
+        "area": "2",
+        "mult": 1,
+        "since": "1789703832",
+        "status": 1,
+        "registrant": "0x27D9672FBc61d5e47E2000863C1645ad406c1EB5",
+        "nandBurn": 2,
+        "latchBurn": 0,
+        "bstar": "2",
+        "bonus": "0",
+        "optimal": false,
+        "commitBlock": "0",
+        "firstUnusedId": "0",
+        "stopBlock": "0",
+        "verifWeight": "2",
+        "unverWeight": "0",
+        "debt": "82618143"
+      },
+      "returnedFlag": true
+    },
+    {
+      "id": "12485",
+      "owner": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+      "approved": "0x0000000000000000000000000000000000000000",
+      "record": {
+        "circuits": "0xb1024b89886B9a34Aa4ff5F31C411D708b20a14C",
+        "circuitId": "12485",
+        "taskId": 74,
+        "gateCount": 2,
+        "stateCount": 1,
+        "depth": 1,
+        "area": "8",
+        "mult": 1,
+        "since": "1788230460",
+        "status": 1,
+        "registrant": "0xBc01D306B919614e66a43b176796F2116cFdA9A0",
+        "nandBurn": 1,
+        "latchBurn": 1,
+        "bstar": "2",
+        "bonus": "0",
+        "optimal": false,
+        "commitBlock": "0",
+        "firstUnusedId": "0",
+        "stopBlock": "0",
+        "verifWeight": "2",
+        "unverWeight": "0",
+        "debt": "82618310"
+      },
+      "returnedFlag": true
+    }
+  ],
+  "shares": [
+    {
+      "category": 0,
+      "id": 1,
+      "holder": "0xa93CB7A0aF86Af3a15bba3732564c9405e9CCf57",
+      "claimed": "28176",
+      "outstanding": "0"
+    },
+    {
+      "category": 0,
+      "id": 2,
+      "holder": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+      "claimed": "28176",
+      "outstanding": "0"
+    },
+    {
+      "category": 0,
+      "id": 3,
+      "holder": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+      "claimed": "28176",
+      "outstanding": "0"
+    },
+    {
+      "category": 0,
+      "id": 4,
+      "holder": "0xa93CB7A0aF86Af3a15bba3732564c9405e9CCf57",
+      "claimed": "28176",
+      "outstanding": "0"
+    },
+    {
+      "category": 1,
+      "id": 1,
+      "holder": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+      "claimed": "9731",
+      "outstanding": "0"
+    },
+    {
+      "category": 1,
+      "id": 2,
+      "holder": "0xa93CB7A0aF86Af3a15bba3732564c9405e9CCf57",
+      "claimed": "9731",
+      "outstanding": "0"
+    }
+  ],
+  "ledger": {
+    "bemBalance": "7",
+    "unrecognized": "0",
+    "deficit": "0",
+    "totalAccounted": "134815",
+    "totalPaid": "134808",
+    "recipientAAccrued": "1321",
+    "recipientAPaid": "1321",
+    "recipientBAccrued": "1321",
+    "recipientBPaid": "1321",
+    "nandIncome": "112707",
+    "nandReceiptsAccrued": "112704",
+    "nandReceiptsPaid": "112704",
+    "latchIncome": "19463",
+    "latchReceiptsAccrued": "19462",
+    "latchReceiptsPaid": "19462",
+    "residue": "7"
+  },
+  "receipts": [
+    {
+      "action": "deploy-nand",
+      "hash": "0x44f5b07b3291820d1b48e31bbbe2fe6293e8bb8875c9139c4033b972b091b58b",
+      "block": "128769877",
+      "blockHash": "0x938d1cdae1b6e488a973b6a3be69f827c0bc5c085d3ed8c1e0a90f4118e0488f",
+      "confirmationsAtAudit": 2687,
+      "gasUsed": "2066032",
+      "effectiveGasPrice": "55000000"
+    },
+    {
+      "action": "deploy-latch",
+      "hash": "0x9e8b3a04191e045ffabf37ad75e691272c0625724649106845b60d95fdcabb25",
+      "block": "128769904",
+      "blockHash": "0x26fc446324a02649e6959428387b94b89ee649eeaa5d299c94a49ad3caafb26f",
+      "confirmationsAtAudit": 2660,
+      "gasUsed": "2066082",
+      "effectiveGasPrice": "55000000"
+    },
+    {
+      "action": "deploy-helper",
+      "hash": "0xf18524f74f8443657c8c5a13889b0f8fb85289654b2bc0142f6bd3a62a7ca519",
+      "block": "128769930",
+      "blockHash": "0x9979cbd73fb06f3f47bb30df5a34698f1f04cbacdceef39c4bbd74b90eccff95",
+      "confirmationsAtAudit": 2634,
+      "gasUsed": "822046",
+      "effectiveGasPrice": "55000000"
+    },
+    {
+      "action": "deploy-pool",
+      "hash": "0xa741b47e8e5530a77eacddb19865275e7448745f0b4c5dca2f8aab5ab46b3bf5",
+      "block": "128769959",
+      "blockHash": "0x6558d22fda1a4bc92184432322853a209518ccf0349267bff49fa5eea5d7a8a3",
+      "confirmationsAtAudit": 2605,
+      "gasUsed": "4847694",
+      "effectiveGasPrice": "55000000"
+    },
+    {
+      "action": "deploy-distributor",
+      "hash": "0x71bcb25c11675907740d283152460f605c44e194360bab6c46960bfd059cec02",
+      "block": "128769998",
+      "blockHash": "0xbfa649088161a2b05160fca8f256c605d272113b4250d25f62915c771d1a0588",
+      "confirmationsAtAudit": 2566,
+      "gasUsed": "1771212",
+      "effectiveGasPrice": "55000000"
+    },
+    {
+      "action": "bindPool",
+      "hash": "0x38972ca6ed55959c6eb415c91018bf251c4d223e307adeca309b257362c06055",
+      "block": "128770042",
+      "blockHash": "0x3e95087819c39aeced11d21f75d10bc0ae395382b4e8cb97d6c13e7892e26637",
+      "confirmationsAtAudit": 2522,
+      "gasUsed": "58506",
+      "effectiveGasPrice": "55000000"
+    },
+    {
+      "action": "issue",
+      "hash": "0xe165517e310fa725d1f9a705a21014db2df7a4031cf077274015ee5315debea4",
+      "block": "128770085",
+      "blockHash": "0xf4e5a6faa0a3b31f34c5af867267716f82d3fd3b7f86f03d4162061e2ba85083",
+      "confirmationsAtAudit": 2479,
+      "gasUsed": "240731",
+      "effectiveGasPrice": "55000000"
+    },
+    {
+      "action": "issue",
+      "hash": "0x1906d24cb23398f23199e1f0804ced37f97e01604c04424a40eb6fea50a38181",
+      "block": "128770125",
+      "blockHash": "0x859af06ca337eb54c8d0ed705123010822ba8baa6323d5c59497e858856f7fd9",
+      "confirmationsAtAudit": 2439,
+      "gasUsed": "148024",
+      "effectiveGasPrice": "55000000"
+    },
+    {
+      "action": "finalizeIssuance",
+      "hash": "0xae667f0c88b6c5f9973e85f5b30e345c6a37fdf527cf7d2b384c2c0bdb1faffe",
+      "block": "128770164",
+      "blockHash": "0x1a0d42eef2e829fc6b96c23f12fd76cb15db0f46279f14243198023d6dd68c46",
+      "confirmationsAtAudit": 2400,
+      "gasUsed": "48908",
+      "effectiveGasPrice": "55000000"
+    },
+    {
+      "action": "finalizeIssuance",
+      "hash": "0x6291bff1b3fef7fe10fb37833e07f17f21f2738bedd7c338c0ed24860175e49e",
+      "block": "128770204",
+      "blockHash": "0xd966a44c6ee03646879327992008f5f1cccb65a23d2a3608cdf1725d55958228",
+      "confirmationsAtAudit": 2360,
+      "gasUsed": "48908",
+      "effectiveGasPrice": "55000000"
+    },
+    {
+      "action": "safeBatchTransferFrom",
+      "hash": "0xb4789d32f71b2dfa23d470d584599415be87ef8f36ca7b40727ce96f951876bb",
+      "block": "128770244",
+      "blockHash": "0x04c71b2952758ae0ad9b41ffb6475669a2a1374ef50df17a4c384a385cc8702a",
+      "confirmationsAtAudit": 2320,
+      "gasUsed": "195247",
+      "effectiveGasPrice": "55000000"
+    },
+    {
+      "action": "safeBatchTransferFrom",
+      "hash": "0x7e8a14cdfcbbe0b622044393aed2146482ef215c5f463cce4d7123faabeab1af",
+      "block": "128770285",
+      "blockHash": "0xcffa3e804be64ffbc4cac35d726f35a073339d7cb8b29bb97804d2d7f5524a29",
+      "confirmationsAtAudit": 2279,
+      "gasUsed": "128625",
+      "effectiveGasPrice": "55000000"
+    },
+    {
+      "action": "allocate",
+      "hash": "0x161b55e1dd16e05e899a6ca8418f73d63fddf936254fabb86ab0b50f78c3a184",
+      "block": "128770320",
+      "blockHash": "0x7876cd1a2ea898ccad063ab4aa3244b80a521c634797fe1f0da41c966cd4827c",
+      "confirmationsAtAudit": 2244,
+      "gasUsed": "508069",
+      "effectiveGasPrice": "55000000"
+    },
+    {
+      "action": "finalizeAllocation",
+      "hash": "0x31eda798d6c5c6eb24ff9606a522b5caa37b50920c61caeef42109a9c9059c5c",
+      "block": "128770363",
+      "blockHash": "0xb12043876168b8b5b74709f746ac044ac9f45ed69d111178e2285d7a0befbf8e",
+      "confirmationsAtAudit": 2201,
+      "gasUsed": "69523",
+      "effectiveGasPrice": "55000000"
+    },
+    {
+      "action": "activate",
+      "hash": "0xd103157482c252078863ad274e611a20237d7a76a3de0542b850e520285ee354",
+      "block": "128770397",
+      "blockHash": "0x4fa08f3336f743bfe136157a4b457684b9bf282d662604a967f7c3cff0f6ccb8",
+      "confirmationsAtAudit": 2167,
+      "gasUsed": "111548",
+      "effectiveGasPrice": "55000000"
+    },
+    {
+      "action": "renounce-nand",
+      "hash": "0xa1d3e944debea1c5287f49ba0998edb730baf5c263303bc7e4b7ffef2d04a0ed",
+      "block": "128770432",
+      "blockHash": "0x6309dd08d270d42d74b6e1de8863868a0050a39161bd033e28a2372b5d1bb73d",
+      "confirmationsAtAudit": 2132,
+      "gasUsed": "25688",
+      "effectiveGasPrice": "55000000"
+    },
+    {
+      "action": "renounce-latch",
+      "hash": "0x2121a94030a4998a2921612e16d2bd723af81e25ad15727302d7da0b5e22a8ad",
+      "block": "128770466",
+      "blockHash": "0xf47db102c6ac00114956db39462b422a39bdf34a3276eae17a12e128738bb079",
+      "confirmationsAtAudit": 2098,
+      "gasUsed": "25688",
+      "effectiveGasPrice": "55000000"
+    },
+    {
+      "action": "renounce-distributor",
+      "hash": "0x58f3b7e91d42b089b8bdffb406e11f6f70295c03511f86e8feda1f200f36325c",
+      "block": "128770498",
+      "blockHash": "0x6e8a03954ea1f5a99bc53062047f8c866ed188292ba9dbde38eaf70cbd423d5d",
+      "confirmationsAtAudit": 2066,
+      "gasUsed": "25543",
+      "effectiveGasPrice": "55000000"
+    },
+    {
+      "action": "renounce-pool",
+      "hash": "0xd40fef5ed9c0a3260284aefdba3a28c651c46ffab68c7c024453206acc7ac791",
+      "block": "128770534",
+      "blockHash": "0xf2bab6b6fb69dc64d3161e0cd4fdfb0a43df6b334a13d808a0fbeb4420fd8b23",
+      "confirmationsAtAudit": 2030,
+      "gasUsed": "26027",
+      "effectiveGasPrice": "55000000"
+    },
+    {
+      "action": "approve-3204-only",
+      "hash": "0x3815421652d6b3b8d39212d363499363a81996058d771e56a0415e440aaea19e",
+      "block": "128770594",
+      "blockHash": "0x7c52a5f264e0465faa157b548581dbd0ce681b0ed7602de1924e21387a7c07c2",
+      "confirmationsAtAudit": 1970,
+      "gasUsed": "56352",
+      "effectiveGasPrice": "55000000"
+    },
+    {
+      "action": "phase-A-deposit-3204",
+      "hash": "0x17ebd294dabb251705fda3a1e16e6d2a4114468855db801ebf26d9cefcf1176b",
+      "block": "128770632",
+      "blockHash": "0xd617de697460d5bc5c5608395ef13ebbb7c1f9cf635cb136e5cf1003fb930f42",
+      "confirmationsAtAudit": 1932,
+      "gasUsed": "425562",
+      "effectiveGasPrice": "55000000"
+    },
+    {
+      "action": "phase-A-bounded-harvest",
+      "hash": "0x5bb97ed6c1b94c6b2568061d951c66c9612c9cb81436822167f41d1e5606349d",
+      "block": "128770802",
+      "blockHash": "0x2da54656ab64c191d664720e4a6e743ba05c6a7553ba4e04b2563f13f71a20db",
+      "confirmationsAtAudit": 1762,
+      "gasUsed": "143514",
+      "effectiveGasPrice": "55000000"
+    },
+    {
+      "action": "deliver-original-wallet-receipts",
+      "hash": "0x8af79e655f45c68b21efa63ea5929b26bb5e79b128414d5e7b729b1effbba5b8",
+      "block": "128770834",
+      "blockHash": "0xce618459e7da0bcd7f72fda5e12c8c414355ddfea04034913d4ffe54c0ea882e",
+      "confirmationsAtAudit": 1730,
+      "gasUsed": "250349",
+      "effectiveGasPrice": "55000000"
+    },
+    {
+      "action": "phase-A-subset-claim",
+      "hash": "0xa6438e8a80b805186749921a318826872424883aa2ea5c50cda4deca9fc0d396",
+      "block": "128770867",
+      "blockHash": "0xe3a39d0208e95cbb65f5cc03b8fb4b95961d62a2b1903b794b3f019c00f959cf",
+      "confirmationsAtAudit": 1697,
+      "gasUsed": "172561",
+      "effectiveGasPrice": "55000000"
+    },
+    {
+      "action": "old-miner-income-held-before-admission",
+      "hash": "0xd2a0223551d9a4f81c410dfbb6af0a416e7328117c31577b938b5d5dd954c747",
+      "block": "128771042",
+      "blockHash": "0x7827e5459e9eea01226995f26c6f3b3541c905bdcb261006e0aa31a9ef3534fd",
+      "confirmationsAtAudit": 1522,
+      "gasUsed": "104805",
+      "effectiveGasPrice": "55000000"
+    },
+    {
+      "action": "approve-12485-only",
+      "hash": "0xc660ebe245ff8670261d627103f50c86875f5d8d78dadd6062a1d239dc65df8c",
+      "block": "128771219",
+      "blockHash": "0x420bac95cf979c042c66ac4a92c27b757468164380acb77ceaf5290ea4c7b905",
+      "confirmationsAtAudit": 1345,
+      "gasUsed": "56352",
+      "effectiveGasPrice": "55000000"
+    },
+    {
+      "action": "phase-B-deposit-12485",
+      "hash": "0x7ce5693b11b0f6fc676e76cc1ea00c9f3cea214db07ef9c3f592be6f7112c5b1",
+      "block": "128771269",
+      "blockHash": "0x4da3be3a092d0ea22436943eaace5cd81eea70c59068a48b6a95f477ca174a02",
+      "confirmationsAtAudit": 1295,
+      "gasUsed": "398484",
+      "effectiveGasPrice": "55000000"
+    },
+    {
+      "action": "phase-C-harvest-3-1",
+      "hash": "0xea57b883a14776c1516fc5fae8a724b5be1724f1992a18dc35757b3686d60082",
+      "block": "128771444",
+      "blockHash": "0x6c66a0e15edf328c726decbbcd282d06a23c7162f00fed8489217e9614fff7a7",
+      "confirmationsAtAudit": 1120,
+      "gasUsed": "178991",
+      "effectiveGasPrice": "55000000"
+    },
+    {
+      "action": "late-deliver-helper-receipts",
+      "hash": "0x888396a14b72a2512f8dfea542a0144ae7a7718e9b556ad326fb1601cad93b2c",
+      "block": "128771481",
+      "blockHash": "0x68e38346e38694c3b37ab7b854e25b93e72b308a17ee8314868d0db762c77306",
+      "confirmationsAtAudit": 1083,
+      "gasUsed": "161147",
+      "effectiveGasPrice": "55000000"
+    },
+    {
+      "action": "helper-initial-receipt-claim",
+      "hash": "0x304c0899d71f84a08784189800b56d36dc707d7def68395f14cfae035de866d1",
+      "block": "128771518",
+      "blockHash": "0x2b07daf336f8f5a0acb11b5a87b198a677249194cbe4ef2587036e342f253742",
+      "confirmationsAtAudit": 1046,
+      "gasUsed": "188613",
+      "effectiveGasPrice": "55000000"
+    },
+    {
+      "action": "original-selected-claim",
+      "hash": "0xecb59b3a10c4e410cb4871fd8aa3aec47a3fee0419fb3044b4342e963e4bf238",
+      "block": "128771559",
+      "blockHash": "0x0c98ccfef960cf383a2174f6322397a36e99dbb57b967cfa018f839f77c6e7fb",
+      "confirmationsAtAudit": 1005,
+      "gasUsed": "129015",
+      "effectiveGasPrice": "55000000"
+    },
+    {
+      "action": "transfer-unpaid-nand-1-to-helper",
+      "hash": "0x64d008b2c408a9266216098a00d2e4f6d6109c141e59bb4a8c3fe241ee819a95",
+      "block": "128771596",
+      "blockHash": "0x6a0fa1758ba2280271e3d02b69459a058dbd5f868378fd968c4bfb7bd355dad1",
+      "confirmationsAtAudit": 968,
+      "gasUsed": "60062",
+      "effectiveGasPrice": "55000000"
+    },
+    {
+      "action": "permanent-shutdown",
+      "hash": "0x52243fd1faa90ec521717ada08a4cea9d7956cef03dddaaf31eadf1d8010ff4a",
+      "block": "128771706",
+      "blockHash": "0x4b420a8f4e5ad6e607894b5693e3bb108b6471f91b9e115236e84aae2553cb7f",
+      "confirmationsAtAudit": 858,
+      "gasUsed": "45903",
+      "effectiveGasPrice": "55000000"
+    },
+    {
+      "action": "return-3204",
+      "hash": "0x6c15f5ab160aa381e600f663c0c3b94f321b08b5d376027d1cc7568dadb97b5b",
+      "block": "128771735",
+      "blockHash": "0xb9e97a6b79b067336482bd2bde96b1964341d48a75000d61702032b146432472",
+      "confirmationsAtAudit": 829,
+      "gasUsed": "105579",
+      "effectiveGasPrice": "55000000"
+    },
+    {
+      "action": "return-12485",
+      "hash": "0x768804c76e15f33b2ded37efc0e303105b5f926f0d80c32c747e9184c489e29b",
+      "block": "128771766",
+      "blockHash": "0x31d68d97e12f1fadc19d56daaf56a961db53530c880ab4f829edcebbb78ce799",
+      "confirmationsAtAudit": 798,
+      "gasUsed": "83705",
+      "effectiveGasPrice": "55000000"
+    },
+    {
+      "action": "cleanup-wallet-receipt-claims",
+      "hash": "0x0a57207e1a97afc3a61fcc2d2efb8843d6932c7994a4bb8731e87edb7564f461",
+      "block": "128772081",
+      "blockHash": "0x79da8bbfd5c5909582e6d7178612ea6864575b5d0c56476d6b81105897c4bebe",
+      "confirmationsAtAudit": 483,
+      "gasUsed": "131430",
+      "effectiveGasPrice": "55000000"
+    },
+    {
+      "action": "cleanup-helper-receipt-claims-including-transferred-1",
+      "hash": "0xa2a71b1ac13a62c451368394527cd5f00c10cc9693a8a27bef628ecc771ab932",
+      "block": "128772121",
+      "blockHash": "0xb3f40af12c37b3474521173eaf0f64462a96bf14fcea63b8c8fa71b5d3fa9036",
+      "confirmationsAtAudit": 443,
+      "gasUsed": "122634",
+      "effectiveGasPrice": "55000000"
+    },
+    {
+      "action": "cleanup-helper-repeat-claim-1",
+      "hash": "0x43d154b82c0f54e1ec52b9ec9db2aff939167cc464fb1ce90754ac2893668cf6",
+      "block": "128772162",
+      "blockHash": "0x4c0b930c6805cb9ca91f7ae188effd167fce63dccb40a5e4757996237f0bf387",
+      "confirmationsAtAudit": 402,
+      "gasUsed": "77551",
+      "effectiveGasPrice": "55000000"
+    },
+    {
+      "action": "cleanup-release-A-separately",
+      "hash": "0x34826a61c8f3533e875c844c4b173643cdb98975c1d76427c4b69d8604aa7b9a",
+      "block": "128772205",
+      "blockHash": "0x4f764d4d06f3e3745e8439d5e133ad1dce33f4c8f6ec6093e26499e9b1fd035d",
+      "confirmationsAtAudit": 359,
+      "gasUsed": "99526",
+      "effectiveGasPrice": "55000000"
+    },
+    {
+      "action": "cleanup-release-B-separately",
+      "hash": "0x763544c8b0c4d427340a98359e65c592e07f4c779d491d297c3d228ede3af4f4",
+      "block": "128772240",
+      "blockHash": "0x9c9793ae5661ba2ed140f67006c258d6b9b336758b37bf490b80ade9fa937b67",
+      "confirmationsAtAudit": 324,
+      "gasUsed": "98228",
+      "effectiveGasPrice": "55000000"
+    },
+    {
+      "action": "cleanup-helper-forwards-BEM-to-original",
+      "hash": "0x8f93e2e45bdf9b8aee31d120459c704bb8766a4a58febb3b5c1a470d3c316251",
+      "block": "128772278",
+      "blockHash": "0xdf4350025be187ccee2cefd5942d0b952e0ca43b8b2d76dc766fecc45b971998",
+      "confirmationsAtAudit": 286,
+      "gasUsed": "35458",
+      "effectiveGasPrice": "55000000"
+    },
+    {
+      "action": "cleanup-post-return-owner-income-3204",
+      "hash": "0x17e183c8b68075ab4991fe0ab6d4b3570594455a6663e4f2118444cb0c61791d",
+      "block": "128772456",
+      "blockHash": "0xcbf22729827833e00c3e573bca2e2e0d6aec6326117feba5527cd9df64258fb7",
+      "confirmationsAtAudit": 108,
+      "gasUsed": "104805",
+      "effectiveGasPrice": "55000000"
+    },
+    {
+      "action": "cleanup-post-return-owner-income-12485",
+      "hash": "0x658f532f94a10e4499dab42b0dcd979bc0436706206b8c4eaac78043e8525649",
+      "block": "128772492",
+      "blockHash": "0x7408cd1344dd73b290df39a6a77c67c317ff733d681fcd02ec80e95f6c2146ad",
+      "confirmationsAtAudit": 72,
+      "gasUsed": "104805",
+      "effectiveGasPrice": "55000000"
+    }
+  ],
+  "nftTransfers": [
+    {
+      "action": "phase-A-deposit-3204",
+      "id": "3204"
+    },
+    {
+      "action": "phase-B-deposit-12485",
+      "id": "12485"
+    },
+    {
+      "action": "return-3204",
+      "id": "3204"
+    },
+    {
+      "action": "return-12485",
+      "id": "12485"
+    }
+  ],
+  "initialBNBRaw": "53799532700000000",
+  "finalBNBRaw": "52888208440000000",
+  "totalFeeRaw": "911324260000000",
+  "ownerBEMRaw": "9404214",
+  "helperBEMRaw": "0",
+  "poolBEMRaw": "7",
+  "postReturnIncomeRaw": "9683"
+}

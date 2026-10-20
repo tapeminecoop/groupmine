@@ -1,0 +1,37 @@
+{
+  "scope": "ACTUAL_BSC_MAINNET",
+  "overall": "PARTIAL_AUTOMATION_FAILED_RECOVERY_AND_ACCOUNTING_PASS",
+  "originalAutomationStatus": "FAIL_OR_INCOMPLETE",
+  "originalFailedAssertions": {
+    "former-holder-claim-rejected": {
+      "status": "FAIL",
+      "evidence": {
+        "simulationOnly": true,
+        "expectedError": "NotHolder(uint8,uint256)",
+        "expectedSelector": "0x794e61c9",
+        "reason": "Execution reverted for an unknown reason.\n\nRaw Call Arguments:\n  from:  0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129\n  to:    0x5904d00d2990c8734051b5d0e7aaeba636dc591e\n  data:  0xdbc7d8fd00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001\n\nDetails: execution reverted\nVersion: viem@2.57.2"
+      }
+    },
+    "closed-pool-admission-rejected": {
+      "status": "FAIL",
+      "evidence": {
+        "simulationOnly": true,
+        "expectedError": "CanaryClosed()",
+        "expectedSelector": "0x9b6c0ccc",
+        "reason": "Execution reverted for an unknown reason.\n\nRaw Call Arguments:\n  from:  0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129\n  to:    0x5904d00d2990c8734051b5d0e7aaeba636dc591e\n  data:  0x58d48e4a000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000c84\n\nDetails: execution reverted\nVersion: viem@2.57.2"
+      }
+    }
+  },
+  "skippedNormalFinalCanaryHarvest": true,
+  "conditions": {
+    "designatedMinersDepositedAndUsed": true,
+    "compositionChangedTwoZeroToThreeOne": true,
+    "oldEntitlementsPreservedAndNewIncomeCorrect": true,
+    "distributionClaimsPositiveEntitlementTransfer": true,
+    "bothRolesCorrectlyPaid": true,
+    "bothActualFinalOwnersOriginalWallet": true,
+    "finalAccountingReconciled": true,
+    "noUnrelatedOrFundraisingAssetsModified": true
+  },
+  "independentAudit": "reports/canary/mainnet/canary-588196bf-b2d8-4c9b-9c60-fdc66faecd68/final-audit.json"
+}

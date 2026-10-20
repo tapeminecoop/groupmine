@@ -1,0 +1,59 @@
+{
+  "schema": "recoverable-canary-run/1",
+  "mode": "fork",
+  "runId": "2026-10-20T15-19-24-355Z-complete",
+  "candidateDigest": "a4003a06dca0164c89852cb65b137d45fa24665fa8cf21f33cab220af2c9385f",
+  "owner": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+  "contracts": {
+    "nand": "0xa246ab1715b8d0c66072dc0db934906516a96229",
+    "latch": "0xf6133735fa93c6042f3bf84eb47894e23566cc62",
+    "helper": "0xa93cb7a0af86af3a15bba3732564c9405e9ccf57",
+    "pool": "0x5904d00d2990c8734051b5d0e7aaeba636dc591e",
+    "distributor": "0x47f09bb7a2361f8e2341d046441aea0321e2b612"
+  },
+  "identities": {
+    "nand": {
+      "codeHash": "0x7f59d20c18c4dec6ddf617a9f085a87d4622efc279fbc1438e5293333288ec8f",
+      "bytes": 8743,
+      "immutableTemplateMatched": true
+    },
+    "latch": {
+      "codeHash": "0x7f59d20c18c4dec6ddf617a9f085a87d4622efc279fbc1438e5293333288ec8f",
+      "bytes": 8743,
+      "immutableTemplateMatched": true
+    },
+    "helper": {
+      "codeHash": "0x8ca6042e3eb2cc0dd51140193a52879153323afcd6d0609e76e01ba1499b3607",
+      "bytes": 3410,
+      "immutableTemplateMatched": true
+    },
+    "pool": {
+      "codeHash": "0xd05dd9b09dcb11da1ae202b57954758e4e8e65a1d6f532908cc01638ea6b63ae",
+      "bytes": 20404,
+      "immutableTemplateMatched": true
+    },
+    "distributor": {
+      "codeHash": "0x3e2fa6a91cb4d3661049fdd6d7e315b12b816c317fd64e0c70c9e8c72733846f",
+      "bytes": 7680,
+      "immutableTemplateMatched": true
+    }
+  },
+  "totalFeeRaw": "927033195000000",
+  "maxRunFee": "100000000000000000",
+  "maxTxFee": "20000000000000000",
+  "recoveryReserve": "10000000000000000",
+  "feePriceCeiling": "100000000",
+  "forkGasPrice": "50000000",
+  "minConfirmations": 1,
+  "maxWaitSeconds": 300,
+  "accrualIntervalSeconds": 60,
+  "dir": "reports/canary/fork/2026-10-20T15-19-24-355Z/complete",
+  "startedAt": "2026-10-20T15:19:27.556Z",
+  "status": "PASS",
+  "forkSource": {
+    "block": "128768886",
+    "blockHash": "0x32d46710fd4c02fdc185920b12c8b4d40016722cada692e0c120c2a967ea7e7d"
+  },
+  "nextNonce": 63,
+  "poolDeployBlock": "128768890"
+}

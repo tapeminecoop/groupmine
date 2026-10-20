@@ -1,0 +1,59 @@
+{
+  "schema": "tapeout-allocation-artifact/1",
+  "chainId": 56,
+  "distributor": "0x47f09bb7a2361f8e2341d046441aea0321e2b612",
+  "nandReceipt": "0xa246ab1715b8d0c66072dc0db934906516a96229",
+  "latchReceipt": "0xf6133735fa93c6042f3bf84eb47894e23566cc62",
+  "sourceSha256": "80df935ce46dc53a4571165ae8b4aac19890ea7376c70b559130031c6268ff6f",
+  "blockNumber": "128768899",
+  "totals": {
+    "NAND": 4,
+    "LATCH": 2,
+    "wallets": 2
+  },
+  "wallets": [
+    {
+      "wallet": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+      "nand": {
+        "count": 3,
+        "ranges": [
+          [
+            1,
+            3
+          ]
+        ]
+      },
+      "latch": {
+        "count": 1,
+        "ranges": [
+          [
+            1,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "wallet": "0xa93CB7A0aF86Af3a15bba3732564c9405e9CCf57",
+      "nand": {
+        "count": 1,
+        "ranges": [
+          [
+            4,
+            1
+          ]
+        ]
+      },
+      "latch": {
+        "count": 1,
+        "ranges": [
+          [
+            2,
+            1
+          ]
+        ]
+      }
+    }
+  ],
+  "howToClaim": "Call claim(maxIds) on the distributor from your wallet (or anyone may call deliver(yourWallet, maxIds)); receipts arrive with all BEM accrued so far, then claim BEM on the pool with claimBatch(nandIds, latchIds)."
+}

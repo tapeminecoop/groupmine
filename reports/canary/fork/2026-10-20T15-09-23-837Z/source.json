@@ -1,0 +1,185 @@
+{
+  "candidate": {
+    "baseRevision": "c4bc022c76c5de528a98caa58974ee5772f80d4a",
+    "head": "c4bc022c76c5de528a98caa58974ee5772f80d4a",
+    "files": {
+      ".env.example": "3d50f2e9440092fe220791892b2c7411b30352f0b8a3a8a3d5a46b2110030cfe",
+      "docs/CANARY_RUNBOOK.md": "8a69416aceae8874a12835d331110a4db05c4b09b4c7b5b6e8d12be2efe05d90",
+      "foundry.toml": "f748e4561d6eb9a2fa7ff0ac9b62b659f5c568e4c6f37e2e57d244f54f337d24",
+      "package-lock.json": "8b1ba8fee521264c928cd9c0a8f485182b2dc3d8186e741019818706391a4427",
+      "package.json": "5bec41b5d5909a17f1b03a9b65c438b7834733f55f810be79f0b659436d32556",
+      "scripts/canary/build-source.mjs": "09694856173a12d941ad8a18c91cacd39c86d287b0bee07dee66c78154e149bd",
+      "scripts/canary/common.ts": "1b4d527bc6778cd2d3cb8cfded0c5ed5f79fb80efa0aa5a05e569bf1571bf1fe",
+      "scripts/canary/fork.ts": "47853d9f779aeb92c815a95430669ad74018407f658d6f7144d470fed2f2dfae",
+      "scripts/canary/inspect.ts": "feb5863a27cda450b07f68df810c42690a2d72bba3b8fb8c2557798e33a83b59",
+      "scripts/canary/live-runner.ts": "1af1941276c70baa300f48111012e6b1bc6b659e6d7b3ada80f43a1d2ad06cab",
+      "scripts/canary/prepare.ts": "1ac237e86a5d78d374fb2747359405d1b9443bd7b7b8bfd16cc925f12af69a77",
+      "scripts/canary/recover.ts": "4c4ebd5e6c943a60b4f5689d26f60367325b5bf72912b6ca9b0d640d61095930",
+      "scripts/canary/report.ts": "de07284d368f1bdac20b2c759b5da84c406780d57db0988e1c6d1e8f50713a52",
+      "scripts/canary/transactions.ts": "b7b788abd28484a60f09e9fcccb4241b07dfb5b4dad9b7f8584d9b053563064b",
+      "scripts/canary/verify-local.ts": "4ac08f1c0947f9900f2dd9e3eaf7a197959662f0021a8fbb68adb39b87f214d1",
+      "scripts/canary/workflow.ts": "255788622e5ef4891a86307f156f580318df7f085a5298ed9441340aedcedb44",
+      "sdk/abi.ts": "0af3c8446c305b428a0635458db3a3266aa2347b020480ea28761848a4852033",
+      "sdk/allocation.ts": "a8da976b451dfc32c7aaa7a797981d68e4846e6f0e85a016e55c82f2a673147e",
+      "sdk/bytecode.json": "def3d68e3f6868fa7b23e9dca3003d79a80cb6406d0f087233214552937109c7",
+      "sdk/config.ts": "00850a733086d107b37d1661b0be53a04cbfe35672fc2c714394128df290a769",
+      "sdk/constants.ts": "c6e7e327689845a119f5869eff0d21bf8ed7d92de6d148138237a953c4edf326",
+      "sdk/gas.ts": "6b11862dfce8e2d05343e6acc7fdc361f228c2564b693116fb012ff997623b07",
+      "sdk/index.ts": "f5ddf337e39e0b2c5499cf57e847085fed664640cdb19c0b60d9f6112a53723a",
+      "sdk/math.ts": "a61cc703a219b3170c9894443c6628531fd4b1173c285e4f068d9254186f83a3",
+      "sdk/pool.ts": "b7236e0f77754f326e15947196b91e0d920cc5b9dafd5542fa41ef32cee8d028",
+      "sdk/tx.ts": "a2f5d1ed5ff3cffb87116b27eb6b108908a45a6d3b1beca5c38c02f991017d2b",
+      "sdk/verify.ts": "7171b7dbb84b44020ea22fb8a8a534c1c3ce37083910e8495c75cc47d0c34f78",
+      "src/PoolMath.sol": "2b43436239a4d56f258b23d6ee1725f078873cd3635d1dbf22ce9e8456e22e6e",
+      "src/TapeoutEntitlementReceipt.sol": "f5657c2827ca9650983d4eac567583b8bb70f09079e73d6906ce12433b4de910",
+      "src/TapeoutMinerPool.sol": "aa3f28c32c5fd1c42819862dca20c8f91d4804ceedadd97541fe25891ca46bcb",
+      "src/TapeoutReceiptDistributor.sol": "67f0b24fa54783b16595cd8b0fa5e4e4ecea5888cd53c58af55294c2e7f18659",
+      "src/canary/CanaryParticipant.sol": "5a7bcd8273280b3ecedde9e60bce1b53e308cc7d507b5da4bacb76fb35eef7aa",
+      "src/canary/RecoverableTapeoutMinerPool.sol": "1658554ea0519c8539b217693e044fa73edfe1c04652d0480d5d8107d05e94b1",
+      "src/interfaces/IMining.sol": "c8d8c41b57f55bc38a8d5c6712b74062a588519ec5b024fa19f11043cd1dbf12",
+      "test/sdk/canary.test.ts": "6877e3fa46ff1c0faeb015e2197122bfce2afc324b96c242e8bfbf197fa00fdf",
+      "test/unit/CanaryRecovery.t.sol": "8ba4b8f9ff199a19fc097195d46ba585adf5db1f95e37c40d7acad73cd536058"
+    },
+    "build": {
+      "nand": "353c3c49bd54c601eb0a04b85c40c52570b276303839d5e915300fab07339cc0",
+      "latch": "353c3c49bd54c601eb0a04b85c40c52570b276303839d5e915300fab07339cc0",
+      "helper": "6474cd2f9c499ad08ca3d0337d1289806a44432d162ffdc6685b8bd2373c7dca",
+      "pool": "8c7f2bef2ff70e14d4dccd1afed8a1bfe5be70674b375b965c97f375bab79a1a",
+      "distributor": "6ffc55c40e5c4ad8dd9890dfde21b21b3fa5618c67b36748f3804fc6cc5448e5"
+    },
+    "settings": {
+      "solc": "0.8.24",
+      "evm": "paris",
+      "viaIR": true,
+      "optimizerRuns": 200
+    },
+    "digest": "7fc9e94d6622403cbaa5458eac22f74681015dd9f0ff372ef83cc80f3b9ca4a1"
+  },
+  "source": {
+    "scope": "READ_ONLY_BSC_SNAPSHOT",
+    "chainId": 56,
+    "block": "128767553",
+    "blockHash": "0x54b08dda5b9f92e7f1e1c5761fb896907ab3a596c573facf7d5f42b4460a50bb",
+    "timestamp": "1792508956",
+    "owner": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+    "checks": {
+      "miningImplementation": true,
+      "miningCode": true,
+      "beacon": true,
+      "collectionImplementation": true,
+      "bemDecimals": true,
+      "ownerIsEOA": true,
+      "bemRuntime": true,
+      "miningRuntime": true,
+      "minerCollectionRuntime": true,
+      "collectionImplementationCode": true,
+      "miner3204": true,
+      "miner12485": true
+    },
+    "protocol": {
+      "minerCollection": {
+        "address": "0xb1024b89886B9a34Aa4ff5F31C411D708b20a14C",
+        "codeHash": "0xd8c4b0216e0aadd615fbd134465b6af060a11769edc7c844d8f14d1b8a783992"
+      },
+      "mining": {
+        "address": "0x7E2E0DC66a3bD9103E69b766afA62d9f7b697b46",
+        "codeHash": "0xed6b710a769987f50494d713f278817992e3266e45898a990be878efc2fcbbce"
+      },
+      "bem": {
+        "address": "0x5ce033B2bFCa3Af30b3e8C8457DeaF776A8b695a",
+        "codeHash": "0x982ba79538b51e54ee1382f57522098af0635b0f67f2574d393b29ed0958b344"
+      }
+    },
+    "miningImplementation": "0xa3dbe873da37cd4e4a13c7cef23a7db6ca60f898",
+    "collectionImplementation": "0x8E1D125Def6d3826C278299273a0760D47626068",
+    "miners": [
+      {
+        "id": "3204",
+        "key": "0xb0e5b7d325dead6144886258056fb8e27ff5f6192aaa90fd0b45682c297c1c0d",
+        "owner": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+        "record": {
+          "circuits": "0xb1024b89886B9a34Aa4ff5F31C411D708b20a14C",
+          "circuitId": "3204",
+          "taskId": 1,
+          "gateCount": 2,
+          "stateCount": 0,
+          "depth": 2,
+          "area": "2",
+          "mult": 1,
+          "since": "1789703832",
+          "status": 1,
+          "registrant": "0x27D9672FBc61d5e47E2000863C1645ad406c1EB5",
+          "nandBurn": 2,
+          "latchBurn": 0,
+          "bstar": "2",
+          "bonus": "0",
+          "optimal": false,
+          "commitBlock": "0",
+          "firstUnusedId": "0",
+          "stopBlock": "0",
+          "verifWeight": "2",
+          "unverWeight": "0",
+          "debt": "82557168"
+        },
+        "cachedBurn": [
+          true,
+          2,
+          0
+        ],
+        "circuitBurn": [
+          2,
+          0
+        ],
+        "pendingRaw": "36998",
+        "approved": "0x0000000000000000000000000000000000000000"
+      },
+      {
+        "id": "12485",
+        "key": "0x1eab22e4977aa21abc69cf940272969e412c3e3e085180b3e4b30e37f299ca0b",
+        "owner": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+        "record": {
+          "circuits": "0xb1024b89886B9a34Aa4ff5F31C411D708b20a14C",
+          "circuitId": "12485",
+          "taskId": 74,
+          "gateCount": 2,
+          "stateCount": 1,
+          "depth": 1,
+          "area": "8",
+          "mult": 1,
+          "since": "1788230460",
+          "status": 1,
+          "registrant": "0xBc01D306B919614e66a43b176796F2116cFdA9A0",
+          "nandBurn": 1,
+          "latchBurn": 1,
+          "bstar": "2",
+          "bonus": "0",
+          "optimal": false,
+          "commitBlock": "0",
+          "firstUnusedId": "0",
+          "stopBlock": "0",
+          "verifWeight": "2",
+          "unverWeight": "0",
+          "debt": "82534787"
+        },
+        "cachedBurn": [
+          true,
+          1,
+          1
+        ],
+        "circuitBurn": [
+          1,
+          1
+        ],
+        "pendingRaw": "59379",
+        "approved": "0x0000000000000000000000000000000000000000"
+      }
+    ],
+    "bnbRaw": "53799532700000000",
+    "bemRaw": "9259723",
+    "bemDecimals": 8,
+    "warning": "pending is an observation, not a promise of claim payout"
+  },
+  "signing": "NO_PRIVATE_KEY_USED_FOR_TRANSACTIONS",
+  "impersonation": "LOCAL_ANVIL_ONLY",
+  "mainnetTransactions": 0
+}

@@ -20,6 +20,14 @@
     "typecheck": "tsc --noEmit",
     "verify": "node --import tsx scripts/verify-all.ts",
     "export-abi": "node scripts/export-abi.mjs",
+    "canary:build": "node scripts/canary/build-source.mjs && forge build --offline",
+    "canary:test": "forge test --offline --match-contract CanaryRecoveryTest",
+    "canary:verify-local": "node --import tsx scripts/canary/verify-local.ts",
+    "canary:inspect": "node --import tsx scripts/canary/inspect.ts",
+    "canary:fork": "node --import tsx scripts/canary/fork.ts",
+    "canary:prepare": "node --import tsx scripts/canary/prepare.ts",
+    "canary:live": "node --import tsx scripts/canary/live-runner.ts",
+    "canary:recover": "node --import tsx scripts/canary/recover.ts",
     "pool": "node --import tsx cli/pool.ts"
   },
   "dependencies": {

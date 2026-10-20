@@ -1,0 +1,43 @@
+{
+  "name": "tapeout-miner-pool",
+  "version": "2.0.0-rc.1",
+  "private": true,
+  "type": "module",
+  "description": "TapeOut pooled mining: independent NAND/LATCH entitlement receipts, receipt distributor, and miner custody with composition-weighted BEM distribution",
+  "engines": {
+    "node": ">=20.19"
+  },
+  "scripts": {
+    "build": "forge build",
+    "test": "forge test",
+    "test:unit": "forge test --match-path 'test/unit/*'",
+    "test:invariant": "forge test --match-path 'test/invariant/*'",
+    "test:fork": "node --import tsx scripts/fork-test.ts",
+    "test:sdk": "node --import tsx --test test/sdk/*.test.ts",
+    "test:local-e2e": "node --import tsx scripts/local-e2e.ts",
+    "test:fork-e2e": "node --import tsx scripts/fork-e2e.ts",
+    "test:fork-safe-e2e": "node --import tsx scripts/fork-safe-e2e.ts",
+    "typecheck": "tsc --noEmit",
+    "verify": "node --import tsx scripts/verify-all.ts",
+    "export-abi": "node scripts/export-abi.mjs",
+    "canary:build": "node scripts/canary/build-source.mjs && forge build --offline",
+    "canary:test": "forge test --offline --match-contract CanaryRecoveryTest",
+    "canary:verify-local": "node --import tsx scripts/canary/verify-local.ts",
+    "canary:inspect": "node --import tsx scripts/canary/inspect.ts",
+    "canary:fork": "node --import tsx scripts/canary/fork.ts",
+    "canary:prepare": "node --import tsx scripts/canary/prepare.ts",
+    "canary:live": "node --import tsx scripts/canary/live-runner.ts",
+    "canary:recover": "node --import tsx scripts/canary/recover.ts",
+    "pool": "node --import tsx cli/pool.ts"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "5.4.0",
+    "viem": "2.57.2",
+    "zod": "3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "22.13.4",
+    "tsx": "4.19.3",
+    "typescript": "5.7.3"
+  }
+}

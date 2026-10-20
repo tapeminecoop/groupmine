@@ -1,0 +1,530 @@
+{
+  "scope": "LOCAL_MOCKS_AND_STATIC_CHECKS_ONLY",
+  "completedAt": "2026-10-20T15:19:50.353Z",
+  "status": "PASS",
+  "source": {
+    "baseRevision": "c4bc022c76c5de528a98caa58974ee5772f80d4a",
+    "head": "c4bc022c76c5de528a98caa58974ee5772f80d4a",
+    "files": {
+      ".env.example": "3d50f2e9440092fe220791892b2c7411b30352f0b8a3a8a3d5a46b2110030cfe",
+      "docs/CANARY_RUNBOOK.md": "8a69416aceae8874a12835d331110a4db05c4b09b4c7b5b6e8d12be2efe05d90",
+      "foundry.toml": "f748e4561d6eb9a2fa7ff0ac9b62b659f5c568e4c6f37e2e57d244f54f337d24",
+      "package-lock.json": "8b1ba8fee521264c928cd9c0a8f485182b2dc3d8186e741019818706391a4427",
+      "package.json": "5bec41b5d5909a17f1b03a9b65c438b7834733f55f810be79f0b659436d32556",
+      "scripts/canary/build-source.mjs": "09694856173a12d941ad8a18c91cacd39c86d287b0bee07dee66c78154e149bd",
+      "scripts/canary/common.ts": "1b4d527bc6778cd2d3cb8cfded0c5ed5f79fb80efa0aa5a05e569bf1571bf1fe",
+      "scripts/canary/fork.ts": "37652abf886af969dceb2897fab5130952dd6ac68a32603fe793fdbea93b2643",
+      "scripts/canary/inspect.ts": "feb5863a27cda450b07f68df810c42690a2d72bba3b8fb8c2557798e33a83b59",
+      "scripts/canary/live-runner.ts": "1af1941276c70baa300f48111012e6b1bc6b659e6d7b3ada80f43a1d2ad06cab",
+      "scripts/canary/prepare.ts": "9f92d5f3adbeeb4d3560c425c4c9ead377e705d53fccaab5b6377dfc00bc0295",
+      "scripts/canary/recover.ts": "4c4ebd5e6c943a60b4f5689d26f60367325b5bf72912b6ca9b0d640d61095930",
+      "scripts/canary/report.ts": "de07284d368f1bdac20b2c759b5da84c406780d57db0988e1c6d1e8f50713a52",
+      "scripts/canary/transactions.ts": "b7b788abd28484a60f09e9fcccb4241b07dfb5b4dad9b7f8584d9b053563064b",
+      "scripts/canary/verify-local.ts": "618456ad24f0617828c96d89b1c172b7240954fd7e0ea796d5ab6f448ee6bb60",
+      "scripts/canary/workflow.ts": "5d916f1435e8dbcb900d74d026ae89b6a2a97a19832c3c2d6bd55911998a2f1e",
+      "sdk/abi.ts": "0af3c8446c305b428a0635458db3a3266aa2347b020480ea28761848a4852033",
+      "sdk/allocation.ts": "a8da976b451dfc32c7aaa7a797981d68e4846e6f0e85a016e55c82f2a673147e",
+      "sdk/bytecode.json": "def3d68e3f6868fa7b23e9dca3003d79a80cb6406d0f087233214552937109c7",
+      "sdk/config.ts": "00850a733086d107b37d1661b0be53a04cbfe35672fc2c714394128df290a769",
+      "sdk/constants.ts": "c6e7e327689845a119f5869eff0d21bf8ed7d92de6d148138237a953c4edf326",
+      "sdk/gas.ts": "6b11862dfce8e2d05343e6acc7fdc361f228c2564b693116fb012ff997623b07",
+      "sdk/index.ts": "f5ddf337e39e0b2c5499cf57e847085fed664640cdb19c0b60d9f6112a53723a",
+      "sdk/math.ts": "a61cc703a219b3170c9894443c6628531fd4b1173c285e4f068d9254186f83a3",
+      "sdk/pool.ts": "b7236e0f77754f326e15947196b91e0d920cc5b9dafd5542fa41ef32cee8d028",
+      "sdk/tx.ts": "a2f5d1ed5ff3cffb87116b27eb6b108908a45a6d3b1beca5c38c02f991017d2b",
+      "sdk/verify.ts": "7171b7dbb84b44020ea22fb8a8a534c1c3ce37083910e8495c75cc47d0c34f78",
+      "src/PoolMath.sol": "2b43436239a4d56f258b23d6ee1725f078873cd3635d1dbf22ce9e8456e22e6e",
+      "src/TapeoutEntitlementReceipt.sol": "f5657c2827ca9650983d4eac567583b8bb70f09079e73d6906ce12433b4de910",
+      "src/TapeoutMinerPool.sol": "aa3f28c32c5fd1c42819862dca20c8f91d4804ceedadd97541fe25891ca46bcb",
+      "src/TapeoutReceiptDistributor.sol": "67f0b24fa54783b16595cd8b0fa5e4e4ecea5888cd53c58af55294c2e7f18659",
+      "src/canary/CanaryParticipant.sol": "5a7bcd8273280b3ecedde9e60bce1b53e308cc7d507b5da4bacb76fb35eef7aa",
+      "src/canary/RecoverableTapeoutMinerPool.sol": "1658554ea0519c8539b217693e044fa73edfe1c04652d0480d5d8107d05e94b1",
+      "src/interfaces/IMining.sol": "c8d8c41b57f55bc38a8d5c6712b74062a588519ec5b024fa19f11043cd1dbf12",
+      "test/sdk/canary.test.ts": "6877e3fa46ff1c0faeb015e2197122bfce2afc324b96c242e8bfbf197fa00fdf",
+      "test/unit/CanaryRecovery.t.sol": "8ba4b8f9ff199a19fc097195d46ba585adf5db1f95e37c40d7acad73cd536058"
+    },
+    "build": {
+      "nand": "353c3c49bd54c601eb0a04b85c40c52570b276303839d5e915300fab07339cc0",
+      "latch": "353c3c49bd54c601eb0a04b85c40c52570b276303839d5e915300fab07339cc0",
+      "helper": "6474cd2f9c499ad08ca3d0337d1289806a44432d162ffdc6685b8bd2373c7dca",
+      "pool": "8c7f2bef2ff70e14d4dccd1afed8a1bfe5be70674b375b965c97f375bab79a1a",
+      "distributor": "6ffc55c40e5c4ad8dd9890dfde21b21b3fa5618c67b36748f3804fc6cc5448e5"
+    },
+    "settings": {
+      "solc": "0.8.24",
+      "evm": "paris",
+      "viaIR": true,
+      "optimizerRuns": 200
+    },
+    "digest": "a4003a06dca0164c89852cb65b137d45fa24665fa8cf21f33cab220af2c9385f"
+  },
+  "results": [
+    {
+      "name": "source-adaptation",
+      "command": [
+        "/Users/jaychen/.nvm/versions/node/v20.19.5/bin/node",
+        "scripts/canary/build-source.mjs",
+        "--check"
+      ],
+      "durationMs": 219,
+      "exitCode": 0,
+      "status": "PASS",
+      "log": "reports/canary/local/source-adaptation.txt"
+    },
+    {
+      "name": "format",
+      "command": [
+        "forge",
+        "fmt",
+        "--check"
+      ],
+      "durationMs": 27,
+      "exitCode": 0,
+      "status": "PASS",
+      "log": "reports/canary/local/format.txt"
+    },
+    {
+      "name": "solidity",
+      "command": [
+        "forge",
+        "test",
+        "--offline",
+        "--no-match-path",
+        "test/fork/*"
+      ],
+      "durationMs": 8036,
+      "exitCode": 0,
+      "status": "PASS",
+      "log": "reports/canary/local/solidity.txt",
+      "soliditySummary": "107 tests passed, 0 failed, 0 skipped"
+    },
+    {
+      "name": "sdk",
+      "command": [
+        "/Users/jaychen/.nvm/versions/node/v20.19.5/bin/node",
+        "--import",
+        "tsx",
+        "--test",
+        "test/sdk/math.test.ts",
+        "test/sdk/canary.test.ts",
+        "test/sdk/plans.test.ts",
+        "test/sdk/verify.test.ts",
+        "test/sdk/gas.test.ts",
+        "test/sdk/allocation.test.ts"
+      ],
+      "durationMs": 1276,
+      "exitCode": 0,
+      "status": "PASS",
+      "log": "reports/canary/local/sdk.txt",
+      "sdkSummary": "# tests 36\n# suites 0\n# pass 36\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 1244.503125"
+    },
+    {
+      "name": "typecheck",
+      "command": [
+        "/Users/jaychen/.nvm/versions/node/v20.19.5/bin/node",
+        "node_modules/typescript/bin/tsc",
+        "--noEmit"
+      ],
+      "durationMs": 3628,
+      "exitCode": 0,
+      "status": "PASS",
+      "log": "reports/canary/local/typecheck.txt"
+    }
+  ],
+  "builds": {
+    "nand": {
+      "creationCodeHash": "0xebe115e818b3a8f988fa334fcc0366d1d94df8bea716486a55a9b7b713f4790f",
+      "runtimeTemplateHash": "0x7f59d20c18c4dec6ddf617a9f085a87d4622efc279fbc1438e5293333288ec8f",
+      "creationBytes": 10361,
+      "runtimeBytes": 8743
+    },
+    "latch": {
+      "creationCodeHash": "0xebe115e818b3a8f988fa334fcc0366d1d94df8bea716486a55a9b7b713f4790f",
+      "runtimeTemplateHash": "0x7f59d20c18c4dec6ddf617a9f085a87d4622efc279fbc1438e5293333288ec8f",
+      "creationBytes": 10361,
+      "runtimeBytes": 8743
+    },
+    "helper": {
+      "creationCodeHash": "0xe5489a62540c1c3eea02593126e856961317b2c31ef11ba7f6131d391d3f52ea",
+      "runtimeTemplateHash": "0xd32e89e97f0bdb8bd0c62cab3d0304f5577d1db9941b2c80b8ffacd0887cd4fb",
+      "creationBytes": 3838,
+      "runtimeBytes": 3410,
+      "immutables": {
+        "50637": [
+          {
+            "start": 188,
+            "length": 32
+          },
+          {
+            "start": 780,
+            "length": 32
+          },
+          {
+            "start": 1185,
+            "length": 32
+          },
+          {
+            "start": 1523,
+            "length": 32
+          },
+          {
+            "start": 2602,
+            "length": 32
+          }
+        ],
+        "50640": [
+          {
+            "start": 703,
+            "length": 32
+          },
+          {
+            "start": 848,
+            "length": 32
+          },
+          {
+            "start": 1992,
+            "length": 32
+          }
+        ],
+        "50642": [
+          {
+            "start": 320,
+            "length": 32
+          },
+          {
+            "start": 574,
+            "length": 32
+          },
+          {
+            "start": 1424,
+            "length": 32
+          },
+          {
+            "start": 1881,
+            "length": 32
+          },
+          {
+            "start": 2354,
+            "length": 32
+          }
+        ],
+        "50644": [
+          {
+            "start": 400,
+            "length": 32
+          },
+          {
+            "start": 641,
+            "length": 32
+          },
+          {
+            "start": 1244,
+            "length": 32
+          },
+          {
+            "start": 1740,
+            "length": 32
+          },
+          {
+            "start": 2422,
+            "length": 32
+          }
+        ]
+      }
+    },
+    "pool": {
+      "creationCodeHash": "0x028218752b6da821b69a79376c286db2edb3176b13f4ba9b22fc6c800739c74a",
+      "runtimeTemplateHash": "0x9070dcbc5258b573e6bb65cfc65f494cdb53c81192acd7f05436e1f365ff82d5",
+      "creationBytes": 32279,
+      "runtimeBytes": 20404,
+      "immutables": {
+        "52632": [
+          {
+            "start": 8019,
+            "length": 32
+          },
+          {
+            "start": 9127,
+            "length": 32
+          },
+          {
+            "start": 12518,
+            "length": 32
+          },
+          {
+            "start": 14024,
+            "length": 32
+          },
+          {
+            "start": 15806,
+            "length": 32
+          },
+          {
+            "start": 17071,
+            "length": 32
+          },
+          {
+            "start": 17611,
+            "length": 32
+          },
+          {
+            "start": 18257,
+            "length": 32
+          }
+        ],
+        "52635": [
+          {
+            "start": 4333,
+            "length": 32
+          },
+          {
+            "start": 4409,
+            "length": 32
+          },
+          {
+            "start": 5285,
+            "length": 32
+          },
+          {
+            "start": 5360,
+            "length": 32
+          },
+          {
+            "start": 5453,
+            "length": 32
+          },
+          {
+            "start": 6042,
+            "length": 32
+          },
+          {
+            "start": 6130,
+            "length": 32
+          },
+          {
+            "start": 6298,
+            "length": 32
+          },
+          {
+            "start": 8927,
+            "length": 32
+          },
+          {
+            "start": 9946,
+            "length": 32
+          },
+          {
+            "start": 10022,
+            "length": 32
+          },
+          {
+            "start": 10836,
+            "length": 32
+          },
+          {
+            "start": 10911,
+            "length": 32
+          },
+          {
+            "start": 11004,
+            "length": 32
+          },
+          {
+            "start": 11470,
+            "length": 32
+          },
+          {
+            "start": 11558,
+            "length": 32
+          },
+          {
+            "start": 11726,
+            "length": 32
+          },
+          {
+            "start": 17417,
+            "length": 32
+          }
+        ],
+        "52638": [
+          {
+            "start": 3782,
+            "length": 32
+          },
+          {
+            "start": 4531,
+            "length": 32
+          },
+          {
+            "start": 5042,
+            "length": 32
+          },
+          {
+            "start": 5888,
+            "length": 32
+          },
+          {
+            "start": 5977,
+            "length": 32
+          },
+          {
+            "start": 6234,
+            "length": 32
+          },
+          {
+            "start": 6769,
+            "length": 32
+          },
+          {
+            "start": 10116,
+            "length": 32
+          },
+          {
+            "start": 10211,
+            "length": 32
+          },
+          {
+            "start": 10285,
+            "length": 32
+          },
+          {
+            "start": 11316,
+            "length": 32
+          },
+          {
+            "start": 11405,
+            "length": 32
+          },
+          {
+            "start": 11662,
+            "length": 32
+          },
+          {
+            "start": 12056,
+            "length": 32
+          },
+          {
+            "start": 16115,
+            "length": 32
+          }
+        ],
+        "52641": [
+          {
+            "start": 7256,
+            "length": 32
+          },
+          {
+            "start": 13007,
+            "length": 32
+          },
+          {
+            "start": 16752,
+            "length": 32
+          },
+          {
+            "start": 18945,
+            "length": 32
+          }
+        ],
+        "52644": [
+          {
+            "start": 7389,
+            "length": 32
+          },
+          {
+            "start": 7775,
+            "length": 32
+          },
+          {
+            "start": 13859,
+            "length": 32
+          },
+          {
+            "start": 16788,
+            "length": 32
+          },
+          {
+            "start": 19392,
+            "length": 32
+          }
+        ],
+        "52646": [
+          {
+            "start": 1551,
+            "length": 32
+          },
+          {
+            "start": 1904,
+            "length": 32
+          },
+          {
+            "start": 16038,
+            "length": 32
+          }
+        ]
+      }
+    },
+    "distributor": {
+      "creationCodeHash": "0xe692733f4ea3629017d1050d386aca52b4ff384705e659000e35347935f17acc",
+      "runtimeTemplateHash": "0xcf370db1582af44f0e527d510d7ef139195bb800dcc1aa9499bf793d2b720ada",
+      "creationBytes": 8289,
+      "runtimeBytes": 7680,
+      "immutables": {
+        "53556": [
+          {
+            "start": 1956,
+            "length": 32
+          },
+          {
+            "start": 5488,
+            "length": 32
+          },
+          {
+            "start": 7352,
+            "length": 32
+          }
+        ],
+        "53559": [
+          {
+            "start": 2727,
+            "length": 32
+          },
+          {
+            "start": 4921,
+            "length": 32
+          },
+          {
+            "start": 7180,
+            "length": 32
+          },
+          {
+            "start": 7556,
+            "length": 32
+          }
+        ],
+        "53562": [
+          {
+            "start": 2976,
+            "length": 32
+          },
+          {
+            "start": 5419,
+            "length": 32
+          },
+          {
+            "start": 7221,
+            "length": 32
+          },
+          {
+            "start": 7592,
+            "length": 32
+          }
+        ]
+      }
+    }
+  },
+  "freshBscFork": "PASS_SEE_SEPARATE_FORK_EVIDENCE",
+  "mainnet": "NOT_RUN_REQUIRES_APPROVAL",
+  "mainnetTransactions": 0,
+  "forkEvidence": "reports/canary/fork/2026-10-20T15-19-24-355Z"
+}

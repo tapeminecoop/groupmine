@@ -1,0 +1,9 @@
+{
+  "scope": "LOCAL_BSC_FORK_ONLY",
+  "status": "PASS",
+  "sourceDigest": "a4003a06dca0164c89852cb65b137d45fa24665fa8cf21f33cab220af2c9385f",
+  "rehearsal": "reports/canary/fork/2026-10-20T15-19-24-355Z",
+  "completedAt": "2026-10-20T15:19:56.854Z",
+  "mainnetTransactions": 0,
+  "signaturesCreated": 0
+}

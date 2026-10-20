@@ -1,0 +1,1 @@
+Canary source matches the exhaustive adaptation of c4bc022 production source

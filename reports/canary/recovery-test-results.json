@@ -1,0 +1,102 @@
+{
+  "scope": "MOCK_FAULT_INJECTION_AND_LOCAL_FORK_RECOVERY",
+  "sourceDigest": "a4003a06dca0164c89852cb65b137d45fa24665fa8cf21f33cab220af2c9385f",
+  "mock": {
+    "status": "PASS",
+    "tests": [
+      {
+        "name": "testBoundaryAndUnrecognizedBEMKeepHistoryAndFinalAttribution",
+        "status": "PASS"
+      },
+      {
+        "name": "testEmergencyHasNoMiningOrBEMCallsEvenWhenTheyConsumeAllGas",
+        "status": "PASS"
+      },
+      {
+        "name": "testHelperControlAndBindingAreNarrow",
+        "status": "PASS"
+      },
+      {
+        "name": "testMiningFailureAndBEMBalanceFailureDoNotBlockRecovery",
+        "status": "PASS"
+      },
+      {
+        "name": "testNormalHarvestShutdownBothReturnsAfterRenunciation",
+        "status": "PASS"
+      },
+      {
+        "name": "testPartialReturnDoesNotPreventOtherAndRetriesAreIdempotent",
+        "status": "PASS"
+      },
+      {
+        "name": "testShutdownBeforeActivationCannotReopen",
+        "status": "PASS"
+      },
+      {
+        "name": "testShutdownIsPermanentAndScopeCannotExpand",
+        "status": "PASS"
+      },
+      {
+        "name": "testTransferFailurePreservesUnpaidLedgerAndRetryAfterReturn",
+        "status": "PASS"
+      },
+      {
+        "name": "testUnauthorizedCallerAndDestinationSelectorRejected",
+        "status": "PASS"
+      },
+      {
+        "name": "testUnexpectedIDAndCompositionMismatchReject",
+        "status": "PASS"
+      },
+      {
+        "name": "testUnregisteredNFTBeforeActivationAndBeforeDistributionCanReturn",
+        "status": "PASS"
+      }
+    ]
+  },
+  "normalFork": {
+    "closed": true,
+    "errors": {},
+    "verified": [
+      {
+        "id": "3204",
+        "owner": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129"
+      },
+      {
+        "id": "12485",
+        "owner": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129"
+      }
+    ]
+  },
+  "interruptedFork": {
+    "closed": true,
+    "errors": {},
+    "verified": [
+      {
+        "id": "3204",
+        "owner": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129"
+      },
+      {
+        "id": "12485",
+        "owner": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129"
+      }
+    ]
+  },
+  "mainnet": {
+    "status": "PASS",
+    "runId": "canary-588196bf-b2d8-4c9b-9c60-fdc66faecd68",
+    "evidence": "reports/canary/mainnet/canary-588196bf-b2d8-4c9b-9c60-fdc66faecd68/recovery.json",
+    "independentConfirmedOwnership": [
+      {
+        "id": "3204",
+        "owner": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129"
+      },
+      {
+        "id": "12485",
+        "owner": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129"
+      }
+    ],
+    "confirmedBlock": "128772561",
+    "closed": true
+  }
+}
