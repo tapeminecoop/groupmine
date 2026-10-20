@@ -3,7 +3,7 @@
   "status": "PASS",
   "ledgerStatus": "PASS",
   "blockNumber": "65",
-  "blockHash": "0x62fb2eba955ea538c29dab5ac12200670b1e34a1a68370b2228feb3154fb1d58",
+  "blockHash": "0xaf1ccfc9ae2abedc0cfd89bf6a497c6b358a173ac7d92210cafc9b5479ef8f18",
   "pool": "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
   "composition": {
     "totalNandBurn": "16",

@@ -5,13 +5,16 @@
 - **Repository:** https://github.com/tapeminecoop/groupmine
 - **Reviewed baseline:** `48a2d74939ee167b4d4bed99e6b1d0e759c6a5db` ("Add TapeOut multi-miner pool with
   NAND/LATCH receipts (V1)"). This work is on branch `worktree-pooled-mining-v2`, created from it.
-- **Differences found on 2026-10-20.** GitHub `main` equals the baseline. Local `main` has one more
-  commit from a separate session, `6aeb5a9` ("Add historical distributor and size CLI transactions for
-  BSC's gas cap", not pushed): `HistoricalDistributor` splits a V1 historical NAND/LATCH recipient's
-  income among fixed contributor weights, and the V1 CLI sizes its batches for the BSC gas cap. It
-  builds on the historical-share model this specification removes ("no historical shares or
-  multi-round accounting"), so it is not part of this branch. The gas-cap concern it addresses is
-  handled here separately (`sdk/gas.ts`, `SetupGasTest`).
+- **Later change on `main`, merged here.** After this branch started, `main` gained `6aeb5a9` ("Add
+  historical distributor and size CLI transactions for BSC's gas cap"): a `HistoricalDistributor`
+  that splits a V1 historical NAND/LATCH recipient's income among fixed contributor weights, and gas
+  sizing for the V1 CLI. The distributor depends on V1 pool features that V2 removes (historical
+  recipients, `releaseHistorical`, `historicalClaimable`, `recipientOf`), and the V2 specification
+  drops historical shares, so the merge into this branch removes it with its tests, SDK module, CLI
+  commands, e2e script, example and reports. Its gas-cap safeguards were ported to the V2 tooling:
+  every plan carries a worst-case bound used as its gas limit, plans over the budget and oversize
+  `--batch-size` values are refused, and Safe batch files are split by gas (`sdk/gas.ts`,
+  `test/unit/GasModel.t.sol`, `test/sdk/gas.test.ts`).
 
 ## 2. What changed from V1
 

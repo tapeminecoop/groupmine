@@ -14,14 +14,17 @@ import bytecode from './bytecode.json' with { type: 'json' };
 import { CATEGORY, MINER_STATUS_ACTIVE, erc20Abi, erc721Abi, miningAbi, type CategoryName } from './constants.js';
 import { poolDeployment, receiptConstructorArgs, type SystemFile } from './config.js';
 import { accrue, residueBound, type Accrual, type State } from './math.js';
-import type { DistributorInput } from './allocation.js';
+import { allocationBatchGas, type DistributorInput } from './allocation.js';
+import {
+  CALL_GAS, CLAIM_GAS, DEPLOY_GAS, FUND_GAS, HARVEST_GAS, ISSUE_GAS, admissionGasEstimate, deliveryGas, idsGas, maxIdsPerTx, revokeGas,
+} from './gas.js';
 import type { TxPlan } from './tx.js';
 
-const call = (to: Address, abi: Abi, functionName: string, args: readonly unknown[], description: string): TxPlan =>
-  ({ to, data: encodeFunctionData({ abi, functionName, args } as never), value: 0n, description });
-const poolCall = (pool: Address, fn: string, args: readonly unknown[], d: string) => call(pool, tapeoutMinerPoolAbi as Abi, fn, args, d);
-const receiptCall = (r: Address, fn: string, args: readonly unknown[], d: string) => call(r, tapeoutEntitlementReceiptAbi as Abi, fn, args, d);
-const distributorCall = (x: Address, fn: string, args: readonly unknown[], d: string) => call(x, tapeoutReceiptDistributorAbi as Abi, fn, args, d);
+const call = (to: Address, abi: Abi, functionName: string, args: readonly unknown[], description: string, gas: bigint): TxPlan =>
+  ({ to, data: encodeFunctionData({ abi, functionName, args } as never), value: 0n, description, gas });
+const poolCall = (pool: Address, fn: string, args: readonly unknown[], d: string, gas: bigint) => call(pool, tapeoutMinerPoolAbi as Abi, fn, args, d, gas);
+const receiptCall = (r: Address, fn: string, args: readonly unknown[], d: string, gas: bigint) => call(r, tapeoutEntitlementReceiptAbi as Abi, fn, args, d, gas);
+const distributorCall = (x: Address, fn: string, args: readonly unknown[], d: string, gas: bigint) => call(x, tapeoutReceiptDistributorAbi as Abi, fn, args, d, gas);
 
 export function chunk<T>(items: T[], size: number): T[][] {
   if (size < 1) throw new Error('batch size must be positive');
@@ -34,81 +37,96 @@ const ownableAbi = [{ type: 'function', name: 'renounceOwnership', inputs: [], o
   { type: 'function', name: 'owner', inputs: [], outputs: [{ type: 'address' }], stateMutability: 'view' }] as const;
 
 // ------------------------------------------------------------------ transaction plans
+// Every plan carries its worst-case gas bound from sdk/gas.ts.
 
 export function deployReceiptPlans(f: SystemFile): TxPlan[] {
   const args = receiptConstructorArgs(f);
   const make = (label: string, a: readonly unknown[]) => ({ to: null, value: 0n, description: `deploy ${label} entitlement receipt (issuer ${f.receipts.issuer})`,
-    data: encodeDeployData({ abi: tapeoutEntitlementReceiptAbi as Abi, bytecode: bytecode.TapeoutEntitlementReceipt.bytecode as Hex, args: a }) });
+    data: encodeDeployData({ abi: tapeoutEntitlementReceiptAbi as Abi, bytecode: bytecode.TapeoutEntitlementReceipt.bytecode as Hex, args: a }), gas: DEPLOY_GAS.receipt });
   return [make('NAND', args.nand), make('LATCH', args.latch)];
 }
 
 export function deployPoolPlan(f: SystemFile, nandReceipt: Address, latchReceipt: Address): TxPlan {
   const d = poolDeployment(f, nandReceipt, latchReceipt);
   return { to: null, value: 0n, description: `deploy TapeoutMinerPool "${d.poolName}" (owner ${d.owner}, ${d.depositors.length} whitelisted depositors)`,
-    data: encodeDeployData({ abi: tapeoutMinerPoolAbi as Abi, bytecode: bytecode.TapeoutMinerPool.bytecode as Hex, args: [d] }) };
+    data: encodeDeployData({ abi: tapeoutMinerPoolAbi as Abi, bytecode: bytecode.TapeoutMinerPool.bytecode as Hex, args: [d] }), gas: DEPLOY_GAS.pool };
 }
 
 export function deployDistributorPlan(owner: Address, pool: Address): TxPlan {
   return { to: null, value: 0n, description: `deploy TapeoutReceiptDistributor (owner ${owner}) for pool ${pool}`,
-    data: encodeDeployData({ abi: tapeoutReceiptDistributorAbi as Abi, bytecode: bytecode.TapeoutReceiptDistributor.bytecode as Hex, args: [owner, pool] }) };
+    data: encodeDeployData({ abi: tapeoutReceiptDistributorAbi as Abi, bytecode: bytecode.TapeoutReceiptDistributor.bytecode as Hex, args: [owner, pool] }), gas: DEPLOY_GAS.distributor };
 }
 
-export function issuePlans(receipt: Address, label: CategoryName, to: Address, count: number, batch = 500): TxPlan[] {
+export function issuePlans(receipt: Address, label: CategoryName, to: Address, count: number, batch = maxIdsPerTx(ISSUE_GAS)): TxPlan[] {
   const plans: TxPlan[] = [];
   for (let left = count; left > 0; left -= Math.min(batch, left)) {
     const n = Math.min(batch, left);
-    plans.push(receiptCall(receipt, 'issue', [to, BigInt(n)], `issue the next ${n} ${label} receipt IDs to ${to}`));
+    plans.push(receiptCall(receipt, 'issue', [to, BigInt(n)], `issue the next ${n} ${label} receipt IDs to ${to}`, idsGas(ISSUE_GAS, n)));
   }
   return plans;
 }
 
 export const finalizeIssuancePlan = (receipt: Address, label: CategoryName) =>
-  receiptCall(receipt, 'finalizeIssuance', [], `finalize ${label} issuance (supply fixed forever)`);
+  receiptCall(receipt, 'finalizeIssuance', [], `finalize ${label} issuance (supply fixed forever)`, CALL_GAS.finalizeIssuance);
 
 /** Before finalization: burn the highest `count` IDs, which the issuer must still hold (undo over-issuance). */
-export function retractPlans(receipt: Address, label: CategoryName, count: number, batch = 500): TxPlan[] {
+export function retractPlans(receipt: Address, label: CategoryName, count: number, batch = maxIdsPerTx(ISSUE_GAS)): TxPlan[] {
   const plans: TxPlan[] = [];
   for (let left = count; left > 0; left -= Math.min(batch, left)) {
     const n = Math.min(batch, left);
-    plans.push(receiptCall(receipt, 'retract', [BigInt(n)], `retract the highest ${n} ${label} receipt IDs (issuer-held, before finalization)`));
+    plans.push(receiptCall(receipt, 'retract', [BigInt(n)], `retract the highest ${n} ${label} receipt IDs (issuer-held, before finalization)`, idsGas(ISSUE_GAS, n)));
   }
   return plans;
 }
 
 export function fundPlans(receipt: Address, label: CategoryName, from: Address, distributor: Address, ids: bigint[], batch = 300): TxPlan[] {
   return chunk(ids, batch).map(part => receiptCall(receipt, 'safeBatchTransferFrom', [from, distributor, part, part.map(() => 1n), '0x'],
-    `move ${part.length} ${label} receipts (#${part[0]}..#${part.at(-1)}) into the distributor`));
+    `move ${part.length} ${label} receipts (#${part[0]}..#${part.at(-1)}) into the distributor`, idsGas(FUND_GAS, part.length)));
 }
 
 export function allocatePlans(distributor: Address, batches: DistributorInput[][]): TxPlan[] {
   return batches.map(b => distributorCall(distributor, 'allocate', [b],
-    `allocate ${b.reduce((s, e) => s + e.count, 0n)} receipt IDs in ${b.length} ranges`));
+    `allocate ${b.reduce((s, e) => s + e.count, 0n)} receipt IDs in ${b.length} ranges`, allocationBatchGas(b)));
 }
 
-export const revokeWalletPlan = (distributor: Address, wallet: Address) => distributorCall(distributor, 'revokeWallet', [wallet], `revoke every range allocated to ${wallet} (before finalization)`);
-export const finalizeAllocationPlan = (distributor: Address) => distributorCall(distributor, 'finalizeAllocation', [], 'finalize the allocation (beneficiaries become immutable; claims open)');
-export const claimReceiptsPlan = (distributor: Address, maxIds: number) => distributorCall(distributor, 'claim', [BigInt(maxIds)], `claim up to ${maxIds} allocated receipts`);
-export const deliverPlan = (distributor: Address, wallet: Address, maxIds: number) => distributorCall(distributor, 'deliver', [wallet, BigInt(maxIds)], `deliver up to ${maxIds} receipts to their beneficiary ${wallet}`);
+/** `ranges`: the wallet's current ranges (`rangesOf`), which size the call. */
+export const revokeWalletPlan = (distributor: Address, wallet: Address, ranges: readonly OnChainRange[]) =>
+  distributorCall(distributor, 'revokeWallet', [wallet], `revoke every range allocated to ${wallet} (before finalization)`, revokeGas(ranges));
+export const finalizeAllocationPlan = (distributor: Address) =>
+  distributorCall(distributor, 'finalizeAllocation', [], 'finalize the allocation (beneficiaries become immutable; claims open)', CALL_GAS.finalizeAllocation);
+export const claimReceiptsPlan = (distributor: Address, maxIds: number, ranges: readonly OnChainRange[]) =>
+  distributorCall(distributor, 'claim', [BigInt(maxIds)], `claim up to ${maxIds} allocated receipts`, deliveryGas(ranges, maxIds));
+export const deliverPlan = (distributor: Address, wallet: Address, maxIds: number, ranges: readonly OnChainRange[]) =>
+  distributorCall(distributor, 'deliver', [wallet, BigInt(maxIds)], `deliver up to ${maxIds} receipts to their beneficiary ${wallet}`, deliveryGas(ranges, maxIds));
 
 export const activatePlan = (pool: Address, nandShares: bigint, latchShares: bigint) =>
-  poolCall(pool, 'activate', [nandShares, latchShares], `activate with S_N=${nandShares}, S_L=${latchShares}`);
+  poolCall(pool, 'activate', [nandShares, latchShares], `activate with S_N=${nandShares}, S_L=${latchShares}`, CALL_GAS.activate);
 
 export const approveMinersPlan = (collection: Address, pool: Address) =>
-  call(collection, erc721Abi as Abi, 'setApprovalForAll', [pool, true], `approve pool ${pool} to pull the caller's miners`);
+  call(collection, erc721Abi as Abi, 'setApprovalForAll', [pool, true], `approve pool ${pool} to pull the caller's miners`, CALL_GAS.setApprovalForAll);
 
-export const depositPlans = (pool: Address, ids: bigint[], batch: number) =>
-  chunk(ids, batch).map(part => poolCall(pool, 'depositMiners', [part], `admit miners ${part.join(',')} (settles every registered miner first)`));
+/** `registered`: miners registered before the first batch; each batch settles all of them plus earlier batches. */
+function admissionPlans(pool: Address, fn: 'depositMiners' | 'registerMiners', ids: bigint[], batch: number, registered: bigint): TxPlan[] {
+  let before = registered;
+  return chunk(ids, batch).map(part => {
+    const plan = poolCall(pool, fn, [part], `admit ${fn === 'registerMiners' ? 'pool-held ' : ''}miners ${part.join(',')} (settles every registered miner first)`,
+      admissionGasEstimate(before, BigInt(part.length)));
+    before += BigInt(part.length);
+    return plan;
+  });
+}
 
-export const registerPlans = (pool: Address, ids: bigint[], batch: number) =>
-  chunk(ids, batch).map(part => poolCall(pool, 'registerMiners', [part], `admit pool-held miners ${part.join(',')} (settles every registered miner first)`));
+export const depositPlans = (pool: Address, ids: bigint[], batch: number, registered: bigint) => admissionPlans(pool, 'depositMiners', ids, batch, registered);
+export const registerPlans = (pool: Address, ids: bigint[], batch: number, registered: bigint) => admissionPlans(pool, 'registerMiners', ids, batch, registered);
 
 export const harvestPlans = (pool: Address, ids: bigint[], batch: number) =>
-  chunk(ids, batch).map(part => poolCall(pool, 'harvest', [part], `harvest miners ${part.join(',')}`));
+  chunk(ids, batch).map(part => poolCall(pool, 'harvest', [part], `harvest miners ${part.join(',')}`, idsGas(HARVEST_GAS, part.length)));
 
 export function harvestRangePlans(pool: Address, minerCount: bigint, batch: number): TxPlan[] {
   const plans: TxPlan[] = [];
   for (let start = 0n; start < minerCount; start += BigInt(batch)) {
-    plans.push(poolCall(pool, 'harvestRange', [start, BigInt(batch)], `harvest registry entries ${start}..${start + BigInt(batch) - 1n}`));
+    const count = minerCount - start < BigInt(batch) ? minerCount - start : BigInt(batch);
+    plans.push(poolCall(pool, 'harvestRange', [start, BigInt(batch)], `harvest registry entries ${start}..${start + count - 1n}`, idsGas(HARVEST_GAS, count)));
   }
   return plans;
 }
@@ -118,20 +136,20 @@ export function claimPlans(pool: Address, nandIds: bigint[], latchIds: bigint[],
   return chunk(items, batch).map(part => {
     const n = part.filter(([c]) => c === 'NAND').map(([, id]) => id);
     const l = part.filter(([c]) => c === 'LATCH').map(([, id]) => id);
-    return poolCall(pool, 'claimBatch', [n, l], `claim BEM for ${n.length} NAND + ${l.length} LATCH receipts`);
+    return poolCall(pool, 'claimBatch', [n, l], `claim BEM for ${n.length} NAND + ${l.length} LATCH receipts`, idsGas(CLAIM_GAS, part.length));
   });
 }
 
 export const releasePlans = (pool: Address) => [
-  poolCall(pool, 'releaseA', [], 'pay recipient A its accrued 1/102'),
-  poolCall(pool, 'releaseB', [], 'pay recipient B its accrued 1/102'),
+  poolCall(pool, 'releaseA', [], 'pay recipient A its accrued 1/102', CALL_GAS.releaseA),
+  poolCall(pool, 'releaseB', [], 'pay recipient B its accrued 1/102', CALL_GAS.releaseB),
 ];
 
 export const setRecipientPlan = (pool: Address, role: 0 | 1, to: Address) =>
-  poolCall(pool, 'setRecipient', [role, to], `move recipient ${role === 0 ? 'A' : 'B'} to ${to} (sent by the current recipient)`);
+  poolCall(pool, 'setRecipient', [role, to], `move recipient ${role === 0 ? 'A' : 'B'} to ${to} (sent by the current recipient)`, CALL_GAS.setRecipient);
 
 export const renouncePlan = (target: Address, label: string) =>
-  call(target, ownableAbi as unknown as Abi, 'renounceOwnership', [], `renounce ownership of the ${label}`);
+  call(target, ownableAbi as unknown as Abi, 'renounceOwnership', [], `renounce ownership of the ${label}`, CALL_GAS.renounceOwnership);
 
 // ------------------------------------------------------------------ reads
 

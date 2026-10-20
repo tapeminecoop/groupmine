@@ -149,6 +149,44 @@
     "gas": 241151
    }
   },
+  "GasModelTest": {
+   "testAllocationModelCoversManySmallRangesAndOneLargeRange()": {
+    "status": "Success",
+    "gas": 47000927
+   },
+   "testCallsRunAsSeparateTransactions()": {
+    "status": "Success",
+    "gas": 60203
+   },
+   "testClaimModelCoversTheLargestPlannedBatch()": {
+    "status": "Success",
+    "gas": 31825961
+   },
+   "testDeliveryModelCoversOneLargeAndManySmallRanges()": {
+    "status": "Success",
+    "gas": 39731219
+   },
+   "testDeploymentModelsCoverTheLargestConfigurations()": {
+    "status": "Success",
+    "gas": 18144648
+   },
+   "testFundBatchModelCoversMovingReceiptsIntoTheDistributor()": {
+    "status": "Success",
+    "gas": 25578165
+   },
+   "testIssueBatchModelCoversIssuingToTheOperatorAndToTheDistributor()": {
+    "status": "Success",
+    "gas": 22434408
+   },
+   "testRevokeModelCoversLargeAndFragmentedWallets()": {
+    "status": "Success",
+    "gas": 128598625
+   },
+   "testSingleCallsFitTheirBounds()": {
+    "status": "Success",
+    "gas": 3425656
+   }
+  },
   "PoolAccountingTest": {
    "testCheckpointFreezesCategoryTotalsAndCarriesAtMostOneUnit()": {
     "status": "Success",
@@ -157,7 +195,7 @@
    "testFuzzMathProperties(uint96,uint96,uint32,uint32,uint32,uint32,uint16,uint16)": {
     "status": "Success",
     "fuzzRuns": 512,
-    "meanGas": 22181
+    "meanGas": 22179
    },
    "testOuterFloorsAndTheirResidueAtSmallTotals()": {
     "status": "Success",
@@ -369,34 +407,16 @@
     "status": "Success",
     "gas": 4494123
    }
-  },
-  "SetupGasTest": {
-   "testAllocationModelBoundsManySmallRangesAndOneLargeRange()": {
-    "status": "Success",
-    "gas": 46874421
-   },
-   "testDefaultDeliveryAndClaimBatchesFitTheBudget()": {
-    "status": "Success",
-    "gas": 32477800
-   },
-   "testFundBatchModelBoundsMovingReceiptsIntoTheDistributor()": {
-    "status": "Success",
-    "gas": 21322919
-   },
-   "testIssueBatchModelBoundsIssuingToTheOperatorAndToTheDistributor()": {
-    "status": "Success",
-    "gas": 22401559
-   }
   }
  },
- "total": 85,
- "passed": 85,
+ "total": 90,
+ "passed": 90,
  "invariantAdmissionPaths": {
   "runs": 1542,
-  "successfulAdmissions": 3826,
-  "rolledBackAdmissions": 1422,
+  "successfulAdmissions": 3746,
+  "rolledBackAdmissions": 1505,
   "runsWithAdmission": 1516,
-  "runsWithRollback": 645,
+  "runsWithRollback": 658,
   "maxRegisteredMiners": 11
  }
 }

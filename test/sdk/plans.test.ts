@@ -48,7 +48,7 @@ test('issue, fund, allocate, claim and release plans encode the right calls in b
   assert.equal(claims.length, 2);
   assert.deepEqual(decodeFunctionData({ abi: tapeoutMinerPoolAbi as Abi, data: claims[1].data }).args, [[3n], [1n]]);
   assert.deepEqual(releasePlans(A).map(p => decodeFunctionData({ abi: tapeoutMinerPoolAbi as Abi, data: p.data }).functionName), ['releaseA', 'releaseB']);
-  assert.match(castCommand(issue[0]), /^cast send --rpc-url "\$RPC_URL" <SIGNER_FLAGS> 0x/);
+  assert.match(castCommand(issue[0]), /^cast send --rpc-url "\$RPC_URL" <SIGNER_FLAGS> --gas-limit \d+ 0x/);
   assert.throws(() => safeBatch(deployReceiptPlans(systemFileSchema.parse(example)), 56, 'deploy'), /Contract creation/);
 });
 
@@ -61,7 +61,7 @@ test('admission gas model stays inside the BSC per-transaction cap', () => {
   assert.equal(maxAdmissionBatch(10_000n), 0n);
   // Fork measurement: 867,619 gas with 23 registered miners; the model must not underestimate it.
   assert.ok(admissionGasEstimate(23n, 1n) >= 867_619n);
-  // Default setup batches (bounded against measurements in test/unit/SetupGas.t.sol).
+  // Default setup batches (bounds checked as gas limits in test/unit/GasModel.t.sol).
   assert.equal(maxIdsPerTx(ISSUE_GAS), 231);
   assert.equal(maxIdsPerTx(FUND_GAS), 312);
   assert.equal(maxIdsPerTx(ISSUE_GAS, 50_000n), 0);

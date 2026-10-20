@@ -10,8 +10,9 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { getAddress, keccak256, zeroAddress, type Address } from 'viem';
 import {
-  BATCH_GAS_BUDGET, BSC_IDENTITY, BSC_PROTOCOL, CATEGORY, ERC1967_BEACON_SLOT, ERC1967_IMPLEMENTATION_SLOT, FUND_GAS, ISSUE_GAS, LATCH_CATEGORY,
-  NAND_CATEGORY, RECIPIENT, TX_GAS_CAP, accrue, activatePlan, admissionGasEstimate, allocatePlans, allocationArtifact, maxIdsPerTx,
+  ALLOCATE_GAS, BATCH_GAS_BUDGET, BSC_IDENTITY, BSC_PROTOCOL, CATEGORY, CLAIM_GAS, ERC1967_BEACON_SLOT, ERC1967_IMPLEMENTATION_SLOT, FUND_GAS,
+  HARVEST_GAS, ISSUE_GAS, LATCH_CATEGORY, NAND_CATEGORY, RECIPIENT, TX_GAS_CAP, accrue, activatePlan, admissionGasEstimate, allocatePlans,
+  allocationArtifact, assertWithinBudget, checkBatchSize, groupForSafe, maxDeliverable, maxIdsPerTx,
   allocationBatches, approveMinersPlan, assertLocalAnvil, assignIds, beaconAbi, castCommand, checkPerIdHistories,
   checkReconciliation, claimPlans, claimReceiptsPlan, client, deliverPlan, depositPlans, deployDistributorPlan,
   deployPoolPlan, deployReceiptPlans, describeError, erc20Abi, erc721Abi, finalizeAllocationPlan, finalizeIssuancePlan,
@@ -67,15 +68,23 @@ const idList = (raw?: string) => {
   }
   return out;
 };
-const batch = (f: Flags, fallback: number) => { const v = Number(str(f, 'batch-size') ?? fallback); if (!Number.isInteger(v) || v < 1) throw new Error('Invalid --batch-size'); return v; };
+/** `--batch-size`, refused above `max`: the largest batch whose worst case fits the BSC gas budget. */
+const batch = (f: Flags, fallback: number, max: number, command: string) => {
+  const v = Number(str(f, 'batch-size') ?? Math.min(fallback, max));
+  if (!Number.isInteger(v) || v < 1) throw new Error('Invalid --batch-size');
+  return checkBatchSize(command, v, max);
+};
 const category = (f: Flags): CategoryName => { const c = need(f, 'category').toUpperCase(); if (c !== 'NAND' && c !== 'LATCH') throw new Error('--category must be NAND or LATCH'); return c; };
 const rpcUrl = (f: Flags) => str(f, 'rpc-url') ?? process.env.RPC_URL ?? (() => { throw new Error('Missing --rpc-url (or RPC_URL)'); })();
 const receiptAddress = (a: Addresses, c: CategoryName) => addr(c === 'NAND' ? a.nandReceipt : a.latchReceipt);
 const poolOf = (a: Addresses) => { if (!a.pool) throw new Error('addresses file has no pool yet (run deploy)'); return addr(a.pool); };
 const distributorOf = (a: Addresses) => { if (!a.distributor) throw new Error('addresses file has no distributor yet (run deploy)'); return addr(a.distributor); };
 
-/** Shared execution path for every write command. */
+/** Shared execution path for every write command. Every plan must fit the per-transaction gas budget
+ *  (BSC caps a transaction's gas limit at 2^24, BEP-652); its worst-case bound is the gas limit for
+ *  local sends and printed cast commands, and Safe batch files are split so each fits the budget. */
 async function execute(command: string, flags: Flags, plans: TxPlan[], extra: Record<string, unknown> = {}) {
+  assertWithinBudget(plans);
   const from = str(flags, 'from') ? addr(need(flags, 'from')) : undefined;
   if (flags['send-local']) {
     if (!from) throw new Error('--send-local needs --from (an unlocked or impersonated Anvil account)');
@@ -90,11 +99,22 @@ async function execute(command: string, flags: Flags, plans: TxPlan[], extra: Re
   const hasRpc = !!(flags['rpc-url'] || process.env.RPC_URL);
   const chainId = hasRpc ? await client(rpcUrl(flags)).getChainId() : undefined;
   const safePath = str(flags, 'safe-json');
-  if (safePath) await writeFile(safePath, json(safeBatch(plans, chainId ?? 56, `TapeOut pool: ${command}`, str(flags, 'safe') ? addr(need(flags, 'safe')) : undefined)) + '\n');
+  const safeFiles: { file: string; maxGas?: bigint }[] = [];
+  if (safePath) {
+    // The Transaction Builder executes a whole batch file as one transaction.
+    const groups = groupForSafe(plans);
+    for (const [i, group] of groups.entries()) {
+      const file = groups.length === 1 ? safePath : safePath.replace(/(\.json)?$/, `.${i + 1}$1`);
+      const name = `TapeOut pool: ${command}${groups.length === 1 ? '' : ` (${i + 1} of ${groups.length})`}`;
+      await writeFile(file, json(safeBatch(group, chainId ?? 56, name, str(flags, 'safe') ? addr(need(flags, 'safe')) : undefined)) + '\n');
+      safeFiles.push({ file, ...(group.every(p => p.gas !== undefined) ? { maxGas: group.reduce((s, p) => s + p.gas!, 0n) } : {}) });
+    }
+  }
   const simulations = from && hasRpc ? await simulateSequentially(client(rpcUrl(flags)), plans, from) : undefined;
   return {
-    command, mode: 'PLAN_ONLY_NOT_SENT', chainId, ...(safePath ? { safeBatchFile: safePath, note: 'One Safe batch is one transaction: keep its total gas within the BSC cap' } : {}), ...extra,
-    plans: plans.map((p, i) => ({ description: p.description, to: p.to, value: p.value, data: p.data, cast: castCommand(p), ...(simulations ? { simulation: simulations[i] } : {}) })),
+    command, mode: 'PLAN_ONLY_NOT_SENT', chainId, ...extra,
+    ...(safeFiles.length ? { safeBatchFiles: safeFiles, ...(safeFiles.length > 1 ? { safeBatchNote: 'each file is one Safe transaction; execute them in order' } : {}) } : {}),
+    plans: plans.map((p, i) => ({ description: p.description, to: p.to, value: p.value, data: p.data, maxGas: p.gas, cast: castCommand(p), ...(simulations ? { simulation: simulations[i] } : {}) })),
   };
 }
 
@@ -181,7 +201,7 @@ export async function main(argv = process.argv.slice(2)): Promise<unknown> {
   if (command === 'issue') {
     const c = category(flags);
     // ~50k gas per ID: a 500-ID batch (the contract maximum) would not fit a BSC transaction.
-    return execute(command, flags, issuePlans(receiptAddress(addresses, c), c, addr(need(flags, 'to')), Number(uint(need(flags, 'count'))), batch(flags, Math.min(500, maxIdsPerTx(ISSUE_GAS)))));
+    return execute(command, flags, issuePlans(receiptAddress(addresses, c), c, addr(need(flags, 'to')), Number(uint(need(flags, 'count'))), batch(flags, 500, maxIdsPerTx(ISSUE_GAS), command)));
   }
   if (command === 'retract') {
     const c = category(flags);
@@ -193,7 +213,7 @@ export async function main(argv = process.argv.slice(2)): Promise<unknown> {
     const held = new Set(await readHeldIds(rpc, receipt, s.owner));
     const notHeld = Array.from({ length: count }, (_, i) => Number(s.supply) - i).filter(id => !held.has(id));
     if (notHeld.length) throw new Error(`Only issuer-held top IDs can be retracted; not held by the issuer: ${notHeld.slice(0, 20).join(',')}`);
-    return execute(command, flags, retractPlans(receipt, c, count, batch(flags, Math.min(500, maxIdsPerTx(ISSUE_GAS)))), { supplyAfter: s.supply - BigInt(count) });
+    return execute(command, flags, retractPlans(receipt, c, count, batch(flags, 500, maxIdsPerTx(ISSUE_GAS), command)), { supplyAfter: s.supply - BigInt(count) });
   }
   if (command === 'finalize-issuance') {
     const c = category(flags);
@@ -240,7 +260,7 @@ export async function main(argv = process.argv.slice(2)): Promise<unknown> {
     const missing = ids.filter(id => !held.includes(id));
     if (missing.length) throw new Error(`${from} does not hold ${c} IDs ${missing.slice(0, 20).join(',')}`);
     if (ids.length === 0) return { command, status: 'NOTHING_TO_FUND' };
-    return execute(command, flags, fundPlans(receipt, c, from, distributorOf(addresses), ids, batch(flags, Math.min(300, maxIdsPerTx(FUND_GAS)))), { count: ids.length });
+    return execute(command, flags, fundPlans(receipt, c, from, distributorOf(addresses), ids, batch(flags, 300, maxIdsPerTx(FUND_GAS), command)), { count: ids.length });
   }
 
   if (command === 'import-allocation') {
@@ -273,7 +293,9 @@ export async function main(argv = process.argv.slice(2)): Promise<unknown> {
     const artifact = allocationArtifact({ chainId: addresses.chainId, distributor, nandReceipt: addr(addresses.nandReceipt), latchReceipt: addr(addresses.latchReceipt), sourceSha256: sha256, blockNumber: block.number }, assignments);
     const out = str(flags, 'artifact-out');
     if (out) await writeFile(out, json(artifact) + '\n');
-    return execute(command, flags, allocatePlans(distributor, allocationBatches(pending, batch(flags, 400))),
+    // IDs per transaction; the batcher also splits by range count so each batch fits the gas budget.
+    const maxIds = maxIdsPerTx({ base: ALLOCATE_GAS.base + ALLOCATE_GAS.perRange, perId: ALLOCATE_GAS.perId });
+    return execute(command, flags, allocatePlans(distributor, allocationBatches(pending, batch(flags, 400, maxIds, command))),
       { totals, inventory: { NAND: inventory.NAND.length, LATCH: inventory.LATCH.length }, wallets: assignments.length, alreadyImported, ...(out ? { artifact: out } : {}) });
   }
 
@@ -304,7 +326,7 @@ export async function main(argv = process.argv.slice(2)): Promise<unknown> {
     const wallet = addr(need(flags, 'wallet'));
     const ranges = await readWalletRanges(rpc, distributor, wallet);
     if (ranges.length === 0) return { command, status: 'NOTHING_ALLOCATED', wallet };
-    return execute(command, flags, [revokeWalletPlan(distributor, wallet)], { removes: ranges.map(r => ({ category: r.category === 0 ? 'NAND' : 'LATCH', firstId: r.firstId, count: r.count })) });
+    return execute(command, flags, [revokeWalletPlan(distributor, wallet, ranges)], { removes: ranges.map(r => ({ category: r.category === 0 ? 'NAND' : 'LATCH', firstId: r.firstId, count: r.count })) });
   }
 
   if (command === 'finalize-allocation') return execute(command, flags, [finalizeAllocationPlan(distributorOf(addresses))]);
@@ -351,17 +373,16 @@ export async function main(argv = process.argv.slice(2)): Promise<unknown> {
     }
     if (problems.length) throw new Error(`Admission preflight failed:\n- ${problems.join('\n- ')}`);
     // Every admission settles all registered miners first; size batches for the BSC per-transaction cap.
-    const requested = batch(flags, 10);
-    const fits = maxAdmissionBatch(s.minerCount);
-    if (fits === 0n) throw new Error(`With ${s.minerCount} registered miners an admission would exceed the ${BATCH_GAS_BUDGET} gas budget (BSC cap ${TX_GAS_CAP}); see docs/VERIFICATION_REPORT.md`);
-    const size = Math.min(requested, Number(fits));
+    const fits = Number(maxAdmissionBatch(s.minerCount));
+    if (fits === 0) throw new Error(`With ${s.minerCount} registered miners an admission would exceed the ${BATCH_GAS_BUDGET} gas budget (BSC cap ${TX_GAS_CAP}); see docs/VERIFICATION_REPORT.md`);
+    const size = batch(flags, 10, fits, command);
     const plans: TxPlan[] = [];
     if (command === 'deposit') {
       const approved = await rpc.readContract({ address: s.collection, abi: erc721Abi, functionName: 'isApprovedForAll', args: [from, pool] });
       if (!approved) plans.push(approveMinersPlan(s.collection, pool));
-      plans.push(...depositPlans(pool, ids, size));
-    } else plans.push(...registerPlans(pool, ids, size));
-    return execute(command, flags, plans, { registeredMiners: s.minerCount, batchSize: size, estimatedGasPerBatch: admissionGasEstimate(s.minerCount, BigInt(size)),
+      plans.push(...depositPlans(pool, ids, size, s.minerCount));
+    } else plans.push(...registerPlans(pool, ids, size, s.minerCount));
+    return execute(command, flags, plans, { registeredMiners: s.minerCount, batchSize: size,
       registryLimitForSingleAdmission: maxRegisteredForAdmission(1n), composition: composition.map(m => ({ tokenId: m.tokenId, nandBurn: m.nandBurn, latchBurn: m.latchBurn })) });
   }
 
@@ -374,18 +395,25 @@ export async function main(argv = process.argv.slice(2)): Promise<unknown> {
       failing = await findFailingMiners(rpc, pool, ids, addr(need(flags, 'from')));
       ids = ids.filter(id => !failing.includes(id));
     }
-    const plans = flags.all && !flags['isolate-failures'] ? harvestRangePlans(pool, s.minerCount, batch(flags, 100)) : harvestPlans(pool, ids, batch(flags, 100));
+    const size = batch(flags, 100, maxIdsPerTx(HARVEST_GAS), command);
+    const plans = flags.all && !flags['isolate-failures'] ? harvestRangePlans(pool, s.minerCount, size) : harvestPlans(pool, ids, size);
     return execute(command, flags, plans, { miners: ids.length, excludedFailingMiners: failing });
   }
 
   if (command === 'claim-receipts' || command === 'deliver') {
     const distributor = distributorOf(addresses);
-    const maxIds = Number(str(flags, 'max-ids') ?? 300);
-    if (command === 'deliver') return execute(command, flags, [deliverPlan(distributor, addr(need(flags, 'wallet')), maxIds)]);
-    const from = addr(need(flags, 'from'));
-    const [n, l] = await rpc.readContract({ address: distributor, abi: (await import('../sdk/abi.js')).tapeoutReceiptDistributorAbi, functionName: 'pendingOf', args: [from] }) as readonly [bigint, bigint];
-    if (n + l === 0n) return { command, status: 'NOTHING_TO_CLAIM', wallet: from };
-    return execute(command, flags, [claimReceiptsPlan(distributor, maxIds)], { waiting: { NAND: n, LATCH: l } });
+    const wallet = addr(need(flags, command === 'deliver' ? 'wallet' : 'from'));
+    const ranges = await readWalletRanges(rpc, distributor, wallet);
+    const waiting = { NAND: 0n, LATCH: 0n };
+    for (const r of ranges) waiting[r.category === 0 ? 'NAND' : 'LATCH'] += r.count - r.delivered;
+    if (waiting.NAND + waiting.LATCH === 0n) return { command, status: 'NOTHING_TO_DELIVER', wallet };
+    // A delivery's cost grows with the IDs and ranges it reaches; keep it within the gas budget.
+    const fits = maxDeliverable(ranges);
+    const maxIds = str(flags, 'max-ids') ? Number(uint(need(flags, 'max-ids'))) : Math.min(300, fits);
+    if (maxIds < 1) throw new Error('Invalid --max-ids');
+    if (maxIds > fits) throw new Error(`--max-ids ${maxIds} is above ${fits} for this wallet's ranges: BSC limits a transaction's gas to ${TX_GAS_CAP} (BEP-652)`);
+    const plan = command === 'deliver' ? deliverPlan(distributor, wallet, maxIds, ranges) : claimReceiptsPlan(distributor, maxIds, ranges);
+    return execute(command, flags, [plan], { waiting });
   }
 
   if (command === 'claim') {
@@ -401,7 +429,7 @@ export async function main(argv = process.argv.slice(2)): Promise<unknown> {
     if (str(flags, 'from') && addr(need(flags, 'from')) !== holder) throw new Error('BEM claims must be sent by the receipt holder');
     const expected = holdings.NAND.ids.reduce((s, id, i) => (nand.includes(BigInt(id)) ? s + holdings.NAND.claimable[i] : s), 0n)
       + holdings.LATCH.ids.reduce((s, id, i) => (latch.includes(BigInt(id)) ? s + holdings.LATCH.claimable[i] : s), 0n);
-    return execute(command, flags, claimPlans(pool, nand, latch, batch(flags, 200)), { holder, expectedPayoutRaw: expected, expectedPayoutBem: formatBem(expected) });
+    return execute(command, flags, claimPlans(pool, nand, latch, batch(flags, 200, maxIdsPerTx(CLAIM_GAS), command)), { holder, expectedPayoutRaw: expected, expectedPayoutBem: formatBem(expected) });
   }
 
   if (command === 'release') return execute(command, flags, releasePlans(pool));

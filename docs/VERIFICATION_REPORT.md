@@ -38,16 +38,18 @@ Material decisions:
    collections.
 6. **Authority:** a fixed whitelist (1 to 16) gates both admission paths; plain transfers are inert;
    the owner's only power is `activate`; recipients rotate only themselves.
-7. **Tooling** never signs, sizes every batch from measured gas models against the BSC
-   per-transaction cap, and refuses allocation wallets that cannot receive ERC-1155.
+7. **Tooling** never signs and refuses allocation wallets that cannot receive ERC-1155. Every plan
+   carries a worst-case gas bound that is its gas limit (printed `cast` commands, local sends);
+   plans over 3/4 of the BSC per-transaction cap and oversize batch sizes are refused, and Safe
+   batch files are split by gas (safeguards ported from `main`'s `6aeb5a9`).
 
 ## 2. What was run
 
 | Check | Command | Result | Raw output |
 | --- | --- | --- | --- |
 | Build, sizes, formatting | `forge build --sizes`, `forge fmt --check` | PASS: runtime sizes under EIP-170 (24,576 B); largest initcode, the pool's 30,857 B, under EIP-3860 (49,152 B) | — |
-| Unit, fuzz and invariant suites (mock protocol) | `forge test --no-match-path 'test/fork/*'` | **85 / 85 PASS** | `reports/solidity-tests.json` |
-| SDK unit tests | `npm run test:sdk` | **16 / 16 PASS** | `reports/sdk-tests.tap` |
+| Unit, fuzz, gas and invariant suites (mock protocol) | `forge test --no-match-path 'test/fork/*'` | **90 / 90 PASS** | `reports/solidity-tests.json` |
+| SDK unit tests | `npm run test:sdk` | **21 / 21 PASS** | `reports/sdk-tests.tap` |
 | TypeScript | `npm run typecheck` | PASS | `reports/typecheck.txt` |
 | CLI end to end, local Anvil, mock protocol | `npm run test:local-e2e` | **PASS, 29 / 29 checks**, 46 steps, 44 local transactions | `reports/local-e2e.json`, `reports/local-e2e-reconcile.json` |
 | Real BSC state, Foundry fork, block 128,713,128 | `npm run test:fork` | **4 / 4 PASS** | `reports/fork-test.json`, `fork-identity.json`, `fork-boundary.json`, `fork-gas.json` |
@@ -57,14 +59,14 @@ Material decisions:
 | BSC mainnet | — | **NOT RUN** (out of scope) | — |
 
 Solidity suites: `PoolAdmissionTest` 17, `DistributorTest` 12, `PoolClaimsTest` 11, `PoolSetupTest` 9,
-`PoolHarvestTest` 8, `PoolAccountingTest` 6 (one fuzz test, 512 runs), `EntitlementReceiptTest` 5,
-`SetupGasTest` 4, `AdmissionGasTest` 1, `PoolUnsupportedCategoryTest` 1, and two invariant campaigns
+`GasModelTest` 9, `PoolHarvestTest` 8, `PoolAccountingTest` 6 (one fuzz test, 512 runs),
+`EntitlementReceiptTest` 5, `AdmissionGasTest` 1, `PoolUnsupportedCategoryTest` 1, and two invariant campaigns
 (`PoolInvariantTest` 5 invariants, `PoolInvariantCoverageTest` the same plus one) of 256 runs × depth
 64 each, `fail_on_revert = true`, 0 reverts. The invariant handler keeps an independent reference
 model of the boundary (expected settled and carried income from the mock's owed balances) and checks
 four-account conservation, the model against the ledger, per-ID histories, monotonic entitlements,
-custody and composition. Its path counters over 1,542 logged runs: 3,826 successful admissions, 1,422
-rolled-back admissions (1,516 runs admitted at least once, 645 saw a rollback), up to 11 registered
+custody and composition. Its path counters over 1,542 logged runs: 3,746 successful admissions, 1,505
+rolled-back admissions (1,516 runs admitted at least once, 658 saw a rollback), up to 11 registered
 miners.
 
 ## 3. Coverage of the required scenarios
@@ -78,13 +80,13 @@ miners.
 | Unauthorized admission and registration bypass | `testOnlyWhitelistedDepositorsAdmitAndOnlyTheirOwnMiners`, `testPlainTransferNeitherRegistersNorBypassesTheWhitelistOrSettlement`, `testSafeTransferIntoThePoolIsRefused`, `testDepositorWhitelistIsValidatedAndRequired`; local e2e `nonDepositorRejected`, `registrationBypassRejected`, `plainTransferDidNotAdmit`; fork e2e `outsiderDepositRevertsOnChain` |
 | Authoritative composition, duplicate miners | `testCompositionMustComeFromAValidActiveMinerRecord`, `testDuplicateAndAlreadyRegisteredMinersAreRejected`; fork `testForkProtocolIdentityAndCompositionAbi`; fork e2e `realCompositionsAdmissible`, `nandMinerBurnsNoLatch` |
 | Strict old/new settlement with carried income | `testSpecificationAcceptanceExample`, `testOldIncomeHiddenFromPendingIsStillSettledUnderTheOldRatio`, `testCarriedIncomeIsNotPaidBackToTheDepositor`, `testFirstAdmissionRecognizesIncomeHeldBeforeAnyComposition`, `testBatchUsesOnePostBatchCompositionForAllCarriedIncome`; fork `testForkStrictAdmissionBoundaryWithRealMiners`; fork e2e `carriedIncomeCollectedAtFirstAdmission`, `oldIncomeSettledInsideAdmission`, `realBoundaryMatchesOldNewCompositionModel`; local e2e `acceptanceExampleNand140Latch60` |
-| Rollback when old-miner settlement fails | `testActiveOldMinerSettlementFailureRollsBackTheWholeAdmission`, `testIncomingMinerClaimFailureRollsBack`, `testInactiveOldMinerIsSkippedExplicitly`; 1,422 invariant rollbacks; local e2e `failedSettlementRolledBack`, `inactiveMinerSkippedExplicitly` |
+| Rollback when old-miner settlement fails | `testActiveOldMinerSettlementFailureRollsBackTheWholeAdmission`, `testIncomingMinerClaimFailureRollsBack`, `testInactiveOldMinerIsSkippedExplicitly`; 1,505 invariant rollbacks; local e2e `failedSettlementRolledBack`, `inactiveMinerSkippedExplicitly` |
 | Batch-order independence | `testBatchOrderDoesNotChangeTheOutcome` (every order from one snapshot) |
 | Conservation, monotonicity, rounding | `PoolAccountingTest` (6, incl. fuzz), the invariants, `testEntitlementsNeverDecreaseAcrossCompositionChanges`; `reconcile --deep` PASS in both e2e runs |
 | Revenue access when Mining or admission fails | `testAMiningOutageBlocksAdmissionButNotClaimsOfHeldIncome`, `testClaimsDoNotDependOnMiningOrAdmissions`, `testHarvestIsolatesFailingMiners` |
 | Initialization, first miner, zero totals, zero supply | `testAdmissionsRequireActivation`, `testActivationRejectsTwoEmptyCollections`, `testFirstAdmissionRecognizesIncomeHeldBeforeAnyComposition`, `PoolUnsupportedCategoryTest` |
 | Distributor custody rules | `testNoAdministrativeRouteToHeldReceiptsOrTheirBem`, `testReceiptsWithConsumedRewardHistoryAreRefused`, `testDistributedReceiptsCanNeverReturnAsInventory`, `testDeliverAlwaysGoesToTheRecordedBeneficiary`, `testABeneficiaryThatCannotReceiveIsNeverRedirected` |
-| Admission gas as the registry grows | `AdmissionGasTest` (mock, to 400 miners), fork `testForkAdmissionGasScaling` (24 real miners), `SetupGasTest` (setup batches) |
+| Admission gas as the registry grows | `AdmissionGasTest` (mock, to 400 miners), fork `testForkAdmissionGasScaling` (24 real miners); every other planned transaction's bound in `GasModelTest` |
 
 ## 4. Real-protocol observations (BSC block 128,713,128)
 
@@ -110,8 +112,8 @@ their holders with fork-only impersonation, and time advanced only inside the fo
 - **CLI fork run.** Pool ownership renounced before any deposit; four real miners admitted in three
   admissions (one batch of two); the outsider's deposit reverted on chain with `NotDepositor`;
   moving miners to the depositor paid nothing to their previous holders; deep reconciliation PASS
-  (final run: residue 25 raw against a bound of 53, NAND Σ claimed = paid = 20,333,894,720, LATCH
-  456,350,880). Amounts differ slightly between runs because the Anvil fork's block timestamps follow
+  (final run: residue 36 raw against a bound of 53, NAND Σ claimed = paid = 20,333,806,640, LATCH
+  456,352,104). Amounts differ slightly between runs because the Anvil fork's block timestamps follow
   the wall clock.
 
 ## 5. Gas and scale
@@ -129,12 +131,27 @@ the Mendel upgrade on 2026-04-28) at about 593 registered miners, and a 3/4 plan
 442. The CLI uses a rounded-up model (300k + 30k per registered + 250k per incoming miner) and stops
 planning at 401. On the mock the cost is about 22k per registered miner (9,001,358 gas at 400).
 
-Setup batches (`SetupGasTest`, whole-transaction estimates): issue 231 IDs 10.77M (to a wallet) or
-11.63M (into the distributor); fund 300 IDs 9.82M; allocate 85 single-ID ranges for new wallets
-10.54M, or 400 IDs in one range 10.38M; deliver 300 IDs 8.81M; claim BEM for 200 IDs 5.71M. All stay
-under the 12.58M planning budget, and each model bounds its measurement. Other costs from the e2e runs:
-receipt deployment 2.07M, pool 4.56M, distributor 1.75M, activation 109k, harvest of four real miners
-248k, each recipient release about 116k.
+Every other planned transaction carries a worst-case bound that the CLI uses as its gas limit.
+`GasModelTest` runs each call as its own transaction (Foundry isolation, so earlier writes in the
+test cannot make it look cheaper) with exactly the bound as its limit, which also covers gas spent
+before refunds. At the largest sizes the CLI plans, gas used against the bound:
+
+| Transaction | Gas used | Bound |
+| --- | ---: | ---: |
+| Issue 231 IDs to a wallet / into the distributor | 10.77M / 11.63M | 12.57M |
+| Fund the distributor with 300 IDs | 10.06M | 12.10M |
+| Allocate 85 single-ID ranges for new wallets / 400 IDs in one range | 10.54M / 10.39M | 12.56M / 10.98M |
+| Revoke a wallet with 1,500 IDs in two ranges | 6.46M | 12.16M |
+| Deliver 300 IDs in one range / 60 single-ID ranges | 9.05M / 2.71M | 11.30M / 8.32M |
+| Claim BEM for 386 IDs | 10.91M | 12.55M |
+| Deploy receipt (long metadata) / pool (16 depositors, 64-byte name) / distributor | 2.29M / 5.30M / 1.75M | 3M / 6M / 2.5M |
+
+All bounds stay under the 12.58M planning budget. The isolated method changed one model: delivery
+needs about 37k gas per ID as a limit (it was 32k), because its refunds only arrive after execution.
+The local and fork end-to-end runs send every transaction with its bound as the limit and check that
+the node's estimate stays below it, which also covers admissions and harvests on the real protocol.
+Other costs from those runs: activation 109k, harvest of four real miners 248k, each recipient
+release about 116k.
 
 ## 6. Static analysis
 
@@ -175,7 +192,11 @@ No code change resulted.
 7. **Wallets that cannot receive ERC-1155** are stopped by the tooling, not by the contract; a contract
    beneficiary added by other means would leave its receipts in the distributor (its BEM stays
    attached but unclaimable).
-8. **Not covered:** real (non-impersonated) deposits by actual depositors, Safe-batch execution on
+8. **Per-transaction sizes.** `revokeWallet` clears a whole wallet in one call, so the tooling can only
+   correct (before finalization) wallets of up to about 1,550 allocated IDs; one delivery carries up to
+   about 330 IDs in a single range (fewer when they span many ranges), so large wallets claim in
+   several transactions.
+9. **Not covered:** real (non-impersonated) deposits by actual depositors, Safe-batch execution on
    BSC, long-running behaviour over many composition periods on the real protocol, and an audit.
 
 ## 8. Reproduce

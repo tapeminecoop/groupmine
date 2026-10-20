@@ -5,14 +5,19 @@ never reads private keys:
 
 - by default a write command prints its plan: calldata, the equivalent `cast send` command (add your
   own signer flags such as `--ledger` or `--account`) and, with `--from`, a simulation of each step;
-- `--safe-json FILE` writes a Safe Transaction Builder batch (one Safe transaction: keep its total gas
-  under the BSC cap); contract creations cannot go through a Safe, so deploy from an EOA and put the
-  Safe in the system file as owner;
+- `--safe-json FILE` writes Safe Transaction Builder batch files. The Safe runs a whole file as one
+  transaction, so plans are split into `FILE.1.json`, `FILE.2.json`, … when their combined bound
+  exceeds the budget; execute them in order. Contract creations cannot go through a Safe, so deploy
+  from an EOA and put the Safe in the system file as owner;
 - `--send-local` executes only against a loopback Anvil node, for rehearsals.
 
-Every simulated plan is checked against the BSC per-transaction gas cap (2^24). Default batch sizes
-come from measured gas models: 231 IDs per issue, 300 per funding transfer, allocation batches sized
-by ranges and IDs, 300 receipts per delivery, 200 IDs per BEM claim.
+BSC rejects any transaction whose gas limit exceeds 2^24 (16,777,216; BEP-652). Every plan therefore
+carries a worst-case gas bound (`maxGas`, from `sdk/gas.ts`) that the printed `cast` command uses as
+`--gas-limit` and local sends use as their limit; plans whose bound exceeds 3/4 of the cap are refused,
+and so is a `--batch-size` above a command's maximum. Defaults: 231 IDs per issue (maximum 231), 300
+per funding transfer (312), allocation batches of up to 400 IDs split further by range count (459),
+300 receipts per delivery (fewer when a wallet's IDs are spread over many ranges), 200 IDs per BEM
+claim (386), 100 miners per harvest (124). Admission batches shrink as the registry grows.
 
 Set `RPC_URL` (or pass `--rpc-url`) and, before any mainnet step, confirm the protocol still matches
 what was tested:
@@ -105,7 +110,8 @@ The import rejects bad or mis-checksummed addresses, wallets listed twice, empty
 that are contracts unable to receive ERC-1155, and totals that differ from the distributor's
 inventory. It assigns IDs deterministically (file order, lowest IDs first) and is resumable:
 re-running it plans only what is still missing. To correct a wallet before finalization, run
-`revoke-wallet --wallet 0x…` and import again.
+`revoke-wallet --wallet 0x…` and import again. A revocation clears all of the wallet's IDs in one
+transaction, which the tooling plans for wallets of up to about 1,550 IDs.
 
 ```bash
 npm run pool -- verify-allocation --addresses deployments/addresses.json --artifact deployments/allocation.artifact.json

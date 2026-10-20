@@ -13,12 +13,15 @@ import { mockMiningAbi, tapeoutEntitlementReceiptAbi, tapeoutMinerPoolAbi, tapeo
 import { BATCH_GAS_BUDGET, TX_GAS_CAP } from './constants.js';
 
 /** An unsigned transaction. Plans are what the CLI prints, simulates, exports for a Safe, or sends to a
- *  local Anvil node; the tooling never handles private keys. */
+ *  local Anvil node; the tooling never handles private keys. `gas` is the plan's worst-case bound
+ *  (sdk/gas.ts): it is the gas limit for local sends and printed cast commands, because a transaction
+ *  that calls the real Mining contract can need more gas when included than when estimated. */
 export interface TxPlan {
   to: Address | null;
   data: Hex;
   value: bigint;
   description: string;
+  gas?: bigint;
 }
 
 export interface SentTx {
@@ -88,7 +91,8 @@ export async function impersonate(rpc: PublicClient, account: Address) {
 }
 
 /** Send on local Anvil. Plans above the BSC per-transaction gas cap are refused even locally, so a
- *  rehearsal fails exactly where mainnet would. A revert is replayed to report its reason. */
+ *  rehearsal fails exactly where mainnet would. A plan's bound is its gas limit, and an estimate above
+ *  the bound is reported as a model error. A revert is replayed to report its reason. */
 export async function sendLocal(rpc: PublicClient, plan: TxPlan, from: Address): Promise<SentTx> {
   let gas: bigint | undefined;
   try {
@@ -97,9 +101,11 @@ export async function sendLocal(rpc: PublicClient, plan: TxPlan, from: Address):
     throw new Error(`Simulation failed for "${plan.description}": ${describeError(error)}`);
   }
   if (gas > TX_GAS_CAP) throw new Error(`"${plan.description}" needs ${gas} gas, above the BSC per-transaction cap ${TX_GAS_CAP}`);
+  if (plan.gas !== undefined && gas > plan.gas) throw new Error(`"${plan.description}" estimates ${gas} gas, above its planned bound ${plan.gas}: the gas model in sdk/gas.ts is too low`);
+  const limit = plan.gas ?? (gas + gas / 5n > TX_GAS_CAP ? TX_GAS_CAP : gas + gas / 5n);
   const hash = await rpc.request({
     method: 'eth_sendTransaction',
-    params: [{ from, ...(plan.to ? { to: plan.to } : {}), data: plan.data, value: toHex(plan.value), gas: toHex(gas + gas / 5n > TX_GAS_CAP ? TX_GAS_CAP : gas + gas / 5n) }],
+    params: [{ from, ...(plan.to ? { to: plan.to } : {}), data: plan.data, value: toHex(plan.value), gas: toHex(limit) }],
   } as never) as Hex;
   const receipt = await rpc.waitForTransactionReceipt({ hash, timeout: 600_000 });
   if (receipt.status !== 'success') {
@@ -129,10 +135,12 @@ export function safeBatch(plans: TxPlan[], chainId: number, name: string, safe?:
   };
 }
 
-/** Equivalent Foundry command; the operator chooses the signer (--ledger, --account, ...). */
+/** Equivalent Foundry command; the operator chooses the signer (--ledger, --account, ...). A planned
+ *  bound becomes `--gas-limit`, so cast does not size the limit from its own estimate. */
 export function castCommand(plan: TxPlan): string {
   const value = plan.value > 0n ? ` --value ${plan.value}` : '';
+  const gas = plan.gas !== undefined ? ` --gas-limit ${plan.gas}` : '';
   return plan.to
-    ? `cast send --rpc-url "$RPC_URL" <SIGNER_FLAGS>${value} ${plan.to} ${plan.data}`
-    : `cast send --rpc-url "$RPC_URL" <SIGNER_FLAGS>${value} --create ${plan.data}`;
+    ? `cast send --rpc-url "$RPC_URL" <SIGNER_FLAGS>${value}${gas} ${plan.to} ${plan.data}`
+    : `cast send --rpc-url "$RPC_URL" <SIGNER_FLAGS>${value}${gas} --create ${plan.data}`;
 }
