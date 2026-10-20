@@ -1,0 +1,264 @@
+{
+  "scope": "REAL_BSC_STATE_LOCAL_FORK_ONLY",
+  "status": "PASS",
+  "startedAt": "2026-10-20T16:40:27.266Z",
+  "completedAt": "2026-10-20T16:40:58.892Z",
+  "source": {
+    "chainId": 56,
+    "forkBlock": "128713128",
+    "blockHash": "0x760f050b7ec66ced2a2745918d7492650150f9d71d3159259412996ebe65081f",
+    "blockTimestamp": "1792484426",
+    "archiveRpcHost": "bsc-mainnet.public.blastapi.io",
+    "discoveryRpcHost": "bsc-mainnet.public.blastapi.io"
+  },
+  "protocol": {
+    "minerCollection": "0xb1024b89886B9a34Aa4ff5F31C411D708b20a14C",
+    "mining": "0x7E2E0DC66a3bD9103E69b766afA62d9f7b697b46",
+    "bem": "0x5ce033B2bFCa3Af30b3e8C8457DeaF776A8b695a"
+  },
+  "inputs": {
+    "FORK_NAND_MINER": "12733",
+    "FORK_LATCH_MINER": "13948",
+    "FORK_INACTIVE_TOKEN": "648",
+    "FORK_SCALE_MINERS": "4183,1574,6940,4307,4655,3207,13617,7924,11127,4951,3932,10031,14559,16112,8714,2161,6767,11214,6453,14011,16944,15731,7541,5930"
+  },
+  "discovery": "overrides provided",
+  "deployedArtifacts": {
+    "compiled": "paris (./out)",
+    "forkEvm": "cancun",
+    "sdkBytecodeSha256": {
+      "TapeoutMinerPool": "eacfe5cdd35cae9357b09e7785702be5f7e85d470a6e3c91f1741565a39447a0",
+      "TapeoutEntitlementReceipt": "b4b05cc13a0ab68fa9e1c107390554aede947d6d2efe8a528924a4c54835e799",
+      "TapeoutReceiptDistributor": "4383061a4ff73e9a587bd4a7f0979e4309b4f16364a35a237016f26881cc589b",
+      "MockBEM": "47a401222bc11c2e409c1bb68ec67e8b79cfb34032ff0ac7f0febb494128e2f0",
+      "MockMining": "2e8dd3c89a6df7118b2693c0f73450a262bfe1334b28f689de6e40495ddbfbfe",
+      "MockNFT": "67c5817f50554ed615ce2521ac2d125e1ba71be286bd2803bb0893b57cfa73e5"
+    }
+  },
+  "forgeCommand": "forge test --match-path test/fork/* -vv --json --fork-url https://bsc-mainnet.public.blastapi.io --fork-block-number 128713128 --fork-retries 30 --fork-retry-backoff 3000 --compute-units-per-second 40",
+  "forgeExitCode": 0,
+  "results": [
+    {
+      "name": "testOnlyTheCurrentHolderCanStop()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testStopByHolderSettlesAccruedIncomeThenCools()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testForkBoundaryIsIndependentOfProcessingOrder()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testForkBoundaryWithThreeOldMinersAndAnIncomingBatch()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testForkFirstAdmissionAndZeroSupplyCategory()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testForkPlainTransferThenRegisterWindow()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testForkAdmissionGasScaling()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testForkCompositionMatchesCircuitBurnAndIgnoresReferences()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testForkProtocolIdentityAndCompositionAbi()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testForkStrictAdmissionBoundaryWithRealMiners()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testForkWhitelistAfterRenounceAndBypassRejection()",
+      "status": "Success",
+      "reason": null
+    }
+  ],
+  "observations": {
+    "identity": {
+      "bemCodeHash": "0x982ba79538b51e54ee1382f57522098af0635b0f67f2574d393b29ed0958b344",
+      "bemCodeSize": 2205,
+      "bemDecimals": 8,
+      "bemErc1967ImplementationSlot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "collectionBeaconCodeHash": "0x964014cd563c5bc62e1f8a3b2995969d6385f25da1e4efa353a01a62e0b75cca",
+      "collectionBeaconOwner": "0x68224F668083c29e9800Be2a646d42d18cedF7e2",
+      "collectionBeaconOwnerCodeSize": 130,
+      "collectionImplementation": "0x8E1D125Def6d3826C278299273a0760D47626068",
+      "collectionImplementationCodeHash": "0x2ea433839e23b3773b7880d6f1807affb0f648ae98760b9a3b6394879665c345",
+      "collectionProxyCodeHash": "0xd8c4b0216e0aadd615fbd134465b6af060a11769edc7c844d8f14d1b8a783992",
+      "forkBlock": 128713128,
+      "inactiveToken": 648,
+      "inactiveTokenStatus": 0,
+      "miner12733Bstar": 88,
+      "miner12733GateCount": 88,
+      "miner12733LatchBurn": 0,
+      "miner12733NandBurn": 88,
+      "miner13948Bstar": 66,
+      "miner13948GateCount": 66,
+      "miner13948LatchBurn": 64,
+      "miner13948NandBurn": 2,
+      "miningImplementation": "0xa3DBe873DA37cD4e4a13c7cEf23a7dB6Ca60f898",
+      "miningImplementationCodeHash": "0x63b1124d3448fdeb28b163c52142e15a7a464d7ae7d817e51f6c242b62424479",
+      "miningOwner": "0x0000000000000000000000000000000000000000",
+      "miningPaused": false,
+      "miningProxyCodeHash": "0xed6b710a769987f50494d713f278817992e3266e45898a990be878efc2fcbbce"
+    },
+    "composition": {
+      "forkBlock": 128713128,
+      "miner12733CircuitBurnLatch": 0,
+      "miner12733CircuitBurnNand": 88,
+      "miner13948CircuitBurnLatch": 64,
+      "miner13948CircuitBurnNand": 2,
+      "miner1574CircuitBurnLatch": 5,
+      "miner1574CircuitBurnNand": 4,
+      "miner4183CircuitBurnLatch": 9,
+      "miner4183CircuitBurnNand": 1,
+      "referenceCircuit": 109,
+      "referenceCircuitBurnCached": false,
+      "referenceCircuitKey": "0x3ceb7484a0dce891452b2d158abf086bedd65514799aab527d200917c4e6180e",
+      "referenceCircuitLocalLatch": 0,
+      "referenceCircuitLocalNand": 0,
+      "referenceCircuitRecordedGates": 123264,
+      "referenceCircuitStatus": 0
+    },
+    "boundary": {
+      "admissionGas": 231401,
+      "carriedIncome": 1078419271,
+      "firstAdmissionCarried": 20061449000,
+      "forkBlock": 128713128,
+      "latchIncome": 439386512,
+      "latchMiner": 13948,
+      "latchMinerHolder": "0x637505a590c30073D6fFaA601784FcB31B9b6A98",
+      "latchMinerLatchBurn": 64,
+      "latchMinerNandBurn": 2,
+      "nandIncome": 20312932421,
+      "nandMiner": 12733,
+      "nandMinerBurn": 88,
+      "nandMinerHolder": "0xb73C928D82926D58c4eC8d30b957e88FB973dBF5",
+      "oldMinerPendingAfterOneHour": 0,
+      "recipientAEach": 207523189,
+      "settledOldIncome": 27497042
+    },
+    "boundaryMulti": {
+      "admissionGas": 403570,
+      "carriedIncome": 1079198599,
+      "firstAdmissionCarried": 20070567015,
+      "forkBlock": 128713128,
+      "heldBeforeAdmission": 6539575478,
+      "incomingMiners": [
+        13948,
+        6940
+      ],
+      "latchIncome": 3876543841,
+      "nandIncome": 23297076106,
+      "oldLatchBurn": 14,
+      "oldMinerClaimable": [
+        27497042,
+        187821,
+        66392
+      ],
+      "oldMiners": [
+        12733,
+        4183,
+        1574
+      ],
+      "oldNandBurn": 93,
+      "postBatchLatchBurn": 86,
+      "postBatchNandBurn": 112,
+      "recipientAEach": 271736199,
+      "settledOldIncome": 27751255
+    },
+    "boundaryOrder": {
+      "latchIncome": 3037675812,
+      "nandIncome": 17724595627,
+      "total": 21177516869
+    },
+    "registerWindow": {
+      "atomicLatchIncome": 439386512,
+      "atomicNandIncome": 20312932421,
+      "carriedIncome": 1078419271,
+      "windowLatchIncome": 0,
+      "windowNandIncome": 20752318934
+    },
+    "lifecycle": {
+      "claimRevertsAfterCooldown": true,
+      "claimWouldPayAtStopTime": 20088946042,
+      "claimedEventAmount": 20088946042,
+      "debtAfterStop": 60299771429,
+      "forkBlock": 128713128,
+      "paidByStop": 20088946042,
+      "pendingLiveImplemented": false,
+      "pendingStaleBeforeStop": 20061288600,
+      "statusAfterStop": 3,
+      "stopCooldownSeconds": 1200,
+      "stopHolder": "0xb73C928D82926D58c4eC8d30b957e88FB973dBF5",
+      "stopMiner": 12733
+    },
+    "lifecycleHolderOnly": {
+      "miner": 13948,
+      "originalHolder": "0x637505a590c30073D6fFaA601784FcB31B9b6A98",
+      "registrant": "0x637505a590c30073D6fFaA601784FcB31B9b6A98",
+      "registrantCouldStop": false
+    },
+    "gas": {
+      "admitWith0Registered": 397971,
+      "admitWith10Registered": 507262,
+      "admitWith11Registered": 534991,
+      "admitWith12Registered": 562720,
+      "admitWith13Registered": 590449,
+      "admitWith14Registered": 618058,
+      "admitWith15Registered": 645907,
+      "admitWith16Registered": 673516,
+      "admitWith17Registered": 701365,
+      "admitWith18Registered": 729094,
+      "admitWith19Registered": 756703,
+      "admitWith1Registered": 317401,
+      "admitWith20Registered": 784432,
+      "admitWith21Registered": 812161,
+      "admitWith22Registered": 840010,
+      "admitWith23Registered": 867619,
+      "admitWith2Registered": 285430,
+      "admitWith3Registered": 313159,
+      "admitWith4Registered": 340768,
+      "admitWith5Registered": 368497,
+      "admitWith6Registered": 396346,
+      "admitWith7Registered": 424075,
+      "admitWith8Registered": 451684,
+      "admitWith9Registered": 479413,
+      "forkBlock": 128713128,
+      "lastAdmissionGas": 867619,
+      "maxMarginalGasPerRegisteredMiner": 27849,
+      "registeredAtEnd": 24
+    }
+  },
+  "method": [
+    "Fork state is read from BSC at the pinned block; no protocol code or storage is modified (no vm.etch / vm.store / mockCall / deal).",
+    "Miner NFTs are moved from their current holders with fork-only impersonation (vm.prank), then admitted through depositMiners / registerMiners.",
+    "Time is advanced inside the fork only (vm.warp / vm.roll) so real Mining accrues income between admissions.",
+    "Expected settlement amounts are observed independently: what a real Mining.claim pays at the same timestamp, measured on a snapshot and undone (vm.snapshotState / vm.revertToState).",
+    "Lifecycle experiments impersonate the current NFT holder to call Mining.stop; BEM donations are real claims forwarded by an impersonated holder.",
+    "Gas is measured with protocol and pool accounts cooled (vm.cool), approximating stand-alone transactions; the 21,000 base cost is excluded."
+  ],
+  "mainnetTransactionsSent": 0,
+  "signaturesCreated": 0
+}

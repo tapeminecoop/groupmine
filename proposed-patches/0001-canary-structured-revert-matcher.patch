@@ -1,0 +1,35 @@
+--- a/scripts/canary/workflow.ts
++++ b/scripts/canary/workflow.ts
+@@ -5,6 +5,7 @@
+ import { erc20Abi, miningAbi } from '../../sdk/constants.ts';
+ import { artifact, IDS, nftAbi, P, preflight, redact, save } from './common.ts';
+ import { Runner } from './transactions.ts';
++import { classifyNegative } from './revert-matcher.ts';
+ 
+ export async function workflow(r: Runner, interrupted = false) {
+   const { owner, dir } = r.manifest;
+@@ -40,11 +41,16 @@
+       waits += seconds;
+     }
+   };
+-  const rejected = async (name: string, from: Address, to: Address, data: Hex, expectedError: string) => {
+-    let reason = '';
+-    try { await r.rpc.call({ account: from, to, data }); } catch (e) { reason = redact(e); }
++  // Negative tests decide on the revert *bytes*, wherever the node puts them (structured JSON-RPC
++  // error data, nested data, or Anvil-style message text), never on viem's human-readable message.
++  // Every other outcome (no bytes, another selector, transport error, success) fails the assertion
++  // and records its kind, so an RPC shape difference is distinguishable from a contract defect.
++  const rejected = async (name: string, from: Address, to: Address, data: Hex, expectedError: string) => {
++    let error: unknown;
++    try { await r.rpc.call({ account: from, to, data }); } catch (e) { error = e; }
++    const outcome = classifyNegative(error, expectedError);
+     const expectedSelector = keccak256(stringToHex(expectedError)).slice(0, 10);
+-    check(name, /revert/i.test(reason) && reason.toLowerCase().includes(expectedSelector), { simulationOnly: true, expectedError, expectedSelector, reason });
++    check(name, outcome.kind === 'EXPECTED_REVERT', { simulationOnly: true, expectedError, expectedSelector, outcome, reason: error === undefined ? '' : redact(error) });
+   };
+   const exactClaim = async (name: string, holder: Address, nand: bigint[], latch: bigint[], helper = false) => {
+     const before = await bem(holder);
+
+--- /dev/null
++++ b/scripts/canary/revert-matcher.ts
+@@ (new file: copy of test/audit/revert-matcher.ts without the frozenRunnerDecision helper) @@

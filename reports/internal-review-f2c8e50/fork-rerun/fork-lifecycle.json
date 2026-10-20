@@ -1,0 +1,14 @@
+{
+  "claimRevertsAfterCooldown": true,
+  "claimWouldPayAtStopTime": 20088946042,
+  "claimedEventAmount": 20088946042,
+  "debtAfterStop": 60299771429,
+  "forkBlock": 128713128,
+  "paidByStop": 20088946042,
+  "pendingLiveImplemented": false,
+  "pendingStaleBeforeStop": 20061288600,
+  "statusAfterStop": 3,
+  "stopCooldownSeconds": 1200,
+  "stopHolder": "0xb73C928D82926D58c4eC8d30b957e88FB973dBF5",
+  "stopMiner": 12733
+}

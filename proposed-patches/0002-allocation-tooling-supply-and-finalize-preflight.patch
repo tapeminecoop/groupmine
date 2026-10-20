@@ -1,0 +1,53 @@
+--- a/sdk/verify.ts
++++ b/sdk/verify.ts
+@@ -195,6 +195,14 @@
+     if (state.totals[c].allocated !== state.totals[c].inventory) gaps.push(`${c}: ${state.totals[c].allocated} allocated of ${state.totals[c].inventory} held`);
+   }
+   if (state.totals.NAND.allocated + state.totals.LATCH.allocated === 0n) gaps.push('nothing is allocated');
++  // Receipts that were issued but never entered the distributor keep their full entitlement outside this
++  // allocation; they are reported so that a reviewer sees that the allocation is not the whole supply.
++  const warnings: string[] = [];
++  const retained = { NAND: 0n, LATCH: 0n };
++  for (const c of CATEGORIES) {
++    retained[c] = state.issuance[c].supply - state.totals[c].inventory;
++    if (retained[c] > 0n) warnings.push(`${c}: ${retained[c]} of ${state.issuance[c].supply} issued receipts never entered the distributor and are not part of this allocation`);
++  }
+ 
+   const status: VerifyStatus = mismatches.length ? 'MISMATCH' : state.finalized ? 'FINALIZED_AND_MATCHES' : gaps.length ? 'NOT_READY' : 'READY_TO_FINALIZE';
+   return {
+@@ -204,7 +212,10 @@
+     mismatches: mismatches.slice(0, 100),
+     mismatchCount: mismatches.length,
+     readinessGaps: gaps,
++    warnings,
+     verified: {
++      supply: { NAND: state.issuance.NAND.supply, LATCH: state.issuance.LATCH.supply },
++      retained,
+       wallets: onChain.size,
+       listedWallets: state.wallets.length,
+       ids: { NAND: allocatedSum.NAND, LATCH: allocatedSum.LATCH },
+--- a/cli/pool.ts
++++ b/cli/pool.ts
+@@ -326,7 +326,21 @@
+     return execute(command, flags, [revokeWalletPlan(distributor, wallet, ranges)], { removes: ranges.map(r => ({ category: r.category === 0 ? 'NAND' : 'LATCH', firstId: r.firstId, count: r.count })) });
+   }
+ 
+-  if (command === 'finalize-allocation') return execute(command, flags, [finalizeAllocationPlan(distributorOf(addresses))]);
++  if (command === 'finalize-allocation') {
++    // Same readiness rules as verify-allocation: the contract itself lets an empty or half-funded
++    // distributor be finalized, after which no receipt can ever enter it.
++    const distributor = distributorOf(addresses);
++    const state = await readAllocationState(rpc, distributor);
++    const problems: string[] = [];
++    if (state.finalized) problems.push('the allocation is already finalized');
++    for (const c of ['NAND', 'LATCH'] as const) {
++      if (!state.issuance[c].finalized) problems.push(`${c} issuance is not finalized`);
++      if (state.totals[c].allocated !== state.totals[c].inventory) problems.push(`${c}: ${state.totals[c].allocated} allocated of ${state.totals[c].inventory} held`);
++    }
++    if (state.totals.NAND.allocated + state.totals.LATCH.allocated === 0n) problems.push('nothing is allocated: finalizing now would close the distributor empty');
++    if (problems.length) throw new Error(`Finalization preflight failed: ${problems.join('; ')} (run verify-allocation)`);
++    return execute(command, flags, [finalizeAllocationPlan(distributor)]);
++  }
+ 
+   if (command === 'activate') {
+     const nandShares = uint(need(flags, 'nand-shares'));
