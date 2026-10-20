@@ -84,6 +84,8 @@ async function main() {
     await step('retract-latch', ['retract', '--addresses', addressesFile, '--category', 'LATCH', '--count', '3', '--from', operator, '--send-local']);
     const latchAddress = JSON.parse(await readFile(addressesFile, 'utf8')).latchReceipt as Address;
     check('overIssuanceRetracted', await read<bigint>(latchAddress, tapeoutEntitlementReceiptAbi as Abi, 'totalSupply') === 10n);
+    const earlyReceipt = await fails('renounce-receipt-before-finalization', ['renounce', '--addresses', addressesFile, '--target', 'nand', '--from', operator, '--send-local']);
+    check('renounceRefusedBeforeIssuanceFinalized', /issuance is not finalized/.test(earlyReceipt), earlyReceipt);
     await step('finalize-nand', ['finalize-issuance', '--addresses', addressesFile, '--category', 'NAND', '--from', operator, '--send-local']);
     await step('finalize-latch', ['finalize-issuance', '--addresses', addressesFile, '--category', 'LATCH', '--from', operator, '--send-local']);
     let addresses = JSON.parse(await readFile(addressesFile, 'utf8'));
@@ -95,6 +97,9 @@ async function main() {
     addresses = JSON.parse(await readFile(addressesFile, 'utf8'));
     const pool = addresses.pool as Address;
     const distributor = addresses.distributor as Address;
+    const earlyPool = await fails('renounce-pool-before-activation', ['renounce', '--addresses', addressesFile, '--target', 'pool', '--from', operator, '--send-local']);
+    const earlyDistributor = await fails('renounce-distributor-before-finalization', ['renounce', '--addresses', addressesFile, '--target', 'distributor', '--from', operator, '--send-local']);
+    check('renounceRefusedBeforeActivationAndAllocation', /not activated/.test(earlyPool) && /allocation is not finalized/.test(earlyDistributor), { earlyPool, earlyDistributor });
     // Plan mode (the mainnet path): the distributor deployment is planned from the recorded pool address.
     const planned = await step('plan-distributor-deployment', ['deploy-distributor', '--system', systemFile, '--addresses', addressesFile, '--from', operator]);
     const plan = (planned.plans as { to: Address | null; simulation?: { ok: boolean } }[])[0];
@@ -122,15 +127,36 @@ async function main() {
     check('importBatched', (imported.transactions as unknown[]).length >= 4);
     const again = await step('import-resume-is-noop', ['import-allocation', '--addresses', addressesFile, '--allocation', allocationFile]);
     check('importResumeHasNothingLeft', (again.plans as unknown[]).length === 0 && again.alreadyImported === 3);
+    // Verification must cover the whole on-chain allocation (review finding): artifacts that omit a
+    // wallet, list no wallets, or name another chain are rejected.
+    const fullArtifact = JSON.parse(await readFile(`${DIR}/artifact.json`, 'utf8'));
+    const variant = async (label: string, change: (a: typeof fullArtifact) => unknown) => {
+      const file = `${DIR}/artifact-${label}.json`;
+      await writeFile(file, json(change(structuredClone(fullArtifact))));
+      return step(`verify-${label}`, ['verify-allocation', '--addresses', addressesFile, '--artifact', file]);
+    };
+    const omitted = await variant('omits-bob', a => ({ ...a, wallets: a.wallets.filter((w: { wallet: string }) => w.wallet.toLowerCase() !== bob.toLowerCase()) }));
+    check('verifyRejectsArtifactOmittingAWallet', omitted.status === 'MISMATCH' && JSON.stringify(omitted.mismatches).toLowerCase().includes(`${bob.toLowerCase()} is allocated on chain but missing`), omitted);
+    const emptyWallets = await variant('no-wallets', a => ({ ...a, wallets: [], totals: { NAND: 0, LATCH: 0, wallets: 0 } }));
+    check('verifyRejectsEmptyWalletList', emptyWallets.status === 'MISMATCH', emptyWallets);
+    const bare = await fails('verify-bare-wallet-list', ['verify-allocation', '--addresses', addressesFile, '--artifact', await (async () => { const f = `${DIR}/artifact-bare.json`; await writeFile(f, '{"wallets": []}'); return f; })()]);
+    check('verifyRejectsUnvalidatedArtifact', /Invalid allocation artifact/.test(bare), bare);
+    const wrongChain = await variant('wrong-chain', a => ({ ...a, chainId: 97 }));
+    check('verifyRejectsWrongChainIdentity', wrongChain.status === 'MISMATCH', wrongChain);
+
     // Correct one wallet before finalization: revoke it, see verification fail, re-import (resume restores it).
     await step('revoke-carol', ['revoke-wallet', '--addresses', addressesFile, '--wallet', carol, '--from', operator, '--send-local']);
     const incomplete = await step('verify-after-revoke', ['verify-allocation', '--addresses', addressesFile, '--artifact', `${DIR}/artifact.json`]);
-    check('revokedWalletBlocksFinalization', incomplete.status === 'NOT_READY', incomplete);
+    check('revokedWalletBlocksFinalization', incomplete.status === 'MISMATCH', incomplete);
     const restored = await step('reimport-carol', ['import-allocation', '--addresses', addressesFile, '--allocation', allocationFile, '--from', operator, '--send-local']);
     check('reimportOnlyRestoresTheRevokedWallet', (restored.transactions as unknown[]).length === 1 && restored.alreadyImported === 2, restored);
     const verified = await step('verify-allocation', ['verify-allocation', '--addresses', addressesFile, '--artifact', `${DIR}/artifact.json`]);
-    check('allocationVerified', verified.status === 'READY_TO_FINALIZE', verified);
+    check('allocationVerified', verified.status === 'READY_TO_FINALIZE' && (verified.verified as { wallets: number }).wallets === 3, verified);
     await step('finalize-allocation', ['finalize-allocation', '--addresses', addressesFile, '--from', operator, '--send-local']);
+    const finalized = await step('verify-after-finalization', ['verify-allocation', '--addresses', addressesFile, '--artifact', `${DIR}/artifact.json`]);
+    check('verifyAfterFinalizationMatches', finalized.status === 'FINALIZED_AND_MATCHES', finalized);
+    const emptyAfter = await variant('no-wallets-finalized', a => ({ ...a, wallets: [], totals: { NAND: 0, LATCH: 0, wallets: 0 } }));
+    check('verifyNeverMatchesEmptyArtifactAfterFinalization', emptyAfter.status === 'MISMATCH', emptyAfter);
 
     // 4. Activation, then every ownership renounced separately.
     await fails('activate-rejects-wrong-counts', ['activate', '--addresses', addressesFile, '--nand-shares', '31', '--latch-shares', '10', '--from', operator, '--send-local']);
@@ -181,15 +207,24 @@ async function main() {
     const carolBefore = await read<bigint>(bem, erc20Abi as Abi, 'balanceOf', [carol]);
     await step('carol-claims-bem', ['claim', '--addresses', addressesFile, '--from', carol, '--all', '--send-local']);
     check('newHolderGotTransferredEntitlement', (await read<bigint>(bem, erc20Abi as Abi, 'balanceOf', [carol])) - carolBefore >= due);
+    // Every receipt has been delivered (and NAND #21 moved on to carol): the artifact must still match.
+    const afterDelivery = await step('verify-after-delivery', ['verify-allocation', '--addresses', addressesFile, '--artifact', `${DIR}/artifact.json`]);
+    const deliveredIds = (afterDelivery.verified as { delivered: { NAND: bigint; LATCH: bigint } }).delivered;
+    check('verifyAfterDeliveryMatches', afterDelivery.status === 'FINALIZED_AND_MATCHES' && deliveredIds.NAND === 30n && deliveredIds.LATCH === 10n, afterDelivery);
     await step('release', ['release', '--addresses', addressesFile, '--from', outsider, '--send-local']);
     check('outsiderReceivedNothing', (await read<bigint>(bem, erc20Abi as Abi, 'balanceOf', [outsider])) === 0n);
 
-    // 8. Inactive old miner is skipped explicitly; a failing ACTIVE old miner rolls admission back.
+    // 8. Settlement exceptions (mock fault injection): a REVOKED old miner is skipped explicitly; any
+    //    other failure of an old miner (a COOLING status, a failing claim) rolls the admission back.
     await write(mining, mockMiningAbi as Abi, 'setStatus', [nft, 1n, 2]);
-    const skipped = await step('deposit-with-inactive-old-miner', ['deposit', '--addresses', addressesFile, '--token-ids', '3', '--from', depositor, '--send-local']);
+    const skipped = await step('deposit-with-revoked-old-miner', ['deposit', '--addresses', addressesFile, '--token-ids', '3', '--from', depositor, '--send-local']);
     const skipReceipt = await rpc.getTransactionReceipt({ hash: (skipped.transactions as { hash: Hex }[]).at(-1)!.hash });
-    const skipLogs = parseEventLogs({ abi: tapeoutMinerPoolAbi as Abi, eventName: 'InactiveMinerSkipped', logs: skipReceipt.logs });
-    check('inactiveMinerSkippedExplicitly', skipLogs.length === 1);
+    const skipLogs = parseEventLogs({ abi: tapeoutMinerPoolAbi as Abi, eventName: 'RevokedMinerSkipped', logs: skipReceipt.logs });
+    check('revokedMinerSkippedExplicitly', skipLogs.length === 1);
+    await write(mining, mockMiningAbi as Abi, 'setStatus', [nft, 2n, 3]);
+    const cooling = await fails('deposit-rolls-back-on-cooling-old-miner', ['deposit', '--addresses', addressesFile, '--token-ids', '4', '--from', depositor, '--send-local']);
+    check('coolingOldMinerBlocksAdmission', /SettlementFailed\(2,/.test(cooling) && (await read<bigint>(pool, tapeoutMinerPoolAbi as Abi, 'minerCount')) === 3n, cooling);
+    await write(mining, mockMiningAbi as Abi, 'setStatus', [nft, 2n, 1]);
     await write(mining, mockMiningAbi as Abi, 'setKeyBroken', [nft, 2n, true]);
     const rollback = await fails('deposit-rolls-back-on-failed-settlement', ['deposit', '--addresses', addressesFile, '--token-ids', '4', '--from', depositor, '--send-local']);
     check('failedSettlementRolledBack', /SettlementFailed\(2,/.test(rollback) && (await read<bigint>(pool, tapeoutMinerPoolAbi as Abi, 'minerCount')) === 3n, rollback);

@@ -61,7 +61,11 @@ export function maxIdsPerTx(model: { base: bigint; perId: bigint }, limit: bigin
 
 interface WalletRange { count: bigint; delivered: bigint }
 
-/** Bound for delivering up to `maxIds` of a wallet's receipts: only the ranges the call reaches count. */
+/**
+ * Bound for delivering up to `maxIds` of a wallet's receipts. The distributor resumes at the wallet's
+ * first range with undelivered IDs (its `nextRangeOf` cursor), so completed ranges cost nothing and
+ * only the ranges and IDs this delivery transfers count.
+ */
 export function deliveryGas(ranges: readonly WalletRange[], maxIds: number): bigint {
   let gas = DELIVER_GAS.base;
   let left = BigInt(maxIds);
@@ -78,10 +82,38 @@ export function deliveryGas(ranges: readonly WalletRange[], maxIds: number): big
 
 /** Largest `maxIds` whose delivery stays within `limit` (0 if nothing is pending). */
 export function maxDeliverable(ranges: readonly WalletRange[], limit: bigint = BATCH_GAS_BUDGET): number {
-  const pending = ranges.reduce((s, r) => s + Number(r.count - r.delivered), 0);
-  let n = 0;
-  while (n < pending && deliveryGas(ranges, n + 1) <= limit) n++;
-  return n;
+  let gas = DELIVER_GAS.base;
+  let n = 0n;
+  for (const r of ranges) {
+    const pending = r.count - r.delivered;
+    if (pending === 0n) continue;
+    if (gas + DELIVER_GAS.perRange + DELIVER_GAS.perId > limit) break;
+    gas += DELIVER_GAS.perRange;
+    const fit = (limit - gas) / DELIVER_GAS.perId;
+    const take = pending < fit ? pending : fit;
+    n += take;
+    gas += DELIVER_GAS.perId * take;
+    if (take < pending) break;
+  }
+  return Number(n);
+}
+
+/** Sizes of successive deliveries that hand over every pending ID, each at most `cap` and within `limit`. */
+export function deliveryBatches(ranges: readonly WalletRange[], cap: number, limit: bigint = BATCH_GAS_BUDGET) {
+  const state = ranges.map(r => ({ count: r.count, delivered: r.delivered }));
+  const batches: { maxIds: number; gas: bigint }[] = [];
+  for (;;) {
+    const n = Math.min(cap, maxDeliverable(state, limit));
+    if (n === 0) return batches;
+    batches.push({ maxIds: n, gas: deliveryGas(state, n) });
+    let left = BigInt(n);
+    for (const r of state) {
+      if (left === 0n) break;
+      const take = r.count - r.delivered < left ? r.count - r.delivered : left;
+      r.delivered += take;
+      left -= take;
+    }
+  }
 }
 
 /** Bound for `revokeWallet`, which clears every range of the wallet in one call. */
@@ -90,7 +122,7 @@ export function revokeGas(ranges: readonly { count: bigint }[]): bigint {
 }
 
 /** A planned transaction as far as gas is concerned (structurally a TxPlan). */
-interface Sized { description: string; gas?: bigint }
+interface Sized { description: string; gas?: bigint; data?: string }
 
 /** Refuse plans whose worst case exceeds the budget (a plan without a bound is left to simulation). */
 export function assertWithinBudget(plans: readonly Sized[]) {
@@ -101,23 +133,47 @@ export function assertWithinBudget(plans: readonly Sized[]) {
   }
 }
 
-/** Split plans, in order, into Safe batches whose summed worst case fits the budget: the Transaction
- *  Builder executes one batch file as one MultiSend transaction. A plan without a bound goes alone. */
+/**
+ * Executing a batch file through a Safe adds the Safe's own work to its plans' bounds:
+ * - base: the proxy, the nonce (first use included), the guard check, events, and signature checks
+ *   for up to 10 owners;
+ * - per payload byte: the Safe hashes and copies the payload, and SafeL2 also logs all of it;
+ * - 1/30 of the plans' bounds: each nested call must leave 1/64 of the remaining gas behind
+ *   (EIP-150), and a MultiSend batch nests two calls deep.
+ * Each plan's bound also includes a 21,000 base cost and its calldata, which a call inside the batch
+ * does not pay again. Measured on a BSC fork with SafeL2 1.4.1 and GnosisSafeL2 1.3.0
+ * (reports/fork-safe-e2e.json).
+ */
+export const SAFE_EXEC_GAS = { base: 150_000n, perPayloadByte: 16n, retainedDivisor: 30n } as const;
+
+/** MultiSend packs each transaction as operation (1 byte), to (20), value (32), data length (32), data. */
+export const safePayloadBytes = (plans: readonly { data?: string }[]) =>
+  plans.reduce((s, p) => s + 85 + (p.data ? (p.data.length - 2) / 2 : 0), 0);
+
+/** Worst case of one Safe transaction executing these plans (unbounded plans count as the budget). */
+export function safeBatchGas(plans: readonly Sized[]): bigint {
+  const inner = plans.reduce((s, p) => s + (p.gas ?? BATCH_GAS_BUDGET), 0n);
+  return inner + SAFE_EXEC_GAS.base + SAFE_EXEC_GAS.perPayloadByte * BigInt(safePayloadBytes(plans)) + inner / SAFE_EXEC_GAS.retainedDivisor;
+}
+
+/** Split plans, in order, into Safe batches: the Transaction Builder executes one batch file as one
+ *  transaction. A batch takes further plans while its Safe bound stays within the budget. A plan that
+ *  exceeds the budget once the Safe's overhead is added goes alone, and must still fit the cap. */
 export function groupForSafe<T extends Sized>(plans: readonly T[]): T[][] {
   const groups: T[][] = [];
   let current: T[] = [];
-  let used = 0n;
   for (const plan of plans) {
-    const gas = plan.gas ?? BATCH_GAS_BUDGET;
-    if (current.length > 0 && used + gas > BATCH_GAS_BUDGET) {
+    if (current.length > 0 && safeBatchGas([...current, plan]) > BATCH_GAS_BUDGET) {
       groups.push(current);
       current = [];
-      used = 0n;
     }
     current.push(plan);
-    used += gas;
   }
   if (current.length > 0) groups.push(current);
+  for (const group of groups) {
+    const gas = safeBatchGas(group);
+    if (gas > TX_GAS_CAP) throw new Error(`"${group[0].description}" through a Safe may need up to ${gas} gas, above the BSC per-transaction cap ${TX_GAS_CAP} (BEP-652): use a smaller batch`);
+  }
   return groups;
 }
 

@@ -138,8 +138,9 @@ contract SystemHandler is Test {
         bool shouldRevert = mining.broken();
         uint256 expectSettled;
         for (uint256 i; i < registered.length; ++i) {
-            if (_status(registered[i]) != 1) continue; // Mining pays nothing for inactive miners
-            if (mining.keyBroken(_key(registered[i]))) shouldRevert = true;
+            uint8 status = _status(registered[i]);
+            if (status == 2) continue; // revoked: permanent, never collectible, skipped
+            if (status != 1 || mining.keyBroken(_key(registered[i]))) shouldRevert = true;
             expectSettled += _owed(registered[i]);
         }
         uint256 expectCarried = heldBeforeComposition;
@@ -221,10 +222,22 @@ contract SystemHandler is Test {
         calls["thirdParty"]++;
     }
 
-    function setStatus(uint256 minerSeed, bool activeFlag) external {
+    /// @dev A challenge revokes a registered miner: permanent, and its unpaid rewards stay uncollectible.
+    function revokeMiner(uint256 minerSeed) external {
         if (registered.length == 0) return;
         uint256 id = registered[bound(minerSeed, 0, registered.length - 1)];
-        mining.setStatus(address(nft), id, activeFlag ? 1 : 2);
+        if (_status(id) == 2) return;
+        mining.setStatus(address(nft), id, 2);
+        calls["revoke"]++;
+    }
+
+    /// @dev Mock-only fault injection: a registered miner reported COOLING (unreachable for pool-held
+    ///      miners on the real protocol). Admissions must fail closed while it lasts.
+    function coolMiner(uint256 minerSeed, bool cooling) external {
+        if (registered.length == 0) return;
+        uint256 id = registered[bound(minerSeed, 0, registered.length - 1)];
+        if (_status(id) == 2) return;
+        mining.setStatus(address(nft), id, cooling ? 3 : 1);
         calls["status"]++;
     }
 

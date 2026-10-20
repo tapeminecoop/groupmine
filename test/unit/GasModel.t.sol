@@ -76,6 +76,7 @@ contract GasModelTest is SystemTestBase {
         (bool ok, bytes memory result) = target.call{gas: bound - intrinsic}(data);
         used = before - gasleft();
         if (!ok) {
+            if (result.length == 0) revert("transaction failed within its planned gas limit (out of gas)");
             assembly {
                 revert(add(result, 32), mload(result))
             }
@@ -245,6 +246,46 @@ contract GasModelTest is SystemTestBase {
         console2.log("deliver 60 ranges", many, manyBound);
         assertEq(nandReceipt.balanceOf(alice, DELIVER_DEFAULT), 1);
         assertEq(nandReceipt.balanceOf(bob, DELIVER_DEFAULT + 60), 1);
+    }
+
+    /// @dev Review finding: one wallet with 183 single-ID ranges, delivered in the batches the CLI plans
+    ///      (the most that fit the budget: 91, 91, then 1), each as its own transaction with exactly its
+    ///      planned gas limit. The last delivery comes after 182 completed ranges.
+    function testFragmentedWalletDeliversInPlannedTransactions() public {
+        uint256 ranges = 183;
+        issue(nandReceipt, address(distributor), ranges);
+        TapeoutReceiptDistributor.AllocationInput[] memory e =
+            new TapeoutReceiptDistributor.AllocationInput[](ranges);
+        for (uint256 i; i < ranges; ++i) {
+            e[i] = _entry(alice, i + 1, 1);
+        }
+        _allocate(e);
+        vm.prank(operator);
+        nandReceipt.finalizeIssuance();
+        vm.prank(operator);
+        latchReceipt.finalizeIssuance();
+        vm.prank(operator);
+        distributor.finalizeAllocation();
+
+        // sdk maxDeliverable for single-ID ranges, and the bound deliveryGas assigns to each batch.
+        uint256 perTx = (BATCH_GAS_BUDGET - DELIVER_BASE) / (DELIVER_PER_RANGE + DELIVER_PER_ID);
+        assertEq(perTx, 91);
+        uint256 left = ranges;
+        uint256 txs;
+        while (left > 0) {
+            uint256 n = left < perTx ? left : perTx;
+            uint256 bound = DELIVER_BASE + n * (DELIVER_PER_RANGE + DELIVER_PER_ID);
+            uint256 used = _within(alice, address(distributor), abi.encodeCall(distributor.claim, (n)), bound);
+            console2.log("deliver", n, used, bound);
+            left -= n;
+            ++txs;
+        }
+        assertEq(txs, 3);
+        (uint256 pendingNand,) = distributor.pendingOf(alice);
+        assertEq(pendingNand, 0);
+        for (uint256 id = 1; id <= ranges; ++id) {
+            assertEq(nandReceipt.balanceOf(alice, id), 1);
+        }
     }
 
     function testClaimModelCoversTheLargestPlannedBatch() public {

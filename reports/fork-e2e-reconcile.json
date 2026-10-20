@@ -3,7 +3,7 @@
   "status": "PASS",
   "ledgerStatus": "PASS",
   "blockNumber": "128713161",
-  "blockHash": "0x1e1dbc9c10daece6f0e37f6d9a57416b0bb8c40039a189ea38bc5f306da7f6a1",
+  "blockHash": "0x4db5fbb3f123b7db9216e129d18dfd428c7b4942ffe534c041b643296505008d",
   "pool": "0xEfCCe657d16d300410690bA919e187E0b7Ad0cB2",
   "composition": {
     "totalNandBurn": "95",
@@ -11,22 +11,22 @@
     "compositionPeriod": "3"
   },
   "reconciliation": {
-    "bemBalance": "36",
+    "bemBalance": "44",
     "unrecognized": "0",
     "deficit": "0",
-    "totalAccounted": "21205961954",
-    "totalPaid": "21205961918",
-    "recipientAAccrued": "207901587",
-    "recipientAPaid": "207901587",
-    "recipientBAccrued": "207901587",
-    "recipientBPaid": "207901587",
-    "nandIncome": "20333806670",
-    "nandReceiptsAccrued": "20333806640",
-    "nandReceiptsPaid": "20333806640",
-    "latchIncome": "456352107",
-    "latchReceiptsAccrued": "456352104",
-    "latchReceiptsPaid": "456352104",
-    "residue": "36"
+    "totalAccounted": "21205953900",
+    "totalPaid": "21205953856",
+    "recipientAAccrued": "207901508",
+    "recipientAPaid": "207901508",
+    "recipientBAccrued": "207901508",
+    "recipientBPaid": "207901508",
+    "nandIncome": "20333798670",
+    "nandReceiptsAccrued": "20333798640",
+    "nandReceiptsPaid": "20333798640",
+    "latchIncome": "456352211",
+    "latchReceiptsAccrued": "456352200",
+    "latchReceiptsPaid": "456352200",
+    "residue": "44"
   },
   "checks": {
     "offChainMathMatches": true,
@@ -48,14 +48,14 @@
   "perIdHistories": {
     "NAND": {
       "ids": 40,
-      "claimedSum": "20333806640",
-      "receiptsPaid": "20333806640",
+      "claimedSum": "20333798640",
+      "receiptsPaid": "20333798640",
       "match": true
     },
     "LATCH": {
       "ids": 12,
-      "claimedSum": "456352104",
-      "receiptsPaid": "456352104",
+      "claimedSum": "456352200",
+      "receiptsPaid": "456352200",
       "match": true
     }
   }

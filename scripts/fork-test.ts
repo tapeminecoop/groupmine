@@ -4,12 +4,15 @@
  *  1. Pins a recent BSC block and discovers (read-only multicall): a NAND-only active miner, an active
  *     miner that burns LATCH, an inactive token, and further active miners for the gas-scaling run —
  *     all held by plain EOAs (impersonated on the fork only).
- *  2. Runs test/fork/PoolFork.t.sol (fork profile: Cancun EVM, Paris artifacts from ./out).
- *  3. Writes reports/fork-test.json.
+ *  2. Runs every test in test/fork/ (PoolFork, PoolBoundary, MiningLifecycle; fork profile: Cancun EVM,
+ *     Paris artifacts from ./out) and requires all 11 to pass.
+ *  3. Writes reports/fork-test.json with the observations each test wrote.
  *
  * Env: FORK_RPC_URL (archive), DISCOVERY_RPC_URL (recent state; defaults to FORK_RPC_URL), FORK_BLOCK,
  *      FORK_NAND_MINER / FORK_LATCH_MINER / FORK_INACTIVE_TOKEN / FORK_SCALE_MINERS (overrides),
- *      FORK_SCALE_COUNT (default 24), FORK_CUPS (default 40).
+ *      FORK_SCALE_COUNT (default 24), FORK_CUPS (default 40). The boundary and composition tests use
+ *      miners verified at block 128,713,128 (FORK_OLD_MINERS, FORK_INCOMING_MINERS, FORK_DONOR_MINER,
+ *      FORK_REFERENCE_CIRCUIT); set them when pinning another block.
  */
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
@@ -89,9 +92,14 @@ async function main() {
   console.error(json({ phase: 'DISCOVERED', forkBlock, blockHash: block.hash, ...env }));
   const build = spawnSync('forge', ['build'], { encoding: 'utf8' });
   if (build.status !== 0) throw new Error(`forge build failed: ${build.stderr.slice(-2000)}`);
-  const args = ['test', '--match-path', 'test/fork/PoolFork.t.sol', '-vv', '--json', '--fork-url', archiveUrl, '--fork-block-number', String(forkBlock),
+  const args = ['test', '--match-path', 'test/fork/*', '-vv', '--json', '--fork-url', archiveUrl, '--fork-block-number', String(forkBlock),
     '--fork-retries', '30', '--fork-retry-backoff', '3000', '--compute-units-per-second', String(process.env.FORK_CUPS ?? 40)];
-  for (const f of ['reports/fork-identity.json', 'reports/fork-boundary.json', 'reports/fork-gas.json']) await writeFile(f, '{}\n');
+  const observationFiles = {
+    identity: 'reports/fork-identity.json', composition: 'reports/fork-composition.json', boundary: 'reports/fork-boundary.json',
+    boundaryMulti: 'reports/fork-boundary-multi.json', boundaryOrder: 'reports/fork-boundary-order.json', registerWindow: 'reports/fork-register-window.json',
+    lifecycle: 'reports/fork-lifecycle.json', lifecycleHolderOnly: 'reports/fork-lifecycle-holder.json', gas: 'reports/fork-gas.json',
+  };
+  for (const f of Object.values(observationFiles)) await writeFile(f, '{}\n');
   const run = spawnSync('forge', args, { env: { ...process.env, ...env, FORK_RPC_URL: archiveUrl, FORK_BLOCK: String(forkBlock), FOUNDRY_PROFILE: 'fork' }, encoding: 'utf8', maxBuffer: 128 * 1024 * 1024, timeout: 7_200_000 });
   let forge: unknown;
   try { forge = JSON.parse(run.stdout); } catch { forge = {}; }
@@ -99,7 +107,8 @@ async function main() {
     .flatMap(suite => Object.entries(suite.test_results ?? {}).map(([name, r]) => ({ name, status: r.status, reason: r.reason ?? null })));
   const readJson = async (file: string) => { try { return JSON.parse(await readFile(file, 'utf8')); } catch { return null; } };
   const bytecode = JSON.parse(await readFile('sdk/bytecode.json', 'utf8'));
-  const passed = run.status === 0 && results.length === 4 && results.every(r => r.status === 'Success');
+  // Every fork test must have run and passed: PoolForkTest (5), PoolBoundaryForkTest (4), MiningLifecycleForkTest (2).
+  const passed = run.status === 0 && results.length === 11 && results.every(r => r.status === 'Success');
   const report = {
     scope: 'REAL_BSC_STATE_LOCAL_FORK_ONLY', status: passed ? 'PASS' : 'FAIL', startedAt, completedAt: new Date().toISOString(),
     source: { chainId: 56, forkBlock, blockHash: block.hash, blockTimestamp: block.timestamp, archiveRpcHost: new URL(archiveUrl).host, discoveryRpcHost: new URL(discoveryUrl).host },
@@ -108,11 +117,13 @@ async function main() {
       nandMiner: found.nandMiner, latchMiner: found.latchMiner, inactive: found.inactive, scaleMiners: found.scale.length } : 'overrides provided',
     deployedArtifacts: { compiled: 'paris (./out)', forkEvm: 'cancun', sdkBytecodeSha256: Object.fromEntries(Object.entries(bytecode).map(([k, v]) => [k, (v as { sha256: string }).sha256])) },
     forgeCommand: `forge ${args.join(' ')}`, forgeExitCode: run.status, results,
-    observations: { identity: await readJson('reports/fork-identity.json'), boundary: await readJson('reports/fork-boundary.json'), gas: await readJson('reports/fork-gas.json') },
+    observations: Object.fromEntries(await Promise.all(Object.entries(observationFiles).map(async ([k, f]) => [k, await readJson(f)] as const))),
     method: [
-      'Fork state is read from BSC at the pinned block; no protocol code or storage is modified (no vm.etch / vm.store / mockCall).',
-      'Miner NFTs are moved from their current EOA holders with fork-only impersonation (vm.prank), then admitted through depositMiners / registerMiners.',
+      'Fork state is read from BSC at the pinned block; no protocol code or storage is modified (no vm.etch / vm.store / mockCall / deal).',
+      'Miner NFTs are moved from their current holders with fork-only impersonation (vm.prank), then admitted through depositMiners / registerMiners.',
       'Time is advanced inside the fork only (vm.warp / vm.roll) so real Mining accrues income between admissions.',
+      'Expected settlement amounts are observed independently: what a real Mining.claim pays at the same timestamp, measured on a snapshot and undone (vm.snapshotState / vm.revertToState).',
+      'Lifecycle experiments impersonate the current NFT holder to call Mining.stop; BEM donations are real claims forwarded by an impersonated holder.',
       'Gas is measured with protocol and pool accounts cooled (vm.cool), approximating stand-alone transactions; the 21,000 base cost is excluded.',
     ],
     mainnetTransactionsSent: 0, signaturesCreated: 0,

@@ -20,7 +20,9 @@ P     = ⌊100 · T / 102⌋    (participants: NAND + LATCH receipts)
 ```
 
 The weights never change, and there is no other fee. A and B are paid by `releaseA`/`releaseB`, each
-tracking its own paid amount.
+tracking its own paid amount. The paid amount belongs to the role, not the address: when a recipient
+moves its role (`setRecipient`), whatever has accrued but not been released is paid to the new
+address by the next release.
 
 ## 3. Composition periods
 

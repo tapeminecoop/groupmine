@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Compacts Slither output into reports/slither.json and a path-sanitized reports/slither.txt.
 // Usage: node scripts/summarize-slither.mjs <slither --json output> <slither text output> <slither version>
-// Produced by: slither . --foundry-compile-all --filter-paths "node_modules|lib|test|script" --exclude-informational
+// Produced by: slither . --foundry-compile-all --filter-paths "node_modules|lib|test|script" --exclude-informational --fail-none
 import { readFile, writeFile } from 'node:fs/promises';
 
 const [rawPath, textPath, version] = process.argv.slice(2);
@@ -23,7 +23,7 @@ for (const f of findings) {
 }
 await writeFile('reports/slither.json', JSON.stringify({
   tool: `slither ${version}`,
-  command: 'slither . --foundry-compile-all --filter-paths "node_modules|lib|test|script" --exclude-informational',
+  command: 'slither . --foundry-compile-all --filter-paths "node_modules|lib|test|script" --exclude-informational --fail-none',
   success: raw.success,
   results: findings.length,
   byCheck,

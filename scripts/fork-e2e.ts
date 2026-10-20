@@ -153,6 +153,9 @@ async function main() {
     await step('deliver-to-bob', ['deliver', '--addresses', addressesFile, '--wallet', bob, '--from', outsider, '--send-local']);
     check('deliveryWentToBob', (await read<bigint>(addresses.nandReceipt, [{ type: 'function', name: 'balanceOf', stateMutability: 'view', inputs: [{ type: 'address' }, { type: 'uint256' }], outputs: [{ type: 'uint256' }] }] as Abi, 'balanceOf', [bob, 21n])) === 1n);
     await step('carol-claims-receipts', ['claim-receipts', '--addresses', addressesFile, '--from', carol, '--send-local']);
+    // All receipts delivered: the artifact must still describe the whole (finalized) allocation.
+    const afterDelivery = await step('verify-after-delivery', ['verify-allocation', '--addresses', addressesFile, '--artifact', `${DIR}/artifact.json`]);
+    check('allocationMatchesAfterDelivery', afterDelivery.status === 'FINALIZED_AND_MATCHES', afterDelivery);
     await step('carol-claims-bem', ['claim', '--addresses', addressesFile, '--from', carol, '--all', '--send-local']);
     await step('bob-claims-bem', ['claim', '--addresses', addressesFile, '--from', bob, '--all', '--send-local']);
     await step('release', ['release', '--addresses', addressesFile, '--from', outsider, '--send-local']);

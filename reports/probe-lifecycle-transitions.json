@@ -1,0 +1,156 @@
+{
+ "readOnly": true,
+ "source": "scripts/probe-revocation.ts (eth_call binary search over historical blocks, then the Mining transactions of the transition block)",
+ "rpcHost": "bsc-mainnet.public.blastapi.io",
+ "transitions": {
+  "revoked_2247": {
+   "readOnly": true,
+   "tokenId": "2247",
+   "key": "0x79c25f50999c54bafa666732345918052bd25cfbf7d716e48d496e84f5e19550",
+   "transitionBlock": "119597281",
+   "blockHash": "0xd453fbea4b7439dbc7712d56bdc139b965365b7b3980b8f40e0bb60b4560df16",
+   "timestamp": "1788380025",
+   "statusBefore": 1,
+   "statusAfter": 2,
+   "holderBeforeTransition": "0x216566D25Be326Cb7aE09bA37b485e644e89a36c",
+   "debtBefore": "212133524",
+   "debtAfter": "213588191",
+   "transactions": [
+    {
+     "hash": "0x2234e26942caae8b6b4f1c6ea9592459e7dba043ccf2589cdeb63e4e82b9bb14",
+     "from": "0x98ce75463917e5fd1470675c6f133a38f7167712",
+     "input4": "0x2d33823a",
+     "status": "success",
+     "events": [
+      {
+       "contract": "BEM",
+       "event": "Transfer",
+       "args": {
+        "from": "0x0000000000000000000000000000000000000000",
+        "to": "0x216566D25Be326Cb7aE09bA37b485e644e89a36c",
+        "value": "1454667"
+       }
+      },
+      {
+       "contract": "Mining",
+       "event": "Claimed",
+       "args": {
+        "key": "0x79c25f50999c54bafa666732345918052bd25cfbf7d716e48d496e84f5e19550",
+        "to": "0x216566D25Be326Cb7aE09bA37b485e644e89a36c",
+        "amount": "1454667"
+       }
+      },
+      {
+       "contract": "Mining",
+       "event": "Revoked",
+       "args": {
+        "key": "0x79c25f50999c54bafa666732345918052bd25cfbf7d716e48d496e84f5e19550",
+        "challenger": "0x98Ce75463917E5fd1470675c6F133a38F7167712",
+        "vectorIndex": 109
+       }
+      }
+     ]
+    }
+   ]
+  },
+  "revoked_7555": {
+   "readOnly": true,
+   "tokenId": "7555",
+   "key": "0x2ba334a29b5d6e7b0e2698ec0bc57e694a2af4c0dea95bca257152883c20ae84",
+   "transitionBlock": "119590644",
+   "blockHash": "0x07a539c7e425979794f51a95896dcaf7340186481bbb33f660b534d7dcc3ded2",
+   "timestamp": "1788377034",
+   "statusBefore": 1,
+   "statusAfter": 2,
+   "holderBeforeTransition": "0xeF66404Ff59e425a3FF153475af63322c2B81939",
+   "debtBefore": "176978393",
+   "debtAfter": "177777514",
+   "transactions": [
+    {
+     "hash": "0xaf7b1a233be1ebf4a7fa89957bd875676d4288299ee7f6e4571eb3a79cb29f9e",
+     "from": "0x2295aa80bcbcacce626c0111e2853b9882e44a10",
+     "input4": "0x2d33823a",
+     "status": "success",
+     "events": [
+      {
+       "contract": "BEM",
+       "event": "Transfer",
+       "args": {
+        "from": "0x0000000000000000000000000000000000000000",
+        "to": "0xeF66404Ff59e425a3FF153475af63322c2B81939",
+        "value": "799121"
+       }
+      },
+      {
+       "contract": "Mining",
+       "event": "Claimed",
+       "args": {
+        "key": "0x2ba334a29b5d6e7b0e2698ec0bc57e694a2af4c0dea95bca257152883c20ae84",
+        "to": "0xeF66404Ff59e425a3FF153475af63322c2B81939",
+        "amount": "799121"
+       }
+      },
+      {
+       "contract": "Mining",
+       "event": "Revoked",
+       "args": {
+        "key": "0x2ba334a29b5d6e7b0e2698ec0bc57e694a2af4c0dea95bca257152883c20ae84",
+        "challenger": "0x2295aa80bcbCaCce626C0111E2853b9882E44A10",
+        "vectorIndex": 1
+       }
+      }
+     ]
+    }
+   ]
+  },
+  "stopped_672": {
+   "readOnly": true,
+   "tokenId": "672",
+   "key": "0x316f3b07a9b198e744dc2fbdcc35caf613822690c5f2dc8ac45752811103b34f",
+   "transitionBlock": "118184257",
+   "blockHash": "0xd7f3f4f36659481bc2f890c6ea97ae7f316e1b55a796667209ad54dccd433fd4",
+   "timestamp": "1787743940",
+   "statusBefore": 1,
+   "statusAfter": 3,
+   "holderBeforeTransition": "0x343814Ed06F87f34c8f69486c02e06763a552074",
+   "debtBefore": "2146828",
+   "debtAfter": "5408752",
+   "transactions": [
+    {
+     "hash": "0x48fb4a9a9210f188d3695f5efcaa00153608e00b82804bd3cf26c77baca2f99a",
+     "from": "0x343814ed06f87f34c8f69486c02e06763a552074",
+     "input4": "0x63c4f031",
+     "status": "success",
+     "events": [
+      {
+       "contract": "BEM",
+       "event": "Transfer",
+       "args": {
+        "from": "0x0000000000000000000000000000000000000000",
+        "to": "0x343814Ed06F87f34c8f69486c02e06763a552074",
+        "value": "3261924"
+       }
+      },
+      {
+       "contract": "Mining",
+       "event": "Claimed",
+       "args": {
+        "key": "0x316f3b07a9b198e744dc2fbdcc35caf613822690c5f2dc8ac45752811103b34f",
+        "to": "0x343814Ed06F87f34c8f69486c02e06763a552074",
+        "amount": "3261924"
+       }
+      },
+      {
+       "contract": "Mining",
+       "event": "Stopped",
+       "args": {
+        "key": "0x316f3b07a9b198e744dc2fbdcc35caf613822690c5f2dc8ac45752811103b34f",
+        "by": "0x343814Ed06F87f34c8f69486c02e06763a552074"
+       }
+      }
+     ]
+    }
+   ]
+  }
+ }
+}

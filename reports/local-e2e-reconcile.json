@@ -2,8 +2,8 @@
   "command": "reconcile",
   "status": "PASS",
   "ledgerStatus": "PASS",
-  "blockNumber": "65",
-  "blockHash": "0xaf1ccfc9ae2abedc0cfd89bf6a497c6b358a173ac7d92210cafc9b5479ef8f18",
+  "blockNumber": "67",
+  "blockHash": "0x1dde83507ea656e6998ae9e6b5ddf00b0aa0b6b61af16e54222f1f1a502ef506",
   "pool": "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
   "composition": {
     "totalNandBurn": "16",

@@ -1,0 +1,181 @@
+{
+  "readOnly": true,
+  "block": "128745229",
+  "blockHash": "0xa3b946c13b9e4c5d6d7dc7acab5c475eb6d262016faa484fa72d9abee331af08",
+  "circuitsScanned": 18011,
+  "circuitBurnUnavailable": 0,
+  "activeMinersCheckedAgainstCircuitBurn": 17809,
+  "activeDisagreements": 0,
+  "disagreementExamples": [],
+  "circuitsWithReferences": 7,
+  "referenceExamples": [
+    {
+      "id": "109",
+      "circuitInfo": [
+        0,
+        6016,
+        6016,
+        123264
+      ],
+      "circuitBurn": [
+        0,
+        0
+      ],
+      "cachedBurn": [
+        false,
+        0,
+        0
+      ],
+      "minerStatus": 0,
+      "getMinerBurn": [
+        0,
+        0
+      ],
+      "gateCount": 0
+    },
+    {
+      "id": "17321",
+      "circuitInfo": [
+        0,
+        37,
+        8,
+        1357
+      ],
+      "circuitBurn": [
+        0,
+        0
+      ],
+      "cachedBurn": [
+        false,
+        0,
+        0
+      ],
+      "minerStatus": 0,
+      "getMinerBurn": [
+        0,
+        0
+      ],
+      "gateCount": 0
+    },
+    {
+      "id": "17320",
+      "circuitInfo": [
+        4,
+        6,
+        0,
+        176
+      ],
+      "circuitBurn": [
+        0,
+        0
+      ],
+      "cachedBurn": [
+        false,
+        0,
+        0
+      ],
+      "minerStatus": 0,
+      "getMinerBurn": [
+        0,
+        0
+      ],
+      "gateCount": 0
+    },
+    {
+      "id": "17319",
+      "circuitInfo": [
+        4,
+        5,
+        0,
+        110
+      ],
+      "circuitBurn": [
+        0,
+        0
+      ],
+      "cachedBurn": [
+        false,
+        0,
+        0
+      ],
+      "minerStatus": 0,
+      "getMinerBurn": [
+        0,
+        0
+      ],
+      "gateCount": 0
+    },
+    {
+      "id": "17311",
+      "circuitInfo": [
+        4,
+        1,
+        0,
+        33
+      ],
+      "circuitBurn": [
+        0,
+        0
+      ],
+      "cachedBurn": [
+        false,
+        0,
+        0
+      ],
+      "minerStatus": 0,
+      "getMinerBurn": [
+        0,
+        0
+      ],
+      "gateCount": 0
+    },
+    {
+      "id": "17317",
+      "circuitInfo": [
+        4,
+        1,
+        0,
+        22
+      ],
+      "circuitBurn": [
+        0,
+        0
+      ],
+      "cachedBurn": [
+        false,
+        0,
+        0
+      ],
+      "minerStatus": 0,
+      "getMinerBurn": [
+        0,
+        0
+      ],
+      "gateCount": 0
+    },
+    {
+      "id": "17318",
+      "circuitInfo": [
+        4,
+        1,
+        0,
+        22
+      ],
+      "circuitBurn": [
+        0,
+        0
+      ],
+      "cachedBurn": [
+        false,
+        0,
+        0
+      ],
+      "minerStatus": 0,
+      "getMinerBurn": [
+        0,
+        0
+      ],
+      "gateCount": 0
+    }
+  ]
+}

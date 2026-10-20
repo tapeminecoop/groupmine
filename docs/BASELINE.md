@@ -15,6 +15,10 @@
   every plan carries a worst-case bound used as its gas limit, plans over the budget and oversize
   `--batch-size` values are refused, and Safe batch files are split by gas (`sdk/gas.ts`,
   `test/unit/GasModel.t.sol`, `test/sdk/gas.test.ts`).
+- **Review round.** A review of `6da9a41` (the PR head at the time; `main` was still `6aeb5a9`)
+  produced the findings resolved in this round. No commits landed between that review and the start
+  of this work. The changes, their tests and what remains open are listed in the findings matrix of
+  [VERIFICATION_REPORT.md](VERIFICATION_REPORT.md).
 
 ## 2. What changed from V1
 

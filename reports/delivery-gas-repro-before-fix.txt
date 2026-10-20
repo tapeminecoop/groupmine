@@ -1,0 +1,11 @@
+Ran 1 test for test/unit/GasModel.t.sol:GasModelTest
+[FAIL: transaction failed within its planned gas limit (out of gas)] testFragmentedWalletDeliversInPlannedTransactions() (gas: 28847607)
+Logs:
+  deliver 91 4109565 12567000
+  deliver 91 4345124 12567000
+Suite result: FAILED. 0 passed; 1 failed; 0 skipped; finished in 16.72ms (8.67ms CPU time)
+Ran 1 test suite in 113.70ms (16.72ms CPU time): 0 tests passed, 1 failed, 0 skipped (1 total tests)
+Failing tests:
+Encountered 1 failing test in test/unit/GasModel.t.sol:GasModelTest
+[FAIL: transaction failed within its planned gas limit (out of gas)] testFragmentedWalletDeliversInPlannedTransactions() (gas: 28847607)
+Encountered a total of 1 failing tests, 0 tests succeeded

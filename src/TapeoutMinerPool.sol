@@ -25,7 +25,7 @@ import {TapeoutEntitlementReceipt} from "./TapeoutEntitlementReceipt.sol";
 ///        1. validate the batch and read each incoming miner's burn from Mining;
 ///        2. recognize BEM already held, under the old composition;
 ///        3. call `Mining.claim` for every registered miner and recognize it under the old composition
-///           (a failed claim of a miner Mining still reports ACTIVE reverts the whole admission);
+///           (a failed claim reverts the whole admission, unless Mining reports the miner REVOKED);
 ///        4. checkpoint the old period, take custody, add the batch to the composition totals;
 ///        5. claim the incoming miners' carried income and recognize it under the new composition.
 contract TapeoutMinerPool is Ownable2Step, ReentrancyGuard {
@@ -87,6 +87,9 @@ contract TapeoutMinerPool is Ownable2Step, ReentrancyGuard {
     uint256 public constant PARTICIPANT_PARTS = PoolMath.PARTICIPANT_PARTS;
     uint256 public constant RECIPIENT_PARTS = PoolMath.RECIPIENT_PARTS;
     uint8 public constant MINER_ACTIVE = 1;
+    /// @dev Mining status 2. Permanent: a revoked circuit can never mine again, and Mining refuses
+    ///      every claim for it (docs/VERIFICATION_REPORT.md, Mining lifecycle).
+    uint8 public constant MINER_REVOKED = 2;
     uint256 public constant MAX_DEPOSITORS = 16;
     uint256 public constant MAX_ADMISSION_BATCH = 50;
     uint256 public constant MAX_PAGE = 500;
@@ -178,7 +181,7 @@ contract TapeoutMinerPool is Ownable2Step, ReentrancyGuard {
         uint256 nandBurn,
         uint256 latchBurn
     );
-    event InactiveMinerSkipped(uint256 indexed tokenId);
+    event RevokedMinerSkipped(uint256 indexed tokenId);
     event MinersAdmitted(
         address indexed depositor,
         uint256 indexed period,
@@ -622,16 +625,19 @@ contract TapeoutMinerPool is Ownable2Step, ReentrancyGuard {
         return (key, r.nandBurn, r.latchBurn);
     }
 
-    /// @dev Strict settlement of one registered miner. Mining refuses claims for miners that are no
-    ///      longer ACTIVE (they have nothing collectible); any other failure aborts the admission.
+    /// @dev Strict settlement of one registered miner: any failed claim aborts the admission, with one
+    ///      exception. A miner Mining reports as REVOKED is permanent and Mining refuses every claim for
+    ///      it, so nothing of it can ever be collected; it is skipped with an event. A pool-held miner
+    ///      cannot be stopped (only the NFT holder can call Mining.stop, and the pool never does), so a
+    ///      COOLING or never-started status here is unexpected and fails closed like any other failure.
     function _settleOld(uint256 index) private {
         bytes32 key = _minerKeys[index];
         try mining.claim(key) {}
         catch (bytes memory reason) {
-            if (mining.getMiner(key).status == MINER_ACTIVE) {
+            if (mining.getMiner(key).status != MINER_REVOKED) {
                 revert SettlementFailed(_minerIds[index], reason);
             }
-            emit InactiveMinerSkipped(_minerIds[index]);
+            emit RevokedMinerSkipped(_minerIds[index]);
         }
     }
 

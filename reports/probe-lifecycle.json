@@ -1,0 +1,165 @@
+{
+  "readOnly": true,
+  "block": "128741865",
+  "blockHash": "0xb6f4eec9da8a59ea188d5b97e2d4dcbda90a9f1a891b8ab25221af4362d3efe3",
+  "timestamp": "1792497362",
+  "scannedTokenIds": "1..21000",
+  "records": 21000,
+  "statusLabels": {
+    "0": "none (frontend: Not mining)",
+    "1": "active (Mining)",
+    "2": "revoked (Revoked)",
+    "3": "cooling (Cooling down)"
+  },
+  "statuses": {
+    "0": 3157,
+    "1": 17809,
+    "2": 11,
+    "3": 23
+  },
+  "statusZeroNeverStarted": 3157,
+  "STOP_COOLDOWN": "1200",
+  "examples": {
+    "0": [],
+    "2": [
+      {
+        "id": "2247",
+        "key": "0x79c25f50999c54bafa666732345918052bd25cfbf7d716e48d496e84f5e19550",
+        "status": 2,
+        "registrant": "0x216566D25Be326Cb7aE09bA37b485e644e89a36c",
+        "owner": "0x6C3c29E866d32D5B6a26AdB163B163916bed4602",
+        "since": "1787502616",
+        "stopBlock": "0",
+        "debt": "213588191",
+        "taskId": 228,
+        "pendingLive": "revert The contract function \"pendingLive\" reverted.",
+        "transition": {
+          "id": "2247",
+          "stopBlock": "0",
+          "note": "no stopBlock recorded"
+        }
+      },
+      {
+        "id": "2479",
+        "key": "0x5cb39dff99efbc124dc8e4dc45200ea16893333cb287e98aaa0a37b7b50d81da",
+        "status": 2,
+        "registrant": "0x20AFE109fdfeDFBBE9B24E85c980B9083AE08A6A",
+        "owner": "0xE0ebdE4b63C9C530d2dD6261473d8d62f8333333",
+        "since": "1787368351",
+        "stopBlock": "0",
+        "debt": "497705978",
+        "taskId": 16,
+        "pendingLive": "revert The contract function \"pendingLive\" reverted.",
+        "transition": {
+          "id": "2479",
+          "stopBlock": "0",
+          "note": "no stopBlock recorded"
+        }
+      },
+      {
+        "id": "2483",
+        "key": "0x56a70709b61c6cbababc4c50a1cd3b7bd6511fc61ced2945c6e5c57fdafcbcd7",
+        "status": 2,
+        "registrant": "0x20AFE109fdfeDFBBE9B24E85c980B9083AE08A6A",
+        "owner": "0x5E46B84569157eE2bDF5EBd3FB4EC16028cdFB48",
+        "since": "1787368207",
+        "stopBlock": "0",
+        "debt": "497765096",
+        "taskId": 16,
+        "pendingLive": "revert The contract function \"pendingLive\" reverted.",
+        "transition": {
+          "id": "2483",
+          "stopBlock": "0",
+          "note": "no stopBlock recorded"
+        }
+      },
+      {
+        "id": "7555",
+        "key": "0x2ba334a29b5d6e7b0e2698ec0bc57e694a2af4c0dea95bca257152883c20ae84",
+        "status": 2,
+        "registrant": "0xeF66404Ff59e425a3FF153475af63322c2B81939",
+        "owner": "0xeF66404Ff59e425a3FF153475af63322c2B81939",
+        "since": "1787673635",
+        "stopBlock": "0",
+        "debt": "177777514",
+        "taskId": 18,
+        "pendingLive": "revert The contract function \"pendingLive\" reverted.",
+        "transition": {
+          "id": "7555",
+          "stopBlock": "0",
+          "note": "no stopBlock recorded"
+        }
+      }
+    ],
+    "3": [
+      {
+        "id": "672",
+        "key": "0x316f3b07a9b198e744dc2fbdcc35caf613822690c5f2dc8ac45752811103b34f",
+        "status": 3,
+        "registrant": "0x343814Ed06F87f34c8f69486c02e06763a552074",
+        "owner": "0x343814Ed06F87f34c8f69486c02e06763a552074",
+        "since": "1787341842",
+        "stopBlock": "118184257",
+        "debt": "5408752",
+        "taskId": 0,
+        "pendingLive": "revert The contract function \"pendingLive\" reverted with the follow",
+        "transition": {
+          "id": "672",
+          "stopBlock": "118184257",
+          "error": "Missing or invalid parameters.\nDouble check you have provided the correct parameters."
+        }
+      },
+      {
+        "id": "673",
+        "key": "0x7bac02ecce577b73c842dfa3a29da21d0498eff2a3e8fa89d18a58018faa50f5",
+        "status": 3,
+        "registrant": "0xBE1E1c020F8548Eb5d0aEfdc4E5Cf6FF47CC4046",
+        "owner": "0xBE1E1c020F8548Eb5d0aEfdc4E5Cf6FF47CC4046",
+        "since": "1787391859",
+        "stopBlock": "117635584",
+        "debt": "3280573",
+        "taskId": 0,
+        "pendingLive": "revert The contract function \"pendingLive\" reverted with the follow",
+        "transition": {
+          "id": "673",
+          "stopBlock": "117635584",
+          "error": "Missing or invalid parameters.\nDouble check you have provided the correct parameters."
+        }
+      },
+      {
+        "id": "711",
+        "key": "0xaa4f9e468f9b675f2dd7904b58017c48e3febd63f57638bb4344fc774a9301f8",
+        "status": 3,
+        "registrant": "0x9d474154966e6c05A91062948c863902491a7602",
+        "owner": "0x9d474154966e6c05A91062948c863902491a7602",
+        "since": "1787609280",
+        "stopBlock": "117885476",
+        "debt": "37148632",
+        "taskId": 4,
+        "pendingLive": "revert The contract function \"pendingLive\" reverted.",
+        "transition": {
+          "id": "711",
+          "stopBlock": "117885476",
+          "error": "Missing or invalid parameters.\nDouble check you have provided the correct parameters."
+        }
+      },
+      {
+        "id": "968",
+        "key": "0xe8ba250ad776852325b7607fc95c2eaef9428adbbe50e6b29fada75d70aa475f",
+        "status": 3,
+        "registrant": "0x2c96951cBB0775dB283D5254876aeBF8C8394161",
+        "owner": "0xb17D0f8487123774F430d3B5708c7bb4143b68d8",
+        "since": "1787359266",
+        "stopBlock": "117344316",
+        "debt": "1942306",
+        "taskId": 0,
+        "pendingLive": "revert The contract function \"pendingLive\" reverted.",
+        "transition": {
+          "id": "968",
+          "stopBlock": "117344316",
+          "error": "Missing or invalid parameters.\nDouble check you have provided the correct parameters."
+        }
+      }
+    ]
+  }
+}

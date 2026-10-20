@@ -12,15 +12,16 @@ import { getAddress, keccak256, zeroAddress, type Address } from 'viem';
 import {
   ALLOCATE_GAS, BATCH_GAS_BUDGET, BSC_IDENTITY, BSC_PROTOCOL, CATEGORY, CLAIM_GAS, ERC1967_BEACON_SLOT, ERC1967_IMPLEMENTATION_SLOT, FUND_GAS,
   HARVEST_GAS, ISSUE_GAS, LATCH_CATEGORY, NAND_CATEGORY, RECIPIENT, TX_GAS_CAP, accrue, activatePlan, admissionGasEstimate, allocatePlans,
-  allocationArtifact, assertWithinBudget, checkBatchSize, groupForSafe, maxDeliverable, maxIdsPerTx,
+  allocationArtifact, assertWithinBudget, checkBatchSize, groupForSafe, maxDeliverable, maxIdsPerTx, safeBatchGas,
   allocationBatches, approveMinersPlan, assertLocalAnvil, assignIds, beaconAbi, castCommand, checkPerIdHistories,
-  checkReconciliation, claimPlans, claimReceiptsPlan, client, deliverPlan, depositPlans, deployDistributorPlan,
+  checkReconciliation, claimPlans, client, deliveryPlans, depositPlans, deployDistributorPlan,
   deployPoolPlan, deployReceiptPlans, describeError, erc20Abi, erc721Abi, finalizeAllocationPlan, finalizeIssuancePlan,
   findFailingMiners, formatBem, fundPlans, harvestPlans, harvestRangePlans, impersonate, issuePlans, loadAddresses,
   loadAllocationFile, loadSystemFile, maxAdmissionBatch, maxRegisteredForAdmission, parseBem, readComposition,
   readDistributorSummary, readHeldIds, readHoldings, readMiners, readPoolSummary, readReceiptSummary, readWalletRanges,
   receiverProblems, registerPlans, releasePlans, renouncePlan, residueBound, retractPlans, revokeWalletPlan, runs, safeBatch, sendLocal, setRecipientPlan, simulate,
   systemProblems, tapeoutMinerPoolAbi, validateAllocation, type Addresses, type CategoryName, type SentTx, type TxPlan,
+  parseAllocationArtifact, readAllocationState, tapeoutEntitlementReceiptAbi, tapeoutReceiptDistributorAbi, verifyAllocation,
 } from '../sdk/index.js';
 
 type Flags = Record<string, string | boolean>;
@@ -82,7 +83,8 @@ const distributorOf = (a: Addresses) => { if (!a.distributor) throw new Error('a
 
 /** Shared execution path for every write command. Every plan must fit the per-transaction gas budget
  *  (BSC caps a transaction's gas limit at 2^24, BEP-652); its worst-case bound is the gas limit for
- *  local sends and printed cast commands, and Safe batch files are split so each fits the budget. */
+ *  local sends and printed cast commands. Safe batch files are split so each Safe transaction, the
+ *  Safe's own work included, fits the budget (a single oversized plan goes alone, within the cap). */
 async function execute(command: string, flags: Flags, plans: TxPlan[], extra: Record<string, unknown> = {}) {
   assertWithinBudget(plans);
   const from = str(flags, 'from') ? addr(need(flags, 'from')) : undefined;
@@ -99,15 +101,17 @@ async function execute(command: string, flags: Flags, plans: TxPlan[], extra: Re
   const hasRpc = !!(flags['rpc-url'] || process.env.RPC_URL);
   const chainId = hasRpc ? await client(rpcUrl(flags)).getChainId() : undefined;
   const safePath = str(flags, 'safe-json');
-  const safeFiles: { file: string; maxGas?: bigint }[] = [];
+  const safeFiles: { file: string; transactions: number; plansMaxGas?: bigint; maxGas?: bigint }[] = [];
   if (safePath) {
-    // The Transaction Builder executes a whole batch file as one transaction.
+    // The Transaction Builder executes a whole batch file as one transaction; maxGas adds the Safe's
+    // own work to the plans' bounds and is the gas limit to execute it with.
     const groups = groupForSafe(plans);
     for (const [i, group] of groups.entries()) {
       const file = groups.length === 1 ? safePath : safePath.replace(/(\.json)?$/, `.${i + 1}$1`);
       const name = `TapeOut pool: ${command}${groups.length === 1 ? '' : ` (${i + 1} of ${groups.length})`}`;
       await writeFile(file, json(safeBatch(group, chainId ?? 56, name, str(flags, 'safe') ? addr(need(flags, 'safe')) : undefined)) + '\n');
-      safeFiles.push({ file, ...(group.every(p => p.gas !== undefined) ? { maxGas: group.reduce((s, p) => s + p.gas!, 0n) } : {}) });
+      const bounded = group.every(p => p.gas !== undefined);
+      safeFiles.push({ file, transactions: group.length, ...(bounded ? { plansMaxGas: group.reduce((s, p) => s + p.gas!, 0n), maxGas: safeBatchGas(group) } : {}) });
     }
   }
   const simulations = from && hasRpc ? await simulateSequentially(client(rpcUrl(flags)), plans, from) : undefined;
@@ -301,24 +305,17 @@ export async function main(argv = process.argv.slice(2)): Promise<unknown> {
 
   if (command === 'verify-allocation') {
     const distributor = distributorOf(addresses);
-    const artifact = JSON.parse(await readFile(need(flags, 'artifact'), 'utf8')) as ReturnType<typeof allocationArtifact>;
-    const block = await rpc.getBlock({ blockTag: 'latest' });
-    const mismatches: string[] = [];
-    for (const w of artifact.wallets) {
-      const onChain = idSets(await readWalletRanges(rpc, distributor, addr(w.wallet), block.number));
-      const planned = { NAND: expand(w.nand.ranges), LATCH: expand(w.latch.ranges) };
-      for (const c of ['NAND', 'LATCH'] as const) {
-        const same = onChain[c].size === planned[c].length && planned[c].every(id => onChain[c].has(id));
-        if (!same) mismatches.push(`${w.wallet} ${c}: on-chain ${json(runs([...onChain[c]].sort((x, y) => x - y)))} vs artifact ${json(runs(planned[c]))}`);
-      }
+    // Untrusted input: validated at runtime, then compared with the chain (pinned to one block) in both directions.
+    const artifact = parseAllocationArtifact(JSON.parse(await readFile(need(flags, 'artifact'), 'utf8')));
+    const state = await readAllocationState(rpc, distributor);
+    const result = verifyAllocation(artifact, state, { chainId: addresses.chainId, distributor, nandReceipt: addr(addresses.nandReceipt), latchReceipt: addr(addresses.latchReceipt) });
+    // Wallets that still have receipts to take must be able to receive them.
+    const waiting = state.wallets.filter(w => w.ranges.some(r => r.delivered < r.count)).map(w => w.wallet);
+    const unreachableWallets = await receiverProblems(rpc, waiting, state.blockNumber);
+    if (result.status === 'READY_TO_FINALIZE' && unreachableWallets.length) {
+      return { command, ...result, status: 'NOT_READY', readinessGaps: [...result.readinessGaps, 'some wallets cannot receive ERC-1155'], unreachableWallets };
     }
-    const summary = await readDistributorSummary(rpc, distributor, block.number);
-    const covered = summary.NAND.allocated === summary.NAND.inventory && summary.LATCH.allocated === summary.LATCH.inventory;
-    const receipts = await Promise.all([readReceiptSummary(rpc, addr(addresses.nandReceipt)), readReceiptSummary(rpc, addr(addresses.latchReceipt))]);
-    const unreachable = await receiverProblems(rpc, artifact.wallets.map(w => addr(w.wallet)), block.number);
-    const ready = mismatches.length === 0 && unreachable.length === 0 && covered && receipts.every(r => r.issuanceFinalized) && !summary.allocationFinalized;
-    return { command, status: summary.allocationFinalized && mismatches.length === 0 ? 'FINALIZED_AND_MATCHES' : ready ? 'READY_TO_FINALIZE' : 'NOT_READY',
-      blockNumber: block.number, mismatches, unreachableWallets: unreachable, coverage: { NAND: summary.NAND, LATCH: summary.LATCH }, issuanceFinalized: receipts.map(r => r.issuanceFinalized) };
+    return { command, ...result, unreachableWallets };
   }
 
   if (command === 'revoke-wallet') {
@@ -346,7 +343,17 @@ export async function main(argv = process.argv.slice(2)): Promise<unknown> {
     const target = need(flags, 'target');
     const map: Record<string, Address | undefined> = { pool: addresses.pool as Address, distributor: addresses.distributor as Address, nand: addresses.nandReceipt as Address, latch: addresses.latchReceipt as Address };
     if (!map[target]) throw new Error('--target must be pool, distributor, nand or latch (and deployed)');
-    return execute(command, flags, [renouncePlan(addr(map[target]!), target)], { note: 'Each contract is renounced separately; renouncing one finalizes nothing else' });
+    const contract = addr(map[target]!);
+    // Renouncing before a contract's one-time setup is done would leave it permanently unusable.
+    const check = {
+      pool: { abi: tapeoutMinerPoolAbi, fn: 'active', unready: 'the pool is not activated: activation (the owner\'s only power) would become impossible', removes: 'nothing further: activation was the owner\'s only power' },
+      distributor: { abi: tapeoutReceiptDistributorAbi, fn: 'allocationFinalized', unready: 'the allocation is not finalized: it could never be finalized and no receipt could be delivered', removes: 'nothing further: allocation functions are closed after finalization' },
+      nand: { abi: tapeoutEntitlementReceiptAbi, fn: 'issuanceFinalized', unready: 'NAND issuance is not finalized: it could never be finalized and the pool could never activate', removes: 'the issuer\'s setURI (metadata only); the supply is already fixed' },
+      latch: { abi: tapeoutEntitlementReceiptAbi, fn: 'issuanceFinalized', unready: 'LATCH issuance is not finalized: it could never be finalized and the pool could never activate', removes: 'the issuer\'s setURI (metadata only); the supply is already fixed' },
+    }[target]!;
+    const ready = await rpc.readContract({ address: contract, abi: check.abi, functionName: check.fn } as never) as boolean;
+    if (!ready) throw new Error(`Refusing to plan renounceOwnership of the ${target}: ${check.unready}`);
+    return execute(command, flags, [renouncePlan(contract, target)], { removes: check.removes, note: 'Each contract is renounced separately; renouncing one finalizes nothing else' });
   }
 
   const pool = poolOf(addresses);
@@ -407,13 +414,14 @@ export async function main(argv = process.argv.slice(2)): Promise<unknown> {
     const waiting = { NAND: 0n, LATCH: 0n };
     for (const r of ranges) waiting[r.category === 0 ? 'NAND' : 'LATCH'] += r.count - r.delivered;
     if (waiting.NAND + waiting.LATCH === 0n) return { command, status: 'NOTHING_TO_DELIVER', wallet };
-    // A delivery's cost grows with the IDs and ranges it reaches; keep it within the gas budget.
+    // A delivery's cost grows with the IDs and ranges it transfers; plan as many deliveries as needed,
+    // each within the gas budget (--max-ids caps every delivery).
     const fits = maxDeliverable(ranges);
-    const maxIds = str(flags, 'max-ids') ? Number(uint(need(flags, 'max-ids'))) : Math.min(300, fits);
-    if (maxIds < 1) throw new Error('Invalid --max-ids');
-    if (maxIds > fits) throw new Error(`--max-ids ${maxIds} is above ${fits} for this wallet's ranges: BSC limits a transaction's gas to ${TX_GAS_CAP} (BEP-652)`);
-    const plan = command === 'deliver' ? deliverPlan(distributor, wallet, maxIds, ranges) : claimReceiptsPlan(distributor, maxIds, ranges);
-    return execute(command, flags, [plan], { waiting });
+    const cap = str(flags, 'max-ids') ? Number(uint(need(flags, 'max-ids'))) : 300;
+    if (cap < 1) throw new Error('Invalid --max-ids');
+    if (str(flags, 'max-ids') && cap > fits) throw new Error(`--max-ids ${cap} is above ${fits} for this wallet's ranges: BSC limits a transaction's gas to ${TX_GAS_CAP} (BEP-652)`);
+    const plans = deliveryPlans(distributor, wallet, ranges, cap, command === 'deliver');
+    return execute(command, flags, plans, { waiting, deliveries: plans.length });
   }
 
   if (command === 'claim') {

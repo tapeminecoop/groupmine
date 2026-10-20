@@ -1,0 +1,66 @@
+$ forge test --match-path test/unit/GasModel.t.sol -vv
+# exit 0
+
+## stdout
+No files changed, compilation skipped
+
+Ran 10 tests for test/unit/GasModel.t.sol:GasModelTest
+[PASS] testAllocationModelCoversManySmallRangesAndOneLargeRange() (gas: 47001041)
+Logs:
+  allocate ranges 85 10537916 12555000
+  allocate 400 ids 10389163 10980000
+
+[PASS] testCallsRunAsSeparateTransactions() (gas: 60203)
+[PASS] testClaimModelCoversTheLargestPlannedBatch() (gas: 31826084)
+Logs:
+  claimBatch 386 10913951 12552000
+
+[PASS] testDeliveryModelCoversOneLargeAndManySmallRanges() (gas: 39784341)
+Logs:
+  deliver 300 ids, 1 range 9070541 11300000
+  deliver 60 ranges 2744335 8320000
+
+[PASS] testDeploymentModelsCoverTheLargestConfigurations() (gas: 18205455)
+Logs:
+  deploy receipt 2293918 3000000
+  deploy pool (16 depositors) 5311642 6000000
+  deploy distributor 1773979 2500000
+
+[PASS] testFragmentedWalletDeliversInPlannedTransactions() (gas: 28764157)
+Logs:
+  deliver 91 4144902 12567000
+  deliver 91 4113202 12567000
+  deliver 1 88279 237000
+
+[PASS] testFundBatchModelCoversMovingReceiptsIntoTheDistributor() (gas: 25578200)
+Logs:
+  fund batch 300 10060637 12100000
+
+[PASS] testIssueBatchModelCoversIssuingToTheOperatorAndToTheDistributor() (gas: 22434478)
+Logs:
+  issue batch 231 12574000
+    to operator 10767507
+    to distributor 11626387
+
+[PASS] testRevokeModelCoversLargeAndFragmentedWallets() (gas: 128598739)
+Logs:
+  revoke 1500 ids 6460236 12160000
+  revoke 85 ranges 811871 3330000
+
+[PASS] testSingleCallsFitTheirBounds() (gas: 3426068)
+Logs:
+  finalizeIssuance 49150
+  finalizeAllocation 69765
+  activate 109624
+  setApprovalForAll 48933
+  releaseA / releaseB 136814 118504
+  setRecipient 30630
+  renounceOwnership 26247
+
+Suite result: ok. 10 passed; 0 failed; 0 skipped; finished in 22.99ms (86.78ms CPU time)
+
+Ran 1 test suite in 116.37ms (22.99ms CPU time): 10 tests passed, 0 failed, 0 skipped (10 total tests)
+
+
+## stderr
+

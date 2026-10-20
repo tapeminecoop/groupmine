@@ -16,7 +16,8 @@ import { poolDeployment, receiptConstructorArgs, type SystemFile } from './confi
 import { accrue, residueBound, type Accrual, type State } from './math.js';
 import { allocationBatchGas, type DistributorInput } from './allocation.js';
 import {
-  CALL_GAS, CLAIM_GAS, DEPLOY_GAS, FUND_GAS, HARVEST_GAS, ISSUE_GAS, admissionGasEstimate, deliveryGas, idsGas, maxIdsPerTx, revokeGas,
+  CALL_GAS, CLAIM_GAS, DEPLOY_GAS, FUND_GAS, HARVEST_GAS, ISSUE_GAS, admissionGasEstimate, deliveryBatches, deliveryGas, idsGas, maxIdsPerTx,
+  revokeGas,
 } from './gas.js';
 import type { TxPlan } from './tx.js';
 
@@ -98,6 +99,17 @@ export const claimReceiptsPlan = (distributor: Address, maxIds: number, ranges: 
   distributorCall(distributor, 'claim', [BigInt(maxIds)], `claim up to ${maxIds} allocated receipts`, deliveryGas(ranges, maxIds));
 export const deliverPlan = (distributor: Address, wallet: Address, maxIds: number, ranges: readonly OnChainRange[]) =>
   distributorCall(distributor, 'deliver', [wallet, BigInt(maxIds)], `deliver up to ${maxIds} receipts to their beneficiary ${wallet}`, deliveryGas(ranges, maxIds));
+
+/** Every delivery `wallet` still needs, in order, each sized and bounded for the state the previous
+ *  ones leave (`claim` by the wallet itself, or `deliver` pushed by anyone when `push`). */
+export function deliveryPlans(distributor: Address, wallet: Address, ranges: readonly OnChainRange[], cap: number, push: boolean): TxPlan[] {
+  return deliveryBatches(ranges, cap).map(({ maxIds, gas }, i, all) => {
+    const step = all.length > 1 ? ` (${i + 1} of ${all.length})` : '';
+    return push
+      ? distributorCall(distributor, 'deliver', [wallet, BigInt(maxIds)], `deliver up to ${maxIds} receipts to their beneficiary ${wallet}${step}`, gas)
+      : distributorCall(distributor, 'claim', [BigInt(maxIds)], `claim up to ${maxIds} allocated receipts${step}`, gas);
+  });
+}
 
 export const activatePlan = (pool: Address, nandShares: bigint, latchShares: bigint) =>
   poolCall(pool, 'activate', [nandShares, latchShares], `activate with S_N=${nandShares}, S_L=${latchShares}`, CALL_GAS.activate);

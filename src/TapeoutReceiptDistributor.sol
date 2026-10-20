@@ -44,6 +44,8 @@ contract TapeoutReceiptDistributor is Ownable2Step, ReentrancyGuard, IERC1155Rec
     uint256[2] private _delivered;
     mapping(TapeoutMinerPool.Category => mapping(uint256 id => address wallet)) private _beneficiary;
     mapping(address wallet => Range[]) private _ranges;
+    /// @dev Index of the wallet's first range with undelivered IDs; earlier ranges are complete.
+    mapping(address wallet => uint256 index) private _nextRange;
     address[] private _wallets;
     mapping(address wallet => bool) private _listed;
 
@@ -207,11 +209,17 @@ contract TapeoutReceiptDistributor is Ownable2Step, ReentrancyGuard, IERC1155Rec
     /// @notice Allocated and still undelivered IDs of `wallet`, per category.
     function pendingOf(address wallet) external view returns (uint256 nandCount, uint256 latchCount) {
         Range[] storage list = _ranges[wallet];
-        for (uint256 r; r < list.length; ++r) {
+        for (uint256 r = _nextRange[wallet]; r < list.length; ++r) {
             uint256 left = list[r].count - list[r].delivered;
             if (list[r].category == TapeoutMinerPool.Category.NAND) nandCount += left;
             else latchCount += left;
         }
+    }
+
+    /// @notice Index in `rangesOf(wallet)` of the first range with undelivered IDs (the next delivery
+    ///         starts there); equal to the number of ranges once everything is delivered.
+    function nextRangeOf(address wallet) external view returns (uint256) {
+        return _nextRange[wallet];
     }
 
     function walletCount() external view returns (uint256) {
@@ -261,18 +269,23 @@ contract TapeoutReceiptDistributor is Ownable2Step, ReentrancyGuard, IERC1155Rec
         return true;
     }
 
+    /// @dev Starts at the wallet's cursor, so a delivery pays only for the ranges and IDs it transfers,
+    ///      however many ranges were completed before. Every range from the cursor on has undelivered
+    ///      IDs (ranges hold at least one ID and only this function delivers). All bookkeeping, the
+    ///      cursor included, is written before each transfer; a failing receiver reverts all of it.
     function _deliver(address wallet, uint256 maxIds) private returns (uint256 total) {
         if (!allocationFinalized) revert AllocationOpen();
         Range[] storage list = _ranges[wallet];
-        for (uint256 r; r < list.length && total < maxIds; ++r) {
+        uint256 length = list.length;
+        for (uint256 r = _nextRange[wallet]; r < length && total < maxIds; ++r) {
             Range storage range = list[r];
             uint256 left = range.count - range.delivered;
-            if (left == 0) continue;
             uint256 n = left < maxIds - total ? left : maxIds - total;
             uint256 first = uint256(range.firstId) + range.delivered;
             range.delivered += uint64(n);
             _delivered[uint256(range.category)] += n;
             total += n;
+            if (n == left) _nextRange[wallet] = r + 1;
             uint256[] memory ids = new uint256[](n);
             uint256[] memory values = new uint256[](n);
             for (uint256 i; i < n; ++i) {

@@ -117,6 +117,19 @@ export const tapeoutMinerPoolAbi = [
   },
   {
     "type": "function",
+    "name": "MINER_REVOKED",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint8",
+        "internalType": "uint8"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "PARTICIPANT_PARTS",
     "inputs": [],
     "outputs": [
@@ -1457,19 +1470,6 @@ export const tapeoutMinerPoolAbi = [
   },
   {
     "type": "event",
-    "name": "InactiveMinerSkipped",
-    "inputs": [
-      {
-        "name": "tokenId",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
     "name": "IncomeRecognized",
     "inputs": [
       {
@@ -1731,6 +1731,19 @@ export const tapeoutMinerPoolAbi = [
         "name": "amount",
         "type": "uint256",
         "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "RevokedMinerSkipped",
+    "inputs": [
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "indexed": true,
         "internalType": "uint256"
       }
     ],
@@ -3159,6 +3172,25 @@ export const tapeoutReceiptDistributorAbi = [
         "name": "",
         "type": "address",
         "internalType": "contract TapeoutEntitlementReceipt"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "nextRangeOf",
+    "inputs": [
+      {
+        "name": "wallet",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "stateMutability": "view"

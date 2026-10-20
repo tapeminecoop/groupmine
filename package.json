@@ -16,7 +16,9 @@
     "test:sdk": "node --import tsx --test test/sdk/*.test.ts",
     "test:local-e2e": "node --import tsx scripts/local-e2e.ts",
     "test:fork-e2e": "node --import tsx scripts/fork-e2e.ts",
+    "test:fork-safe-e2e": "node --import tsx scripts/fork-safe-e2e.ts",
     "typecheck": "tsc --noEmit",
+    "verify": "node --import tsx scripts/verify-all.ts",
     "export-abi": "node scripts/export-abi.mjs",
     "pool": "node --import tsx cli/pool.ts"
   },

@@ -168,12 +168,15 @@ contract PoolAdmissionTest is SystemTestBase {
         assertReconciled();
     }
 
-    function testInactiveOldMinerIsSkippedExplicitly() public {
+    /// @dev The one settlement exception: a REVOKED miner. Revocation is permanent and Mining refuses
+    ///      every claim for it, so its unpaid rewards (left in the mock here) can never be collected by
+    ///      anyone; the admission skips it explicitly.
+    function testRevokedOldMinerIsSkippedExplicitly() public {
         admitNew(1, 9, 1);
         admitNew(2, 2, 2);
         accrue(1, 102_000);
         accrue(2, 50_000);
-        mining.setStatus(address(nft), 2, 2); // stopped: the protocol refuses to pay it at all
+        mining.setStatus(address(nft), 2, 2); // revoked by a challenge
         newMiner(3, 1, 1);
         vm.recordLogs();
         (uint256 settled,) = admit(one(3));
@@ -182,7 +185,7 @@ contract PoolAdmissionTest is SystemTestBase {
         bool skipped;
         for (uint256 i; i < logs.length; ++i) {
             if (
-                logs[i].topics[0] == TapeoutMinerPool.InactiveMinerSkipped.selector
+                logs[i].topics[0] == TapeoutMinerPool.RevokedMinerSkipped.selector
                     && uint256(logs[i].topics[1]) == 2
             ) {
                 skipped = true;
@@ -190,7 +193,42 @@ contract PoolAdmissionTest is SystemTestBase {
         }
         assertTrue(skipped);
         assertEq(pool.totalNandBurn(), 12); // composition is cached at admission and kept
-        assertEq(mining.rewards(mining.minerKey(address(nft), 2)), 50_000);
+        bytes32 key2 = mining.minerKey(address(nft), 2);
+        assertEq(mining.rewards(key2), 50_000);
+        vm.expectRevert(abi.encodeWithSelector(MockMining.NotActiveMiner.selector, key2));
+        mining.claim(key2);
+        vm.expectRevert(bytes("REVOKED_IS_TERMINAL"));
+        mining.setStatus(address(nft), 2, 1);
+    }
+
+    /// @dev Any other non-ACTIVE status of a registered miner fails closed. On the real protocol a
+    ///      pool-held miner cannot become COOLING (only the NFT holder can stop it, and stop pays the
+    ///      holder first), so this is mock-only fault injection of an unexpected state.
+    function testCoolingOrUnstartedOldMinerBlocksAdmission() public {
+        admitNew(1, 9, 1);
+        admitNew(2, 2, 2);
+        accrue(2, 50_000);
+        newMiner(3, 1, 1);
+        bytes32 key2 = mining.minerKey(address(nft), 2);
+        for (uint8 status = 0; status <= 3; status += 3) {
+            mining.setStatus(address(nft), 2, status);
+            vm.startPrank(depositor);
+            nft.setApprovalForAll(address(pool), true);
+            vm.expectRevert(
+                abi.encodeWithSelector(
+                    TapeoutMinerPool.SettlementFailed.selector,
+                    2,
+                    abi.encodeWithSelector(MockMining.NotActiveMiner.selector, key2)
+                )
+            );
+            pool.depositMiners(one(3));
+            vm.stopPrank();
+            assertEq(pool.minerCount(), 2);
+        }
+        // Once the miner is ACTIVE again, its 50_000 is settled under the old composition.
+        mining.setStatus(address(nft), 2, 1);
+        (uint256 settled,) = admit(one(3));
+        assertEq(settled, 50_000);
     }
 
     function testIncomingMinerClaimFailureRollsBack() public {

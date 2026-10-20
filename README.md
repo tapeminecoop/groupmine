@@ -26,6 +26,7 @@ How it fits together: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Allocation r
 [docs/ACCOUNTING.md](docs/ACCOUNTING.md). Operator runbook: [docs/OPERATIONS.md](docs/OPERATIONS.md).
 What was tested and what remains open: [docs/VERIFICATION_REPORT.md](docs/VERIFICATION_REPORT.md).
 Relationship to the previous version (`48a2d74`) and reused evidence: [docs/BASELINE.md](docs/BASELINE.md).
+A plan for a future recoverable live test (not executed): [docs/LIVE_TEST_PLAN.md](docs/LIVE_TEST_PLAN.md).
 
 ## Repository layout
 
@@ -33,11 +34,11 @@ Relationship to the previous version (`48a2d74`) and reused evidence: [docs/BASE
 | --- | --- |
 | `src/` | The contracts and the `IMining` protocol interface |
 | `test/unit`, `test/invariant` | Foundry unit, fuzz, gas and invariant suites on a mock protocol |
-| `test/fork/PoolFork.t.sol` | Real BSC protocol tests on a pinned fork (run through `scripts/fork-test.ts`) |
+| `test/fork/` | Real BSC protocol tests on a pinned fork: identity, composition, admission boundary, Mining lifecycle (run through `scripts/fork-test.ts`) |
 | `sdk/` | TypeScript SDK: ABIs, bytecode, math mirror, config and allocation parsing, transaction plans, readers, gas models |
 | `cli/pool.ts` | Operator CLI: plans, simulations, Safe batches, local Anvil execution; never handles keys |
 | `script/DeployPool.s.sol` | Optional Foundry deployment path (`DeployReceipts`, `DeployPool`) |
-| `scripts/` | Local and fork end-to-end runners, ABI export, report summarizers, composition probe |
+| `scripts/` | Local and fork end-to-end runners (including Safe execution of the CLI's batch files), the `verify` runner, ABI export, report summarizers, read-only protocol probes |
 | `deployments/examples/` | Example system configuration and allocation files |
 | `reports/` | Raw outputs referenced by the verification report |
 
@@ -65,6 +66,17 @@ FORK_RPC_URL=https://bsc-mainnet.public.blastapi.io npm run test:fork
 
 ```bash
 FORK_RPC_URL=https://bsc-mainnet.public.blastapi.io npm run test:fork-e2e
+```
+
+```bash
+FORK_RPC_URL=https://bsc-mainnet.public.blastapi.io npm run test:fork-safe-e2e
+```
+
+Everything at once, with a manifest of what ran (`reports/run-manifest.json`; set `SLITHER` to a
+slither binary to include static analysis):
+
+```bash
+FORK_RPC_URL=https://bsc-mainnet.public.blastapi.io npm run verify
 ```
 
 Preview how 1,020 BEM would be split for a given composition and receipt supplies:

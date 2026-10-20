@@ -7,7 +7,7 @@ import {SystemTestBase} from "../helpers/SystemTestBase.sol";
 import {TapeoutMinerPool} from "../../src/TapeoutMinerPool.sol";
 import {TapeoutReceiptDistributor} from "../../src/TapeoutReceiptDistributor.sol";
 import {TapeoutEntitlementReceipt} from "../../src/TapeoutEntitlementReceipt.sol";
-import {ForeignERC1155} from "../helpers/Mocks.sol";
+import {ForeignERC1155, ToggleReceiver} from "../helpers/Mocks.sol";
 
 /// @dev S_N = 30, S_L = 12, all issued to the operator, then moved into the distributor.
 contract DistributorTest is SystemTestBase {
@@ -286,6 +286,124 @@ contract DistributorTest is SystemTestBase {
         distributor.deliver(address(bem), 100);
         assertEq(nandReceipt.holderOf(1), address(distributor));
         assertEq(distributor.beneficiaryOf(NAND, 1), address(bem));
+    }
+
+    function _finalize() internal {
+        vm.prank(operator);
+        distributor.finalizeAllocation();
+    }
+
+    /// @dev Each delivery continues at the wallet's first range with undelivered IDs; a range can be
+    ///      consumed across deliveries without being skipped or repeated.
+    function testFragmentedAllocationIsDeliveredAcrossSeveralTransactions() public {
+        _fundAll();
+        // alice: ten single-ID NAND ranges (1..10), then LATCH 1..12 in one range; bob: NAND 11..30.
+        TapeoutReceiptDistributor.AllocationInput[] memory e =
+            new TapeoutReceiptDistributor.AllocationInput[](12);
+        for (uint256 i; i < 10; ++i) {
+            e[i] = _entry(NAND, alice, uint64(i + 1), 1);
+        }
+        e[10] = _entry(LATCH, alice, 1, 12);
+        e[11] = _entry(NAND, bob, 11, 20);
+        vm.prank(operator);
+        distributor.allocate(e);
+        _finalize();
+
+        vm.prank(alice);
+        assertEq(distributor.claim(4), 4); // NAND 1..4
+        assertEq(distributor.nextRangeOf(alice), 4);
+        vm.prank(alice);
+        assertEq(distributor.claim(8), 8); // NAND 5..10, then LATCH 1..2 of the next range
+        assertEq(distributor.nextRangeOf(alice), 10); // still on the partly delivered LATCH range
+        (uint256 n, uint256 l) = distributor.pendingOf(alice);
+        assertEq(n, 0);
+        assertEq(l, 10);
+        vm.prank(carol);
+        assertEq(distributor.deliver(alice, 3), 3); // LATCH 3..5
+        assertEq(distributor.nextRangeOf(alice), 10);
+        assertEq(latchReceipt.holderOf(5), alice);
+        assertEq(latchReceipt.holderOf(6), address(distributor));
+        vm.prank(alice);
+        assertEq(distributor.claim(100), 7); // LATCH 6..12
+        assertEq(distributor.nextRangeOf(alice), 11);
+        vm.prank(alice);
+        vm.expectRevert(abi.encodeWithSelector(TapeoutReceiptDistributor.NothingToDeliver.selector, alice));
+        distributor.claim(1);
+
+        for (uint256 id = 1; id <= 10; ++id) {
+            assertEq(nandReceipt.holderOf(id), alice);
+        }
+        for (uint256 id = 1; id <= 12; ++id) {
+            assertEq(latchReceipt.holderOf(id), alice);
+        }
+        assertEq(nandReceipt.holderOf(11), address(distributor)); // bob's are untouched
+        (,, uint256[2] memory delivered) = distributor.totals();
+        assertEq(delivered[0], 10);
+        assertEq(delivered[1], 12);
+    }
+
+    /// @dev A receiver hook that rejects the transfer reverts the whole delivery, cursor included.
+    function testReceiverRefusalRollsBackTheWholeDelivery() public {
+        _fundAll();
+        ToggleReceiver wallet = new ToggleReceiver();
+        wallet.setRefuse(true);
+        TapeoutReceiptDistributor.AllocationInput[] memory e =
+            new TapeoutReceiptDistributor.AllocationInput[](3);
+        e[0] = _entry(NAND, address(wallet), 1, 2);
+        e[1] = _entry(NAND, address(wallet), 3, 28);
+        e[2] = _entry(LATCH, alice, 1, 12);
+        vm.prank(operator);
+        distributor.allocate(e);
+        _finalize();
+
+        vm.prank(carol);
+        vm.expectRevert(ToggleReceiver.Refused.selector);
+        distributor.deliver(address(wallet), 5);
+        assertEq(distributor.nextRangeOf(address(wallet)), 0);
+        (uint256 n,) = distributor.pendingOf(address(wallet));
+        assertEq(n, 30);
+        TapeoutReceiptDistributor.Range[] memory ranges = distributor.rangesOf(address(wallet));
+        assertEq(ranges[0].delivered, 0);
+        (,, uint256[2] memory delivered) = distributor.totals();
+        assertEq(delivered[0], 0);
+        assertEq(nandReceipt.holderOf(1), address(distributor));
+
+        wallet.setRefuse(false);
+        vm.prank(carol);
+        assertEq(distributor.deliver(address(wallet), 5), 5); // NAND 1..2, then 3..5 of the next range
+        assertEq(distributor.nextRangeOf(address(wallet)), 1);
+        assertEq(nandReceipt.holderOf(5), address(wallet));
+        assertEq(nandReceipt.holderOf(6), address(distributor));
+    }
+
+    /// @dev Every ID is delivered once, and arrives with all the BEM it accrued while undelivered; the
+    ///      distributor itself never receives BEM.
+    function testDeliveryIsExactlyOnceAndKeepsTheAttachedBem() public {
+        _fundAll();
+        _allocateExample();
+        _finalize();
+        admitNew(1, 3, 1);
+        accrue(1, 1_020_000);
+        pool.harvestRange(0, 1);
+        uint256 perNand = pool.claimable(NAND, 1); // 750_000 / 30
+        uint256 perLatch = pool.claimable(LATCH, 1); // 250_000 / 12
+        assertEq(perNand, 25_000);
+        assertEq(perLatch, 20_833);
+
+        vm.prank(carol);
+        assertEq(distributor.deliver(alice, 20), 20); // NAND 1..20
+        vm.prank(carol);
+        assertEq(distributor.deliver(alice, 100), 5); // LATCH 1..5
+        vm.prank(carol);
+        vm.expectRevert(abi.encodeWithSelector(TapeoutReceiptDistributor.NothingToDeliver.selector, alice));
+        distributor.deliver(alice, 1);
+        assertEq(pool.claimable(NAND, 20), perNand);
+        assertEq(claimAs(alice, range(1, 20), range(1, 5)), 20 * perNand + 5 * perLatch);
+        assertEq(bem.balanceOf(address(distributor)), 0);
+        (,, uint256[2] memory delivered) = distributor.totals();
+        assertEq(delivered[0], 20);
+        assertEq(delivered[1], 5);
+        assertReconciled();
     }
 }
 

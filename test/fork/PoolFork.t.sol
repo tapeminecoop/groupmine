@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
-
 import {Test, Vm} from "forge-std/Test.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
@@ -10,13 +9,28 @@ import {TapeoutEntitlementReceipt} from "../../src/TapeoutEntitlementReceipt.sol
 import {TapeoutReceiptDistributor} from "../../src/TapeoutReceiptDistributor.sol";
 import {PoolMath} from "../../src/PoolMath.sol";
 import {IMining} from "../../src/interfaces/IMining.sol";
+import {PoolForkBase, IBeacon, IMiningMany} from "./PoolForkBase.sol";
 
-interface IBeacon {
-    function implementation() external view returns (address);
+interface IOwnable {
+    function owner() external view returns (address);
 }
 
-interface IMiningMany {
-    function claimMany(bytes32[] calldata keys) external;
+interface IPausable {
+    function paused() external view returns (bool);
+}
+
+/// @dev Mining's computed local burn of a circuit (official frontend ABI); not used by the pool.
+interface ICircuitBurn {
+    function circuitBurn(address circuits, uint256 circuitId)
+        external
+        view
+        returns (uint32 nand, uint32 latch);
+}
+
+/// @dev The miner collection's recorded circuit statistics; the last value is the gate count including
+///      referenced sub-circuits.
+interface ICircuitInfo {
+    function circuitInfo(uint256 circuitId) external view returns (uint32, uint32, uint32, uint32);
 }
 
 /// @notice Real BSC protocol state at a pinned block (run through scripts/fork-test.ts). Uses the
@@ -24,178 +38,7 @@ interface IMiningMany {
 ///         are moved from their current holders with fork-only impersonation. Deploys the exact Paris
 ///         artifacts from ./out. Env: FORK_RPC_URL, FORK_BLOCK, FORK_NAND_MINER, FORK_LATCH_MINER,
 ///         FORK_SCALE_MINERS (comma separated), FORK_INACTIVE_TOKEN.
-contract PoolForkTest is Test {
-    address internal constant COLLECTION = 0xb1024b89886B9a34Aa4ff5F31C411D708b20a14C;
-    address internal constant MINING = 0x7E2E0DC66a3bD9103E69b766afA62d9f7b697b46;
-    address internal constant BEM = 0x5ce033B2bFCa3Af30b3e8C8457DeaF776A8b695a;
-    address internal constant MINING_IMPLEMENTATION = 0xa3DBe873DA37cD4e4a13c7cEf23a7dB6Ca60f898;
-    address internal constant COLLECTION_BEACON = 0xf8D6d8EB894d6971c8976Ad8b4971cbEFE028156;
-    bytes32 internal constant IMPLEMENTATION_SLOT =
-        0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
-    bytes32 internal constant BEACON_SLOT =
-        0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50;
-    bytes32 internal constant KEY_3204 = 0xb0e5b7d325dead6144886258056fb8e27ff5f6192aaa90fd0b45682c297c1c0d;
-    uint256 internal constant TX_GAS_CAP = 16_777_216; // BEP-652 / EIP-7825, BSC Mendel (2026-04-28)
-
-    TapeoutMinerPool.Category internal constant NAND = TapeoutMinerPool.Category.NAND;
-    TapeoutMinerPool.Category internal constant LATCH = TapeoutMinerPool.Category.LATCH;
-
-    IERC20 internal bem = IERC20(BEM);
-    IMining internal mining = IMining(MINING);
-    IERC721 internal collection = IERC721(COLLECTION);
-
-    address internal operator = makeAddr("fork.operator");
-    address internal depositor = makeAddr("fork.depositor");
-    address internal recipientA = makeAddr("fork.recipientA");
-    address internal recipientB = makeAddr("fork.recipientB");
-    address internal alice = makeAddr("fork.alice");
-    address internal bob = makeAddr("fork.bob");
-    address internal carol = makeAddr("fork.carol");
-    address internal keeper = makeAddr("fork.keeper");
-
-    TapeoutEntitlementReceipt internal nandReceipt;
-    TapeoutEntitlementReceipt internal latchReceipt;
-    TapeoutMinerPool internal pool;
-    TapeoutReceiptDistributor internal distributor;
-    uint256 internal forkBlock;
-    uint256 internal nandMiner;
-    uint256 internal latchMiner;
-
-    function setUp() public {
-        string memory rpc = vm.envOr("FORK_RPC_URL", string(""));
-        if (bytes(rpc).length == 0) {
-            vm.skip(true);
-            return;
-        }
-        forkBlock = vm.envUint("FORK_BLOCK");
-        vm.createSelectFork(rpc, forkBlock);
-        nandMiner = vm.envUint("FORK_NAND_MINER");
-        latchMiner = vm.envUint("FORK_LATCH_MINER");
-    }
-
-    // ---------------------------------------------------------------------------------- deployment
-
-    function _artifact(string memory name) internal view returns (bytes memory) {
-        return vm.parseJsonBytes(
-            vm.readFile(string.concat("out/", name, ".sol/", name, ".json")), ".bytecode.object"
-        );
-    }
-
-    function _create(bytes memory initCode) internal returns (address deployed) {
-        assembly {
-            deployed := create(0, add(initCode, 0x20), mload(initCode))
-        }
-        require(deployed != address(0), "artifact deployment failed");
-    }
-
-    /// @dev Receipts S_N = 20 / S_L = 10 -> distributor -> alice 12 + 4, bob 8, carol 6; pool active.
-    function _deploySystem() internal {
-        bytes memory receiptCode = _artifact("TapeoutEntitlementReceipt");
-        nandReceipt = TapeoutEntitlementReceipt(
-            _create(
-                abi.encodePacked(
-                    receiptCode,
-                    abi.encode(keccak256("TAPEOUT_NAND_ENTITLEMENT"), "Fork NAND", "fNAND", "", operator)
-                )
-            )
-        );
-        latchReceipt = TapeoutEntitlementReceipt(
-            _create(
-                abi.encodePacked(
-                    receiptCode,
-                    abi.encode(keccak256("TAPEOUT_LATCH_ENTITLEMENT"), "Fork LATCH", "fLATCH", "", operator)
-                )
-            )
-        );
-        address[] memory depositors = new address[](1);
-        depositors[0] = depositor;
-        TapeoutMinerPool.Deployment memory d = TapeoutMinerPool.Deployment({
-            owner: operator,
-            bem: BEM,
-            mining: MINING,
-            minerCollection: COLLECTION,
-            nandReceipt: address(nandReceipt),
-            latchReceipt: address(latchReceipt),
-            recipientA: recipientA,
-            recipientB: recipientB,
-            depositors: depositors,
-            poolName: "Fork Pool"
-        });
-        pool = TapeoutMinerPool(_create(abi.encodePacked(_artifact("TapeoutMinerPool"), abi.encode(d))));
-        distributor = TapeoutReceiptDistributor(
-            _create(
-                abi.encodePacked(_artifact("TapeoutReceiptDistributor"), abi.encode(operator, address(pool)))
-            )
-        );
-        vm.startPrank(operator);
-        nandReceipt.issue(operator, 20);
-        latchReceipt.issue(address(distributor), 10); // minted straight into the distributor
-        nandReceipt.finalizeIssuance();
-        latchReceipt.finalizeIssuance();
-        uint256[] memory ids = new uint256[](20);
-        uint256[] memory ones = new uint256[](20);
-        for (uint256 i; i < 20; ++i) {
-            ids[i] = i + 1;
-            ones[i] = 1;
-        }
-        nandReceipt.safeBatchTransferFrom(operator, address(distributor), ids, ones, "");
-        TapeoutReceiptDistributor.AllocationInput[] memory e =
-            new TapeoutReceiptDistributor.AllocationInput[](4);
-        e[0] = TapeoutReceiptDistributor.AllocationInput(NAND, alice, 1, 12);
-        e[1] = TapeoutReceiptDistributor.AllocationInput(LATCH, alice, 1, 4);
-        e[2] = TapeoutReceiptDistributor.AllocationInput(NAND, bob, 13, 8);
-        e[3] = TapeoutReceiptDistributor.AllocationInput(LATCH, carol, 5, 6);
-        distributor.allocate(e);
-        distributor.finalizeAllocation();
-        pool.activate(20, 10);
-        vm.stopPrank();
-    }
-
-    function _moveToDepositor(uint256 tokenId) internal returns (address holder, uint256 pendingBefore) {
-        holder = collection.ownerOf(tokenId);
-        bytes32 key = mining.minerKey(COLLECTION, tokenId);
-        uint256 holderBem = bem.balanceOf(holder);
-        pendingBefore = mining.pending(key);
-        vm.prank(holder);
-        collection.transferFrom(holder, depositor, tokenId);
-        assertEq(bem.balanceOf(holder), holderBem, "transfer pays nothing to the previous holder");
-        assertEq(mining.pending(key), pendingBefore, "transfer leaves the miner's income in place");
-    }
-
-    function _admit(uint256[] memory tokenIds)
-        internal
-        returns (uint256 settled, uint256 carried, uint256 gasUsed)
-    {
-        vm.startPrank(depositor);
-        collection.setApprovalForAll(address(pool), true);
-        uint256 g = gasleft();
-        (settled, carried) = pool.depositMiners(tokenIds);
-        gasUsed = g - gasleft();
-        vm.stopPrank();
-    }
-
-    function _one(uint256 x) internal pure returns (uint256[] memory r) {
-        r = new uint256[](1);
-        r[0] = x;
-    }
-
-    function _range(uint256 first, uint256 last) internal pure returns (uint256[] memory r) {
-        r = new uint256[](last - first + 1);
-        for (uint256 i; i < r.length; ++i) {
-            r[i] = first + i;
-        }
-    }
-
-    function _coolProtocol() internal {
-        vm.cool(address(pool));
-        vm.cool(BEM);
-        vm.cool(MINING);
-        vm.cool(MINING_IMPLEMENTATION);
-        vm.cool(COLLECTION);
-        vm.cool(COLLECTION_BEACON);
-        vm.cool(IBeacon(COLLECTION_BEACON).implementation());
-    }
-
+contract PoolForkTest is PoolForkBase {
     // ---------------------------------------------------------------------------------- tests
 
     function testForkProtocolIdentityAndCompositionAbi() public {
@@ -237,9 +80,39 @@ contract PoolForkTest is Test {
         keys[0] = mining.minerKey(COLLECTION, nandMiner);
         keys[1] = inactiveKey;
         IMiningMany(MINING).claimMany(keys); // does not revert: why the pool never relies on it
+
+        // Upgrade and pause authority at this block, read rather than assumed.
+        address collectionImplementation = IBeacon(COLLECTION_BEACON).implementation();
+        address miningOwner = IOwnable(MINING).owner();
+        address beaconOwner = IOwnable(COLLECTION_BEACON).owner();
+        assertEq(miningOwner, address(0), "Mining ownership is renounced at this block");
+        assertFalse(IPausable(MINING).paused());
+        assertEq(vm.load(MINING, ADMIN_SLOT), bytes32(0), "UUPS: no ERC-1967 admin");
+        vm.startPrank(makeAddr("fork.stranger"));
+        (bool upgraded,) =
+            MINING.call(abi.encodeWithSignature("upgradeToAndCall(address,bytes)", MINING_IMPLEMENTATION, ""));
+        (bool paused,) = MINING.call(abi.encodeWithSignature("pause()"));
+        vm.stopPrank();
+        assertFalse(upgraded, "a stranger cannot upgrade Mining");
+        assertFalse(paused, "a stranger cannot pause Mining");
+
         vm.serializeUint(key, "forkBlock", forkBlock);
         vm.serializeUint(key, "inactiveToken", inactive);
-        vm.serializeAddress(key, "collectionImplementation", IBeacon(COLLECTION_BEACON).implementation());
+        vm.serializeUint(key, "inactiveTokenStatus", mining.getMiner(inactiveKey).status);
+        vm.serializeAddress(key, "miningOwner", miningOwner);
+        vm.serializeBool(key, "miningPaused", IPausable(MINING).paused());
+        vm.serializeAddress(key, "collectionBeaconOwner", beaconOwner);
+        vm.serializeUint(key, "collectionBeaconOwnerCodeSize", beaconOwner.code.length);
+        vm.serializeBytes32(key, "miningProxyCodeHash", MINING.codehash);
+        vm.serializeBytes32(key, "miningImplementationCodeHash", MINING_IMPLEMENTATION.codehash);
+        vm.serializeBytes32(key, "collectionProxyCodeHash", COLLECTION.codehash);
+        vm.serializeBytes32(key, "collectionBeaconCodeHash", COLLECTION_BEACON.codehash);
+        vm.serializeBytes32(key, "collectionImplementationCodeHash", collectionImplementation.codehash);
+        vm.serializeBytes32(key, "bemCodeHash", BEM.codehash);
+        vm.serializeUint(key, "bemCodeSize", BEM.code.length);
+        vm.serializeBytes32(key, "bemErc1967ImplementationSlot", vm.load(BEM, IMPLEMENTATION_SLOT));
+        vm.serializeUint(key, "bemDecimals", IERC20Metadata(BEM).decimals());
+        vm.serializeAddress(key, "collectionImplementation", collectionImplementation);
         string memory out = vm.serializeAddress(key, "miningImplementation", MINING_IMPLEMENTATION);
         vm.writeJson(out, "reports/fork-identity.json");
     }
@@ -343,6 +216,52 @@ contract PoolForkTest is Test {
             + (r.latchReceiptsAccrued - r.latchReceiptsPaid);
         assertEq(r.bemBalance, outstanding + r.residue + r.unrecognized);
         assertLe(r.residue, 3 + 19 + 9);
+    }
+
+    /// @notice The composition the pool records equals Mining's computed local burn (circuitBurn), an
+    ///         independent source from the miner record and burn cache the adapter reads. A circuit that
+    ///         references sub-circuits (the collection records 123,264 gates for #109, including the
+    ///         referenced ones, while circuitBurn computes a local burn of 0) is refused.
+    function testForkCompositionMatchesCircuitBurnAndIgnoresReferences() public {
+        _deploySystem();
+        uint256[] memory ids = new uint256[](4);
+        (ids[0], ids[1], ids[2], ids[3]) = (nandMiner, latchMiner, 4183, 1574);
+        string memory key = "composition";
+        for (uint256 i; i < ids.length; ++i) {
+            (uint32 n, uint32 l) = ICircuitBurn(MINING).circuitBurn(COLLECTION, ids[i]);
+            (,,, uint32 recordedGates) = ICircuitInfo(COLLECTION).circuitInfo(ids[i]);
+            _moveToDepositor(ids[i]);
+            _admit(_one(ids[i]));
+            TapeoutMinerPool.Miner memory m = pool.miner(ids[i]);
+            assertEq(m.nandBurn, n, "pool NAND = circuitBurn");
+            assertEq(m.latchBurn, l, "pool LATCH = circuitBurn");
+            assertEq(uint256(recordedGates), uint256(n) + l, "no references in this circuit");
+            vm.serializeUint(key, string.concat("miner", vm.toString(ids[i]), "CircuitBurnNand"), n);
+            vm.serializeUint(key, string.concat("miner", vm.toString(ids[i]), "CircuitBurnLatch"), l);
+        }
+        uint256 referencing = vm.envOr("FORK_REFERENCE_CIRCUIT", uint256(109));
+        (uint32 rn, uint32 rl) = ICircuitBurn(MINING).circuitBurn(COLLECTION, referencing);
+        (,,, uint32 rGates) = ICircuitInfo(COLLECTION).circuitInfo(referencing);
+        (bool cached,,) = mining.cachedBurn(COLLECTION, referencing);
+        bytes32 rKey = mining.minerKey(COLLECTION, referencing);
+        assertGt(uint256(rGates), uint256(rn) + rl, "recorded gates include referenced sub-circuits");
+        assertEq(uint256(rn) + rl, 0, "local burn of a circuit made only of references");
+        assertEq(mining.getMiner(rKey).status, 0, "it cannot mine");
+        _moveToDepositor(referencing);
+        vm.startPrank(depositor);
+        vm.expectRevert(abi.encodeWithSelector(TapeoutMinerPool.MinerNotActive.selector, referencing));
+        pool.depositMiners(_one(referencing));
+        vm.stopPrank();
+
+        vm.serializeUint(key, "forkBlock", forkBlock);
+        vm.serializeUint(key, "referenceCircuit", referencing);
+        vm.serializeBytes32(key, "referenceCircuitKey", rKey);
+        vm.serializeUint(key, "referenceCircuitRecordedGates", rGates);
+        vm.serializeUint(key, "referenceCircuitLocalNand", rn);
+        vm.serializeUint(key, "referenceCircuitLocalLatch", rl);
+        vm.serializeBool(key, "referenceCircuitBurnCached", cached);
+        string memory out = vm.serializeUint(key, "referenceCircuitStatus", mining.getMiner(rKey).status);
+        vm.writeJson(out, "reports/fork-composition.json");
     }
 
     function testForkWhitelistAfterRenounceAndBypassRejection() public {

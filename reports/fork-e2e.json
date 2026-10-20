@@ -1,7 +1,7 @@
 {
   "scope": "REAL_BSC_STATE_LOCAL_ANVIL_FORK_ONLY",
   "status": "PASS",
-  "startedAt": "2026-10-20T09:48:38.698Z",
+  "startedAt": "2026-10-20T13:23:08.189Z",
   "source": {
     "chainId": 56,
     "forkBlock": "128713128",
@@ -176,14 +176,14 @@
       "mode": "SENT_LOCAL_ANVIL",
       "transactions": [
         {
-          "hash": "0x4a579d660af580d9cb3ba5c0748d4d022c138ff29ab5e67977745558c61dc53c",
-          "gasUsed": "4559665",
+          "hash": "0x7394a80550587d535743e091481728ab4a25548e354c1c87207841ec314e352b",
+          "gasUsed": "4568113",
           "blockNumber": "128713135",
           "description": "deploy TapeoutMinerPool \"Fork E2E Pool\" (owner 0xaC074ef348E9ab2bEaaC87746A09B6c320cB2D20, 1 whitelisted depositors)"
         },
         {
-          "hash": "0xfa1844f4788abdf47bbff9a75a287fb7abc1ee9bfbc4d772b2c1838d5014f920",
-          "gasUsed": "1745071",
+          "hash": "0x9de17383496eb68b816967c29bedb7f213ef5f24a52643f06642b44dd6879b41",
+          "gasUsed": "1771212",
           "blockNumber": "128713136",
           "description": "deploy TapeoutReceiptDistributor (owner 0xaC074ef348E9ab2bEaaC87746A09B6c320cB2D20) for pool 0xEfCCe657d16d300410690bA919e187E0b7Ad0cB2"
         }
@@ -253,7 +253,7 @@
       "transactions": [
         {
           "hash": "0xd95900c3229541eb625c47114c8578206acd7be0803f6510e54d9837052452fb",
-          "gasUsed": "1753707",
+          "gasUsed": "1753729",
           "blockNumber": "128713139",
           "description": "allocate 52 receipt IDs in 4 ranges"
         }
@@ -273,24 +273,25 @@
         "command": "verify-allocation",
         "status": "READY_TO_FINALIZE",
         "blockNumber": "128713139",
+        "blockHash": "0x91f4df2914e05afd997084815854f275eacd33a04e1af6b8fd4cf88a66611c61",
         "mismatches": [],
-        "unreachableWallets": [],
-        "coverage": {
-          "NAND": {
-            "inventory": "40",
-            "allocated": "40",
-            "delivered": "0"
+        "mismatchCount": 0,
+        "readinessGaps": [],
+        "verified": {
+          "wallets": 3,
+          "listedWallets": 3,
+          "ids": {
+            "NAND": "40",
+            "LATCH": "12"
           },
-          "LATCH": {
-            "inventory": "12",
-            "allocated": "12",
-            "delivered": "0"
-          }
+          "delivered": {
+            "NAND": "0",
+            "LATCH": "0"
+          },
+          "holdingsChecked": 52,
+          "allocationFinalized": false
         },
-        "issuanceFinalized": [
-          true,
-          true
-        ]
+        "unreachableWallets": []
       }
     },
     {
@@ -307,7 +308,7 @@
       "transactions": [
         {
           "hash": "0xff567f2fd1d2565159049411c6a943c90edc0ebba8c86766da5def2f3b7038d7",
-          "gasUsed": "69501",
+          "gasUsed": "69523",
           "blockNumber": "128713140",
           "description": "finalize the allocation (beneficiaries become immutable; claims open)"
         }
@@ -331,7 +332,7 @@
       "transactions": [
         {
           "hash": "0x03519ae162e8b8e149ef92ddf1ad9e9c8bc32a6711bffbd188d76b81995fedd3",
-          "gasUsed": "109360",
+          "gasUsed": "109382",
           "blockNumber": "128713141",
           "description": "activate with S_N=40, S_L=12"
         }
@@ -549,7 +550,7 @@
       "transactions": [
         {
           "hash": "0x486cafc807d7a2f69cfd1dd0f55b7db41bde69160ad6332f34ef67c770be9550",
-          "gasUsed": "549278",
+          "gasUsed": "500757",
           "blockNumber": "128713151",
           "description": "admit miners 4183,1574 (settles every registered miner first)"
         }
@@ -591,7 +592,7 @@
       "transactions": [
         {
           "hash": "0xb91b7d07ccf2263315570d4164afbcf8a6034875e5b457aca5c419357dbe1c9d",
-          "gasUsed": "857068",
+          "gasUsed": "879411",
           "blockNumber": "128713154",
           "description": "claim up to 25 allocated receipts"
         }
@@ -612,7 +613,7 @@
       "transactions": [
         {
           "hash": "0x9fe19032b9797dcd2b14e67ad090537b34731fae238d59997c8a24915ebe4fa9",
-          "gasUsed": "856441",
+          "gasUsed": "856463",
           "blockNumber": "128713155",
           "description": "claim BEM for 20 NAND + 5 LATCH receipts"
         }
@@ -634,7 +635,7 @@
       "transactions": [
         {
           "hash": "0x758b0a5c9e4a1fc09a1fab831fb553a6340bde07cc54081e2a92758d6ded14e7",
-          "gasUsed": "652963",
+          "gasUsed": "675160",
           "blockNumber": "128713156",
           "description": "deliver up to 20 receipts to their beneficiary 0x636f42464aA1CefB1f0CF7acDF8DF2674488C715"
         }
@@ -654,11 +655,46 @@
       "transactions": [
         {
           "hash": "0xe7951f53f9220fe03d9d58d2288d0c4adeb8335d4c639a279d622de9a6abd3fa",
-          "gasUsed": "261129",
+          "gasUsed": "283326",
           "blockNumber": "128713157",
           "description": "claim up to 7 allocated receipts"
         }
       ]
+    },
+    {
+      "label": "verify-after-delivery",
+      "argv": [
+        "verify-allocation",
+        "--addresses",
+        ".runtime/fork-e2e/addresses.json",
+        "--artifact",
+        ".runtime/fork-e2e/artifact.json"
+      ],
+      "transactions": [],
+      "result": {
+        "command": "verify-allocation",
+        "status": "FINALIZED_AND_MATCHES",
+        "blockNumber": "128713157",
+        "blockHash": "0x0037b1b6692c1b0e2ef20eb03b736ed38e09e45e684876f619d9ff6fefa0c4ee",
+        "mismatches": [],
+        "mismatchCount": 0,
+        "readinessGaps": [],
+        "verified": {
+          "wallets": 3,
+          "listedWallets": 3,
+          "ids": {
+            "NAND": "40",
+            "LATCH": "12"
+          },
+          "delivered": {
+            "NAND": "40",
+            "LATCH": "12"
+          },
+          "holdingsChecked": 52,
+          "allocationFinalized": true
+        },
+        "unreachableWallets": []
+      }
     },
     {
       "label": "carol-claims-bem",
@@ -675,7 +711,7 @@
       "transactions": [
         {
           "hash": "0x49901d689b91340f1812a61ad892174e55509c545e17fa907730efaabbc19e40",
-          "gasUsed": "294927",
+          "gasUsed": "294949",
           "blockNumber": "128713158",
           "description": "claim BEM for 0 NAND + 7 LATCH receipts"
         }
@@ -696,7 +732,7 @@
       "transactions": [
         {
           "hash": "0x4ff3b5a684e3c0d3e6733525af7fc51c131874bbf4b0063958dd0aa59627fc3c",
-          "gasUsed": "657815",
+          "gasUsed": "657837",
           "blockNumber": "128713159",
           "description": "claim BEM for 20 NAND + 0 LATCH receipts"
         }
@@ -716,7 +752,7 @@
       "transactions": [
         {
           "hash": "0x94e5a4066165abec209c2fdbd8a3f345d61b84c55cab95a2b2f4ba64dd4da18d",
-          "gasUsed": "116516",
+          "gasUsed": "116538",
           "blockNumber": "128713160",
           "description": "pay recipient A its accrued 1/102"
         },
@@ -744,7 +780,7 @@
         "status": "PASS",
         "ledgerStatus": "PASS",
         "blockNumber": "128713161",
-        "blockHash": "0x1e1dbc9c10daece6f0e37f6d9a57416b0bb8c40039a189ea38bc5f306da7f6a1",
+        "blockHash": "0x4db5fbb3f123b7db9216e129d18dfd428c7b4942ffe534c041b643296505008d",
         "pool": "0xEfCCe657d16d300410690bA919e187E0b7Ad0cB2",
         "composition": {
           "totalNandBurn": "95",
@@ -752,22 +788,22 @@
           "compositionPeriod": "3"
         },
         "reconciliation": {
-          "bemBalance": "36",
+          "bemBalance": "44",
           "unrecognized": "0",
           "deficit": "0",
-          "totalAccounted": "21205961954",
-          "totalPaid": "21205961918",
-          "recipientAAccrued": "207901587",
-          "recipientAPaid": "207901587",
-          "recipientBAccrued": "207901587",
-          "recipientBPaid": "207901587",
-          "nandIncome": "20333806670",
-          "nandReceiptsAccrued": "20333806640",
-          "nandReceiptsPaid": "20333806640",
-          "latchIncome": "456352107",
-          "latchReceiptsAccrued": "456352104",
-          "latchReceiptsPaid": "456352104",
-          "residue": "36"
+          "totalAccounted": "21205953900",
+          "totalPaid": "21205953856",
+          "recipientAAccrued": "207901508",
+          "recipientAPaid": "207901508",
+          "recipientBAccrued": "207901508",
+          "recipientBPaid": "207901508",
+          "nandIncome": "20333798670",
+          "nandReceiptsAccrued": "20333798640",
+          "nandReceiptsPaid": "20333798640",
+          "latchIncome": "456352211",
+          "latchReceiptsAccrued": "456352200",
+          "latchReceiptsPaid": "456352200",
+          "residue": "44"
         },
         "checks": {
           "offChainMathMatches": true,
@@ -789,14 +825,14 @@
         "perIdHistories": {
           "NAND": {
             "ids": 40,
-            "claimedSum": "20333806640",
-            "receiptsPaid": "20333806640",
+            "claimedSum": "20333798640",
+            "receiptsPaid": "20333798640",
             "match": true
           },
           "LATCH": {
             "ids": 12,
-            "claimedSum": "456352104",
-            "receiptsPaid": "456352104",
+            "claimedSum": "456352200",
+            "receiptsPaid": "456352200",
             "match": true
           }
         }
@@ -818,6 +854,7 @@
     "realBoundaryMatchesOldNewCompositionModel": true,
     "aliceExactPayout": true,
     "deliveryWentToBob": true,
+    "allocationMatchesAfterDelivery": true,
     "outsiderReceivedNothing": true,
     "recipientsPaidEqually": true,
     "reconcilePass": true
@@ -847,7 +884,7 @@
       "period": "1",
       "count": "1",
       "settledOldIncome": "0",
-      "carriedIncome": "20061662865",
+      "carriedIncome": "20061655227",
       "totalNandBurn": "88",
       "totalLatchBurn": "0"
     },
@@ -856,22 +893,22 @@
       "period": "2",
       "count": "1",
       "settledOldIncome": "27497043",
-      "carriedIncome": "1078428913",
+      "carriedIncome": "1078428568",
       "totalNandBurn": "90",
       "totalLatchBurn": "64"
     },
     "expectedAfterBoundary": {
-      "total": "21167588821",
-      "recipientA": "207525380",
-      "recipientB": "207525380",
-      "participants": "20752538059",
-      "nandIncome": "20313147618",
-      "latchIncome": "439390440",
-      "perNandShare": "507828690",
-      "perLatchShare": "36615870",
-      "nandReceipts": "20313147600",
-      "latchReceipts": "439390440",
-      "residue": "21"
+      "total": "21167580838",
+      "recipientA": "207525302",
+      "recipientB": "207525302",
+      "participants": "20752530233",
+      "nandIncome": "20313139932",
+      "latchIncome": "439390300",
+      "perNandShare": "507828498",
+      "perLatchShare": "36615858",
+      "nandReceipts": "20313139920",
+      "latchReceipts": "439390296",
+      "residue": "18"
     },
     "composition": [
       {
@@ -957,6 +994,6 @@
     "recipientA": "0xD456ea7eab3720608a427142243892B25Cad058F",
     "recipientB": "0x9B8084E32D187f36EB086Fe64dB5e730Cc3BC39F"
   },
-  "completedAt": "2026-10-20T09:49:12.867Z",
+  "completedAt": "2026-10-20T13:23:40.326Z",
   "localForkTransactions": 31
 }

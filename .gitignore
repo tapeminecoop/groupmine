@@ -10,4 +10,5 @@ broadcast/
 .runtime/
 .DS_Store
 *.log
+!reports/logs/*.log
 .runtime-*

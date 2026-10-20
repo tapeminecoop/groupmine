@@ -128,8 +128,14 @@ contract MockMining {
         });
     }
 
+    /// @notice Status changes for tests. REVOKED (2) is terminal, as on the real protocol (a revoked
+    ///         circuit can never mine again). Other transitions, such as an ACTIVE miner becoming
+    ///         COOLING (3) without a payout, are mock-only fault injection: on the real protocol only
+    ///         the NFT holder can stop a miner, and stop() pays the holder first.
     function setStatus(address collection, uint256 tokenId, uint8 status) external {
-        records[minerKey(collection, tokenId)].status = status;
+        Record storage r = records[minerKey(collection, tokenId)];
+        require(r.status != 2, "REVOKED_IS_TERMINAL");
+        r.status = status;
     }
 
     function setCachedBurn(address collection, uint256 tokenId, bool cached, uint32 nand, uint32 latch)
@@ -254,6 +260,39 @@ contract ReceiptHolder {
     function _hook() private {
         if (target == address(0)) return;
         (hookOk, hookResult) = target.call(hookCall);
+    }
+}
+
+/// @dev ERC-1155 wallet contract whose receive hooks can be told to refuse transfers.
+contract ToggleReceiver {
+    bool public refuse;
+
+    error Refused();
+
+    function setRefuse(bool flag) external {
+        refuse = flag;
+    }
+
+    function onERC1155Received(address, address, uint256, uint256, bytes calldata)
+        external
+        view
+        returns (bytes4)
+    {
+        if (refuse) revert Refused();
+        return 0xf23a6e61;
+    }
+
+    function onERC1155BatchReceived(address, address, uint256[] calldata, uint256[] calldata, bytes calldata)
+        external
+        view
+        returns (bytes4)
+    {
+        if (refuse) revert Refused();
+        return 0xbc197c81;
+    }
+
+    function supportsInterface(bytes4 id) external pure returns (bool) {
+        return id == 0x4e2312e0 || id == 0x01ffc9a7;
     }
 }
 

@@ -1,13 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { decodeFunctionData, type Abi } from 'viem';
-import { tapeoutMinerPoolAbi } from '../../sdk/abi.ts';
-import { BATCH_GAS_BUDGET } from '../../sdk/constants.ts';
+import { decodeFunctionData, getAddress, type Abi } from 'viem';
+import { tapeoutMinerPoolAbi, tapeoutReceiptDistributorAbi } from '../../sdk/abi.ts';
+import { BATCH_GAS_BUDGET, TX_GAS_CAP } from '../../sdk/constants.ts';
 import {
-  CLAIM_GAS, DELIVER_GAS, HARVEST_GAS, ISSUE_GAS, admissionGasEstimate, assertWithinBudget, checkBatchSize, deliveryGas, groupForSafe,
-  maxDeliverable, maxIdsPerTx, revokeGas,
+  CLAIM_GAS, DELIVER_GAS, HARVEST_GAS, ISSUE_GAS, SAFE_EXEC_GAS, admissionGasEstimate, assertWithinBudget, checkBatchSize, deliveryBatches, deliveryGas,
+  groupForSafe, maxDeliverable, maxIdsPerTx, revokeGas, safeBatchGas, safePayloadBytes,
 } from '../../sdk/gas.ts';
-import { claimPlans, depositPlans, harvestRangePlans, issuePlans, releasePlans } from '../../sdk/pool.ts';
+import { claimPlans, deliveryPlans, depositPlans, harvestRangePlans, issuePlans, releasePlans } from '../../sdk/pool.ts';
 import { castCommand, type TxPlan } from '../../sdk/tx.ts';
 
 const A = '0x00000000000000000000000000000000000000aa' as const;
@@ -39,11 +39,56 @@ test('plans over the budget are refused and oversize batch sizes rejected', () =
   assert.throws(() => checkBatchSize('claim', 387, maxIdsPerTx(CLAIM_GAS)), /--batch-size 387 is above 386/);
 });
 
-test('Safe batches are split so each file fits one transaction', () => {
+test('Safe batches are split so each file fits one transaction, the Safe overhead included', () => {
   const five = 5_000_000n;
   const groups = groupForSafe([plan(five), plan(five), plan(five), plan(), plan(1n)]);
   assert.deepEqual(groups.map(g => g.map(p => p.gas)), [[five, five], [five], [undefined], [1n]]);
-  assert.ok(groups.every(g => g.reduce((s, p) => s + (p.gas ?? BATCH_GAS_BUDGET), 0n) <= BATCH_GAS_BUDGET));
+  assert.equal(safeBatchGas([plan(five), plan(five)]), 2n * five + SAFE_EXEC_GAS.base + 170n * SAFE_EXEC_GAS.perPayloadByte + (2n * five) / 30n);
+  assert.ok(groups.filter(g => g.length > 1).every(g => safeBatchGas(g) <= BATCH_GAS_BUDGET));
+  // Two plans whose bounds alone fit the budget are split once the Safe's work is added.
+  const six = 6_200_000n;
+  assert.ok(2n * six <= BATCH_GAS_BUDGET);
+  assert.deepEqual(groupForSafe([plan(six), plan(six)]).map(g => g.length), [1, 1]);
+  // The payload counts: the Safe hashes and copies it, and SafeL2 logs it.
+  const big = (gas: bigint): TxPlan => ({ ...plan(gas), data: `0x${'ab'.repeat(40_000)}` });
+  assert.equal(safePayloadBytes([big(1n)]), 40_085);
+  assert.deepEqual(groupForSafe([big(5_500_000n), big(5_500_000n)]).map(g => g.length), [1, 1]);
+  // A plan at the budget goes alone and stays under the cap; one whose Safe bound would not is refused.
+  assert.ok(safeBatchGas([plan(BATCH_GAS_BUDGET)]) > BATCH_GAS_BUDGET && safeBatchGas([plan(BATCH_GAS_BUDGET)]) <= TX_GAS_CAP);
+  assert.deepEqual(groupForSafe([plan(BATCH_GAS_BUDGET), plan(1n)]).map(g => g.length), [1, 1]);
+  assert.throws(() => groupForSafe([{ ...plan(12_500_000n), data: `0x${'ab'.repeat(250_000)}` }]), /through a Safe may need up to \d+ gas, above the BSC per-transaction cap/);
+});
+
+test('a fragmented wallet is delivered in planned steps whose bounds ignore completed ranges', () => {
+  // The review case: 183 single-ID ranges. The distributor resumes at its range cursor, so the final
+  // one-ID delivery is bounded like any single-range delivery (checked on the EVM in GasModelTest).
+  const ranges = Array.from({ length: 183 }, (_, i) => ({ category: 0, firstId: BigInt(i + 1), count: 1n, delivered: 0n }));
+  assert.deepEqual(deliveryBatches(ranges, 300), [
+    { maxIds: 91, gas: 12_567_000n }, { maxIds: 91, gas: 12_567_000n }, { maxIds: 1, gas: 237_000n },
+  ]);
+  const plans = deliveryPlans(A, A, ranges, 300, true);
+  assert.deepEqual(plans.map(p => p.gas), [12_567_000n, 12_567_000n, 237_000n]);
+  assert.deepEqual(decodeFunctionData({ abi: tapeoutReceiptDistributorAbi as Abi, data: plans[2].data }).args, [getAddress(A), 1n]);
+  assert.equal(decodeFunctionData({ abi: tapeoutReceiptDistributorAbi as Abi, data: deliveryPlans(A, A, ranges, 300, false)[0].data }).functionName, 'claim');
+  // A partly delivered range: the next delivery starts inside it, and --max-ids caps each step.
+  const partial = [{ count: 5n, delivered: 5n }, { count: 10n, delivered: 4n }, { count: 3n, delivered: 0n }];
+  assert.deepEqual(deliveryBatches(partial, 4).map(b => b.maxIds), [4, 4, 1]);
+  assert.equal(deliveryBatches(partial, 100)[0].gas, DELIVER_GAS.base + 2n * DELIVER_GAS.perRange + 9n * DELIVER_GAS.perId);
+});
+
+test('maxDeliverable matches a step-by-step search', () => {
+  const slow = (r: { count: bigint; delivered: bigint }[]) => {
+    const pending = r.reduce((s, x) => s + Number(x.count - x.delivered), 0);
+    let n = 0;
+    while (n < pending && deliveryGas(r, n + 1) <= BATCH_GAS_BUDGET) n++;
+    return n;
+  };
+  let seed = 7;
+  const rand = (m: number) => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed % m; };
+  for (let t = 0; t < 40; t++) {
+    const r = Array.from({ length: 1 + rand(120) }, () => { const count = BigInt(1 + rand(12)); return { count, delivered: BigInt(rand(Number(count) + 1)) }; });
+    assert.equal(maxDeliverable(r), slow(r));
+  }
 });
 
 test('delivery and revocation bounds follow the wallet ranges', () => {
