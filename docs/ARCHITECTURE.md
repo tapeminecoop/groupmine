@@ -1,183 +1,178 @@
 # Architecture
 
-TapeOut miner pool V1: one contract holds many TapeOut miner NFTs, collects their BEM through the real
-`Mining.claim` path, and distributes the BEM it actually receives to two ERC-1155 receipt collections
-(NAND and LATCH), two historical-entitlement recipients and a fee recipient. Raw materials, their
-prices, the EOA contribution history, miner withdrawal and redemption are outside this version.
+Four contracts, each deployed and finalized on its own:
 
-## 1. Contracts
+| Contract | Holds | Privileged role and what it can do | What remains after finalization |
+| --- | --- | --- | --- |
+| `TapeoutEntitlementReceipt` (NAND) | — | issuer: `issue`, `retract` (own top IDs only), `finalizeIssuance`, `setURI` | supply fixed forever; issuer can only change the metadata URI |
+| `TapeoutEntitlementReceipt` (LATCH) | — | same code, LATCH category | same |
+| `TapeoutReceiptDistributor` | receipts until delivered | owner: `allocate`, `revokeWallet`, `finalizeAllocation` (all before finalization only) | nothing: beneficiaries and ranges are immutable |
+| `TapeoutMinerPool` | miner NFTs, BEM | owner: `activate` once | nothing: whitelist, recipients and protocol addresses are fixed |
+
+`PoolMath` is the pure accounting library shared by the pool, the tests and (mirrored in TypeScript) the SDK.
+`IMining` is the subset of the deployed Mining ABI the pool uses.
 
 ```
-                   TapeoutMinerPool  (one per fundraising round; Ownable2Step, ReentrancyGuard)
-                   ├── custody:   miner NFTs of the configured collection (registry, no exit path)
-                   ├── income:    Mining.claim(key) per miner -> BEM balance -> ledger
-                   ├── ledger:    totalAccounted / totalPaid, per-bucket paid, per-(category,id) claimed
-                   ├── payouts:   receipt claims, fee release, historical releases
-                   │
-       constructor ├── deploys ─> TapeoutReceipt "NAND"   (ERC-1155, IDs 1..S_N, supply 1 each)
-                   └── deploys ─> TapeoutReceipt "LATCH"  (ERC-1155, IDs 1..S_L, supply 1 each)
-
-external (BSC):  miner collection 0xb102…a14C (beacon proxy) · Mining 0x7E2E…7b46 (ERC-1967 proxy)
-                 · BEM 0x5ce0…695a (8 decimals)
+receipts:     deploy NAND, deploy LATCH ─► issue in batches ─► move into distributor ─► finalizeIssuance (each)
+pool:         deploy (receipt addresses, A, B, depositor whitelist, protocol) ─► activate(S_N, S_L) ─► renounce
+distributor:  deploy(pool) ─► import JSON allocation ─► verify ─► finalizeAllocation ─► users claim (no deadline)
+operation:    whitelisted deposits · anyone harvests · holders claim BEM · anyone releases A and B
 ```
 
-| Contract | Responsibility | Holds funds |
+Activation needs finalized issuance only; the allocation can be finalized before or after it. Receipts
+held by the distributor are part of `S_N`/`S_L` and accrue BEM like any other receipt.
+
+## 1. Entitlement receipts
+
+- IDs are issued sequentially: NAND `1..S_N`, LATCH `1..S_L`, each with supply exactly 1. Every ID is
+  one equal share of its category; NAND #1 and LATCH #1 are unrelated entitlements.
+- `issue(to, count)` mints the next `count` IDs in one batch (the operator can issue to its own wallet
+  and transfer later, or issue straight into the distributor). `retract(count)` exists only to undo
+  over-issuance before finalization: it burns the highest IDs and only if the issuer still holds them,
+  so it can never touch a receipt someone else holds.
+- `finalizeIssuance()` is irreversible. `_update` then refuses every mint and burn, so no code path can
+  add entitlements, burn and reissue, or change the denominator. Transfers stay ordinary ERC-1155
+  transfers; amounts other than 0 or 1 revert, and a holder index (`holderOf`, `holdersPage`) is kept.
+- The contract has no immutables, so every deployment has identical runtime code. That is what lets
+  the pool verify a receipt by code hash.
+
+## 2. Binding the pool to the receipts
+
+The constructor takes the existing receipt addresses and binds them permanently (immutables). It
+accepts them only if they are two different contracts whose runtime code hash equals
+`keccak256(type(TapeoutEntitlementReceipt).runtimeCode)` and whose `category()` is the NAND and LATCH
+constant respectively. An arbitrary ERC-1155, a proxy, or this receipt compiled with other settings is
+rejected (`IncompatibleReceipt`), because none of them is guaranteed to keep unique IDs with a fixed
+supply. Receipts must therefore be deployed from this repository's artifacts, which the CLI does.
+
+`activate(expectedNandShares, expectedLatchShares)` (owner, once) requires both collections to have
+finalized issuance and their supplies to equal the counts the operator reviewed, and refuses
+`S_N + S_L = 0`. The supplies become the pool's permanent denominators.
+
+## 3. Receipt distributor
+
+- **Funding.** Accepts single and batch transfers of the two bound receipts only (`UnsupportedToken`
+  otherwise). Refuses any receipt that already has BEM claim history in the pool
+  (`ConsumedRewardHistory`) and refuses everything after finalization, so a receipt that was delivered
+  can never return as fresh inventory. Anything received before finalization counts as inventory and
+  must be allocated.
+- **Allocation.** Direct on-chain records. The CLI turns the JSON file
+  (`{"allocations":[{"wallet","nandCount","latchCount"}]}`) into ID ranges, deterministically: wallets
+  in file order take the lowest available IDs. `allocate(entries)` checks every ID is held by the
+  distributor and not yet allocated; the wallet must not be zero, the distributor or the pool; a range
+  is at most 1,000 IDs. `revokeWallet` corrects a wallet before finalization. `finalizeAllocation`
+  requires both issuances finalized and `allocated == inventory` for each category. After it, no
+  function can change a beneficiary or a range.
+- **Delivery.** `claim(maxIds)` by the beneficiary, or `deliver(wallet, maxIds)` by anyone, always to
+  the recorded wallet: the receiving address cannot be substituted. A delivered counter per range makes
+  every ID deliverable once. There is no deadline.
+- **No administrative route.** The distributor never calls the pool, never approves an operator, and
+  can only move a receipt to its beneficiary. Because only a receipt's holder can claim its BEM, the
+  income of held receipts stays attached to them; a late claimer receives receipts whose full
+  accumulated BEM is still claimable.
+- **Why not a Merkle tree.** One round with hundreds to low thousands of wallets fits batched
+  `allocate` calls (about 27k gas per ID). On-chain records let the contract itself enforce inventory
+  coverage and immutability, and leave no proof files that must stay published.
+- **Receivers.** Delivery uses `safeBatchTransferFrom`; a contract wallet without an ERC-1155 receiver
+  hook (including some EIP-7702 delegated accounts) can never take delivery, and the distributor never
+  redirects it. The CLI refuses such wallets at import and at verification (ERC-165 check).
+
+## 4. Custody pool
+
+### 4.1 Configuration fixed at deployment
+
+Protocol addresses (BEM, Mining, miner collection) must be contracts. Recipients A and B must be
+non-zero and not the pool; they may be EOAs or multisigs. The depositor whitelist is mandatory: 1 to 16
+unique, non-zero addresses that are not the pool, a protocol contract or a receipt. It has no setter and
+is independent of ownership; the owner or deployer is a depositor only if listed.
+
+| Entry point | Who | Notes |
 | --- | --- | --- |
-| `src/TapeoutMinerPool.sol` | Custody, harvesting, accounting, claims, releases, setup/activation | Miners and BEM |
-| `src/TapeoutReceipt.sol` | Unique-ID ERC-1155 receipt for one category; pool is its only minter | Nothing |
-| `src/PoolMath.sol` | Pure allocation math (see [ACCOUNTING.md](ACCOUNTING.md)) | — |
-| `src/interfaces/IMining.sol` | `minerKey`, `pending`, `claim` (adapted from the baseline) | — |
+| `depositMiners(ids)` | whitelisted depositors | pulls NFTs the caller owns (another account's approval cannot be used) |
+| `registerMiners(ids)` | whitelisted depositors | for NFTs that already reached the pool by plain `transferFrom`; same boundary |
+| `sync`, `harvest`, `harvestRange` | anyone | |
+| `claim`, `claimBatch` | current holder of each receipt ID | ERC-1155 operators must take the ID first |
+| `releaseA`, `releaseB` | anyone | pays the configured recipient; independent of each other and of claims |
+| `setRecipient(role, to)` | the current recipient of that role | lets a recipient rotate to a new address |
+| `activate` | owner, once | the owner's only power |
 
-**Why this composition.** Both receipt collections share one income stream, so one ledger with a
-category split is the simplest correct design: there is no cross-contract settlement, no splitting of
-miners into custody groups, and a single place to reconcile. The receipts are separate contracts
-because the product needs two independent collections, but they carry no accounting: entitlement is
-keyed by `(category, id)` inside the pool, which is what makes income follow the NFT on transfer
-without any transfer hook. The pool deploys its receipts in its constructor so the binding is atomic
-and immutable (no address prediction, no setter). There is no factory, proxy or upgrade path: a new
-round is a new deployment (one transaction), and a deployed pool's rules cannot be changed under its
-holders. Contract sizes: pool 18,741 bytes runtime (limit 24,576), receipt 8,154 bytes.
+There is no pause, upgrade, miner withdrawal, BEM sweep or arbitrary call. A plain ERC-721
+`transferFrom` into the pool registers nothing and changes no totals; `safeTransferFrom` into the pool
+reverts (no receiver hook). Ownership can be renounced after activation without affecting anything.
 
-## 2. Lifecycle
+### 4.2 Admission boundary
 
-### SETUP (owner only)
+`depositMiners` and `registerMiners` run one atomic sequence (`_admit`):
 
-1. **Configure** (`configure(Config)`): `S_N`, `S_L`, `H_N`, `H_L`, `W_N` (8 decimals, LATCH is the
-   remainder), fee recipient, historical NAND/LATCH recipients. Replaceable as a whole until
-   activation; a share count can never drop below an already-minted ID.
-2. **Issue receipts** from the manual allocation (`issueReceiptRange` for contiguous IDs,
-   `issueReceipts` for explicit lists). IDs must be in `1..S`; each ID can exist once. Receipts can be
-   sent to contracts only if they implement the ERC-1155 receiver interface.
-3. **Correct mistakes** with `revokeReceipts` (burn and re-issue). Only possible before activation.
-4. **Deposit miners** at any time (`depositMiners` pulls from the owner after ERC-721 approval;
-   `registerMiners` adopts miners that arrived by plain `transferFrom`). See §3.
-5. **Activate** with `activate(expectedConfigHash)`, the hash of the configuration the operator
-   reviewed off-chain (`npm run pool -- config-hash`). Activation requires:
-   - a fee recipient, and a historical recipient for every category with `H > 0`;
-   - `S + H > 0` for every category with positive weight (no ownerless income);
-   - exactly the IDs `1..S_N` and `1..S_L` issued.
+1. **Validate** the batch (1 to 50 miners, no duplicates, none registered, held by the caller or the
+   pool) and read each miner's composition from Mining (§4.3). A miner that burns a category with no
+   receipts is refused (`UnsupportedCategory`).
+2. **Recognize** BEM already held, under the old composition (`_sync`).
+3. **Settle** every registered miner: `Mining.claim(key)` one by one, never skipped because `pending()`
+   is zero, then recognize the receipts under the old composition. If the claim of a miner that Mining
+   still reports ACTIVE fails, the whole admission reverts (`SettlementFailed`). A miner Mining reports
+   as not ACTIVE is skipped with `InactiveMinerSkipped`: Mining refuses claims for such miners
+   (observed revert `0x5f9bb3be` on BSC), so nothing is collectible. `claimMany` is not used because it
+   silently skips failing keys.
+4. **Checkpoint** the old period (category incomes frozen as bases), take custody, and add the whole
+   batch to the aggregate `N`/`L`.
+5. **Collect carried income**: `Mining.claim` for each incoming miner (must succeed), recognized under
+   the new post-batch composition.
 
-   It then freezes the configuration and supply (`finalizeMinting` on both receipt contracts) and
-   recognizes all BEM already in the pool as income.
+Because the full batch enters the totals in step 4 before any step-5 income is recognized, every
+incoming miner's carried income uses the same composition and the outcome does not depend on order.
+Income still unclaimed when the miner arrives belongs to the pool; nothing is paid to the previous
+holder by the pool. (Mining's `claim` is permissionless and pays the current holder, so a third party
+can still settle a miner to its owner before it is deposited; only income unclaimed at admission
+travels with it.)
 
-### ACTIVE
+BEM that reaches the pool while no miner is admitted (donations, early third-party claims) is not
+recognized, since there is no composition to split it by; the first admission recognizes it in step 5.
 
-| Who | Can |
-| --- | --- |
-| Anyone | `harvest`, `harvestRange`, `sync`, `releaseFee`, `releaseHistorical` (pushes to the fixed recipient) |
-| Receipt holder | `claim(category, id)`, `claimBatch(nandIds, latchIds)` for IDs it holds; transfer IDs (ERC-1155) |
-| Fee / historical recipient | `setRecipient(role, newAddress)` for its own role only |
-| Owner | `depositMiners`, `registerMiners`, `setReceiptURI`, ownership transfer (two-step) |
+### 4.3 Composition source
 
-The owner cannot change economics, mint, burn, move receipts, withdraw BEM, withdraw miners, pause,
-redirect recipients, or execute arbitrary calls after activation; none of those functions exist.
+For miner `id`, the pool reads `getMiner(minerKey(collection, id))` and takes `nandBurn` and
+`latchBurn`: the materials actually burned for that miner. It requires the record to be ACTIVE and to
+point at this collection and token, cross-checks both values against `cachedBurn(collection, id)`
+(which must be cached and equal), and refuses a zero total. Depositors supply only token IDs.
+`gateCount`, `stateCount`, `area`, `depth`, `bstar`, `mult`, `bonus` and the verified/unverified
+weights describe circuit structure or mining power and are not used. The values are cached in the
+miner's registry entry and added to `totalNandBurn`/`totalLatchBurn`; claims never iterate miners.
+Composition is permanent: a miner that later stops still counts, because its materials were consumed.
 
-### Shares, capacity and reserved shares
+### 4.4 Harvesting and claims
 
-The **active share count** `S` is the configured denominator, and activation proves every one of
-those IDs has a holder. **Minting capacity** is `S − issued` during setup and permanently zero after
-activation, so there is never latent supply that could dilute holders or capture income. Shares not
-yet allocated to participants are issued to an explicit **reserve holder** (the allocation file's
-`reserve`), which is their beneficiary. The reserve can later transfer them to participants; as with
-any receipt, unclaimed income moves with the ID, so the reserve claims first if its policy is to keep
-income earned while it held them.
+`harvest(ids)`/`harvestRange(start, count)` call `Mining.claim` per miner inside `try/catch`, emit
+`MinerHarvested` or `MinerHarvestFailed`, and recognize only the actual balance increase under the
+current composition. Claims only read the ledger and the receipt holder index; they never call Mining
+and never depend on admissions, so BEM already recognized stays claimable during a Mining outage or a
+failing admission. `_pay` checks the exact sender and recipient balance deltas.
 
-### Historical entitlements
+## 5. Accounting summary
 
-`H_N` and `H_L` are extra shares that are not NFTs. Denominators are `S + H`; one historical share
-earns exactly what one receipt ID earns. Their accrued income has a ledger of its own
-(`historicalClaimable`, `historicalPaid`) and is paid by `releaseHistorical(category)` to the
-configured recipient, which may be an EOA, a multisig, or a distribution contract that later splits it
-among individual historical contributors. Each entitlement is counted once: historical rights are
-never also represented by receipt IDs. The recipient role can be handed over only by its current
-holder, carrying its unreleased income with it.
+See [ACCOUNTING.md](ACCOUNTING.md). In short: `A = B = ⌊T/102⌋`, receipts share `⌊100T/102⌋`; each
+admission closes a composition period by freezing category totals, and income recognized afterwards
+is split by the new `N/(N+L)`; per-ID claimed history makes unclaimed income follow the receipt.
 
-## 3. Custody and harvesting
+## 6. Scale
 
-**Registration.** A miner is registered only if it is from the configured collection, owned by the
-pool, not yet registered, and the real `Mining.claim(key)` succeeds for it. That claim both validates
-the miner against the real claim path (Mining reverts for keys it does not know) and collects the
-income the miner carried into the pool, including income accrued before the deposit; under the
-protocol's rules unclaimed income stays with the NFT, and it belongs to the pool like any other
-income. ERC-721 `safeTransferFrom` into the pool is rejected (no receiver hook), so unsolicited NFTs
-cannot be pushed in through that path.
+Strict settlement claims every registered miner inside each admission, so admission gas grows
+linearly with the registry: about 27.8k gas per registered miner on the real protocol, plus about
+0.29M for one incoming miner (BSC fork, block 128,713,128). BSC caps a transaction at 2^24 =
+16,777,216 gas (BEP-652, live since the Mendel upgrade on 2026-04-28), so single-miner admissions stop
+fitting at roughly 590 registered miners; the CLI plans against a conservative model and a 3/4 budget
+and stops at 401. Beyond that, harvesting, claims and payments keep working but no further miners can
+be admitted under this boundary. Measurements are in
+[VERIFICATION_REPORT.md](VERIFICATION_REPORT.md#4-gas-and-scale).
 
-**Harvesting.** `harvest(tokenIds)` and `harvestRange(start, count)` are permissionless and batched,
-so collection scales to any number of miners and is independent from claims: holders only ever claim
-income that is already in the pool, and claims never touch `Mining`. Each harvest:
+## 7. Trust assumptions
 
-- always calls `Mining.claim(key)`; `pending` is never consulted (the baseline found
-  `pending() == 0` while `claim()` paid positive BEM, and the fork test here observes it again);
-- isolates failures per miner: a reverting claim emits `MinerHarvestFailed(tokenId, reason)` and is
-  counted in the returned `failed`, distinct from a successful zero claim (`MinerHarvested(id, 0)`);
-- accounts only the BEM balance increase (sync before and after), never an estimate.
-
-`npm run pool -- harvest --all --isolate-failures` simulates first and bisects to name failing
-miners before sending.
-
-## 4. Claims and transfers
-
-- Only the current holder (`balanceOf(caller, id) == 1`) can claim an ID; an ERC-1155 operator must
-  transfer the ID to itself first. Third parties cannot push a holder's claim, so a buyer of a receipt
-  receives its unclaimed income exactly as the baseline's mainnet test demonstrated.
-- `claimBatch` takes both collections in one call; a foreign or out-of-range ID reverts the whole
-  batch; a duplicated ID pays once.
-- Claims sync first, so BEM that arrived by any route is included.
-
-## 5. Material decisions
-
-| Decision | Choice | Why |
-| --- | --- | --- |
-| Contract layout | 1 pool + 2 receipt contracts, receipts deployed by the pool | One ledger for one income stream; two independent collections as required; atomic binding |
-| Upgradeability | None | Holders' terms cannot change; new terms = new pool |
-| Admin | `Ownable2Step` owner with setup powers; after activation only miner deposits and metadata | Manual configuration and issuance need an operator; nothing after activation can hurt holders |
-| Economic configuration | Fixed at activation (hash-committed) | Avoids the unharvested-income boundary problem of mid-life changes |
-| Issuance | All IDs `1..S` before activation; unallocated IDs go to an explicit reserve | No orphaned or diluting shares; reserved shares have a beneficiary |
-| Error correction | `revokeReceipts` before activation only | Manual allocation needs a correction path; none once income can accrue |
-| Accounting | Cumulative floors of `T` | Exact conservation, monotonic, path-independent, bounded residue; O(1) per claim |
-| Fee and historical payout | Permissionless push to a fixed recipient; role transferable only by its holder | Works with any recipient (including contracts); owner cannot redirect |
-| Harvest failure handling | Per-miner isolation with explicit failure events | One bad miner must not block collection from the rest |
-| Miner validation | Real `Mining.claim` must succeed at registration | Uses the protocol itself as the validity check; captures carried income |
-| Payments | Exact sender/recipient balance deltas | Baseline rule; abnormal BEM behaviour reverts instead of corrupting the ledger |
-| EVM target | Paris bytecode (deployed as-is in the fork test on a Cancun EVM) | Conservative; BSC contracts already use PUSH0, so newer targets would also work |
-
-## 6. Relationship to the baseline (TapeoutMarket/test1 @ 9d86a26)
-
-Reused and adapted: the `IMining` interface and its usage rules, balance-based income recognition
-(`balance + totalPaid − totalAccounted`), exact-delta payments, the per-ID claimed-history model and
-holder index (so income follows the receipt and former holders get `NotHolder`), unique-ID ERC-1155
-receipts with supply one, the mock protocol contracts, and many regression scenarios. Not carried
-over: Seaport/CircuitMarket purchasing, funding/refunds, the factory/timelock/clone template
-machinery, and redemption (including "collect all receipts to withdraw the miner"). Deliberate
-differences: many miners instead of one; an owner for the setup phase; two receipt collections with a
-fee and historical buckets; per-miner failure isolation in harvest (the single-miner vault propagated
-the claim revert). See [BASELINE.md](BASELINE.md).
-
-## 7. Limitations and risks
-
-1. **Miners are locked.** There is no withdrawal, redemption or migration. If the protocol ever needs
-   owner-only actions to keep a miner productive (`start`, `stop`, `arm` exist on Mining), the pool
-   cannot perform them; miners must be fully set up before deposit. The fork test shows deposited
-   miners keep accruing after moving into the pool, at the tested block.
-2. **External upgradeability.** The miner collection is a beacon proxy and Mining an ERC-1967 proxy
-   (owner zero and sealed at the observed blocks). A protocol upgrade could change claim semantics.
-   `npm run pool -- protocol-check` compares implementation addresses and code hashes to the recorded
-   values; a mismatch requires review.
-3. **BEM assumptions.** Plain, non-rebasing, fee-free ERC-20. Violations make payments revert rather
-   than misaccount, which also means payouts stop until the token behaves.
-4. **Setup trust.** Allocation is manual and decided by the operator; holders should rely on
-   receipts only after activation, when the configuration hash, supply and recipients are fixed.
-5. **Carried income at deposit.** The pool captures whatever unclaimed income a miner carries when it
-   is deposited. If a depositor claims before depositing, that income never reaches the pool; this is
-   operational policy, not something the contract can enforce.
-6. **Receipt holders must accept ERC-1155.** Issuance and transfers call the ERC-1155 receiver hook on
-   any address with code — contracts and EOAs with an EIP-7702 delegation. A wallet whose delegate
-   does not implement the hook cannot receive receipts (observed on BSC for the well-known test
-   accounts). `issue` checks holders before sending; operators should collect compatible addresses.
-   Fee and historical recipients only receive BEM, so any address works for them.
-7. **No rescue path.** Other tokens or NFTs sent to the pool stay there. BEM sent to it is income.
-8. **Residue and lost keys.** At most `1 + (S_N+H_N−1) + (S_L+H_L−1)` raw units remain after
-   everyone claims; income of IDs whose holders lose their keys stays in the pool.
-9. **Batch sizes.** Claims, issuance and harvests are bounded by block gas; the CLI batches them
-   (measured costs in [VERIFICATION_REPORT.md](VERIFICATION_REPORT.md)).
-10. **Not audited.** Tests, fuzzing, invariants and a fork run are not an independent security audit.
+- **Protocol.** Mining is an ERC-1967 proxy and the miner collection a beacon proxy; their owners can
+  change behaviour. The pool binds to the proxy addresses. `protocol-check` compares the live
+  implementation addresses and code hash with the recorded ones before operations.
+- **BEM** must stay a plain ERC-20 (no fee, rebase or forced debit). Payments with unexpected deltas
+  revert, and a balance below the ledger makes recognition revert (`BalanceDecreased`) instead of
+  rewriting history; claims are then blocked until the balance is restored.
+- **Recipients** control their own role; a lost recipient key leaves that 1/102 unclaimable but affects
+  nothing else.
+- **No audit.** The contracts have not been audited and were not deployed to BSC mainnet.

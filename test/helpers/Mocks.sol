@@ -4,8 +4,10 @@ pragma solidity 0.8.24;
 import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import {ERC1155} from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
+import {IMining} from "../../src/interfaces/IMining.sol";
 
-/// @dev Adapted from test/helpers/Mocks.sol in TapeoutMarket/test1 (commit 9d86a26).
+/// @dev Adapted from test/helpers/Mocks.sol in TapeoutMarket/test1 (commit 9d86a26) and groupmine 48a2d74.
 contract MockNFT is ERC721 {
     bool public broken;
 
@@ -25,8 +27,8 @@ contract MockNFT is ERC721 {
     }
 }
 
-/// @dev 8 decimals like real BEM. Fault switches model a broken balance read, a broken
-///      transfer, a fee-on-transfer token, and an external balance decrease.
+/// @dev 8 decimals like real BEM, with fault switches (broken balance read, broken transfer, fee on
+///      transfer) for the payment-rollback regressions.
 contract MockBEM is ERC20 {
     bool public brokenBalance;
     bool public brokenTransfer;
@@ -67,28 +69,37 @@ contract MockBEM is ERC20 {
     }
 }
 
-/// @dev Multi-miner model of the observed Mining behaviour:
-///      - claim(key) is permissionless and mints to the NFT's *current* holder;
-///      - unclaimed income stays with the miner when the NFT moves;
-///      - `pending` only reports part of the claimable amount (`unsettled` is invisible to it),
-///        reproducing the real pending()==0 / claim()>0 observation;
-///      - claim for a key that was never started reverts, like the real contract.
+/// @dev Model of the observed Mining behaviour (see docs/VERIFICATION_REPORT.md):
+///      - claim(key) is permissionless, mints to the NFT's current holder, and reverts unless the
+///        miner record's status is ACTIVE (1), like the real 0x5f9bb3be revert;
+///      - `pending` reports only part of what claim pays (`unsettled` is invisible to it);
+///      - claimMany skips keys that cannot be claimed instead of reverting;
+///      - the miner record carries nandBurn/latchBurn, mirrored by cachedBurn.
 contract MockMining {
+    struct Record {
+        address circuits;
+        uint64 circuitId;
+        uint8 status;
+        uint32 nandBurn;
+        uint32 latchBurn;
+        bool cached;
+        uint32 cachedNand;
+        uint32 cachedLatch;
+        uint64 circuitIdOverride;
+    }
+
     MockBEM public immutable bem;
     bool public broken;
-    bool public zeroReverts;
     uint256 public claims;
     address public lastCaller;
 
-    mapping(bytes32 => bool) public started;
+    mapping(bytes32 => Record) public records;
     mapping(bytes32 => bool) public keyBroken;
     mapping(bytes32 => uint256) public rewards;
     mapping(bytes32 => uint256) public unsettled;
-    mapping(bytes32 => address) public collections;
-    mapping(bytes32 => uint256) public tokenIds;
     mapping(bytes32 => uint256) public claimCount;
 
-    error UnknownMinerKey(bytes32 key);
+    error NotActiveMiner(bytes32 key);
 
     constructor(MockBEM token) {
         bem = token;
@@ -98,33 +109,77 @@ contract MockMining {
         return keccak256(abi.encode(collection, tokenId));
     }
 
-    function start(address collection, uint256 tokenId) public returns (bytes32 k) {
+    /// @notice Start a miner with its burn composition (ACTIVE, burn cached).
+    function start(address collection, uint256 tokenId, uint32 nand, uint32 latch)
+        public
+        returns (bytes32 k)
+    {
         k = minerKey(collection, tokenId);
-        started[k] = true;
-        collections[k] = collection;
-        tokenIds[k] = tokenId;
+        records[k] = Record({
+            circuits: collection,
+            circuitId: uint64(tokenId),
+            status: 1,
+            nandBurn: nand,
+            latchBurn: latch,
+            cached: true,
+            cachedNand: nand,
+            cachedLatch: latch,
+            circuitIdOverride: 0
+        });
+    }
+
+    function setStatus(address collection, uint256 tokenId, uint8 status) external {
+        records[minerKey(collection, tokenId)].status = status;
+    }
+
+    function setCachedBurn(address collection, uint256 tokenId, bool cached, uint32 nand, uint32 latch)
+        external
+    {
+        Record storage r = records[minerKey(collection, tokenId)];
+        r.cached = cached;
+        r.cachedNand = nand;
+        r.cachedLatch = latch;
+    }
+
+    function setRecordCircuitId(address collection, uint256 tokenId, uint64 circuitId) external {
+        records[minerKey(collection, tokenId)].circuitIdOverride = circuitId;
     }
 
     /// @notice Income visible to `pending`.
     function accrue(address collection, uint256 tokenId, uint256 amount) external {
-        rewards[start(collection, tokenId)] += amount;
+        rewards[minerKey(collection, tokenId)] += amount;
     }
 
     /// @notice Income that `claim` settles but `pending` does not report.
     function accrueUnsettled(address collection, uint256 tokenId, uint256 amount) external {
-        unsettled[start(collection, tokenId)] += amount;
+        unsettled[minerKey(collection, tokenId)] += amount;
     }
 
     function setBroken(bool flag) external {
         broken = flag;
     }
 
-    function setZeroReverts(bool flag) external {
-        zeroReverts = flag;
-    }
-
     function setKeyBroken(address collection, uint256 tokenId, bool flag) external {
         keyBroken[minerKey(collection, tokenId)] = flag;
+    }
+
+    function getMiner(bytes32 k) external view returns (IMining.MinerRecord memory m) {
+        Record storage r = records[k];
+        m.circuits = r.circuits;
+        m.circuitId = r.circuitIdOverride != 0 ? r.circuitIdOverride : r.circuitId;
+        m.status = r.status;
+        m.nandBurn = r.nandBurn;
+        m.latchBurn = r.latchBurn;
+        m.gateCount = r.nandBurn + r.latchBurn;
+        m.stateCount = r.latchBurn;
+        m.bstar = uint64(r.nandBurn) + r.latchBurn;
+        m.area = uint64(r.nandBurn) + r.latchBurn;
+        m.mult = 1;
+    }
+
+    function cachedBurn(address collection, uint256 tokenId) external view returns (bool, uint32, uint32) {
+        Record storage r = records[minerKey(collection, tokenId)];
+        return (r.cached, r.cachedNand, r.cachedLatch);
     }
 
     function pending(bytes32 k) external view returns (uint256) {
@@ -132,23 +187,30 @@ contract MockMining {
         return rewards[k];
     }
 
-    function claim(bytes32 k) external {
+    function claim(bytes32 k) public {
         require(!broken, "MINING_BROKEN");
-        if (!started[k]) revert UnknownMinerKey(k);
+        if (records[k].status != 1) revert NotActiveMiner(k);
         require(!keyBroken[k], "MINER_BROKEN");
         uint256 n = rewards[k] + unsettled[k];
-        require(n > 0 || !zeroReverts, "ZERO_REWARDS");
         rewards[k] = 0;
         unsettled[k] = 0;
         claims++;
         claimCount[k]++;
         lastCaller = msg.sender;
         if (n == 0) return;
-        bem.mint(IERC721(collections[k]).ownerOf(tokenIds[k]), n);
+        Record storage r = records[k];
+        bem.mint(IERC721(r.circuits).ownerOf(r.circuitId), n);
+    }
+
+    /// @notice Like the deployed contract: keys that cannot be claimed are skipped silently.
+    function claimMany(bytes32[] calldata keys) external {
+        for (uint256 i; i < keys.length; ++i) {
+            try this.claim(keys[i]) {} catch {}
+        }
     }
 }
 
-/// @dev ERC-1155 holder that can be told to claim from inside its own receive hook.
+/// @dev ERC-1155 holder that can be told to call something from inside its receive hook.
 contract ReceiptHolder {
     bytes4 private constant RECEIVED = 0xf23a6e61;
     bytes4 private constant BATCH_RECEIVED = 0xbc197c81;
@@ -192,5 +254,26 @@ contract ReceiptHolder {
     function _hook() private {
         if (target == address(0)) return;
         (hookOk, hookResult) = target.call(hookCall);
+    }
+}
+
+/// @dev Any other ERC-1155, used to show that the pool and distributor bind only the real receipts.
+contract ForeignERC1155 is ERC1155 {
+    bytes32 public category;
+
+    constructor(bytes32 category_) ERC1155("") {
+        category = category_;
+    }
+
+    function mint(address to, uint256 id) external {
+        _mint(to, id, 1, "");
+    }
+
+    function issuanceFinalized() external pure returns (bool) {
+        return true;
+    }
+
+    function totalSupply() external pure returns (uint256) {
+        return 1;
     }
 }

@@ -1,5 +1,14 @@
 {
   "collectionImplementation": "0x8E1D125Def6d3826C278299273a0760D47626068",
-  "forkBlock": 128611683,
+  "forkBlock": 128713128,
+  "inactiveToken": 648,
+  "miner12733Bstar": 88,
+  "miner12733GateCount": 88,
+  "miner12733LatchBurn": 0,
+  "miner12733NandBurn": 88,
+  "miner13948Bstar": 66,
+  "miner13948GateCount": 66,
+  "miner13948LatchBurn": 64,
+  "miner13948NandBurn": 2,
   "miningImplementation": "0xa3DBe873DA37cD4e4a13c7cEf23a7dB6Ca60f898"
 }

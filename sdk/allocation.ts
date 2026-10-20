@@ -1,126 +1,171 @@
+import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
-import { getAddress, zeroAddress, type Address } from 'viem';
+import { getAddress, isAddress, zeroAddress, type Address } from 'viem';
 import { z } from 'zod';
-import type { CategoryName } from './constants.js';
+import { BATCH_GAS_BUDGET, type CategoryName } from './constants.js';
+import { ALLOCATE_GAS } from './gas.js';
 
 const address = z.string().regex(/^0x[0-9a-fA-F]{40}$/, 'expected a 0x-prefixed 20-byte address');
-const entry = z.union([
-  z.object({ holder: address, shares: z.number().int().positive(), ref: z.string().max(128).optional() }).strict(),
-  z.object({ holder: address, ids: z.array(z.number().int().positive()).min(1), ref: z.string().max(128).optional() }).strict(),
-]);
 
-/** Manual allocation decided from the EOA contribution records. `shares` entries receive the
- *  lowest free IDs in file order; `ids` entries pin exact IDs. `reserve` (optional) receives every
- *  remaining ID so that IDs 1..S are all issued before activation. */
-export const allocationSchema = z.object({
-  nand: z.array(entry).default([]),
-  latch: z.array(entry).default([]),
-  reserve: address.optional(),
+/** Operator-facing allocation file: wallet addresses and receipt counts per collection. */
+export const allocationFileSchema = z.object({
+  allocations: z.array(z.object({
+    wallet: address,
+    nandCount: z.number().int().nonnegative().max(1_000_000),
+    latchCount: z.number().int().nonnegative().max(1_000_000),
+    ref: z.string().max(128).optional(),
+  }).strict()).min(1),
 }).strict();
 
-export type AllocationFile = z.infer<typeof allocationSchema>;
+export type AllocationFile = z.infer<typeof allocationFileSchema>;
 
-export interface Assignment {
-  holder: Address;
-  ids: number[];
+export interface AllocationEntry {
+  wallet: Address;
+  nandCount: number;
+  latchCount: number;
   ref?: string;
 }
 
-export interface Issuance {
-  category: CategoryName;
-  shares: number;
-  assignments: Assignment[];
+/** [firstId, count] runs of consecutive IDs. */
+export type Range = readonly [number, number];
+
+export interface Assignment {
+  wallet: Address;
+  ref?: string;
+  NAND: Range[];
+  LATCH: Range[];
 }
 
-export async function loadAllocation(file: string): Promise<AllocationFile> {
-  return allocationSchema.parse(JSON.parse(await readFile(file, 'utf8')));
+export const MAX_RANGE = 1000; // TapeoutReceiptDistributor.MAX_RANGE
+
+export async function loadAllocationFile(file: string) {
+  const bytes = await readFile(file);
+  const parsed = allocationFileSchema.parse(JSON.parse(bytes.toString('utf8')));
+  return { file: parsed, sha256: createHash('sha256').update(bytes).digest('hex') };
 }
 
-export function buildIssuance(category: CategoryName, shares: number, entries: AllocationFile['nand'], reserve?: string): Issuance {
-  const taken = new Map<number, number>();
-  const assignments: Assignment[] = entries.map(e => ({ holder: holderAddress(e.holder), ids: [], ...(e.ref ? { ref: e.ref } : {}) }));
-  entries.forEach((e, index) => {
-    if (!('ids' in e)) return;
-    for (const id of e.ids) {
-      if (id < 1 || id > shares) throw new Error(`${category}: id ${id} outside 1..${shares}`);
-      if (taken.has(id)) throw new Error(`${category}: id ${id} allocated twice`);
-      taken.set(id, index);
-      assignments[index].ids.push(id);
+/** Normalizes and validates wallets and counts; throws with every problem found. */
+export function validateAllocation(file: AllocationFile): { entries: AllocationEntry[]; totals: Record<CategoryName, number> } {
+  const problems: string[] = [];
+  const seen = new Map<string, number>();
+  const entries: AllocationEntry[] = [];
+  file.allocations.forEach((a, i) => {
+    // Mixed-case addresses must carry a valid EIP-55 checksum (catches copy errors); all-lowercase is accepted.
+    if (!isAddress(a.wallet, { strict: true })) {
+      problems.push(`allocations[${i}]: invalid address checksum ${a.wallet}`);
+      return;
     }
+    const wallet = getAddress(a.wallet);
+    if (wallet === zeroAddress) problems.push(`allocations[${i}]: zero address`);
+    const key = wallet.toLowerCase();
+    if (seen.has(key)) problems.push(`allocations[${i}]: wallet ${wallet} already listed at allocations[${seen.get(key)}]`);
+    seen.set(key, i);
+    if (a.nandCount === 0 && a.latchCount === 0) problems.push(`allocations[${i}]: ${wallet} receives nothing`);
+    entries.push({ wallet, nandCount: a.nandCount, latchCount: a.latchCount, ...(a.ref ? { ref: a.ref } : {}) });
   });
-  let next = 1;
-  entries.forEach((e, index) => {
-    if (!('shares' in e)) return;
-    for (let n = 0; n < e.shares; n++) {
-      while (taken.has(next)) next++;
-      if (next > shares) throw new Error(`${category}: allocations exceed the ${shares} configured shares`);
-      taken.set(next, index);
-      assignments[index].ids.push(next);
-    }
-  });
-  const missing: number[] = [];
-  for (let id = 1; id <= shares; id++) if (!taken.has(id)) missing.push(id);
-  if (missing.length > 0) {
-    if (!reserve) throw new Error(`${category}: ${missing.length} of ${shares} shares unallocated; allocate them or name a reserve holder`);
-    assignments.push({ holder: holderAddress(reserve), ids: missing, ref: 'reserve' });
-  }
-  for (const a of assignments) a.ids.sort((x, y) => x - y);
-  return { category, shares, assignments: assignments.filter(a => a.ids.length > 0) };
+  if (problems.length) throw new Error(`Allocation file rejected:\n- ${problems.join('\n- ')}`);
+  return { entries, totals: { NAND: entries.reduce((s, e) => s + e.nandCount, 0), LATCH: entries.reduce((s, e) => s + e.latchCount, 0) } };
 }
 
-function holderAddress(raw: string): Address {
-  const value = getAddress(raw);
-  if (value === zeroAddress) throw new Error('holder cannot be the zero address');
-  return value;
-}
-
-/** Contiguous runs of a sorted ID list, e.g. [1,2,3,7,9,10] -> [[1,3],[7,1],[9,2]] as [first,count]. */
-export function runs(ids: number[]): Array<[number, number]> {
-  const sorted = [...ids].sort((a, b) => a - b);
-  const result: Array<[number, number]> = [];
-  for (const id of sorted) {
-    const last = result.at(-1);
+export function runs(ids: number[]): Range[] {
+  const out: [number, number][] = [];
+  for (const id of ids) {
+    const last = out.at(-1);
     if (last && last[0] + last[1] === id) last[1]++;
-    else result.push([id, 1]);
+    else out.push([id, 1]);
   }
-  return result;
+  return out;
 }
 
-export type IssuanceCall =
-  | { kind: 'range'; category: CategoryName; holder: Address; firstId: number; count: number }
-  | { kind: 'list'; category: CategoryName; holders: Address[]; ids: number[] };
+/**
+ * Deterministically assigns IDs from the distributor's inventory: wallets in file order take the lowest
+ * remaining IDs of each collection. Every inventory ID must be assigned (coverage) and no ID twice.
+ */
+export function assignIds(entries: AllocationEntry[], inventory: Record<CategoryName, number[]>): Assignment[] {
+  const problems: string[] = [];
+  const pools: Record<CategoryName, number[]> = { NAND: [], LATCH: [] };
+  for (const c of ['NAND', 'LATCH'] as const) {
+    const sorted = [...inventory[c]].sort((a, b) => a - b);
+    for (let i = 1; i < sorted.length; i++) if (sorted[i] === sorted[i - 1]) problems.push(`${c}: inventory lists ID ${sorted[i]} twice`);
+    if (sorted.some(id => !Number.isInteger(id) || id < 1)) problems.push(`${c}: invalid ID in inventory`);
+    pools[c] = sorted;
+    const wanted = entries.reduce((s, e) => s + (c === 'NAND' ? e.nandCount : e.latchCount), 0);
+    if (wanted !== sorted.length) problems.push(`${c}: allocation totals ${wanted} but the distributor holds ${sorted.length} (every held receipt must be allocated)`);
+  }
+  if (problems.length) throw new Error(`Allocation cannot cover the inventory:\n- ${problems.join('\n- ')}`);
+  const cursor: Record<CategoryName, number> = { NAND: 0, LATCH: 0 };
+  return entries.map(e => {
+    const take = (c: CategoryName, count: number) => {
+      const ids = pools[c].slice(cursor[c], cursor[c] + count);
+      cursor[c] += count;
+      return runs(ids);
+    };
+    return { wallet: e.wallet, ...(e.ref ? { ref: e.ref } : {}), NAND: take('NAND', e.nandCount), LATCH: take('LATCH', e.latchCount) };
+  });
+}
 
-/** Minimal set of issuance calls, each minting at most `maxIdsPerCall` IDs. IDs listed in
- *  `alreadyIssued` are skipped, so a partially executed plan can be resumed safely. */
-export function issuanceCalls(issuance: Issuance, maxIdsPerCall = 200, alreadyIssued: Set<number> = new Set()): IssuanceCall[] {
-  if (maxIdsPerCall < 1) throw new Error('maxIdsPerCall must be positive');
-  const calls: IssuanceCall[] = [];
-  let singles: { holder: Address; id: number }[] = [];
+export interface DistributorInput {
+  category: number;
+  wallet: Address;
+  firstId: bigint;
+  count: bigint;
+}
+
+/**
+ * Distributor `allocate` batches. Each carries at most `maxIdsPerTx` IDs and stays within `gasBudget`
+ * under ALLOCATE_GAS, which charges every range (many small wallets cost more than one large one).
+ */
+export function allocationBatches(assignments: Assignment[], maxIdsPerTx = 400, gasBudget: bigint = BATCH_GAS_BUDGET): DistributorInput[][] {
+  if (maxIdsPerTx < 1) throw new Error('maxIdsPerTx must be positive');
+  const g = { base: Number(ALLOCATE_GAS.base), perId: Number(ALLOCATE_GAS.perId), perRange: Number(ALLOCATE_GAS.perRange) };
+  const budget = Number(gasBudget);
+  if (budget < g.base + g.perRange + g.perId) throw new Error('gas budget cannot fit a single allocation');
+  const batches: DistributorInput[][] = [];
+  let current: DistributorInput[] = [];
+  let used = 0;
+  let gas = g.base;
   const flush = () => {
-    for (let i = 0; i < singles.length; i += maxIdsPerCall) {
-      const chunk = singles.slice(i, i + maxIdsPerCall);
-      calls.push({ kind: 'list', category: issuance.category, holders: chunk.map(s => s.holder), ids: chunk.map(s => s.id) });
-    }
-    singles = [];
+    batches.push(current);
+    current = [];
+    used = 0;
+    gas = g.base;
   };
-  for (const a of issuance.assignments) {
-    for (const [first, count] of runs(a.ids.filter(id => !alreadyIssued.has(id)))) {
-      if (count === 1) { singles.push({ holder: a.holder, id: first }); continue; }
-      for (let offset = 0; offset < count; offset += maxIdsPerCall) {
-        calls.push({ kind: 'range', category: issuance.category, holder: a.holder, firstId: first + offset, count: Math.min(maxIdsPerCall, count - offset) });
+  for (const a of assignments) {
+    for (const [c, category] of [['NAND', 0], ['LATCH', 1]] as const) {
+      for (const [first, count] of a[c]) {
+        let offset = 0;
+        while (offset < count) {
+          const fitsByGas = Math.floor((budget - gas - g.perRange) / g.perId);
+          if (used === maxIdsPerTx || fitsByGas < 1) {
+            flush();
+            continue;
+          }
+          const n = Math.min(count - offset, maxIdsPerTx - used, MAX_RANGE, fitsByGas);
+          current.push({ category, wallet: a.wallet, firstId: BigInt(first + offset), count: BigInt(n) });
+          offset += n;
+          used += n;
+          gas += g.perRange + n * g.perId;
+        }
       }
     }
   }
-  flush();
-  return calls;
+  if (current.length) batches.push(current);
+  return batches;
 }
 
-export function summarize(issuance: Issuance) {
-  const byHolder = new Map<string, number>();
-  for (const a of issuance.assignments) byHolder.set(a.holder, (byHolder.get(a.holder) ?? 0) + a.ids.length);
+/** Upper-bound gas of one `allocate` batch under ALLOCATE_GAS. */
+export function allocationBatchGas(batch: readonly DistributorInput[]): bigint {
+  return ALLOCATE_GAS.base + batch.reduce((s, e) => s + ALLOCATE_GAS.perRange + e.count * ALLOCATE_GAS.perId, 0n);
+}
+
+export function allocationArtifact(meta: { chainId: number; distributor: Address; nandReceipt: Address; latchReceipt: Address; sourceSha256: string; blockNumber: bigint }, assignments: Assignment[]) {
+  const count = (ranges: Range[]) => ranges.reduce((s, [, n]) => s + n, 0);
   return {
-    category: issuance.category,
-    shares: issuance.shares,
-    holders: [...byHolder.entries()].map(([holder, count]) => ({ holder, count, fractionOfCategory: `${((count / issuance.shares) * 100).toFixed(4)}%` })),
+    schema: 'tapeout-allocation-artifact/1',
+    ...meta,
+    blockNumber: meta.blockNumber.toString(),
+    totals: { NAND: assignments.reduce((s, a) => s + count(a.NAND), 0), LATCH: assignments.reduce((s, a) => s + count(a.LATCH), 0), wallets: assignments.length },
+    wallets: assignments.map(a => ({ wallet: a.wallet, ...(a.ref ? { ref: a.ref } : {}), nand: { count: count(a.NAND), ranges: a.NAND }, latch: { count: count(a.LATCH), ranges: a.LATCH } })),
+    howToClaim: 'Call claim(maxIds) on the distributor from your wallet (or anyone may call deliver(yourWallet, maxIds)); receipts arrive with all BEM accrued so far, then claim BEM on the pool with claimBatch(nandIds, latchIds).',
   };
 }

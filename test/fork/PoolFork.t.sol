@@ -6,7 +6,8 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {TapeoutMinerPool} from "../../src/TapeoutMinerPool.sol";
-import {TapeoutReceipt} from "../../src/TapeoutReceipt.sol";
+import {TapeoutEntitlementReceipt} from "../../src/TapeoutEntitlementReceipt.sol";
+import {TapeoutReceiptDistributor} from "../../src/TapeoutReceiptDistributor.sol";
 import {PoolMath} from "../../src/PoolMath.sol";
 import {IMining} from "../../src/interfaces/IMining.sol";
 
@@ -14,10 +15,15 @@ interface IBeacon {
     function implementation() external view returns (address);
 }
 
-/// @notice Real BSC protocol state at a pinned block (run through scripts/fork-test.ts).
-///         Uses the deployed miner collection, Mining and BEM without modifying their code or
-///         storage. Miners are moved from their current EOA holders with fork-only impersonation.
-///         Skipped unless FORK_RPC_URL, FORK_BLOCK and FORK_MINER_IDS are set.
+interface IMiningMany {
+    function claimMany(bytes32[] calldata keys) external;
+}
+
+/// @notice Real BSC protocol state at a pinned block (run through scripts/fork-test.ts). Uses the
+///         deployed miner collection, Mining and BEM without modifying their code or storage; miners
+///         are moved from their current holders with fork-only impersonation. Deploys the exact Paris
+///         artifacts from ./out. Env: FORK_RPC_URL, FORK_BLOCK, FORK_NAND_MINER, FORK_LATCH_MINER,
+///         FORK_SCALE_MINERS (comma separated), FORK_INACTIVE_TOKEN.
 contract PoolForkTest is Test {
     address internal constant COLLECTION = 0xb1024b89886B9a34Aa4ff5F31C411D708b20a14C;
     address internal constant MINING = 0x7E2E0DC66a3bD9103E69b766afA62d9f7b697b46;
@@ -29,6 +35,7 @@ contract PoolForkTest is Test {
     bytes32 internal constant BEACON_SLOT =
         0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50;
     bytes32 internal constant KEY_3204 = 0xb0e5b7d325dead6144886258056fb8e27ff5f6192aaa90fd0b45682c297c1c0d;
+    uint256 internal constant TX_GAS_CAP = 16_777_216; // BEP-652 / EIP-7825, BSC Mendel (2026-04-28)
 
     TapeoutMinerPool.Category internal constant NAND = TapeoutMinerPool.Category.NAND;
     TapeoutMinerPool.Category internal constant LATCH = TapeoutMinerPool.Category.LATCH;
@@ -38,18 +45,21 @@ contract PoolForkTest is Test {
     IERC721 internal collection = IERC721(COLLECTION);
 
     address internal operator = makeAddr("fork.operator");
-    address internal feeTo = makeAddr("fork.fee");
-    address internal histNandTo = makeAddr("fork.historicalNand");
-    address internal histLatchTo = makeAddr("fork.historicalLatch");
+    address internal depositor = makeAddr("fork.depositor");
+    address internal recipientA = makeAddr("fork.recipientA");
+    address internal recipientB = makeAddr("fork.recipientB");
     address internal alice = makeAddr("fork.alice");
     address internal bob = makeAddr("fork.bob");
     address internal carol = makeAddr("fork.carol");
     address internal keeper = makeAddr("fork.keeper");
 
-    uint256[] internal minerIds;
+    TapeoutEntitlementReceipt internal nandReceipt;
+    TapeoutEntitlementReceipt internal latchReceipt;
+    TapeoutMinerPool internal pool;
+    TapeoutReceiptDistributor internal distributor;
     uint256 internal forkBlock;
-    bytes32 internal artifactSha256;
-    string internal observations = "fork";
+    uint256 internal nandMiner;
+    uint256 internal latchMiner;
 
     function setUp() public {
         string memory rpc = vm.envOr("FORK_RPC_URL", string(""));
@@ -59,264 +69,114 @@ contract PoolForkTest is Test {
         }
         forkBlock = vm.envUint("FORK_BLOCK");
         vm.createSelectFork(rpc, forkBlock);
-        minerIds = vm.envUint("FORK_MINER_IDS", ",");
-        require(minerIds.length >= 2, "need at least two miners");
+        nandMiner = vm.envUint("FORK_NAND_MINER");
+        latchMiner = vm.envUint("FORK_LATCH_MINER");
     }
 
-    function testForkProtocolIdentity() public {
-        assertEq(block.chainid, 56);
-        assertEq(address(uint160(uint256(vm.load(MINING, IMPLEMENTATION_SLOT)))), MINING_IMPLEMENTATION);
-        assertEq(address(uint160(uint256(vm.load(COLLECTION, BEACON_SLOT)))), COLLECTION_BEACON);
-        assertEq(IERC20Metadata(BEM).decimals(), 8);
-        // minerKey is deterministic: same key for #3204 as recorded by the baseline.
-        assertEq(mining.minerKey(COLLECTION, 3204), KEY_3204);
-        vm.serializeUint(observations, "forkBlock", forkBlock);
-        vm.serializeAddress(
-            observations, "collectionImplementation", IBeacon(COLLECTION_BEACON).implementation()
+    // ---------------------------------------------------------------------------------- deployment
+
+    function _artifact(string memory name) internal view returns (bytes memory) {
+        return vm.parseJsonBytes(
+            vm.readFile(string.concat("out/", name, ".sol/", name, ".json")), ".bytecode.object"
         );
-        string memory out = vm.serializeAddress(observations, "miningImplementation", MINING_IMPLEMENTATION);
-        vm.writeJson(out, "reports/fork-identity.json");
     }
 
-    function testForkPoolLifecycleWithRealMiners() public {
-        uint256 n = minerIds.length;
-        address[] memory holders = new address[](n);
-        uint256[] memory pendingAtFork = new uint256[](n);
-        for (uint256 i; i < n; ++i) {
-            holders[i] = collection.ownerOf(minerIds[i]);
-            assertEq(holders[i].code.length, 0, "miner holder must be an EOA");
-            pendingAtFork[i] = mining.pending(mining.minerKey(COLLECTION, minerIds[i]));
-        }
-
-        TapeoutMinerPool pool = _deployAndConfigure();
-
-        // Miner 0 is deposited during setup; its carried income is collected at registration.
-        uint256[] memory collected = new uint256[](n);
-        uint256[] memory pendingAtDeposit = new uint256[](n);
-        (collected[0], pendingAtDeposit[0]) = _moveAndDeposit(pool, minerIds[0], holders[0]);
-        assertEq(pool.totalAccounted(), 0);
-        bytes32 reviewed = pool.currentConfigHash();
-        vm.prank(operator);
-        pool.activate(reviewed);
-        assertEq(pool.totalAccounted(), collected[0], "setup income recognized at activation");
-
-        // The rest are deposited while ACTIVE and recognized immediately.
-        for (uint256 i = 1; i < n; ++i) {
-            (collected[i], pendingAtDeposit[i]) = _moveAndDeposit(pool, minerIds[i], holders[i]);
-        }
-        uint256 depositIncome = pool.totalAccounted();
-        assertEq(bem.balanceOf(address(pool)), depositIncome);
-
-        // One hour later: pending() may read zero, but claim() still settles. Harvest everything.
-        vm.warp(block.timestamp + 3600);
-        vm.roll(block.number + 8000);
-        uint256[] memory pendingBefore = new uint256[](n);
-        uint256 zeroPending;
-        for (uint256 i; i < n; ++i) {
-            pendingBefore[i] = mining.pending(mining.minerKey(COLLECTION, minerIds[i]));
-            if (pendingBefore[i] == 0) zeroPending++;
-        }
-        uint256 balanceBefore = bem.balanceOf(address(pool));
-        // Cold accounts, so the measured gas approximates a stand-alone harvest transaction.
-        address[7] memory touched = [
-            address(pool),
-            BEM,
-            MINING,
-            MINING_IMPLEMENTATION,
-            COLLECTION,
-            COLLECTION_BEACON,
-            IBeacon(COLLECTION_BEACON).implementation()
-        ];
-        for (uint256 i; i < touched.length; ++i) {
-            vm.cool(touched[i]);
-        }
-        vm.recordLogs();
-        uint256 gasBefore = gasleft();
-        vm.prank(keeper);
-        (uint256 received, uint256 failed) = pool.harvestRange(0, n);
-        uint256 harvestGas = gasBefore - gasleft();
-        Vm.Log[] memory logs = vm.getRecordedLogs();
-        assertEq(failed, 0, "no real miner failed");
-        assertGt(received, 0, "real Mining paid the pool after one hour");
-        assertEq(bem.balanceOf(address(pool)) - balanceBefore, received, "only actual receipts accounted");
-        assertEq(pool.totalAccounted(), depositIncome + received);
-        uint256 perMinerSum;
-        for (uint256 i; i < logs.length; ++i) {
-            if (
-                logs[i].emitter == address(pool)
-                    && logs[i].topics[0] == TapeoutMinerPool.MinerHarvested.selector
-            ) {
-                perMinerSum += abi.decode(logs[i].data, (uint256));
-            }
-        }
-        assertEq(perMinerSum, received, "per-miner events sum to the harvest");
-
-        // A third party calls the real Mining.claim directly: BEM goes to the holder (the pool).
-        vm.warp(block.timestamp + 3600);
-        vm.roll(block.number + 8000);
-        uint256 keeperBefore = bem.balanceOf(keeper);
-        balanceBefore = bem.balanceOf(address(pool));
-        bytes32 key0 = mining.minerKey(COLLECTION, minerIds[0]);
-        vm.prank(keeper);
-        mining.claim(key0);
-        uint256 thirdParty = bem.balanceOf(address(pool)) - balanceBefore;
-        assertEq(bem.balanceOf(keeper), keeperBefore, "claim pays the holder, not the caller");
-        assertEq(pool.unrecognizedBalance(), thirdParty);
-        assertEq(pool.sync(), thirdParty);
-
-        _claimsTransfersAndReleases(pool);
-
-        // Observations for reports/fork-test.json.
-        string memory key = "lifecycle";
-        vm.serializeUint(key, "forkBlock", forkBlock);
-        vm.serializeUint(key, "minerIds", minerIds);
-        vm.serializeAddress(key, "minerHoldersAtFork", holders);
-        vm.serializeUint(key, "pendingAtFork", pendingAtFork);
-        vm.serializeUint(key, "pendingRightBeforeTransfer", pendingAtDeposit);
-        vm.serializeUint(key, "collectedAtDeposit", collected);
-        vm.serializeUint(key, "pendingBeforeHarvestAfterOneHour", pendingBefore);
-        vm.serializeUint(key, "minersWithZeroPendingBeforeHarvest", zeroPending);
-        vm.serializeUint(key, "harvestReceived", received);
-        vm.serializeUint(key, "harvestGas", harvestGas);
-        vm.serializeUint(key, "thirdPartyClaimReceived", thirdParty);
-        vm.serializeBytes32(key, "deployedArtifactSha256", artifactSha256);
-        vm.serializeAddress(key, "pool", address(pool));
-        vm.serializeUint(key, "totalAccounted", pool.totalAccounted());
-        vm.serializeUint(key, "totalPaid", pool.totalPaid());
-        string memory out = vm.serializeUint(key, "poolBalanceEnd", bem.balanceOf(address(pool)));
-        vm.writeJson(out, "reports/fork-lifecycle.json");
-    }
-
-    /// @dev Deploys the exact Paris-compiled deployment artifact from ./out (not this profile's build).
-    function _deployArtifact(TapeoutMinerPool.Deployment memory d) internal returns (TapeoutMinerPool pool) {
-        bytes memory creation = vm.parseJsonBytes(
-            vm.readFile("out/TapeoutMinerPool.sol/TapeoutMinerPool.json"), ".bytecode.object"
-        );
-        artifactSha256 = sha256(creation);
-        bytes memory initCode = abi.encodePacked(creation, abi.encode(d));
-        address deployed;
+    function _create(bytes memory initCode) internal returns (address deployed) {
         assembly {
             deployed := create(0, add(initCode, 0x20), mload(initCode))
         }
         require(deployed != address(0), "artifact deployment failed");
-        pool = TapeoutMinerPool(deployed);
     }
 
-    function _deployAndConfigure() internal returns (TapeoutMinerPool pool) {
-        pool = _deployArtifact(
-            TapeoutMinerPool.Deployment({
-                owner: operator,
-                bem: BEM,
-                mining: MINING,
-                minerCollection: COLLECTION,
-                poolName: "Fork Pool",
-                nand: TapeoutMinerPool.ReceiptMetadata("Fork NAND Receipt", "fNAND", ""),
-                latch: TapeoutMinerPool.ReceiptMetadata("Fork LATCH Receipt", "fLATCH", "")
-            })
+    /// @dev Receipts S_N = 20 / S_L = 10 -> distributor -> alice 12 + 4, bob 8, carol 6; pool active.
+    function _deploySystem() internal {
+        bytes memory receiptCode = _artifact("TapeoutEntitlementReceipt");
+        nandReceipt = TapeoutEntitlementReceipt(
+            _create(
+                abi.encodePacked(
+                    receiptCode,
+                    abi.encode(keccak256("TAPEOUT_NAND_ENTITLEMENT"), "Fork NAND", "fNAND", "", operator)
+                )
+            )
         );
-        // The specification example scaled by 1/10: S_N=90, H_N=10, S_L=8, H_L=2, W_N=0.8.
+        latchReceipt = TapeoutEntitlementReceipt(
+            _create(
+                abi.encodePacked(
+                    receiptCode,
+                    abi.encode(keccak256("TAPEOUT_LATCH_ENTITLEMENT"), "Fork LATCH", "fLATCH", "", operator)
+                )
+            )
+        );
+        address[] memory depositors = new address[](1);
+        depositors[0] = depositor;
+        TapeoutMinerPool.Deployment memory d = TapeoutMinerPool.Deployment({
+            owner: operator,
+            bem: BEM,
+            mining: MINING,
+            minerCollection: COLLECTION,
+            nandReceipt: address(nandReceipt),
+            latchReceipt: address(latchReceipt),
+            recipientA: recipientA,
+            recipientB: recipientB,
+            depositors: depositors,
+            poolName: "Fork Pool"
+        });
+        pool = TapeoutMinerPool(_create(abi.encodePacked(_artifact("TapeoutMinerPool"), abi.encode(d))));
+        distributor = TapeoutReceiptDistributor(
+            _create(
+                abi.encodePacked(_artifact("TapeoutReceiptDistributor"), abi.encode(operator, address(pool)))
+            )
+        );
         vm.startPrank(operator);
-        pool.configure(
-            TapeoutMinerPool.Config({
-                nandShares: 90,
-                latchShares: 8,
-                historicalNandShares: 10,
-                historicalLatchShares: 2,
-                nandWeight: 80_000_000,
-                feeRecipient: feeTo,
-                historicalNandRecipient: histNandTo,
-                historicalLatchRecipient: histLatchTo
-            })
-        );
-        pool.issueReceiptRange(NAND, alice, 1, 45);
-        pool.issueReceiptRange(NAND, bob, 46, 45);
-        pool.issueReceiptRange(LATCH, alice, 1, 4);
-        pool.issueReceiptRange(LATCH, carol, 5, 4);
-        collection.setApprovalForAll(address(pool), true);
+        nandReceipt.issue(operator, 20);
+        latchReceipt.issue(address(distributor), 10); // minted straight into the distributor
+        nandReceipt.finalizeIssuance();
+        latchReceipt.finalizeIssuance();
+        uint256[] memory ids = new uint256[](20);
+        uint256[] memory ones = new uint256[](20);
+        for (uint256 i; i < 20; ++i) {
+            ids[i] = i + 1;
+            ones[i] = 1;
+        }
+        nandReceipt.safeBatchTransferFrom(operator, address(distributor), ids, ones, "");
+        TapeoutReceiptDistributor.AllocationInput[] memory e =
+            new TapeoutReceiptDistributor.AllocationInput[](4);
+        e[0] = TapeoutReceiptDistributor.AllocationInput(NAND, alice, 1, 12);
+        e[1] = TapeoutReceiptDistributor.AllocationInput(LATCH, alice, 1, 4);
+        e[2] = TapeoutReceiptDistributor.AllocationInput(NAND, bob, 13, 8);
+        e[3] = TapeoutReceiptDistributor.AllocationInput(LATCH, carol, 5, 6);
+        distributor.allocate(e);
+        distributor.finalizeAllocation();
+        pool.activate(20, 10);
         vm.stopPrank();
     }
 
-    /// @dev Holder -> operator (fork impersonation), then operator -> pool through depositMiners.
-    ///      `pending` is read right before the transfer: a claim on *any* miner refreshes Mining's
-    ///      global accrual, so values read earlier in the test can be stale.
-    function _moveAndDeposit(TapeoutMinerPool pool, uint256 tokenId, address holder)
-        internal
-        returns (uint256 collected, uint256 pendingBeforeTransfer)
-    {
+    function _moveToDepositor(uint256 tokenId) internal returns (address holder, uint256 pendingBefore) {
+        holder = collection.ownerOf(tokenId);
         bytes32 key = mining.minerKey(COLLECTION, tokenId);
         uint256 holderBem = bem.balanceOf(holder);
-        pendingBeforeTransfer = mining.pending(key);
+        pendingBefore = mining.pending(key);
         vm.prank(holder);
-        collection.transferFrom(holder, operator, tokenId);
-        // The transfer settles nothing to the old holder and leaves the miner's income in place.
-        assertEq(bem.balanceOf(holder), holderBem, "no settlement on NFT transfer");
-        assertEq(mining.pending(key), pendingBeforeTransfer, "transfer does not touch the miner's income");
-        uint256 before = bem.balanceOf(address(pool));
-        uint256[] memory one = new uint256[](1);
-        one[0] = tokenId;
-        vm.prank(operator);
-        pool.depositMiners(one);
-        collected = bem.balanceOf(address(pool)) - before;
-        assertEq(collection.ownerOf(tokenId), address(pool));
-        assertTrue(pool.isMiner(tokenId));
-        assertEq(pool.minerKeyOf(tokenId), key);
-        assertGe(collected, pendingBeforeTransfer, "income accrued before deposit belongs to the pool");
-        assertEq(bem.balanceOf(operator), 0, "operator received nothing");
+        collection.transferFrom(holder, depositor, tokenId);
+        assertEq(bem.balanceOf(holder), holderBem, "transfer pays nothing to the previous holder");
+        assertEq(mining.pending(key), pendingBefore, "transfer leaves the miner's income in place");
     }
 
-    function _claimsTransfersAndReleases(TapeoutMinerPool pool) internal {
-        PoolMath.Accrual memory a = pool.accrual();
-        assertGt(a.perNandShare, 0);
-        assertEq(a.fee, a.total * 2 / 102);
+    function _admit(uint256[] memory tokenIds)
+        internal
+        returns (uint256 settled, uint256 carried, uint256 gasUsed)
+    {
+        vm.startPrank(depositor);
+        collection.setApprovalForAll(address(pool), true);
+        uint256 g = gasleft();
+        (settled, carried) = pool.depositMiners(tokenIds);
+        gasUsed = g - gasleft();
+        vm.stopPrank();
+    }
 
-        uint256[] memory aliceNand = _range(1, 45);
-        uint256[] memory aliceLatch = _range(1, 4);
-        uint256 before = bem.balanceOf(alice);
-        vm.prank(alice);
-        uint256 paid = pool.claimBatch(aliceNand, aliceLatch);
-        assertEq(paid, 45 * a.perNandShare + 4 * a.perLatchShare);
-        assertEq(bem.balanceOf(alice) - before, paid, "exact BEM delta to holder");
-
-        // Unclaimed NAND #46 moves with the receipt from bob to carol.
-        uint256 due = pool.claimable(NAND, 46);
-        assertEq(due, a.perNandShare);
-        TapeoutReceipt nandReceipt = pool.nandReceipt();
-        vm.prank(bob);
-        nandReceipt.safeTransferFrom(bob, carol, 46, 1, "");
-        vm.prank(bob);
-        vm.expectRevert(abi.encodeWithSelector(TapeoutMinerPool.NotHolder.selector, NAND, 46));
-        pool.claim(NAND, 46);
-        vm.prank(carol);
-        assertEq(pool.claim(NAND, 46), due);
-        // Same numeric IDs, separate histories: NAND #5..#8 were claimed by alice, LATCH #5 by carol.
-        vm.prank(carol);
-        assertEq(pool.claim(LATCH, 5), a.perLatchShare);
-        assertEq(pool.claimed(NAND, 5), a.perNandShare);
-        assertEq(pool.claimed(LATCH, 5), a.perLatchShare);
-        assertEq(pool.claimable(NAND, 6), 0);
-        assertEq(pool.claimable(LATCH, 6), a.perLatchShare);
-
-        assertEq(pool.releaseFee(), a.fee);
-        assertEq(pool.releaseHistorical(NAND), a.historicalNand);
-        assertEq(pool.releaseHistorical(LATCH), a.historicalLatch);
-        assertEq(bem.balanceOf(feeTo), a.fee);
-        assertEq(bem.balanceOf(histNandTo), a.historicalNand);
-        assertEq(bem.balanceOf(histLatchTo), a.historicalLatch);
-
-        TapeoutMinerPool.Reconciliation memory r = pool.reconciliation();
-        assertEq(r.deficit, 0);
-        uint256 outstanding = (r.feeAccrued - r.feePaid) + (r.nandReceiptsAccrued - r.nandReceiptsPaid)
-            + (r.latchReceiptsAccrued - r.latchReceiptsPaid)
-            + (r.historicalNandAccrued - r.historicalNandPaid)
-            + (r.historicalLatchAccrued - r.historicalLatchPaid);
-        assertEq(r.bemBalance, outstanding + r.residue + r.unrecognized);
-        assertEq(before, 0);
-        assertEq(
-            r.totalPaid,
-            bem.balanceOf(alice) + bem.balanceOf(carol) + bem.balanceOf(feeTo) + bem.balanceOf(histNandTo)
-                + bem.balanceOf(histLatchTo)
-        );
-        assertLe(r.residue, 1 + 99 + 9);
+    function _one(uint256 x) internal pure returns (uint256[] memory r) {
+        r = new uint256[](1);
+        r[0] = x;
     }
 
     function _range(uint256 first, uint256 last) internal pure returns (uint256[] memory r) {
@@ -324,5 +184,223 @@ contract PoolForkTest is Test {
         for (uint256 i; i < r.length; ++i) {
             r[i] = first + i;
         }
+    }
+
+    function _coolProtocol() internal {
+        vm.cool(address(pool));
+        vm.cool(BEM);
+        vm.cool(MINING);
+        vm.cool(MINING_IMPLEMENTATION);
+        vm.cool(COLLECTION);
+        vm.cool(COLLECTION_BEACON);
+        vm.cool(IBeacon(COLLECTION_BEACON).implementation());
+    }
+
+    // ---------------------------------------------------------------------------------- tests
+
+    function testForkProtocolIdentityAndCompositionAbi() public {
+        assertEq(block.chainid, 56);
+        assertEq(address(uint160(uint256(vm.load(MINING, IMPLEMENTATION_SLOT)))), MINING_IMPLEMENTATION);
+        assertEq(address(uint160(uint256(vm.load(COLLECTION, BEACON_SLOT)))), COLLECTION_BEACON);
+        assertEq(IERC20Metadata(BEM).decimals(), 8);
+        assertEq(mining.minerKey(COLLECTION, 3204), KEY_3204);
+        string memory key = "identity";
+        uint256[2] memory ids = [nandMiner, latchMiner];
+        for (uint256 i; i < 2; ++i) {
+            bytes32 k = mining.minerKey(COLLECTION, ids[i]);
+            IMining.MinerRecord memory r = mining.getMiner(k);
+            (bool cached, uint32 cn, uint32 cl) = mining.cachedBurn(COLLECTION, ids[i]);
+            assertEq(r.status, 1);
+            assertEq(r.circuits, COLLECTION);
+            assertEq(uint256(r.circuitId), ids[i]);
+            assertTrue(cached);
+            assertEq(cn, r.nandBurn);
+            assertEq(cl, r.latchBurn);
+            vm.serializeUint(key, string.concat("miner", vm.toString(ids[i]), "NandBurn"), r.nandBurn);
+            vm.serializeUint(key, string.concat("miner", vm.toString(ids[i]), "LatchBurn"), r.latchBurn);
+            vm.serializeUint(key, string.concat("miner", vm.toString(ids[i]), "GateCount"), r.gateCount);
+            vm.serializeUint(key, string.concat("miner", vm.toString(ids[i]), "Bstar"), r.bstar);
+        }
+        assertEq(
+            mining.getMiner(mining.minerKey(COLLECTION, nandMiner)).latchBurn, 0, "first miner is NAND-only"
+        );
+        assertGt(
+            mining.getMiner(mining.minerKey(COLLECTION, latchMiner)).latchBurn, 0, "second miner burns LATCH"
+        );
+        // Claims of a miner that is not ACTIVE revert; claimMany skips such a key instead.
+        uint256 inactive = vm.envUint("FORK_INACTIVE_TOKEN");
+        bytes32 inactiveKey = mining.minerKey(COLLECTION, inactive);
+        assertTrue(mining.getMiner(inactiveKey).status != 1);
+        vm.expectRevert(bytes4(0x5f9bb3be));
+        mining.claim(inactiveKey);
+        bytes32[] memory keys = new bytes32[](2);
+        keys[0] = mining.minerKey(COLLECTION, nandMiner);
+        keys[1] = inactiveKey;
+        IMiningMany(MINING).claimMany(keys); // does not revert: why the pool never relies on it
+        vm.serializeUint(key, "forkBlock", forkBlock);
+        vm.serializeUint(key, "inactiveToken", inactive);
+        vm.serializeAddress(key, "collectionImplementation", IBeacon(COLLECTION_BEACON).implementation());
+        string memory out = vm.serializeAddress(key, "miningImplementation", MINING_IMPLEMENTATION);
+        vm.writeJson(out, "reports/fork-identity.json");
+    }
+
+    /// @notice The admission boundary on real protocol state: the NAND-only miner's income is settled
+    ///         under the old (all-NAND) composition inside the admission of the LATCH-burning miner,
+    ///         whose carried income is split by the new composition.
+    function testForkStrictAdmissionBoundaryWithRealMiners() public {
+        _deploySystem();
+        IMining.MinerRecord memory rn = mining.getMiner(mining.minerKey(COLLECTION, nandMiner));
+        IMining.MinerRecord memory rl = mining.getMiner(mining.minerKey(COLLECTION, latchMiner));
+
+        (address holderN, uint256 pendingN) = _moveToDepositor(nandMiner);
+        (uint256 settled0, uint256 carried0,) = _admit(_one(nandMiner));
+        assertEq(settled0, 0);
+        assertGe(carried0, pendingN, "income accrued before deposit belongs to the pool");
+        assertEq(bem.balanceOf(depositor), 0, "carried income is not paid to the depositor");
+        PoolMath.Accrual memory a0 = pool.accrual();
+        assertEq(a0.latchIncome, 0, "an all-NAND composition gives LATCH nothing");
+
+        vm.warp(block.timestamp + 3600);
+        vm.roll(block.number + 8000);
+        uint256 pendingOldAfterHour = mining.pending(mining.minerKey(COLLECTION, nandMiner));
+        (address holderL, uint256 pendingL) = _moveToDepositor(latchMiner);
+        (uint256 settled, uint256 carried, uint256 gasUsed) = _admit(_one(latchMiner));
+        assertGt(settled, 0, "old miner's income was collected inside the admission");
+        assertGe(carried, pendingL);
+
+        // Expected allocation: settled under (n, 0), checkpoint, carried under (n + n', l').
+        PoolMath.State memory s = PoolMath.State(0, 0, 0, rn.nandBurn, 0, 20, 10);
+        PoolMath.Accrual memory afterOld = PoolMath.accrue(carried0 + settled, s);
+        PoolMath.State memory s1 = PoolMath.State(
+            afterOld.nandIncome,
+            afterOld.latchIncome,
+            afterOld.nandIncome + afterOld.latchIncome,
+            uint256(rn.nandBurn) + rl.nandBurn,
+            rl.latchBurn,
+            20,
+            10
+        );
+        PoolMath.Accrual memory expected = PoolMath.accrue(carried0 + settled + carried, s1);
+        PoolMath.Accrual memory a = pool.accrual();
+        assertEq(a.total, expected.total);
+        assertEq(a.nandIncome, expected.nandIncome, "NAND = old income at 100% + carried at n/(n+l)");
+        assertEq(a.latchIncome, expected.latchIncome, "LATCH only from the carried income");
+        assertEq(pool.totalNandBurn(), uint256(rn.nandBurn) + rl.nandBurn);
+        assertEq(pool.totalLatchBurn(), rl.latchBurn);
+
+        string memory key = "boundary";
+        vm.serializeUint(key, "forkBlock", forkBlock);
+        vm.serializeUint(key, "nandMiner", nandMiner);
+        vm.serializeAddress(key, "nandMinerHolder", holderN);
+        vm.serializeUint(key, "nandMinerBurn", rn.nandBurn);
+        vm.serializeUint(key, "latchMiner", latchMiner);
+        vm.serializeAddress(key, "latchMinerHolder", holderL);
+        vm.serializeUint(key, "latchMinerNandBurn", rl.nandBurn);
+        vm.serializeUint(key, "latchMinerLatchBurn", rl.latchBurn);
+        vm.serializeUint(key, "firstAdmissionCarried", carried0);
+        vm.serializeUint(key, "oldMinerPendingAfterOneHour", pendingOldAfterHour);
+        vm.serializeUint(key, "settledOldIncome", settled);
+        vm.serializeUint(key, "carriedIncome", carried);
+        vm.serializeUint(key, "admissionGas", gasUsed);
+        vm.serializeUint(key, "nandIncome", a.nandIncome);
+        vm.serializeUint(key, "latchIncome", a.latchIncome);
+        string memory out = vm.serializeUint(key, "recipientAEach", a.recipientA);
+        vm.writeJson(out, "reports/fork-boundary.json");
+
+        _claimsReleasesAndReconcile();
+    }
+
+    function _claimsReleasesAndReconcile() internal {
+        // Users claim their receipts late; the BEM accrued while the distributor held them is intact.
+        PoolMath.Accrual memory a = pool.accrual();
+        vm.prank(alice);
+        distributor.claim(100);
+        vm.prank(alice);
+        uint256 paid = pool.claimBatch(_range(1, 12), _range(1, 4));
+        assertEq(paid, 12 * a.perNandShare + 4 * a.perLatchShare);
+        // Bob's unclaimed NAND #13 moves with the receipt to carol.
+        vm.prank(bob);
+        distributor.claim(100);
+        uint256 due = pool.claimable(NAND, 13);
+        vm.prank(bob);
+        nandReceipt.safeTransferFrom(bob, carol, 13, 1, "");
+        vm.prank(bob);
+        vm.expectRevert(abi.encodeWithSelector(TapeoutMinerPool.NotHolder.selector, NAND, 13));
+        pool.claim(NAND, 13);
+        vm.prank(carol);
+        assertEq(pool.claim(NAND, 13), due);
+        // Same numeric ID 13 does not exist in LATCH; LATCH #5 (carol) keeps its own history.
+        vm.prank(carol);
+        distributor.claim(100);
+        vm.prank(carol);
+        assertEq(pool.claim(LATCH, 5), a.perLatchShare);
+        assertEq(pool.releaseA(), a.recipientA);
+        assertEq(pool.releaseB(), a.recipientB);
+        TapeoutMinerPool.Reconciliation memory r = pool.reconciliation();
+        assertEq(r.deficit, 0);
+        uint256 outstanding = (r.recipientAAccrued - r.recipientAPaid)
+            + (r.recipientBAccrued - r.recipientBPaid) + (r.nandReceiptsAccrued - r.nandReceiptsPaid)
+            + (r.latchReceiptsAccrued - r.latchReceiptsPaid);
+        assertEq(r.bemBalance, outstanding + r.residue + r.unrecognized);
+        assertLe(r.residue, 3 + 19 + 9);
+    }
+
+    function testForkWhitelistAfterRenounceAndBypassRejection() public {
+        _deploySystem();
+        vm.prank(operator);
+        pool.renounceOwnership();
+        // The miner's own holder is not whitelisted.
+        address holder = collection.ownerOf(nandMiner);
+        vm.startPrank(holder);
+        collection.setApprovalForAll(address(pool), true);
+        vm.expectRevert(abi.encodeWithSelector(TapeoutMinerPool.NotDepositor.selector, holder));
+        pool.depositMiners(_one(nandMiner));
+        // A plain transfer does not admit, and its holder cannot register it.
+        collection.transferFrom(holder, address(pool), nandMiner);
+        vm.expectRevert(abi.encodeWithSelector(TapeoutMinerPool.NotDepositor.selector, holder));
+        pool.registerMiners(_one(nandMiner));
+        vm.stopPrank();
+        assertEq(pool.minerCount(), 0);
+        assertEq(pool.totalNandBurn(), 0);
+        // The whitelisted depositor still admits after renunciation (here via registration).
+        vm.prank(depositor);
+        (, uint256 carried) = pool.registerMiners(_one(nandMiner));
+        assertGt(carried, 0);
+        assertEq(pool.minerCount(), 1);
+        _moveToDepositor(latchMiner);
+        (uint256 settled,,) = _admit(_one(latchMiner));
+        assertEq(pool.minerCount(), 2);
+        assertGe(settled, 0);
+    }
+
+    /// @notice Admission gas on real Mining as the registry grows; every registered miner has accrued
+    ///         income (one hour) and accounts are cold, like a stand-alone transaction.
+    function testForkAdmissionGasScaling() public {
+        _deploySystem();
+        uint256[] memory ids = vm.envUint("FORK_SCALE_MINERS", ",");
+        string memory key = "scaling";
+        uint256 lastGas;
+        uint256 lastCount;
+        uint256 maxPerMiner;
+        for (uint256 i; i < ids.length; ++i) {
+            _moveToDepositor(ids[i]);
+            vm.warp(block.timestamp + 3600);
+            vm.roll(block.number + 8000);
+            _coolProtocol();
+            uint256 registered = pool.minerCount();
+            (,, uint256 gasUsed) = _admit(_one(ids[i]));
+            vm.serializeUint(key, string.concat("admitWith", vm.toString(registered), "Registered"), gasUsed);
+            if (registered > 1 && gasUsed > lastGas) {
+                uint256 perMiner = (gasUsed - lastGas) / (registered - lastCount);
+                if (perMiner > maxPerMiner) maxPerMiner = perMiner;
+            }
+            (lastGas, lastCount) = (gasUsed, registered);
+            assertLt(gasUsed, TX_GAS_CAP);
+        }
+        vm.serializeUint(key, "registeredAtEnd", pool.minerCount());
+        vm.serializeUint(key, "lastAdmissionGas", lastGas);
+        vm.serializeUint(key, "maxMarginalGasPerRegisteredMiner", maxPerMiner);
+        string memory out = vm.serializeUint(key, "forkBlock", forkBlock);
+        vm.writeJson(out, "reports/fork-gas.json");
     }
 }

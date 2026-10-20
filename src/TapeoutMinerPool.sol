@@ -8,18 +8,26 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {IMining} from "./interfaces/IMining.sol";
 import {PoolMath} from "./PoolMath.sol";
-import {TapeoutReceipt} from "./TapeoutReceipt.sol";
+import {TapeoutEntitlementReceipt} from "./TapeoutEntitlementReceipt.sol";
 
-/// @title TapeOut multi-miner custody and BEM distribution pool
-/// @notice Holds any number of TapeOut miner NFTs, collects their BEM through the real
-///         `Mining.claim` path, and distributes the BEM it actually receives to:
-///         the fee recipient (2 of 102 parts), NAND receipt IDs, LATCH receipt IDs, and the
-///         historical NAND/LATCH recipients, according to a configuration fixed at activation.
-/// @dev Lifecycle: SETUP (owner configures, issues every receipt ID, may deposit miners)
-///      -> `activate` (one-way) -> ACTIVE (economics and supply frozen; harvest, claims, releases).
-///      There is no miner withdrawal, BEM withdrawal, pause, upgrade, or arbitrary call path.
-///      Accounting is balance-based and cumulative; see PoolMath for the allocation functions.
-///      Accounting/payment checks follow GroupBuyVault in TapeoutMarket/test1 (commit 9d86a26).
+/// @title TapeOut miner custody and BEM revenue distribution pool
+/// @notice Holds TapeOut miner NFTs and distributes the BEM it actually receives:
+///         1/102 to recipient A, 1/102 to recipient B, and 100/102 to the NAND and LATCH receipt
+///         collections, split by the aggregate NAND/LATCH burn of the admitted miners as read from
+///         the Mining contract. Receipt holders claim per receipt ID; unclaimed income follows the ID.
+/// @dev Lifecycle: deploy (binds receipts, recipients and a fixed depositor whitelist) -> owner
+///      `activate` (receipt supplies finalized and fixed as denominators) -> whitelisted admissions,
+///      harvests, claims and releases. After activation the owner has no remaining power, so
+///      renouncing ownership does not affect operation. There is no miner withdrawal, BEM
+///      withdrawal, pause, upgrade, or arbitrary call path.
+///
+///      Admission (`depositMiners`, `registerMiners`) is an atomic accounting boundary:
+///        1. validate the batch and read each incoming miner's burn from Mining;
+///        2. recognize BEM already held, under the old composition;
+///        3. call `Mining.claim` for every registered miner and recognize it under the old composition
+///           (a failed claim of a miner Mining still reports ACTIVE reverts the whole admission);
+///        4. checkpoint the old period, take custody, add the batch to the composition totals;
+///        5. claim the incoming miners' carried income and recognize it under the new composition.
 contract TapeoutMinerPool is Ownable2Step, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
@@ -29,15 +37,8 @@ contract TapeoutMinerPool is Ownable2Step, ReentrancyGuard {
     }
 
     enum Recipient {
-        FEE,
-        HISTORICAL_NAND,
-        HISTORICAL_LATCH
-    }
-
-    struct ReceiptMetadata {
-        string name;
-        string symbol;
-        string uri;
+        A,
+        B
     }
 
     struct Deployment {
@@ -45,115 +46,155 @@ contract TapeoutMinerPool is Ownable2Step, ReentrancyGuard {
         address bem;
         address mining;
         address minerCollection;
+        address nandReceipt;
+        address latchReceipt;
+        address recipientA;
+        address recipientB;
+        address[] depositors;
         string poolName;
-        ReceiptMetadata nand;
-        ReceiptMetadata latch;
     }
 
-    /// @notice Manually decided economic inputs. Shares are counts; weight uses 8 decimals.
-    struct Config {
-        uint64 nandShares; // S_N: NAND receipt IDs 1..S_N, all issued before activation
-        uint64 latchShares; // S_L: LATCH receipt IDs 1..S_L
-        uint64 historicalNandShares; // H_N: extra NAND shares paid to historicalNandRecipient
-        uint64 historicalLatchShares; // H_L: extra LATCH shares paid to historicalLatchRecipient
-        uint32 nandWeight; // W_N in units of 1e-8; LATCH weight is 1e8 - W_N
-        address feeRecipient;
-        address historicalNandRecipient;
-        address historicalLatchRecipient;
+    struct Miner {
+        bytes32 key;
+        uint32 nandBurn;
+        uint32 latchBurn;
+        uint64 admittedInPeriod;
+        bool registered;
     }
 
-    /// @notice balance + deficit == sum(accrued - paid) + residue + unrecognized.
+    /// @notice bemBalance + deficit == sum(accrued - paid) + residue + unrecognized.
     struct Reconciliation {
         uint256 bemBalance;
         uint256 unrecognized;
         uint256 deficit;
         uint256 totalAccounted;
         uint256 totalPaid;
-        uint256 feeAccrued;
-        uint256 feePaid;
+        uint256 recipientAAccrued;
+        uint256 recipientAPaid;
+        uint256 recipientBAccrued;
+        uint256 recipientBPaid;
+        uint256 nandIncome;
         uint256 nandReceiptsAccrued;
         uint256 nandReceiptsPaid;
+        uint256 latchIncome;
         uint256 latchReceiptsAccrued;
         uint256 latchReceiptsPaid;
-        uint256 historicalNandAccrued;
-        uint256 historicalNandPaid;
-        uint256 historicalLatchAccrued;
-        uint256 historicalLatchPaid;
         uint256 residue;
     }
 
-    string public constant VERSION = "TapeoutMinerPool/1.0.0";
-    uint256 public constant WEIGHT_SCALE = PoolMath.WEIGHT_SCALE;
-    uint256 public constant FEE_PARTS = PoolMath.FEE_PARTS;
-    uint256 public constant ENTITLEMENT_PARTS = PoolMath.ENTITLEMENT_PARTS;
+    string public constant VERSION = "TapeoutMinerPool/2.0.0";
     uint256 public constant TOTAL_PARTS = PoolMath.TOTAL_PARTS;
+    uint256 public constant PARTICIPANT_PARTS = PoolMath.PARTICIPANT_PARTS;
+    uint256 public constant RECIPIENT_PARTS = PoolMath.RECIPIENT_PARTS;
+    uint8 public constant MINER_ACTIVE = 1;
+    uint256 public constant MAX_DEPOSITORS = 16;
+    uint256 public constant MAX_ADMISSION_BATCH = 50;
     uint256 public constant MAX_PAGE = 500;
+    bytes32 internal constant NAND_CATEGORY = keccak256("TAPEOUT_NAND_ENTITLEMENT");
+    bytes32 internal constant LATCH_CATEGORY = keccak256("TAPEOUT_LATCH_ENTITLEMENT");
 
     IERC20 public immutable bem;
     IMining public immutable mining;
     IERC721 public immutable minerCollection;
-    TapeoutReceipt public immutable nandReceipt;
-    TapeoutReceipt public immutable latchReceipt;
+    TapeoutEntitlementReceipt public immutable nandReceipt;
+    TapeoutEntitlementReceipt public immutable latchReceipt;
 
     string public poolName;
+    address public recipientA;
+    address public recipientB;
+    address[] private _depositors;
+    mapping(address account => bool allowed) public isDepositor;
+
     bool public active;
     uint64 public activatedAt;
-    bytes32 public activationConfigHash;
+    uint256 public nandShares;
+    uint256 public latchShares;
 
-    Config private _config;
+    uint256 public totalNandBurn;
+    uint256 public totalLatchBurn;
+    uint256 public compositionPeriod;
+    uint256 public nandBase;
+    uint256 public latchBase;
+    uint256 public participantBase;
 
     uint256 public totalAccounted;
     uint256 public totalPaid;
-    uint256 public feePaid;
+    uint256 public recipientAPaid;
+    uint256 public recipientBPaid;
     uint256[2] private _receiptsPaid;
-    uint256[2] private _historicalPaid;
     mapping(Category => mapping(uint256 id => uint256 amount)) private _claimed;
 
-    uint256[] private _miners;
-    mapping(uint256 tokenId => bytes32 key) private _minerKeys;
-    mapping(uint256 tokenId => bool registered) public isMiner;
+    uint256[] private _minerIds;
+    bytes32[] private _minerKeys;
+    mapping(uint256 tokenId => Miner) private _miners;
 
     error AlreadyActive();
     error NotActive();
     error InvalidAddress();
     error InvalidName();
+    error InvalidDepositors();
+    error IncompatibleReceipt();
+    error IssuanceNotFinalized();
+    error UnexpectedShareCounts(uint256 nandShares, uint256 latchShares);
+    error NoShares();
+    error NotDepositor(address caller);
     error InvalidBatch();
-    error InvalidWeight(uint256 nandWeight);
-    error ShareCountBelowIssued(Category category, uint256 shares, uint256 highestMintedId);
-    error MissingRecipient(Recipient role);
-    error ZeroDenominator(Category category);
-    error IssuanceIncomplete(Category category, uint256 issued, uint256 required);
-    error ConfigHashMismatch(bytes32 expected, bytes32 actual);
+    error DuplicateMiner(uint256 tokenId);
+    error MinerAlreadyRegistered(uint256 tokenId);
+    error MinerNotHeld(uint256 tokenId, address holder);
+    error MinerNotActive(uint256 tokenId);
+    error CompositionMismatch(uint256 tokenId);
+    error EmptyComposition(uint256 tokenId);
+    error UnsupportedCategory(Category category);
+    error SettlementFailed(uint256 tokenId, bytes reason);
+    error UnknownMiner(uint256 tokenId);
     error ReceiptIdOutOfRange(Category category, uint256 id);
     error NotHolder(Category category, uint256 id);
-    error UnknownMiner(uint256 tokenId);
-    error MinerAlreadyRegistered(uint256 tokenId);
-    error MinerNotHeld(uint256 tokenId);
     error InvalidPage();
     error Unauthorized();
     error BalanceDecreased(uint256 balance, uint256 expected);
     error UnexpectedTokenBehavior();
 
-    event Configured(bytes32 indexed configHash, Config config);
-    event ReceiptsIssued(Category indexed category, uint256 count, uint256 issuedTotal);
-    event ReceiptsRevoked(Category indexed category, uint256[] ids);
-    event Activated(bytes32 indexed configHash, Config config, uint256 activatedAt);
+    event Deployed(
+        address nandReceipt,
+        address latchReceipt,
+        address recipientA,
+        address recipientB,
+        address[] depositors
+    );
+    event Activated(uint256 nandShares, uint256 latchShares, uint256 activatedAt);
+    event IncomeRecognized(uint256 received, uint256 totalAccounted, uint256 compositionPeriod);
+    event CompositionCheckpoint(
+        uint256 indexed period,
+        uint256 totalAccounted,
+        uint256 nandBase,
+        uint256 latchBase,
+        uint256 participantBase
+    );
     event MinerRegistered(
         uint256 indexed tokenId,
         bytes32 indexed key,
         address indexed depositor,
-        uint256 index,
-        uint256 collected
+        uint256 nandBurn,
+        uint256 latchBurn
     );
-    event IncomeRecognized(uint256 received, uint256 totalAccounted);
+    event InactiveMinerSkipped(uint256 indexed tokenId);
+    event MinersAdmitted(
+        address indexed depositor,
+        uint256 indexed period,
+        uint256 count,
+        uint256 settledOldIncome,
+        uint256 carriedIncome,
+        uint256 totalNandBurn,
+        uint256 totalLatchBurn
+    );
     event MinerHarvested(uint256 indexed tokenId, uint256 received);
     event MinerHarvestFailed(uint256 indexed tokenId, bytes reason);
     event Harvested(address indexed caller, uint256 attempted, uint256 failed, uint256 received);
     event ReceiptIncomeClaimed(
         Category indexed category, uint256 indexed id, address indexed holder, uint256 amount
     );
-    event FeeReleased(address indexed recipient, uint256 amount);
-    event HistoricalReleased(Category indexed category, address indexed recipient, uint256 amount);
+    event RecipientPaid(Recipient indexed role, address indexed recipient, uint256 amount);
     event RecipientChanged(Recipient indexed role, address indexed previous, address indexed current);
 
     constructor(Deployment memory d) Ownable(d.owner) {
@@ -161,144 +202,97 @@ contract TapeoutMinerPool is Ownable2Step, ReentrancyGuard {
             revert InvalidAddress();
         }
         if (bytes(d.poolName).length == 0 || bytes(d.poolName).length > 64) revert InvalidName();
+        // Bind only to this exact receipt implementation (unique IDs, fixed supply after finalization).
+        bytes32 receiptCode = keccak256(type(TapeoutEntitlementReceipt).runtimeCode);
+        if (
+            d.nandReceipt == d.latchReceipt || d.nandReceipt.codehash != receiptCode
+                || d.latchReceipt.codehash != receiptCode
+                || TapeoutEntitlementReceipt(d.nandReceipt).category() != NAND_CATEGORY
+                || TapeoutEntitlementReceipt(d.latchReceipt).category() != LATCH_CATEGORY
+        ) revert IncompatibleReceipt();
+        if (
+            d.recipientA == address(0) || d.recipientB == address(0) || d.recipientA == address(this)
+                || d.recipientB == address(this)
+        ) revert InvalidAddress();
+        uint256 count = d.depositors.length;
+        if (count == 0 || count > MAX_DEPOSITORS) revert InvalidDepositors();
+        for (uint256 i; i < count; ++i) {
+            address a = d.depositors[i];
+            if (
+                a == address(0) || a == address(this) || isDepositor[a] || a == d.bem || a == d.mining
+                    || a == d.minerCollection || a == d.nandReceipt || a == d.latchReceipt
+            ) revert InvalidDepositors();
+            isDepositor[a] = true;
+            _depositors.push(a);
+        }
         bem = IERC20(d.bem);
         mining = IMining(d.mining);
         minerCollection = IERC721(d.minerCollection);
+        nandReceipt = TapeoutEntitlementReceipt(d.nandReceipt);
+        latchReceipt = TapeoutEntitlementReceipt(d.latchReceipt);
+        recipientA = d.recipientA;
+        recipientB = d.recipientB;
         poolName = d.poolName;
-        nandReceipt = new TapeoutReceipt(d.nand.name, d.nand.symbol, d.nand.uri);
-        latchReceipt = new TapeoutReceipt(d.latch.name, d.latch.symbol, d.latch.uri);
+        emit Deployed(d.nandReceipt, d.latchReceipt, d.recipientA, d.recipientB, d.depositors);
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Setup (owner, before activation)
+    // Activation (owner, once)
     // ---------------------------------------------------------------------------------------------
 
-    /// @notice Set or replace the whole configuration. Share counts may not drop below an
-    ///         already-minted ID, so every issued ID always lies inside 1..S.
-    function configure(Config calldata c) external onlyOwner {
-        _requireSetup();
-        if (c.nandWeight > WEIGHT_SCALE) revert InvalidWeight(c.nandWeight);
-        uint256 nandHighest = nandReceipt.highestMintedId();
-        if (c.nandShares < nandHighest) {
-            revert ShareCountBelowIssued(Category.NAND, c.nandShares, nandHighest);
+    /// @notice Fix both category denominators. Both receipt collections must have finalized issuance,
+    ///         and the supplies must equal the values the operator reviewed.
+    function activate(uint256 expectedNandShares, uint256 expectedLatchShares) external onlyOwner {
+        if (active) revert AlreadyActive();
+        if (!nandReceipt.issuanceFinalized() || !latchReceipt.issuanceFinalized()) {
+            revert IssuanceNotFinalized();
         }
-        uint256 latchHighest = latchReceipt.highestMintedId();
-        if (c.latchShares < latchHighest) {
-            revert ShareCountBelowIssued(Category.LATCH, c.latchShares, latchHighest);
-        }
-        if (
-            c.feeRecipient == address(this) || c.historicalNandRecipient == address(this)
-                || c.historicalLatchRecipient == address(this)
-        ) revert InvalidAddress();
-        _config = c;
-        emit Configured(configHash(c), c);
-    }
-
-    /// @notice Mint receipt IDs to explicit holders, one ID per entry.
-    function issueReceipts(Category category, address[] calldata holders, uint256[] calldata ids)
-        external
-        onlyOwner
-    {
-        _requireSetup();
-        if (ids.length == 0 || holders.length != ids.length) revert InvalidBatch();
-        TapeoutReceipt receipt = receiptOf(category);
-        uint256 limit = shareCount(category);
-        for (uint256 i; i < ids.length; ++i) {
-            if (ids[i] == 0 || ids[i] > limit) revert ReceiptIdOutOfRange(category, ids[i]);
-            receipt.mint(holders[i], ids[i]);
-        }
-        emit ReceiptsIssued(category, ids.length, receipt.totalSupply());
-    }
-
-    /// @notice Mint the contiguous IDs firstId..firstId+count-1 to one holder.
-    function issueReceiptRange(Category category, address holder, uint256 firstId, uint256 count)
-        external
-        onlyOwner
-    {
-        _requireSetup();
-        if (firstId == 0 || count == 0) revert InvalidBatch();
-        uint256 lastId = firstId + count - 1;
-        if (lastId > shareCount(category)) revert ReceiptIdOutOfRange(category, lastId);
-        uint256[] memory ids = new uint256[](count);
-        for (uint256 i; i < count; ++i) {
-            ids[i] = firstId + i;
-        }
-        TapeoutReceipt receipt = receiptOf(category);
-        receipt.mintBatch(holder, ids);
-        emit ReceiptsIssued(category, count, receipt.totalSupply());
-    }
-
-    /// @notice Burn wrongly issued IDs so they can be re-issued. Impossible after activation.
-    function revokeReceipts(Category category, uint256[] calldata ids) external onlyOwner {
-        _requireSetup();
-        if (ids.length == 0) revert InvalidBatch();
-        TapeoutReceipt receipt = receiptOf(category);
-        for (uint256 i; i < ids.length; ++i) {
-            receipt.burn(ids[i]);
-        }
-        emit ReceiptsRevoked(category, ids);
-    }
-
-    /// @notice One-way switch to ACTIVE. Requires a complete, valid configuration whose hash the
-    ///         caller has reviewed, and exactly the IDs 1..S issued in each collection. Closes
-    ///         minting permanently and recognizes any BEM already held as pool income.
-    function activate(bytes32 expectedConfigHash) external onlyOwner nonReentrant {
-        _requireSetup();
-        Config memory c = _config;
-        bytes32 actual = configHash(c);
-        if (actual != expectedConfigHash) revert ConfigHashMismatch(expectedConfigHash, actual);
-        _validateForActivation(c);
+        uint256 sN = nandReceipt.totalSupply();
+        uint256 sL = latchReceipt.totalSupply();
+        if (sN != expectedNandShares || sL != expectedLatchShares) revert UnexpectedShareCounts(sN, sL);
+        if (sN + sL == 0) revert NoShares();
+        nandShares = sN;
+        latchShares = sL;
         active = true;
         activatedAt = uint64(block.timestamp);
-        activationConfigHash = actual;
-        nandReceipt.finalizeMinting();
-        latchReceipt.finalizeMinting();
-        emit Activated(actual, c, block.timestamp);
-        _sync();
-    }
-
-    function setReceiptURI(Category category, string calldata uri_) external onlyOwner {
-        receiptOf(category).setURI(uri_);
+        emit Activated(sN, sL, block.timestamp);
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Miner custody (owner, any phase)
+    // Admission (whitelisted depositors, ACTIVE)
     // ---------------------------------------------------------------------------------------------
 
-    /// @notice Pull miners from the caller (requires ERC-721 approval) and register them.
-    function depositMiners(uint256[] calldata tokenIds) external onlyOwner nonReentrant {
-        if (tokenIds.length == 0) revert InvalidBatch();
-        for (uint256 i; i < tokenIds.length; ++i) {
-            minerCollection.transferFrom(msg.sender, address(this), tokenIds[i]);
-            _registerMiner(tokenIds[i], msg.sender);
-        }
-        if (active) _sync();
+    /// @notice Admit miners owned by the caller (requires ERC-721 approval to this pool).
+    function depositMiners(uint256[] calldata tokenIds)
+        external
+        nonReentrant
+        returns (uint256 settledOldIncome, uint256 carriedIncome)
+    {
+        return _admit(tokenIds, true);
     }
 
-    /// @notice Register miners that reached the pool without `depositMiners` (plain transferFrom).
-    function registerMiners(uint256[] calldata tokenIds) external onlyOwner nonReentrant {
-        if (tokenIds.length == 0) revert InvalidBatch();
-        for (uint256 i; i < tokenIds.length; ++i) {
-            _registerMiner(tokenIds[i], address(0));
-        }
-        if (active) _sync();
+    /// @notice Admit miners that already reached the pool by a plain transfer. Same whitelist and
+    ///         the same settlement boundary as `depositMiners`; a plain transfer alone admits nothing.
+    function registerMiners(uint256[] calldata tokenIds)
+        external
+        nonReentrant
+        returns (uint256 settledOldIncome, uint256 carriedIncome)
+    {
+        return _admit(tokenIds, false);
     }
 
     // ---------------------------------------------------------------------------------------------
     // Income collection (anyone, ACTIVE)
     // ---------------------------------------------------------------------------------------------
 
-    /// @notice Recognize BEM that reached the pool by any route (harvests, third-party
-    ///         Mining.claim calls on pool miners, direct transfers) as pool income.
+    /// @notice Recognize BEM that reached the pool by any route as income of the current period.
     function sync() external nonReentrant returns (uint256 received) {
         _requireActive();
         received = _sync();
     }
 
-    /// @notice Call Mining.claim for each listed registered miner and account the BEM received.
-    /// @dev Always calls claim (never gated on `pending`). A miner whose claim reverts is reported
-    ///      with MinerHarvestFailed and counted in `failed`; it is never treated as a zero claim
-    ///      and never blocks the other miners. Only actual balance increases are accounted.
+    /// @notice Ordinary harvest: claim the listed registered miners under the current composition.
+    ///         Failures are isolated per miner and reported; only actual balance increases count.
     function harvest(uint256[] calldata tokenIds)
         external
         nonReentrant
@@ -309,9 +303,10 @@ contract TapeoutMinerPool is Ownable2Step, ReentrancyGuard {
         _sync();
         uint256 balance = bem.balanceOf(address(this));
         for (uint256 i; i < tokenIds.length; ++i) {
-            if (!isMiner[tokenIds[i]]) revert UnknownMiner(tokenIds[i]);
+            Miner storage m = _miners[tokenIds[i]];
+            if (!m.registered) revert UnknownMiner(tokenIds[i]);
             bool ok;
-            (ok, balance) = _harvestOne(tokenIds[i], balance);
+            (ok, balance) = _harvestOne(tokenIds[i], m.key, balance);
             if (!ok) ++failed;
         }
         received = _sync();
@@ -325,14 +320,14 @@ contract TapeoutMinerPool is Ownable2Step, ReentrancyGuard {
         returns (uint256 received, uint256 failed)
     {
         _requireActive();
-        uint256 length = _miners.length;
+        uint256 length = _minerIds.length;
         if (count == 0 || start >= length) revert InvalidBatch();
         uint256 end = count > length - start ? length : start + count;
         _sync();
         uint256 balance = bem.balanceOf(address(this));
         for (uint256 i = start; i < end; ++i) {
             bool ok;
-            (ok, balance) = _harvestOne(_miners[i], balance);
+            (ok, balance) = _harvestOne(_minerIds[i], _minerKeys[i], balance);
             if (!ok) ++failed;
         }
         received = _sync();
@@ -340,7 +335,7 @@ contract TapeoutMinerPool is Ownable2Step, ReentrancyGuard {
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Claims and releases (ACTIVE)
+    // Claims and recipient payments (ACTIVE)
     // ---------------------------------------------------------------------------------------------
 
     /// @notice Claim the income attached to one receipt ID held by the caller.
@@ -369,43 +364,24 @@ contract TapeoutMinerPool is Ownable2Step, ReentrancyGuard {
         _pay(msg.sender, amount);
     }
 
-    /// @notice Pay the accrued fee to the fee recipient. Callable by anyone.
-    function releaseFee() external nonReentrant returns (uint256 amount) {
-        _requireActive();
-        _sync();
-        uint256 accrued = _accrual(totalAccounted).fee;
-        amount = accrued - feePaid;
-        feePaid = accrued;
-        address to = _config.feeRecipient;
-        _pay(to, amount);
-        emit FeeReleased(to, amount);
+    /// @notice Pay recipient A its accrued 1/102. Callable by anyone; independent of all other payments.
+    function releaseA() external nonReentrant returns (uint256 amount) {
+        return _release(Recipient.A);
     }
 
-    /// @notice Pay a category's accrued historical income to its recipient. Callable by anyone.
-    function releaseHistorical(Category category) external nonReentrant returns (uint256 amount) {
-        _requireActive();
-        _sync();
-        PoolMath.Accrual memory a = _accrual(totalAccounted);
-        uint256 accrued = category == Category.NAND ? a.historicalNand : a.historicalLatch;
-        uint256 index = uint256(category);
-        amount = accrued - _historicalPaid[index];
-        _historicalPaid[index] = accrued;
-        address to =
-            recipientOf(category == Category.NAND ? Recipient.HISTORICAL_NAND : Recipient.HISTORICAL_LATCH);
-        _pay(to, amount);
-        emit HistoricalReleased(category, to, amount);
+    /// @notice Pay recipient B its accrued 1/102. Callable by anyone; independent of all other payments.
+    function releaseB() external nonReentrant returns (uint256 amount) {
+        return _release(Recipient.B);
     }
 
-    /// @notice After activation only the current holder of a recipient role can move it. Unreleased
-    ///         income stays with the role. The owner has no power over recipients once ACTIVE.
+    /// @notice A recipient may move its own role (e.g. to a new multisig). Unpaid income stays with
+    ///         the role. Nobody else, including the owner, can change a recipient.
     function setRecipient(Recipient role, address newRecipient) external {
-        _requireActive();
-        address current = recipientOf(role);
+        address current = role == Recipient.A ? recipientA : recipientB;
         if (msg.sender != current) revert Unauthorized();
         if (newRecipient == address(0) || newRecipient == address(this)) revert InvalidAddress();
-        if (role == Recipient.FEE) _config.feeRecipient = newRecipient;
-        else if (role == Recipient.HISTORICAL_NAND) _config.historicalNandRecipient = newRecipient;
-        else _config.historicalLatchRecipient = newRecipient;
+        if (role == Recipient.A) recipientA = newRecipient;
+        else recipientB = newRecipient;
         emit RecipientChanged(role, current, newRecipient);
     }
 
@@ -413,47 +389,28 @@ contract TapeoutMinerPool is Ownable2Step, ReentrancyGuard {
     // Views
     // ---------------------------------------------------------------------------------------------
 
-    function config() external view returns (Config memory) {
-        return _config;
+    function depositors() external view returns (address[] memory) {
+        return _depositors;
     }
 
-    function configHash(Config memory c) public pure returns (bytes32) {
-        return keccak256(abi.encode(c));
-    }
-
-    function currentConfigHash() external view returns (bytes32) {
-        return configHash(_config);
-    }
-
-    function receiptOf(Category category) public view returns (TapeoutReceipt) {
+    function receiptOf(Category category) public view returns (TapeoutEntitlementReceipt) {
         return category == Category.NAND ? nandReceipt : latchReceipt;
     }
 
     function shareCount(Category category) public view returns (uint256) {
-        return category == Category.NAND ? _config.nandShares : _config.latchShares;
+        return category == Category.NAND ? nandShares : latchShares;
     }
 
-    function historicalShareCount(Category category) external view returns (uint256) {
-        return category == Category.NAND ? _config.historicalNandShares : _config.historicalLatchShares;
-    }
-
-    function recipientOf(Recipient role) public view returns (address) {
-        if (role == Recipient.FEE) return _config.feeRecipient;
-        if (role == Recipient.HISTORICAL_NAND) return _config.historicalNandRecipient;
-        return _config.historicalLatchRecipient;
-    }
-
-    /// @notice Issued IDs versus the configured active share count S (minting capacity left).
-    function issuance(Category category)
-        external
-        view
-        returns (uint256 shares, uint256 issued, uint256 remaining, bool mintingFinalized)
-    {
-        TapeoutReceipt receipt = receiptOf(category);
-        shares = shareCount(category);
-        issued = receipt.totalSupply();
-        remaining = active || issued >= shares ? 0 : shares - issued;
-        mintingFinalized = receipt.mintingFinalized();
+    function state() public view returns (PoolMath.State memory) {
+        return PoolMath.State({
+            nandBase: nandBase,
+            latchBase: latchBase,
+            participantBase: participantBase,
+            totalNandBurn: totalNandBurn,
+            totalLatchBurn: totalLatchBurn,
+            nandShares: nandShares,
+            latchShares: latchShares
+        });
     }
 
     /// @notice Allocation of the income already recognized (totalAccounted).
@@ -461,16 +418,18 @@ contract TapeoutMinerPool is Ownable2Step, ReentrancyGuard {
         return _accrual(totalAccounted);
     }
 
-    /// @notice Allocation as it will be after the next sync (includes unrecognized balance).
+    /// @notice Allocation after the next sync (adds BEM held but not yet recognized). Income still
+    ///         inside Mining is not included anywhere: it becomes income only when it is received.
     function previewAccrual() public view returns (PoolMath.Accrual memory) {
         return _accrual(totalAccounted + unrecognizedBalance());
     }
 
-    /// @notice BEM held beyond what the ledger expects; recognized by the next sync.
+    /// @notice BEM held beyond the ledger. Stays unrecognized while no miner has been admitted.
     function unrecognizedBalance() public view returns (uint256) {
         uint256 balance = bem.balanceOf(address(this));
         uint256 expected = totalAccounted - totalPaid;
         if (balance < expected) revert BalanceDecreased(balance, expected);
+        if (totalNandBurn + totalLatchBurn == 0) return 0;
         return balance - expected;
     }
 
@@ -478,10 +437,13 @@ contract TapeoutMinerPool is Ownable2Step, ReentrancyGuard {
         return _claimed[category][id];
     }
 
+    function receiptsPaid(Category category) external view returns (uint256) {
+        return _receiptsPaid[uint256(category)];
+    }
+
     /// @notice Income the current holder of `id` can claim now (including unrecognized balance).
     function claimable(Category category, uint256 id) public view returns (uint256) {
         if (id == 0 || id > shareCount(category)) revert ReceiptIdOutOfRange(category, id);
-        if (!active) return 0;
         PoolMath.Accrual memory a = previewAccrual();
         uint256 perShare = category == Category.NAND ? a.perNandShare : a.perLatchShare;
         return perShare - _claimed[category][id];
@@ -495,42 +457,22 @@ contract TapeoutMinerPool is Ownable2Step, ReentrancyGuard {
         amounts = new uint256[](ids.length);
         if (ids.length == 0) return (amounts, 0);
         uint256 limit = shareCount(category);
-        uint256 perShare;
-        if (active) {
-            PoolMath.Accrual memory a = previewAccrual();
-            perShare = category == Category.NAND ? a.perNandShare : a.perLatchShare;
-        }
+        PoolMath.Accrual memory a = previewAccrual();
+        uint256 perShare = category == Category.NAND ? a.perNandShare : a.perLatchShare;
         mapping(uint256 => uint256) storage history = _claimed[category];
         for (uint256 i; i < ids.length; ++i) {
             if (ids[i] == 0 || ids[i] > limit) revert ReceiptIdOutOfRange(category, ids[i]);
-            if (!active) continue;
             amounts[i] = perShare - history[ids[i]];
             total += amounts[i];
         }
     }
 
-    function feeClaimable() external view returns (uint256) {
-        if (!active) return 0;
-        return previewAccrual().fee - feePaid;
+    function recipientClaimable(Recipient role) external view returns (uint256) {
+        uint256 accrued = previewAccrual().recipientA; // A and B accrue identically
+        return accrued - (role == Recipient.A ? recipientAPaid : recipientBPaid);
     }
 
-    function historicalClaimable(Category category) external view returns (uint256) {
-        if (!active) return 0;
-        PoolMath.Accrual memory a = previewAccrual();
-        uint256 accrued = category == Category.NAND ? a.historicalNand : a.historicalLatch;
-        return accrued - _historicalPaid[uint256(category)];
-    }
-
-    function receiptsPaid(Category category) external view returns (uint256) {
-        return _receiptsPaid[uint256(category)];
-    }
-
-    function historicalPaid(Category category) external view returns (uint256) {
-        return _historicalPaid[uint256(category)];
-    }
-
-    /// @notice Full ledger snapshot. Identity: bemBalance + deficit == sum over buckets of
-    ///         (accrued - paid) + residue + unrecognized, and totalPaid == sum of paid buckets.
+    /// @notice Full ledger snapshot; see docs/ACCOUNTING.md for the identities.
     function reconciliation() external view returns (Reconciliation memory r) {
         r.bemBalance = bem.balanceOf(address(this));
         r.totalAccounted = totalAccounted;
@@ -539,31 +481,29 @@ contract TapeoutMinerPool is Ownable2Step, ReentrancyGuard {
         if (r.bemBalance >= expected) r.unrecognized = r.bemBalance - expected;
         else r.deficit = expected - r.bemBalance;
         PoolMath.Accrual memory a = _accrual(totalAccounted);
-        r.feeAccrued = a.fee;
-        r.feePaid = feePaid;
+        r.recipientAAccrued = a.recipientA;
+        r.recipientAPaid = recipientAPaid;
+        r.recipientBAccrued = a.recipientB;
+        r.recipientBPaid = recipientBPaid;
+        r.nandIncome = a.nandIncome;
         r.nandReceiptsAccrued = a.nandReceipts;
         r.nandReceiptsPaid = _receiptsPaid[0];
+        r.latchIncome = a.latchIncome;
         r.latchReceiptsAccrued = a.latchReceipts;
         r.latchReceiptsPaid = _receiptsPaid[1];
-        r.historicalNandAccrued = a.historicalNand;
-        r.historicalNandPaid = _historicalPaid[0];
-        r.historicalLatchAccrued = a.historicalLatch;
-        r.historicalLatchPaid = _historicalPaid[1];
         r.residue = a.residue;
     }
 
     function minerCount() external view returns (uint256) {
-        return _miners.length;
+        return _minerIds.length;
+    }
+
+    function miner(uint256 tokenId) external view returns (Miner memory) {
+        return _miners[tokenId];
     }
 
     function minerAt(uint256 index) external view returns (uint256 tokenId, bytes32 key) {
-        tokenId = _miners[index];
-        key = _minerKeys[tokenId];
-    }
-
-    function minerKeyOf(uint256 tokenId) external view returns (bytes32) {
-        if (!isMiner[tokenId]) revert UnknownMiner(tokenId);
-        return _minerKeys[tokenId];
+        return (_minerIds[index], _minerKeys[index]);
     }
 
     function minersPage(uint256 offset, uint256 limit)
@@ -571,14 +511,14 @@ contract TapeoutMinerPool is Ownable2Step, ReentrancyGuard {
         view
         returns (uint256[] memory tokenIds, bytes32[] memory keys)
     {
-        uint256 length = _miners.length;
+        uint256 length = _minerIds.length;
         if (limit == 0 || limit > MAX_PAGE || offset > length) revert InvalidPage();
         uint256 count = limit > length - offset ? length - offset : limit;
         tokenIds = new uint256[](count);
         keys = new bytes32[](count);
         for (uint256 i; i < count; ++i) {
-            tokenIds[i] = _miners[offset + i];
-            keys[i] = _minerKeys[tokenIds[i]];
+            tokenIds[i] = _minerIds[offset + i];
+            keys[i] = _minerKeys[offset + i];
         }
     }
 
@@ -586,69 +526,130 @@ contract TapeoutMinerPool is Ownable2Step, ReentrancyGuard {
     // Internals
     // ---------------------------------------------------------------------------------------------
 
-    function _requireSetup() internal view {
-        if (active) revert AlreadyActive();
-    }
-
-    function _requireActive() internal view {
+    function _requireActive() private view {
         if (!active) revert NotActive();
     }
 
-    function _validateForActivation(Config memory c) internal view {
-        if (c.nandWeight > WEIGHT_SCALE) revert InvalidWeight(c.nandWeight);
-        if (c.feeRecipient == address(0)) revert MissingRecipient(Recipient.FEE);
-        if (c.historicalNandShares != 0 && c.historicalNandRecipient == address(0)) {
-            revert MissingRecipient(Recipient.HISTORICAL_NAND);
+    function _admit(uint256[] calldata tokenIds, bool pull)
+        private
+        returns (uint256 settled, uint256 carried)
+    {
+        _requireActive();
+        if (!isDepositor[msg.sender]) revert NotDepositor(msg.sender);
+        uint256 n = tokenIds.length;
+        if (n == 0 || n > MAX_ADMISSION_BATCH) revert InvalidBatch();
+
+        // 1. Validate the batch and read each miner's authoritative burn from Mining.
+        bytes32[] memory keys = new bytes32[](n);
+        uint32[] memory nands = new uint32[](n);
+        uint32[] memory latches = new uint32[](n);
+        uint256 addNand;
+        uint256 addLatch;
+        for (uint256 i; i < n; ++i) {
+            uint256 id = tokenIds[i];
+            for (uint256 j; j < i; ++j) {
+                if (tokenIds[j] == id) revert DuplicateMiner(id);
+            }
+            if (_miners[id].registered) revert MinerAlreadyRegistered(id);
+            address holder = minerCollection.ownerOf(id);
+            if (holder != (pull ? msg.sender : address(this))) revert MinerNotHeld(id, holder);
+            (keys[i], nands[i], latches[i]) = _readComposition(id);
+            addNand += nands[i];
+            addLatch += latches[i];
         }
-        if (c.historicalLatchShares != 0 && c.historicalLatchRecipient == address(0)) {
-            revert MissingRecipient(Recipient.HISTORICAL_LATCH);
+        // A category without receipts cannot receive income; refuse instead of redirecting it.
+        if (addNand != 0 && nandShares == 0) revert UnsupportedCategory(Category.NAND);
+        if (addLatch != 0 && latchShares == 0) revert UnsupportedCategory(Category.LATCH);
+
+        // 2. BEM already held belongs to the old composition.
+        _sync();
+
+        // 3. Collect everything the registered miners can pay now, under the old composition.
+        uint256 oldCount = _minerKeys.length;
+        for (uint256 i; i < oldCount; ++i) {
+            _settleOld(i);
         }
-        // A category that receives income must have somebody to receive it.
-        if (c.nandWeight != 0 && uint256(c.nandShares) + c.historicalNandShares == 0) {
-            revert ZeroDenominator(Category.NAND);
+        settled = _sync();
+
+        // 4. Close the old period, take custody and switch to the post-batch composition.
+        _checkpoint();
+        uint256 period = compositionPeriod;
+        for (uint256 i; i < n; ++i) {
+            uint256 id = tokenIds[i];
+            if (pull) minerCollection.transferFrom(msg.sender, address(this), id);
+            if (minerCollection.ownerOf(id) != address(this)) {
+                revert MinerNotHeld(id, minerCollection.ownerOf(id));
+            }
+            _miners[id] = Miner({
+                key: keys[i],
+                nandBurn: nands[i],
+                latchBurn: latches[i],
+                admittedInPeriod: uint64(period),
+                registered: true
+            });
+            _minerIds.push(id);
+            _minerKeys.push(keys[i]);
+            emit MinerRegistered(id, keys[i], msg.sender, nands[i], latches[i]);
         }
-        if (c.nandWeight != WEIGHT_SCALE && uint256(c.latchShares) + c.historicalLatchShares == 0) {
-            revert ZeroDenominator(Category.LATCH);
+        totalNandBurn += addNand;
+        totalLatchBurn += addLatch;
+
+        // 5. Income the incoming miners carried in belongs to the pool, under the new composition.
+        for (uint256 i; i < n; ++i) {
+            mining.claim(keys[i]);
         }
-        _validateIssuance(Category.NAND, c.nandShares);
-        _validateIssuance(Category.LATCH, c.latchShares);
+        carried = _sync();
+        emit MinersAdmitted(msg.sender, period, n, settled, carried, totalNandBurn, totalLatchBurn);
     }
 
-    /// @dev Every minted ID is <= S (enforced at mint and by `configure`), so `issued == S`
-    ///      means the live IDs are exactly 1..S: no unissued share can dilute or orphan income.
-    function _validateIssuance(Category category, uint256 shares) internal view {
-        TapeoutReceipt receipt = receiptOf(category);
-        uint256 issued = receipt.totalSupply();
-        if (issued != shares || receipt.highestMintedId() > shares) {
-            revert IssuanceIncomplete(category, issued, shares);
+    /// @dev Reads the miner record and cross-checks it with the burn cache: both must agree, the miner
+    ///      must be ACTIVE and belong to this collection/token, and it must have burned something.
+    function _readComposition(uint256 tokenId) private view returns (bytes32 key, uint32 nand, uint32 latch) {
+        key = mining.minerKey(address(minerCollection), tokenId);
+        IMining.MinerRecord memory r = mining.getMiner(key);
+        if (
+            r.status != MINER_ACTIVE || r.circuits != address(minerCollection)
+                || uint256(r.circuitId) != tokenId
+        ) {
+            revert MinerNotActive(tokenId);
+        }
+        (bool cached, uint32 cachedNand, uint32 cachedLatch) =
+            mining.cachedBurn(address(minerCollection), tokenId);
+        if (!cached || cachedNand != r.nandBurn || cachedLatch != r.latchBurn) {
+            revert CompositionMismatch(tokenId);
+        }
+        if (uint256(r.nandBurn) + r.latchBurn == 0) revert EmptyComposition(tokenId);
+        return (key, r.nandBurn, r.latchBurn);
+    }
+
+    /// @dev Strict settlement of one registered miner. Mining refuses claims for miners that are no
+    ///      longer ACTIVE (they have nothing collectible); any other failure aborts the admission.
+    function _settleOld(uint256 index) private {
+        bytes32 key = _minerKeys[index];
+        try mining.claim(key) {}
+        catch (bytes memory reason) {
+            if (mining.getMiner(key).status == MINER_ACTIVE) {
+                revert SettlementFailed(_minerIds[index], reason);
+            }
+            emit InactiveMinerSkipped(_minerIds[index]);
         }
     }
 
-    function _registerMiner(uint256 tokenId, address depositor) internal {
-        if (isMiner[tokenId]) revert MinerAlreadyRegistered(tokenId);
-        if (minerCollection.ownerOf(tokenId) != address(this)) revert MinerNotHeld(tokenId);
-        bytes32 key = mining.minerKey(address(minerCollection), tokenId);
-        isMiner[tokenId] = true;
-        _minerKeys[tokenId] = key;
-        _miners.push(tokenId);
-        // Registration requires the real claim path to accept the key. It also collects the
-        // income the miner carried into the pool, which belongs to the pool like any other income.
-        uint256 beforeBalance = bem.balanceOf(address(this));
-        mining.claim(key);
-        uint256 afterBalance = bem.balanceOf(address(this));
-        emit MinerRegistered(
-            tokenId,
-            key,
-            depositor,
-            _miners.length - 1,
-            afterBalance > beforeBalance ? afterBalance - beforeBalance : 0
-        );
+    function _checkpoint() private {
+        PoolMath.Accrual memory a = _accrual(totalAccounted);
+        nandBase = a.nandIncome;
+        latchBase = a.latchIncome;
+        participantBase = a.nandIncome + a.latchIncome;
+        ++compositionPeriod;
+        emit CompositionCheckpoint(compositionPeriod, totalAccounted, nandBase, latchBase, participantBase);
     }
 
-    function _harvestOne(uint256 tokenId, uint256 beforeBalance) internal returns (bool ok, uint256 balance) {
-        try mining.claim(_minerKeys[tokenId]) {
+    function _harvestOne(uint256 tokenId, bytes32 key, uint256 beforeBalance)
+        private
+        returns (bool ok, uint256 balance)
+    {
+        try mining.claim(key) {
             balance = bem.balanceOf(address(this));
-            // A decrease cannot be income; it is rejected by the following _sync.
             emit MinerHarvested(tokenId, balance > beforeBalance ? balance - beforeBalance : 0);
             ok = true;
         } catch (bytes memory reason) {
@@ -658,7 +659,7 @@ contract TapeoutMinerPool is Ownable2Step, ReentrancyGuard {
     }
 
     function _claimMany(Category category, uint256[] calldata ids, uint256 perShare)
-        internal
+        private
         returns (uint256 total)
     {
         if (ids.length == 0) return 0;
@@ -670,7 +671,7 @@ contract TapeoutMinerPool is Ownable2Step, ReentrancyGuard {
     }
 
     function _claimOne(Category category, uint256 id, uint256 perShare, uint256 limit)
-        internal
+        private
         returns (uint256 due)
     {
         if (id == 0 || id > limit) revert ReceiptIdOutOfRange(category, id);
@@ -682,34 +683,44 @@ contract TapeoutMinerPool is Ownable2Step, ReentrancyGuard {
         emit ReceiptIncomeClaimed(category, id, msg.sender, due);
     }
 
-    function _accrual(uint256 total) internal view returns (PoolMath.Accrual memory) {
-        Config storage c = _config;
-        return PoolMath.accrue(
-            total,
-            PoolMath.Shares({
-                nandShares: c.nandShares,
-                latchShares: c.latchShares,
-                historicalNandShares: c.historicalNandShares,
-                historicalLatchShares: c.historicalLatchShares,
-                nandWeight: c.nandWeight
-            })
-        );
+    function _release(Recipient role) private returns (uint256 amount) {
+        _requireActive();
+        _sync();
+        uint256 accrued = _accrual(totalAccounted).recipientA; // A and B accrue identically
+        address to;
+        if (role == Recipient.A) {
+            amount = accrued - recipientAPaid;
+            recipientAPaid = accrued;
+            to = recipientA;
+        } else {
+            amount = accrued - recipientBPaid;
+            recipientBPaid = accrued;
+            to = recipientB;
+        }
+        _pay(to, amount);
+        emit RecipientPaid(role, to, amount);
     }
 
-    /// @dev Recognize BEM that arrived since the last sync: balance + totalPaid - totalAccounted.
-    function _sync() internal returns (uint256 received) {
+    function _accrual(uint256 total) private view returns (PoolMath.Accrual memory) {
+        return PoolMath.accrue(total, state());
+    }
+
+    /// @dev Recognize BEM that arrived since the last sync. Nothing is recognized while no miner has
+    ///      been admitted (there is no composition to split it by); it is recognized at the first admission.
+    function _sync() private returns (uint256 received) {
+        if (totalNandBurn + totalLatchBurn == 0) return 0;
         uint256 balance = bem.balanceOf(address(this));
         uint256 expected = totalAccounted - totalPaid;
         if (balance < expected) revert BalanceDecreased(balance, expected);
         received = balance - expected;
         if (received != 0) {
             totalAccounted += received;
-            emit IncomeRecognized(received, totalAccounted);
+            emit IncomeRecognized(received, totalAccounted, compositionPeriod);
         }
     }
 
     /// @dev Plain, non-rebasing, fee-free BEM only: both balance deltas must be exact.
-    function _pay(address to, uint256 amount) internal {
+    function _pay(address to, uint256 amount) private {
         if (amount == 0) return;
         uint256 selfBefore = bem.balanceOf(address(this));
         uint256 toBefore = bem.balanceOf(to);

@@ -1,179 +1,191 @@
-# Verification Report — TapeOut Miner Pool V1
+# Verification report
 
-Date: 2026-10-20. Baseline: TapeoutMarket/test1 @ `9d86a2673dd3b415e5d8ce35cd818d4e73756116`.
-Toolchain: Foundry 1.4.3 (forge/anvil/cast), solc 0.8.24 (Paris, via-IR, optimizer 200),
-OpenZeppelin Contracts 5.4.0, Node 20.19.5, viem 2.57.2, TypeScript 5.7.3, Slither 0.11.3.
+Date: 2026-10-20. Branch `worktree-pooled-mining-v2`, based on groupmine `48a2d74`. Toolchain: solc
+0.8.24 (Paris, via-IR, optimizer 200), OpenZeppelin 5.4.0, Foundry 1.4.3, Node 20+, viem 2.57.2.
 
-This report separates **what was executed for this repository** (§1–§6) from **evidence inherited from
-the baseline** (§7) and **what remains unverified** (§8). No transaction was sent to BSC mainnet, no
-private key was used, and nothing was signed; all chain activity happened on local Anvil chains or
-local forks.
+**Scope.** Local tests against a mock protocol, and real BSC protocol state on local forks. No mainnet
+deployment, no live-value transaction and no signature was made. The contracts are not audited.
 
-## 1. Results (newly executed, final build)
+## 1. Implementation
 
-The final pool creation bytecode has sha256
-`9c7eee078c297e01daf6c7c62bbba61c0d64715286fadc886b3c53b1b3b7fece` (`sdk/bytecode.json`); the fork tests
-deployed exactly this artifact.
+| Contract | Runtime size | Role |
+| --- | ---: | --- |
+| `TapeoutEntitlementReceipt` | 8,743 B | unique-ID ERC-1155 entitlement; deployed twice (NAND, LATCH) |
+| `TapeoutReceiptDistributor` | 7,560 B | holds receipts, records the allocation, delivers to beneficiaries |
+| `TapeoutMinerPool` | 19,074 B | miner custody, admission boundary, BEM ledger, claims, A/B payments |
+
+Design and rules: [ARCHITECTURE.md](ARCHITECTURE.md), [ACCOUNTING.md](ACCOUNTING.md); operator
+workflow: [OPERATIONS.md](OPERATIONS.md); what changed from 48a2d74 and what was reused:
+[BASELINE.md](BASELINE.md).
+
+Material decisions:
+
+1. **Receipt compatibility** is proven by runtime code hash plus category constant, not by
+   interface: only this unique-ID, finalize-once implementation is accepted. `activate` requires
+   finalized issuance and the supplies the operator reviewed.
+2. **Distribution** uses on-chain range records instead of a Merkle tree (one round, bounded wallet
+   count; the contract enforces coverage and immutability itself). The distributor refuses receipts
+   with claim history and accepts nothing after finalization, so distributed receipts cannot be
+   recycled.
+3. **Composition** is `nandBurn`/`latchBurn` from `getMiner`, required to equal `cachedBurn`, for an
+   ACTIVE record of exactly that collection and token, with a non-zero total.
+4. **Strict settlement** calls `Mining.claim` for every registered miner inside each admission;
+   `claimMany` is not used because it skips failures silently. A failure of a miner that Mining still
+   reports ACTIVE reverts the admission. Miners Mining reports as no longer ACTIVE are skipped with an
+   event, because Mining refuses all claims for them (nothing is collectible).
+5. **Edge cases:** BEM held before the first admission is recognized by it; a category with zero
+   receipts cannot gain composition (miners burning it are refused); activation refuses two empty
+   collections.
+6. **Authority:** a fixed whitelist (1 to 16) gates both admission paths; plain transfers are inert;
+   the owner's only power is `activate`; recipients rotate only themselves.
+7. **Tooling** never signs, sizes every batch from measured gas models against the BSC
+   per-transaction cap, and refuses allocation wallets that cannot receive ERC-1155.
+
+## 2. What was run
 
 | Check | Command | Result | Raw output |
 | --- | --- | --- | --- |
-| Build, contract size | `forge build --sizes` | PASS — pool 18,741 B runtime (5,835 B under EIP-170), receipt 8,154 B | — |
-| Formatting | `forge fmt --check src test script` | PASS | — |
-| Unit, fuzz and invariant suites (mock protocol) | `forge test --no-match-path 'test/fork/*'` | **56 / 56 PASS** | `reports/solidity-tests.json` |
-| SDK unit tests | `npm run test:sdk` | **11 / 11 PASS** | `reports/sdk-tests.tap` |
+| Build, sizes, formatting | `forge build --sizes`, `forge fmt --check` | PASS: runtime sizes under EIP-170 (24,576 B); largest initcode, the pool's 30,857 B, under EIP-3860 (49,152 B) | — |
+| Unit, fuzz and invariant suites (mock protocol) | `forge test --no-match-path 'test/fork/*'` | **85 / 85 PASS** | `reports/solidity-tests.json` |
+| SDK unit tests | `npm run test:sdk` | **16 / 16 PASS** | `reports/sdk-tests.tap` |
 | TypeScript | `npm run typecheck` | PASS | `reports/typecheck.txt` |
-| CLI end to end, local Anvil, mock protocol | `npm run test:local-e2e` | **PASS — 23 / 23 checks, 23 local transactions** | `reports/local-e2e.json`, `reports/local-e2e-reconcile.json` |
-| Foundry deployment script, local Anvil | `forge script script/DeployPool.s.sol --unlocked …` | PASS (pool + both receipts deployed, owner ≠ deployer) | console output only |
-| Real BSC protocol, Foundry fork, block 128,611,683 | `npm run test:fork` | **2 / 2 PASS** | `reports/fork-test.json`, `reports/fork-lifecycle.json`, `reports/fork-identity.json` |
-| Real BSC protocol, CLI on Anvil fork, same block | `npm run test:fork-e2e` | **PASS — 14 / 14 checks, 23 local-fork receipts** | `reports/fork-e2e.json`, `reports/fork-e2e-reconcile.json` |
-| Static analysis | `slither src/TapeoutMinerPool.sol …` | Run; findings triaged in §6, no code change | `reports/slither.txt`, `reports/slither.json` |
-| BSC mainnet | — | **NOT RUN** (no deployment, no transactions) | — |
+| CLI end to end, local Anvil, mock protocol | `npm run test:local-e2e` | **PASS, 29 / 29 checks**, 46 steps, 44 local transactions | `reports/local-e2e.json`, `reports/local-e2e-reconcile.json` |
+| Real BSC state, Foundry fork, block 128,713,128 | `npm run test:fork` | **4 / 4 PASS** | `reports/fork-test.json`, `fork-identity.json`, `fork-boundary.json`, `fork-gas.json` |
+| Real BSC state, CLI on an Anvil fork, same block | `npm run test:fork-e2e` | **PASS, 17 / 17 checks**, 31 local-fork transactions | `reports/fork-e2e.json`, `reports/fork-e2e-reconcile.json` |
+| Foundry deployment script, Anvil fork of BSC, same block | `forge script script/DeployPool.s.sol:DeployReceipts`, then `:DeployPool` | PASS: both receipts, pool and distributor deployed from the example system file; pool bound to the script's receipts; receipt runtime code hash `0x7f59d20c…ec8f` equals the build that the SDK bytecode comes from | console output only |
+| Static analysis | Slither 0.11.3 | 42 results, triaged in §6, no code change | `reports/slither.txt`, `reports/slither.json` |
+| BSC mainnet | — | **NOT RUN** (out of scope) | — |
 
-Solidity suite composition: `PoolSetupTest` 15, `PoolAccountingTest` 10 (two fuzz tests × 512 runs),
-`PoolClaimsTest` 13, `PoolHarvestTest` 12, `PoolGasTest` 1, `PoolInvariantTest` 5 invariants
-(256 runs × depth 64 = 16,384 handler calls each, 0 reverts, `fail_on_revert = true`).
+Solidity suites: `PoolAdmissionTest` 17, `DistributorTest` 12, `PoolClaimsTest` 11, `PoolSetupTest` 9,
+`PoolHarvestTest` 8, `PoolAccountingTest` 6 (one fuzz test, 512 runs), `EntitlementReceiptTest` 5,
+`SetupGasTest` 4, `AdmissionGasTest` 1, `PoolUnsupportedCategoryTest` 1, and two invariant campaigns
+(`PoolInvariantTest` 5 invariants, `PoolInvariantCoverageTest` the same plus one) of 256 runs × depth
+64 each, `fail_on_revert = true`, 0 reverts. The invariant handler keeps an independent reference
+model of the boundary (expected settled and carried income from the mock's owed balances) and checks
+four-account conservation, the model against the ledger, per-ID histories, monotonic entitlements,
+custody and composition. Its path counters over 1,542 logged runs: 3,826 successful admissions, 1,422
+rolled-back admissions (1,516 runs admitted at least once, 645 saw a rollback), up to 11 registered
+miners.
 
-## 2. Required behaviours and where they are tested
+## 3. Coverage of the required scenarios
 
-| Requirement | Local tests (mock protocol) | Real protocol (fork) |
-| --- | --- | --- |
-| Specification example (1,020 BEM, 80/20, 900+100 / 80+20) | `testSpecificationExample1020Bem` (all 980 IDs claimed, every bucket exact), SDK `specification example`, CLI `preview` | — |
-| 100:2 fee, not 2% | `testFeeIsTwoOver102NotTwoPercent`, fuzz `fee*102 ≤ 2T < (fee+1)*102` | `fee == T*2/102` asserted on real income |
-| Different weights and share counts | `testWeightsAndShareCountsVaryIndependently`, `testEightDecimalWeightPrecision`, fuzz | W_N = 0.8, 90/8 shares |
-| Zero and non-zero historical shares | `testHistoricalSharesAddToDenominatorAndHaveTheirOwnRecipient`, `testZeroHistoricalReleaseIsANoOp`, `testHistoricalOnlyCategoryIsValid` | H_N = 10, H_L = 2, both released |
-| Multiple miners | `testHarvestCollectsSelectedMinersAndAccountsOnlyActualReceipts`, invariants (6 miners) | 3 real miners |
-| Pre-deposit accrued income belongs to the pool | `testIncomeAccruedBeforeDepositBelongsToThePool`, `testActivationRecognizesBemReceivedDuringSetup` | collected at deposit ≥ pending before transfer, for every miner |
-| Only actual receipts are accounted | `testHarvestCollectsSelected…` (unharvested income stays out), invariant `BemConservation` | balance delta == accounted delta |
-| `pending()==0` never skips `claim()` | `testHarvestAlwaysCallsClaimEvenWhenPendingIsZero` | all 3 miners read `pending == 0`, harvest still received 62,867,799 raw |
-| Repeated and duplicate claims | `testRepeatedClaimsPayOnlyNewIncome`, `testDuplicateIdsInOneBatchPayOnce` | — |
-| Receipt transfers: income follows ID, history preserved, former holder rejected | `testUnclaimedIncomeFollowsTheTransferredReceipt`, `testClaimedHistoryStaysWithTheIdAcrossTransfers` | NAND #46 moved with 377,115,629 raw unclaimed; former holder `NotHolder(0, 46)`; new holder paid |
-| Same numeric ID in both collections | `testSameNumberedIdsInBothCollectionsAreIndependent` | NAND #5 / LATCH #5 histories differ |
-| Unauthorized claims, operators | `testUnauthorizedInvalidAndEmptyClaimsRevert`, `testApprovedOperatorCannotClaimUntilItHoldsTheId` | — |
-| Rounding and conservation | `testRoundingResidueIsBoundedAndNotLost`, `testAllocationIsPathIndependent`, fuzz, 5 invariants | `reconcile --deep` PASS on fork state |
-| Zero denominators | `testZeroDenominatorRejectedOnlyWhenTheCategoryHasWeight` | — |
-| Valid miner registration | `testRegistrationValidatesCollectionOwnershipAndMiningKey`, `testRegistrationNeedsAWorkingClaimPath` | real `Mining.claim` accepted all three keys |
-| Issuance / activation / capacity | `testActivationRequiresCompleteIssuance…`, `testIssuanceStatusSeparatesActiveSharesFromCapacity`, `testRevokeAndReissueOnlyBeforeActivation`, `testShareCountCannotDropBelowAnIssuedId` | issuance + activation via CLI |
-| Owner powers end at activation | `testOwnerLosesEconomicPowersAfterActivation`, `testRecipientRolesMoveOnlyByTheirHolder…` | — |
-| Harvest failure isolation | `testHarvestReportsFailingMinerWithoutBlockingOthers`, `testMiningOutageFailsHarvestsButNotClaims` | `--isolate-failures` ran (no failures on real miners) |
-| Baseline regressions (donations, third-party claims, tax token, balance decrease, payment rollback, holder index) | `testThirdPartyMiningClaimsAndDirectTransfersAreIncome`, `testBalanceDecrease…`, `testBrokenTokenTransferRollsBackClaim`, `testReceiptHolderIndexFollowsTransfersAndPages` | third-party `Mining.claim` paid the pool, not the caller |
-
-## 3. Real-protocol observations (BSC block 128,611,683)
-
-Block hash `0x5a7e2854b81f4c8de85026be37fb691bd53191845741c4ef73716ff759bb20f7`. Archive state from
-`bsc-mainnet.public.blastapi.io`; miner discovery from `bsc-dataseed.bnbchain.org` (600 random token
-IDs sampled, 524 with positive pending; the three with the highest pending held by distinct EOAs were
-used). Protocol identity matched the recorded values: Mining implementation
-`0xa3dbe873…f898` (code hash `0x63b1124d…4479`), collection beacon `0xf8d6…8156` →
-implementation `0x8E1D…6068`, BEM decimals 8, `minerKey(collection, 3204)` equal to the baseline's.
-
-Foundry fork run (`reports/fork-lifecycle.json`), raw BEM units:
-
-| Miner | Holder at block | `pending` at block | `pending` right before transfer | Collected by the pool at deposit |
-| --- | --- | ---: | ---: | ---: |
-| #4630 | `0xc4278A9b…D38D` | 19,308,719,172 | 19,308,719,172 | 19,309,115,055 |
-| #2458 | `0xb9674A6F…00A0` | 14,504,309,958 | 14,504,705,841 | 14,504,705,841 |
-| #6241 | `0x8E723D26…D65C` | 14,204,861,472 | 14,205,169,893 | 14,205,169,893 |
-
-- Moving a miner to a new owner paid nothing to the previous holder and left its income in place;
-  the pool collected it at registration (#4630 before activation, recognized at activation).
-- After one simulated hour every miner reported `pending() == 0`; harvesting them paid
-  **62,867,799** raw, 0 failures, and the per-miner events summed to the received amount.
-- One hour later a third party called the real `Mining.claim` for #4630: the pool received
-  22,621,885 raw, the caller nothing; `sync` recognized it.
-- Ledger at the end: accounted 48,104,480,473 − paid 28,674,043,208 = pool balance 19,430,437,265,
-  equal to outstanding entitlements plus residue.
-
-CLI on the Anvil fork (`reports/fork-e2e.json`): same block and miners, fresh code-free actors.
-Deployment, configuration, issuance in 6 batches, pre- and post-activation deposits, harvest after
-one hour (62,867,797 raw with all `pending` at 0), claims, receipt #46 transfer, former-holder
-rejection, releases, and `reconcile --deep` (NAND Σ claimed = paid = 32,054,828,465; LATCH
-6,599,523,518) all passed. The 23 receipts exist only on that local fork.
-
-## 4. Gas
-
-| Operation | Gas | Conditions |
-| --- | ---: | --- |
-| Deploy pool (+ both receipts) | 7,788,283 | fork receipt, incl. base |
-| Issue 45 IDs (range) | 2,168,834 | fork receipt |
-| Issue 200 IDs (range) | 9,466,404 | local, cold, excl. base |
-| Deposit 1 / 2 real miners (incl. registration claim) | 269,071 / 322,589 | fork receipts |
-| Activate | 181,990 | fork receipt |
-| Harvest 3 real miners | 205,615 | fork receipt (145,723 cold, excl. base, Foundry fork) |
-| Harvest 49 miners | 1,553,290 | local mock, cold, excl. base |
-| Claim 44 IDs | 1,375,863 | fork receipt |
-| Claim 200 IDs | 5,647,190 | local, cold, excl. base |
-| Release fee / historical | 102,086 – 104,717 | fork receipts |
-
-The CLI defaults (issue 200 IDs, claim 200 IDs, harvest 25 miners, deposit 20 miners per transaction)
-stay far below current BSC block gas limits; check the live limit before choosing larger batches.
-
-## 5. Findings during development
-
-1. **EVM version.** The deployed TapeOut contracts (BEM, Mining implementation, collection
-   implementation and proxies) use `PUSH0`, which a Paris EVM cannot execute (`NotActivated`). The
-   fork profile runs the EVM at Cancun while deploying the unchanged Paris artifact.
-2. **EIP-7702 receivers.** On BSC mainnet the well-known Anvil/Hardhat accounts carry EIP-7702
-   delegations (`0xef0100…`) and therefore cannot receive ERC-1155 receipts; issuing to one reverted.
-   `issue` now checks every holder with code before sending and names those that would reject receipts.
-   Operators must collect holder addresses that are plain EOAs, compatible smart accounts, or contracts
-   implementing `IERC1155Receiver`.
-3. **`pending()` is stale between global updates.** A `claim` on any miner refreshed Mining's global
-   accrual and raised other miners' `pending` (e.g. #2458: 14,504,309,958 → 14,504,705,841) without any
-   transfer of value. An NFT transfer itself changed neither `pending` nor balances (traced).
-4. **Zero-pending settlement** (baseline finding) reproduced on three miners through the new pool.
-5. **Intermittent Anvil-fork revert.** One run of the fork CLI flow reverted the post-activation
-   deposit; the identical transaction (same hash) succeeded in later runs. The most likely cause is a
-   failed or throttled remote state fetch from the public RPC during execution; this was not proven.
-   Local sends now replay a reverted transaction at the previous block to report its reason.
-6. **Test-authoring defects fixed:** `vm.prank` consumed by a view call inside the next call's
-   arguments (three places, one of which made a "third-party claim" test use the wrong caller), a
-   `testFail…` name, and gas measured on warm storage (now `vm.cool` before each measurement).
-
-## 6. Static analysis triage (Slither 0.11.3)
-
-| Finding | Assessment |
+| Requirement | Tests |
 | --- | --- |
-| `reentrancy-no-eth` ×3 (harvest, harvestRange, depositMiners) | The only cross-function targets listed are view functions. Every state-changing entry point is `nonReentrant`; the external callees are the fixed Mining/collection contracts. A view read during a harvest could see the inflow before `_sync`; no pool logic depends on that. Accepted. |
-| `incorrect-equality` (`_pay`) | Intentional: exact sender/recipient balance deltas (baseline rule). |
-| `uninitialized-local` (`claimableBatch.perShare`) | Intentionally zero before activation. |
-| `reentrancy-benign`, `reentrancy-events` ×6 | Owner-only setup functions and activation calling the pool's own receipt contracts; during setup every permissionless entry point reverts `NotActive`. |
-| `calls-loop` ×18 | Inherent to batching; batch size is chosen by the caller; harvest isolates failures per miner. |
+| Independently deployed, finalized receipts | `EntitlementReceiptTest` (5); `PoolSetupTest.testReceiptsMustBeThisExactImplementationWithTheRightCategories`, `testActivationRequiresFinalizedSuppliesTheReviewedCountsAndOwner`; local e2e `receiptsDeployedIndependently`, `overIssuanceRetracted`, `supplyFixedAfterFinalization` |
+| JSON import, coverage, finalization, user claims | `DistributorTest` (12); SDK allocation tests; local e2e `importRejectsDuplicates`, `importRequiresCoverage`, `importRejectsWalletThatCannotReceive`, `importBatched`, `importResumeHasNothingLeft`, `revokedWalletBlocksFinalization`, `reimportOnlyRestoresTheRevokedWallet`, `allocationVerified`; fork e2e `allocationVerified`, `deliveryWentToBob` |
+| Late receipt claims; transfers carry unpaid BEM | `testLateClaimsKeepTheBemAccumulatedWhileHeldByTheDistributor`, `testUnclaimedIncomeFollowsTheReceiptAndTheFormerHolderLosesIt`, `testClaimedHistoryStaysWithTheIdAcrossTransfers`; local e2e `lateReceiptKeptAccumulatedBem`, `formerHolderRejected`, `newHolderGotTransferredEntitlement` |
+| Whitelisted deposits after renunciation | `testPoolKeepsWorkingAfterOwnershipIsRenounced`; fork `testForkWhitelistAfterRenounceAndBypassRejection`; both e2e runs renounce before depositing |
+| Unauthorized admission and registration bypass | `testOnlyWhitelistedDepositorsAdmitAndOnlyTheirOwnMiners`, `testPlainTransferNeitherRegistersNorBypassesTheWhitelistOrSettlement`, `testSafeTransferIntoThePoolIsRefused`, `testDepositorWhitelistIsValidatedAndRequired`; local e2e `nonDepositorRejected`, `registrationBypassRejected`, `plainTransferDidNotAdmit`; fork e2e `outsiderDepositRevertsOnChain` |
+| Authoritative composition, duplicate miners | `testCompositionMustComeFromAValidActiveMinerRecord`, `testDuplicateAndAlreadyRegisteredMinersAreRejected`; fork `testForkProtocolIdentityAndCompositionAbi`; fork e2e `realCompositionsAdmissible`, `nandMinerBurnsNoLatch` |
+| Strict old/new settlement with carried income | `testSpecificationAcceptanceExample`, `testOldIncomeHiddenFromPendingIsStillSettledUnderTheOldRatio`, `testCarriedIncomeIsNotPaidBackToTheDepositor`, `testFirstAdmissionRecognizesIncomeHeldBeforeAnyComposition`, `testBatchUsesOnePostBatchCompositionForAllCarriedIncome`; fork `testForkStrictAdmissionBoundaryWithRealMiners`; fork e2e `carriedIncomeCollectedAtFirstAdmission`, `oldIncomeSettledInsideAdmission`, `realBoundaryMatchesOldNewCompositionModel`; local e2e `acceptanceExampleNand140Latch60` |
+| Rollback when old-miner settlement fails | `testActiveOldMinerSettlementFailureRollsBackTheWholeAdmission`, `testIncomingMinerClaimFailureRollsBack`, `testInactiveOldMinerIsSkippedExplicitly`; 1,422 invariant rollbacks; local e2e `failedSettlementRolledBack`, `inactiveMinerSkippedExplicitly` |
+| Batch-order independence | `testBatchOrderDoesNotChangeTheOutcome` (every order from one snapshot) |
+| Conservation, monotonicity, rounding | `PoolAccountingTest` (6, incl. fuzz), the invariants, `testEntitlementsNeverDecreaseAcrossCompositionChanges`; `reconcile --deep` PASS in both e2e runs |
+| Revenue access when Mining or admission fails | `testAMiningOutageBlocksAdmissionButNotClaimsOfHeldIncome`, `testClaimsDoNotDependOnMiningOrAdmissions`, `testHarvestIsolatesFailingMiners` |
+| Initialization, first miner, zero totals, zero supply | `testAdmissionsRequireActivation`, `testActivationRejectsTwoEmptyCollections`, `testFirstAdmissionRecognizesIncomeHeldBeforeAnyComposition`, `PoolUnsupportedCategoryTest` |
+| Distributor custody rules | `testNoAdministrativeRouteToHeldReceiptsOrTheirBem`, `testReceiptsWithConsumedRewardHistoryAreRefused`, `testDistributedReceiptsCanNeverReturnAsInventory`, `testDeliverAlwaysGoesToTheRecordedBeneficiary`, `testABeneficiaryThatCannotReceiveIsNeverRedirected` |
+| Admission gas as the registry grows | `AdmissionGasTest` (mock, to 400 miners), fork `testForkAdmissionGasScaling` (24 real miners), `SetupGasTest` (setup batches) |
 
-Slither is not an audit, and no other analyzer was run.
+## 4. Real-protocol observations (BSC block 128,713,128)
 
-## 7. Inherited evidence (baseline; not re-run)
+Block hash `0x760f050b7ec66ced2a2745918d7492650150f9d71d3159259412996ebe65081f`; archive state from
+`bsc-mainnet.public.blastapi.io`. Protocol state was read, never modified; miners were moved from
+their holders with fork-only impersonation, and time advanced only inside the fork.
 
-Summarized in [BASELINE.md](BASELINE.md) §2: 79 Solidity tests/invariant properties and 78 SDK tests;
-the real-state fork at block 128,554,249 (23 scenarios, 25 receipts) where the zero-pending defect was
-found and fixed; 11 mainnet test transactions through block 128,591,816 with miner #3204 and 100
-receipts, including the 0.00000323 BEM entitlement transfer and the `NotHolder` rejection; and the
-840-test offline tooling regression. That evidence concerns the previous GroupBuy implementation and
-the real protocol's behaviour; it does not validate this repository's code or its economic model.
+- **Identity.** Mining implementation `0xa3DBe873…f898` (code hash `0x63b1124d…4479`), collection
+  beacon implementation `0x8E1D125D…6068`, BEM 8 decimals: unchanged from the recorded values.
+- **Composition ABI.** The `getMiner` layout comes from the official frontend bundle (sha256
+  `0f1b12c3…a1e`), which labels `nandBurn`/`latchBurn` as the layer's actual ("local") burn and shows
+  it beside a separate recursive count that includes referenced circuits. The reference source
+  (`HongH933/tapemarket@2b87e91…/inputs/mining/PodMining.sol`) could not be used: both the file and the
+  repository returned HTTP 404 on 2026-10-20. On chain, `getMiner` and `cachedBurn` agreed for every
+  miner admitted: #12733 88 NAND / 0 LATCH, #13948 2 / 64, #4183 1 / 9, #1574 4 / 5.
+- **Inactive miners.** For token #648 (not ACTIVE) `claim` reverts with `0x5f9bb3be`, while `claimMany`
+  including its key does not revert. This is why admissions claim per key.
+- **Boundary, Foundry fork.** Admitting #12733 collected 20,061,449,000 raw BEM it carried (all NAND,
+  composition 88:0). One hour later `pending()` for #12733 read 0, yet admitting #13948 settled
+  27,497,042 raw from it under 88:0, then collected 1,078,419,271 raw carried by #13948 under 90:64.
+  Result: NAND 20,312,932,421, LATCH 439,386,512, A and B 207,523,189 each; exactly the `PoolMath`
+  values for those inputs (one unit carried at the checkpoint). Admission gas 231,401.
+- **CLI fork run.** Pool ownership renounced before any deposit; four real miners admitted in three
+  admissions (one batch of two); the outsider's deposit reverted on chain with `NotDepositor`;
+  moving miners to the depositor paid nothing to their previous holders; deep reconciliation PASS
+  (final run: residue 25 raw against a bound of 53, NAND Σ claimed = paid = 20,333,894,720, LATCH
+  456,350,880). Amounts differ slightly between runs because the Anvil fork's block timestamps follow
+  the wall clock.
 
-## 8. Not verified / remaining work
+## 5. Gas and scale
 
-- **No BSC mainnet deployment or transaction.** That needs explicit authorization, the operator's
-  signer or Safe, the real allocation, and the real miner IDs; rehearse first with `test:fork-e2e`.
-- **No independent audit.** Tests, fuzzing, invariants, fork runs and Slither do not replace one.
-- **Protocol semantics without source.** Mining, BEM and collection sources were not obtained. Unknown:
-  every path and permission of `claim`; what `start`/`stop`/`arm`/`kick`/`reclaim` do and whether a
-  pooled miner can stop earning without owner action; the collection beacon's upgrade powers; BEM's
-  full token semantics. A protocol upgrade could change behaviour; run `protocol-check` regularly.
-- **Fork scope.** One pinned block, three miners, two simulated hours. Longer periods, task changes,
-  miners in other states, and other blocks were not tested.
-- **Signing paths.** Safe Transaction Builder files were validated structurally, not imported into a
-  Safe; printed `cast send` commands were executed only with `--unlocked` on Anvil, not with a hardware
-  wallet or keystore.
-- **Scale on real state.** Spec-size issuance and claims (980 IDs) ran only on the local mock chain;
-  on the fork the pool had 98 IDs.
-- **Out of scope by specification:** splitting historical income among individual historical
-  contributors (V1 pays a recipient address or contract), leftover-material tracking, refunds,
-  multi-round allocation, miner withdrawal/redemption, and any UI or indexer.
+Admission on the real protocol (`reports/fork-gas.json`; storage cooled, one hour of accrual between
+admissions, so every old-miner claim pays real BEM; the 21,000 base cost excluded):
 
-## 9. Reproduce
+| Registered miners | 0 | 1 | 2 | 5 | 10 | 15 | 20 | 23 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Gas to admit one miner | 397,971 | 317,401 | 285,430 | 368,497 | 507,262 | 645,907 | 784,432 | 867,619 |
+
+The first admission is dearer (fresh storage). The marginal cost is at most 27,849 gas per registered
+miner. Extrapolated, a single-miner admission reaches BSC's 16,777,216 gas cap (BEP-652, active since
+the Mendel upgrade on 2026-04-28) at about 593 registered miners, and a 3/4 planning budget at about
+442. The CLI uses a rounded-up model (300k + 30k per registered + 250k per incoming miner) and stops
+planning at 401. On the mock the cost is about 22k per registered miner (9,001,358 gas at 400).
+
+Setup batches (`SetupGasTest`, whole-transaction estimates): issue 231 IDs 10.77M (to a wallet) or
+11.63M (into the distributor); fund 300 IDs 9.82M; allocate 85 single-ID ranges for new wallets
+10.54M, or 400 IDs in one range 10.38M; deliver 300 IDs 8.81M; claim BEM for 200 IDs 5.71M. All stay
+under the 12.58M planning budget, and each model bounds its measurement. Other costs from the e2e runs:
+receipt deployment 2.07M, pool 4.56M, distributor 1.75M, activation 109k, harvest of four real miners
+248k, each recipient release about 116k.
+
+## 6. Static analysis
+
+Slither 0.11.3, `--exclude-informational`, test and library paths filtered; 42 results:
+
+| Detector | Count | Assessment |
+| --- | ---: | --- |
+| `incorrect-equality` | 1 | `_pay` returns early on `amount == 0`; intended |
+| `reentrancy-no-eth` | 6 | `_admit` (×3), `harvest`, `harvestRange` write state after `Mining.claim`/`transferFrom` by design (the boundary's order); `_deliver` updates the category total after an earlier range's transfer. Every entry point is `nonReentrant`; the calls go to the fixed protocol contracts, bound receipts or the beneficiary; the only cross-function exposure is views |
+| `uninitialized-local` | 4 | accumulators that start at zero |
+| `calls-loop` | 29 | loops over miners and IDs are the design; bounded by batch limits and gas models; harvest isolates failures |
+| `reentrancy-benign` | 1 | checkpoint after settlement claims; same as above |
+| `immutable-states` | 1 | receipt `category` is storage on purpose so all receipts share one runtime code hash |
+
+No code change resulted.
+
+## 7. Remaining limitations
+
+1. **Registry size.** Strict settlement makes admission cost linear in registered miners; about 590
+   miners is the practical ceiling under the BSC cap (401 with the CLI's margin). Inactive miners stay
+   registered and keep costing gas. Beyond the ceiling, harvests, claims and payments continue but no
+   miner can be admitted; lifting it would need a different boundary design, which this specification
+   does not allow silently.
+2. **Protocol upgrades.** Mining (ERC-1967) and the collection (beacon) are upgradeable by their
+   owners. A change to `claim` statuses, burn fields or payout routing would change what the pool
+   observes; admissions fail closed, already recognized BEM stays claimable. Run `protocol-check`
+   before operating.
+3. **Composition semantics** rest on the frontend ABI labels and on-chain consistency, not on the
+   deployed source (unavailable).
+4. **Carried income** is only what is unclaimed at admission: anyone can call `Mining.claim` for a
+   miner before it is deposited, which pays its owner. With `registerMiners`, income claimed between a
+   plain transfer and registration is recognized under the composition current at that moment;
+   `depositMiners` has no such window.
+5. **Inactive-miner handling** trusts Mining's status flag: an ACTIVE miner whose claim fails blocks
+   admissions until Mining recovers.
+6. **BEM** must remain a plain ERC-20; a forced balance decrease blocks recognition and claims rather
+   than rewriting history.
+7. **Wallets that cannot receive ERC-1155** are stopped by the tooling, not by the contract; a contract
+   beneficiary added by other means would leave its receipts in the distributor (its BEM stays
+   attached but unclaimable).
+8. **Not covered:** real (non-impersonated) deposits by actual depositors, Safe-batch execution on
+   BSC, long-running behaviour over many composition periods on the real protocol, and an audit.
+
+## 8. Reproduce
 
 ```bash
-npm ci --ignore-scripts && forge build && forge test --no-match-path 'test/fork/*'
+npm ci --ignore-scripts
+```
+
+```bash
+forge build --sizes && forge fmt --check && forge test --no-match-path 'test/fork/*'
 ```
 
 ```bash
@@ -181,13 +193,14 @@ npm run test:sdk && npm run typecheck && npm run test:local-e2e
 ```
 
 ```bash
-FORK_RPC_URL=https://bsc-mainnet.public.blastapi.io FORK_BLOCK=128611683 FORK_MINER_IDS=4630,2458,6241 npm run test:fork
+FORK_RPC_URL=https://bsc-mainnet.public.blastapi.io FORK_BLOCK=128713128 FORK_NAND_MINER=12733 FORK_LATCH_MINER=13948 FORK_INACTIVE_TOKEN=648 FORK_SCALE_MINERS=4183,1574,6940,4307,4655,3207,13617,7924,11127,4951,3932,10031,14559,16112,8714,2161,6767,11214,6453,14011,16944,15731,7541,5930 npm run test:fork
 ```
 
 ```bash
 FORK_RPC_URL=https://bsc-mainnet.public.blastapi.io npm run test:fork-e2e
 ```
 
-Without `FORK_BLOCK`/`FORK_MINER_IDS`, `test:fork` pins a recent block and discovers miners itself.
-Public RPC endpoints are third-party services and may rate-limit; Foundry caches fork state per pinned
-block, so reruns of the same block are fast.
+Without the overrides, `test:fork` pins a block 20 behind the head and discovers suitable miners there.
+Slither:
+`slither . --foundry-compile-all --filter-paths "node_modules|lib|test|script" --exclude-informational --json <raw>`,
+then `node scripts/summarize-slither.mjs <raw> <text> 0.11.3`.

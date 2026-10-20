@@ -1,152 +1,219 @@
-/private/tmp/claude-501/-Users-jaychen-Desktop-tapemine/c3f5ec0a-0821-432b-a66a-e74bafa05931/scratchpad/slither-venv/lib/python3.9/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
-  warnings.warn(
-'forge clean' running (wd: <repo>)
-'forge config --json' running
-'forge build --build-info src/TapeoutMinerPool.sol' running (wd: <repo>)
-
-TapeoutMinerPool._pay(address,uint256) (src/TapeoutMinerPool.sol#712-721) uses a dangerous strict equality:
-	- amount == 0 (src/TapeoutMinerPool.sol#713)
+TapeoutMinerPool._pay(address,uint256) (src/TapeoutMinerPool.sol#723-732) uses a dangerous strict equality:
+	- amount == 0 (src/TapeoutMinerPool.sol#724)
 Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#dangerous-strict-equalities
 
-Reentrancy in TapeoutMinerPool.depositMiners(uint256[]) (src/TapeoutMinerPool.sol#269-276):
+Reentrancy in TapeoutMinerPool._admit(uint256[],bool) (src/TapeoutMinerPool.sol#533-603):
 	External calls:
-	- minerCollection.transferFrom(msg.sender,address(this),tokenIds[i]) (src/TapeoutMinerPool.sol#272)
-	- _registerMiner(tokenIds[i],msg.sender) (src/TapeoutMinerPool.sol#273)
-		- mining.claim(key) (src/TapeoutMinerPool.sol#637)
+	- _settleOld(i_scope_0) (src/TapeoutMinerPool.sol#570)
+		- mining.claim(key) (src/TapeoutMinerPool.sol#629-635)
 	State variables written after the call(s):
-	- _registerMiner(tokenIds[i],msg.sender) (src/TapeoutMinerPool.sol#273)
-		- _miners.push(tokenId) (src/TapeoutMinerPool.sol#633)
-	TapeoutMinerPool._miners (src/TapeoutMinerPool.sol#112) can be used in cross function reentrancies:
-	- TapeoutMinerPool.minerAt(uint256) (src/TapeoutMinerPool.sol#559-562)
-	- TapeoutMinerPool.minerCount() (src/TapeoutMinerPool.sol#555-557)
-	- TapeoutMinerPool.minersPage(uint256,uint256) (src/TapeoutMinerPool.sol#569-583)
-	- _registerMiner(tokenIds[i],msg.sender) (src/TapeoutMinerPool.sol#273)
-		- isMiner[tokenId] = true (src/TapeoutMinerPool.sol#631)
-	TapeoutMinerPool.isMiner (src/TapeoutMinerPool.sol#114) can be used in cross function reentrancies:
-	- TapeoutMinerPool.isMiner (src/TapeoutMinerPool.sol#114)
-	- TapeoutMinerPool.minerKeyOf(uint256) (src/TapeoutMinerPool.sol#564-567)
-Reentrancy in TapeoutMinerPool.harvest(uint256[]) (src/TapeoutMinerPool.sol#302-319):
+	- _checkpoint() (src/TapeoutMinerPool.sol#575)
+		- ++ compositionPeriod (src/TapeoutMinerPool.sol#643)
+	TapeoutMinerPool.compositionPeriod (src/TapeoutMinerPool.sol#115) can be used in cross function reentrancies:
+	- TapeoutMinerPool.compositionPeriod (src/TapeoutMinerPool.sol#115)
+	- settled = _sync() (src/TapeoutMinerPool.sol#572)
+		- totalAccounted += received (src/TapeoutMinerPool.sol#717)
+	TapeoutMinerPool.totalAccounted (src/TapeoutMinerPool.sol#120) can be used in cross function reentrancies:
+	- TapeoutMinerPool.accrual() (src/TapeoutMinerPool.sol#417-419)
+	- TapeoutMinerPool.previewAccrual() (src/TapeoutMinerPool.sol#423-425)
+	- TapeoutMinerPool.reconciliation() (src/TapeoutMinerPool.sol#476-495)
+	- TapeoutMinerPool.totalAccounted (src/TapeoutMinerPool.sol#120)
+	- TapeoutMinerPool.unrecognizedBalance() (src/TapeoutMinerPool.sol#428-434)
+Reentrancy in TapeoutMinerPool._admit(uint256[],bool) (src/TapeoutMinerPool.sol#533-603):
 	External calls:
-	- (ok,balance) = _harvestOne(tokenIds[i],balance) (src/TapeoutMinerPool.sol#314)
-		- mining.claim(_minerKeys[tokenId]) (src/TapeoutMinerPool.sol#649-657)
+	- _settleOld(i_scope_0) (src/TapeoutMinerPool.sol#570)
+		- mining.claim(key) (src/TapeoutMinerPool.sol#629-635)
+	- minerCollection.transferFrom(msg.sender,address(this),id_scope_2) (src/TapeoutMinerPool.sol#579)
 	State variables written after the call(s):
-	- received = _sync() (src/TapeoutMinerPool.sol#317)
-		- totalAccounted += received (src/TapeoutMinerPool.sol#706)
-	TapeoutMinerPool.totalAccounted (src/TapeoutMinerPool.sol#105) can be used in cross function reentrancies:
-	- TapeoutMinerPool.accrual() (src/TapeoutMinerPool.sol#460-462)
-	- TapeoutMinerPool.previewAccrual() (src/TapeoutMinerPool.sol#465-467)
-	- TapeoutMinerPool.reconciliation() (src/TapeoutMinerPool.sol#534-553)
-	- TapeoutMinerPool.totalAccounted (src/TapeoutMinerPool.sol#105)
-	- TapeoutMinerPool.unrecognizedBalance() (src/TapeoutMinerPool.sol#470-475)
-Reentrancy in TapeoutMinerPool.harvestRange(uint256,uint256) (src/TapeoutMinerPool.sol#322-340):
+	- _minerIds.push(id_scope_2) (src/TapeoutMinerPool.sol#590)
+	TapeoutMinerPool._minerIds (src/TapeoutMinerPool.sol#127) can be used in cross function reentrancies:
+	- TapeoutMinerPool.minerAt(uint256) (src/TapeoutMinerPool.sol#505-507)
+	- TapeoutMinerPool.minerCount() (src/TapeoutMinerPool.sol#497-499)
+	- TapeoutMinerPool.minersPage(uint256,uint256) (src/TapeoutMinerPool.sol#509-523)
+	- _minerKeys.push(keys[i_scope_1]) (src/TapeoutMinerPool.sol#591)
+	TapeoutMinerPool._minerKeys (src/TapeoutMinerPool.sol#128) can be used in cross function reentrancies:
+	- TapeoutMinerPool.minerAt(uint256) (src/TapeoutMinerPool.sol#505-507)
+	- TapeoutMinerPool.minersPage(uint256,uint256) (src/TapeoutMinerPool.sol#509-523)
+	- _miners[id_scope_2] = Miner({key:keys[i_scope_1],nandBurn:nands[i_scope_1],latchBurn:latches[i_scope_1],admittedInPeriod:uint64(period),registered:true}) (src/TapeoutMinerPool.sol#583-589)
+	TapeoutMinerPool._miners (src/TapeoutMinerPool.sol#129) can be used in cross function reentrancies:
+	- TapeoutMinerPool.miner(uint256) (src/TapeoutMinerPool.sol#501-503)
+	- totalLatchBurn += addLatch (src/TapeoutMinerPool.sol#595)
+	TapeoutMinerPool.totalLatchBurn (src/TapeoutMinerPool.sol#114) can be used in cross function reentrancies:
+	- TapeoutMinerPool.state() (src/TapeoutMinerPool.sol#404-414)
+	- TapeoutMinerPool.totalLatchBurn (src/TapeoutMinerPool.sol#114)
+	- TapeoutMinerPool.unrecognizedBalance() (src/TapeoutMinerPool.sol#428-434)
+	- totalNandBurn += addNand (src/TapeoutMinerPool.sol#594)
+	TapeoutMinerPool.totalNandBurn (src/TapeoutMinerPool.sol#113) can be used in cross function reentrancies:
+	- TapeoutMinerPool.state() (src/TapeoutMinerPool.sol#404-414)
+	- TapeoutMinerPool.totalNandBurn (src/TapeoutMinerPool.sol#113)
+	- TapeoutMinerPool.unrecognizedBalance() (src/TapeoutMinerPool.sol#428-434)
+Reentrancy in TapeoutMinerPool._admit(uint256[],bool) (src/TapeoutMinerPool.sol#533-603):
 	External calls:
-	- (ok,balance) = _harvestOne(_miners[i],balance) (src/TapeoutMinerPool.sol#335)
-		- mining.claim(_minerKeys[tokenId]) (src/TapeoutMinerPool.sol#649-657)
+	- _settleOld(i_scope_0) (src/TapeoutMinerPool.sol#570)
+		- mining.claim(key) (src/TapeoutMinerPool.sol#629-635)
+	- minerCollection.transferFrom(msg.sender,address(this),id_scope_2) (src/TapeoutMinerPool.sol#579)
+	- mining.claim(keys[i_scope_3]) (src/TapeoutMinerPool.sol#599)
 	State variables written after the call(s):
-	- received = _sync() (src/TapeoutMinerPool.sol#338)
-		- totalAccounted += received (src/TapeoutMinerPool.sol#706)
-	TapeoutMinerPool.totalAccounted (src/TapeoutMinerPool.sol#105) can be used in cross function reentrancies:
-	- TapeoutMinerPool.accrual() (src/TapeoutMinerPool.sol#460-462)
-	- TapeoutMinerPool.previewAccrual() (src/TapeoutMinerPool.sol#465-467)
-	- TapeoutMinerPool.reconciliation() (src/TapeoutMinerPool.sol#534-553)
-	- TapeoutMinerPool.totalAccounted (src/TapeoutMinerPool.sol#105)
-	- TapeoutMinerPool.unrecognizedBalance() (src/TapeoutMinerPool.sol#470-475)
+	- carried = _sync() (src/TapeoutMinerPool.sol#601)
+		- totalAccounted += received (src/TapeoutMinerPool.sol#717)
+	TapeoutMinerPool.totalAccounted (src/TapeoutMinerPool.sol#120) can be used in cross function reentrancies:
+	- TapeoutMinerPool.accrual() (src/TapeoutMinerPool.sol#417-419)
+	- TapeoutMinerPool.previewAccrual() (src/TapeoutMinerPool.sol#423-425)
+	- TapeoutMinerPool.reconciliation() (src/TapeoutMinerPool.sol#476-495)
+	- TapeoutMinerPool.totalAccounted (src/TapeoutMinerPool.sol#120)
+	- TapeoutMinerPool.unrecognizedBalance() (src/TapeoutMinerPool.sol#428-434)
+Reentrancy in TapeoutReceiptDistributor._deliver(address,uint256) (src/TapeoutReceiptDistributor.sol#264-286):
+	External calls:
+	- _receipt(range.category).safeBatchTransferFrom(address(this),wallet,ids,values,) (src/TapeoutReceiptDistributor.sol#282)
+	State variables written after the call(s):
+	- _delivered[uint256(range.category)] += n (src/TapeoutReceiptDistributor.sol#274)
+	TapeoutReceiptDistributor._delivered (src/TapeoutReceiptDistributor.sol#44) can be used in cross function reentrancies:
+	- TapeoutReceiptDistributor.totals() (src/TapeoutReceiptDistributor.sol#232-238)
+Reentrancy in TapeoutMinerPool.harvest(uint256[]) (src/TapeoutMinerPool.sol#296-314):
+	External calls:
+	- (ok,balance) = _harvestOne(tokenIds[i],m.key,balance) (src/TapeoutMinerPool.sol#309)
+		- mining.claim(key) (src/TapeoutMinerPool.sol#651-658)
+	State variables written after the call(s):
+	- received = _sync() (src/TapeoutMinerPool.sol#312)
+		- totalAccounted += received (src/TapeoutMinerPool.sol#717)
+	TapeoutMinerPool.totalAccounted (src/TapeoutMinerPool.sol#120) can be used in cross function reentrancies:
+	- TapeoutMinerPool.accrual() (src/TapeoutMinerPool.sol#417-419)
+	- TapeoutMinerPool.previewAccrual() (src/TapeoutMinerPool.sol#423-425)
+	- TapeoutMinerPool.reconciliation() (src/TapeoutMinerPool.sol#476-495)
+	- TapeoutMinerPool.totalAccounted (src/TapeoutMinerPool.sol#120)
+	- TapeoutMinerPool.unrecognizedBalance() (src/TapeoutMinerPool.sol#428-434)
+Reentrancy in TapeoutMinerPool.harvestRange(uint256,uint256) (src/TapeoutMinerPool.sol#317-335):
+	External calls:
+	- (ok,balance) = _harvestOne(_minerIds[i],_minerKeys[i],balance) (src/TapeoutMinerPool.sol#330)
+		- mining.claim(key) (src/TapeoutMinerPool.sol#651-658)
+	State variables written after the call(s):
+	- received = _sync() (src/TapeoutMinerPool.sol#333)
+		- totalAccounted += received (src/TapeoutMinerPool.sol#717)
+	TapeoutMinerPool.totalAccounted (src/TapeoutMinerPool.sol#120) can be used in cross function reentrancies:
+	- TapeoutMinerPool.accrual() (src/TapeoutMinerPool.sol#417-419)
+	- TapeoutMinerPool.previewAccrual() (src/TapeoutMinerPool.sol#423-425)
+	- TapeoutMinerPool.reconciliation() (src/TapeoutMinerPool.sol#476-495)
+	- TapeoutMinerPool.totalAccounted (src/TapeoutMinerPool.sol#120)
+	- TapeoutMinerPool.unrecognizedBalance() (src/TapeoutMinerPool.sol#428-434)
 Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-1
 
-TapeoutMinerPool.claimableBatch(TapeoutMinerPool.Category,uint256[]).perShare (src/TapeoutMinerPool.sol#498) is a local variable never initialized
+TapeoutReceiptDistributor.onERC1155BatchReceived(address,address,uint256[],uint256[],bytes).accepted (src/TapeoutReceiptDistributor.sol#105) is a local variable never initialized
+TapeoutMinerPool._admit(uint256[],bool).addNand (src/TapeoutMinerPool.sol#546) is a local variable never initialized
+TapeoutReceiptDistributor.revokeWallet(address).removed (src/TapeoutReceiptDistributor.sol#153) is a local variable never initialized
+TapeoutMinerPool._admit(uint256[],bool).addLatch (src/TapeoutMinerPool.sol#547) is a local variable never initialized
 Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#uninitialized-local-variables
 
-TapeoutMinerPool.issueReceipts(TapeoutMinerPool.Category,address[],uint256[]) (src/TapeoutMinerPool.sol#198-211) has external calls inside a loop: receipt.mint(holders[i],ids[i]) (src/TapeoutMinerPool.sol#208)
-TapeoutMinerPool.revokeReceipts(TapeoutMinerPool.Category,uint256[]) (src/TapeoutMinerPool.sol#232-240) has external calls inside a loop: receipt.burn(ids[i]) (src/TapeoutMinerPool.sol#237)
-TapeoutMinerPool.depositMiners(uint256[]) (src/TapeoutMinerPool.sol#269-276) has external calls inside a loop: minerCollection.transferFrom(msg.sender,address(this),tokenIds[i]) (src/TapeoutMinerPool.sol#272)
-TapeoutMinerPool._registerMiner(uint256,address) (src/TapeoutMinerPool.sol#627-646) has external calls inside a loop: minerCollection.ownerOf(tokenId) != address(this) (src/TapeoutMinerPool.sol#629)
+TapeoutMinerPool._admit(uint256[],bool) (src/TapeoutMinerPool.sol#533-603) has external calls inside a loop: holder = minerCollection.ownerOf(id) (src/TapeoutMinerPool.sol#554)
 	Calls stack containing the loop:
 		TapeoutMinerPool.depositMiners(uint256[])
-TapeoutMinerPool._registerMiner(uint256,address) (src/TapeoutMinerPool.sol#627-646) has external calls inside a loop: key = mining.minerKey(address(minerCollection),tokenId) (src/TapeoutMinerPool.sol#630)
+TapeoutMinerPool._readComposition(uint256) (src/TapeoutMinerPool.sol#607-623) has external calls inside a loop: key = mining.minerKey(address(minerCollection),tokenId) (src/TapeoutMinerPool.sol#608)
 	Calls stack containing the loop:
 		TapeoutMinerPool.depositMiners(uint256[])
-TapeoutMinerPool._registerMiner(uint256,address) (src/TapeoutMinerPool.sol#627-646) has external calls inside a loop: beforeBalance = bem.balanceOf(address(this)) (src/TapeoutMinerPool.sol#636)
+		TapeoutMinerPool._admit(uint256[],bool)
+TapeoutMinerPool._readComposition(uint256) (src/TapeoutMinerPool.sol#607-623) has external calls inside a loop: r = mining.getMiner(key) (src/TapeoutMinerPool.sol#609)
 	Calls stack containing the loop:
 		TapeoutMinerPool.depositMiners(uint256[])
-TapeoutMinerPool._registerMiner(uint256,address) (src/TapeoutMinerPool.sol#627-646) has external calls inside a loop: mining.claim(key) (src/TapeoutMinerPool.sol#637)
+		TapeoutMinerPool._admit(uint256[],bool)
+TapeoutMinerPool._readComposition(uint256) (src/TapeoutMinerPool.sol#607-623) has external calls inside a loop: (cached,cachedNand,cachedLatch) = mining.cachedBurn(address(minerCollection),tokenId) (src/TapeoutMinerPool.sol#616-617)
 	Calls stack containing the loop:
 		TapeoutMinerPool.depositMiners(uint256[])
-TapeoutMinerPool._registerMiner(uint256,address) (src/TapeoutMinerPool.sol#627-646) has external calls inside a loop: afterBalance = bem.balanceOf(address(this)) (src/TapeoutMinerPool.sol#638)
+		TapeoutMinerPool._admit(uint256[],bool)
+TapeoutMinerPool._settleOld(uint256) (src/TapeoutMinerPool.sol#627-636) has external calls inside a loop: mining.claim(key) (src/TapeoutMinerPool.sol#629-635)
 	Calls stack containing the loop:
 		TapeoutMinerPool.depositMiners(uint256[])
-TapeoutMinerPool._registerMiner(uint256,address) (src/TapeoutMinerPool.sol#627-646) has external calls inside a loop: minerCollection.ownerOf(tokenId) != address(this) (src/TapeoutMinerPool.sol#629)
+		TapeoutMinerPool._admit(uint256[],bool)
+TapeoutMinerPool._settleOld(uint256) (src/TapeoutMinerPool.sol#627-636) has external calls inside a loop: mining.getMiner(key).status == MINER_ACTIVE (src/TapeoutMinerPool.sol#631)
+	Calls stack containing the loop:
+		TapeoutMinerPool.depositMiners(uint256[])
+		TapeoutMinerPool._admit(uint256[],bool)
+TapeoutMinerPool._admit(uint256[],bool) (src/TapeoutMinerPool.sol#533-603) has external calls inside a loop: minerCollection.transferFrom(msg.sender,address(this),id_scope_2) (src/TapeoutMinerPool.sol#579)
+	Calls stack containing the loop:
+		TapeoutMinerPool.depositMiners(uint256[])
+TapeoutMinerPool._admit(uint256[],bool) (src/TapeoutMinerPool.sol#533-603) has external calls inside a loop: minerCollection.ownerOf(id_scope_2) != address(this) (src/TapeoutMinerPool.sol#580)
+	Calls stack containing the loop:
+		TapeoutMinerPool.depositMiners(uint256[])
+TapeoutMinerPool._admit(uint256[],bool) (src/TapeoutMinerPool.sol#533-603) has external calls inside a loop: revert MinerNotHeld(uint256,address)(id_scope_2,minerCollection.ownerOf(id_scope_2)) (src/TapeoutMinerPool.sol#581)
+	Calls stack containing the loop:
+		TapeoutMinerPool.depositMiners(uint256[])
+TapeoutMinerPool._admit(uint256[],bool) (src/TapeoutMinerPool.sol#533-603) has external calls inside a loop: mining.claim(keys[i_scope_3]) (src/TapeoutMinerPool.sol#599)
+	Calls stack containing the loop:
+		TapeoutMinerPool.depositMiners(uint256[])
+TapeoutMinerPool._admit(uint256[],bool) (src/TapeoutMinerPool.sol#533-603) has external calls inside a loop: holder = minerCollection.ownerOf(id) (src/TapeoutMinerPool.sol#554)
 	Calls stack containing the loop:
 		TapeoutMinerPool.registerMiners(uint256[])
-TapeoutMinerPool._registerMiner(uint256,address) (src/TapeoutMinerPool.sol#627-646) has external calls inside a loop: key = mining.minerKey(address(minerCollection),tokenId) (src/TapeoutMinerPool.sol#630)
+TapeoutMinerPool._readComposition(uint256) (src/TapeoutMinerPool.sol#607-623) has external calls inside a loop: key = mining.minerKey(address(minerCollection),tokenId) (src/TapeoutMinerPool.sol#608)
 	Calls stack containing the loop:
 		TapeoutMinerPool.registerMiners(uint256[])
-TapeoutMinerPool._registerMiner(uint256,address) (src/TapeoutMinerPool.sol#627-646) has external calls inside a loop: beforeBalance = bem.balanceOf(address(this)) (src/TapeoutMinerPool.sol#636)
+		TapeoutMinerPool._admit(uint256[],bool)
+TapeoutMinerPool._readComposition(uint256) (src/TapeoutMinerPool.sol#607-623) has external calls inside a loop: r = mining.getMiner(key) (src/TapeoutMinerPool.sol#609)
 	Calls stack containing the loop:
 		TapeoutMinerPool.registerMiners(uint256[])
-TapeoutMinerPool._registerMiner(uint256,address) (src/TapeoutMinerPool.sol#627-646) has external calls inside a loop: mining.claim(key) (src/TapeoutMinerPool.sol#637)
+		TapeoutMinerPool._admit(uint256[],bool)
+TapeoutMinerPool._readComposition(uint256) (src/TapeoutMinerPool.sol#607-623) has external calls inside a loop: (cached,cachedNand,cachedLatch) = mining.cachedBurn(address(minerCollection),tokenId) (src/TapeoutMinerPool.sol#616-617)
 	Calls stack containing the loop:
 		TapeoutMinerPool.registerMiners(uint256[])
-TapeoutMinerPool._registerMiner(uint256,address) (src/TapeoutMinerPool.sol#627-646) has external calls inside a loop: afterBalance = bem.balanceOf(address(this)) (src/TapeoutMinerPool.sol#638)
+		TapeoutMinerPool._admit(uint256[],bool)
+TapeoutMinerPool._settleOld(uint256) (src/TapeoutMinerPool.sol#627-636) has external calls inside a loop: mining.claim(key) (src/TapeoutMinerPool.sol#629-635)
 	Calls stack containing the loop:
 		TapeoutMinerPool.registerMiners(uint256[])
-TapeoutMinerPool._harvestOne(uint256,uint256) (src/TapeoutMinerPool.sol#648-658) has external calls inside a loop: mining.claim(_minerKeys[tokenId]) (src/TapeoutMinerPool.sol#649-657)
+		TapeoutMinerPool._admit(uint256[],bool)
+TapeoutMinerPool._settleOld(uint256) (src/TapeoutMinerPool.sol#627-636) has external calls inside a loop: mining.getMiner(key).status == MINER_ACTIVE (src/TapeoutMinerPool.sol#631)
+	Calls stack containing the loop:
+		TapeoutMinerPool.registerMiners(uint256[])
+		TapeoutMinerPool._admit(uint256[],bool)
+TapeoutMinerPool._admit(uint256[],bool) (src/TapeoutMinerPool.sol#533-603) has external calls inside a loop: minerCollection.transferFrom(msg.sender,address(this),id_scope_2) (src/TapeoutMinerPool.sol#579)
+	Calls stack containing the loop:
+		TapeoutMinerPool.registerMiners(uint256[])
+TapeoutMinerPool._admit(uint256[],bool) (src/TapeoutMinerPool.sol#533-603) has external calls inside a loop: minerCollection.ownerOf(id_scope_2) != address(this) (src/TapeoutMinerPool.sol#580)
+	Calls stack containing the loop:
+		TapeoutMinerPool.registerMiners(uint256[])
+TapeoutMinerPool._admit(uint256[],bool) (src/TapeoutMinerPool.sol#533-603) has external calls inside a loop: revert MinerNotHeld(uint256,address)(id_scope_2,minerCollection.ownerOf(id_scope_2)) (src/TapeoutMinerPool.sol#581)
+	Calls stack containing the loop:
+		TapeoutMinerPool.registerMiners(uint256[])
+TapeoutMinerPool._admit(uint256[],bool) (src/TapeoutMinerPool.sol#533-603) has external calls inside a loop: mining.claim(keys[i_scope_3]) (src/TapeoutMinerPool.sol#599)
+	Calls stack containing the loop:
+		TapeoutMinerPool.registerMiners(uint256[])
+TapeoutMinerPool._harvestOne(uint256,bytes32,uint256) (src/TapeoutMinerPool.sol#647-659) has external calls inside a loop: mining.claim(key) (src/TapeoutMinerPool.sol#651-658)
 	Calls stack containing the loop:
 		TapeoutMinerPool.harvest(uint256[])
-TapeoutMinerPool._harvestOne(uint256,uint256) (src/TapeoutMinerPool.sol#648-658) has external calls inside a loop: balance = bem.balanceOf(address(this)) (src/TapeoutMinerPool.sol#650)
+TapeoutMinerPool._harvestOne(uint256,bytes32,uint256) (src/TapeoutMinerPool.sol#647-659) has external calls inside a loop: balance = bem.balanceOf(address(this)) (src/TapeoutMinerPool.sol#652)
 	Calls stack containing the loop:
 		TapeoutMinerPool.harvest(uint256[])
-TapeoutMinerPool._harvestOne(uint256,uint256) (src/TapeoutMinerPool.sol#648-658) has external calls inside a loop: mining.claim(_minerKeys[tokenId]) (src/TapeoutMinerPool.sol#649-657)
+TapeoutMinerPool._harvestOne(uint256,bytes32,uint256) (src/TapeoutMinerPool.sol#647-659) has external calls inside a loop: mining.claim(key) (src/TapeoutMinerPool.sol#651-658)
 	Calls stack containing the loop:
 		TapeoutMinerPool.harvestRange(uint256,uint256)
-TapeoutMinerPool._harvestOne(uint256,uint256) (src/TapeoutMinerPool.sol#648-658) has external calls inside a loop: balance = bem.balanceOf(address(this)) (src/TapeoutMinerPool.sol#650)
+TapeoutMinerPool._harvestOne(uint256,bytes32,uint256) (src/TapeoutMinerPool.sol#647-659) has external calls inside a loop: balance = bem.balanceOf(address(this)) (src/TapeoutMinerPool.sol#652)
 	Calls stack containing the loop:
 		TapeoutMinerPool.harvestRange(uint256,uint256)
-TapeoutMinerPool._claimOne(TapeoutMinerPool.Category,uint256,uint256,uint256) (src/TapeoutMinerPool.sol#672-683) has external calls inside a loop: receiptOf(category).balanceOf(msg.sender,id) != 1 (src/TapeoutMinerPool.sol#678)
+TapeoutMinerPool._claimOne(TapeoutMinerPool.Category,uint256,uint256,uint256) (src/TapeoutMinerPool.sol#673-684) has external calls inside a loop: receiptOf(category).balanceOf(msg.sender,id) != 1 (src/TapeoutMinerPool.sol#679)
 	Calls stack containing the loop:
 		TapeoutMinerPool.claimBatch(uint256[],uint256[])
 		TapeoutMinerPool._claimMany(TapeoutMinerPool.Category,uint256[],uint256)
+TapeoutReceiptDistributor._acceptOne(TapeoutMinerPool.Category,uint256,uint256) (src/TapeoutReceiptDistributor.sol#253-262) has external calls inside a loop: pool.claimed(category,id) != 0 (src/TapeoutReceiptDistributor.sol#260)
+	Calls stack containing the loop:
+		TapeoutReceiptDistributor.onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)
+TapeoutReceiptDistributor.allocate(TapeoutReceiptDistributor.AllocationInput[]) (src/TapeoutReceiptDistributor.sol#121-147) has external calls inside a loop: holders = _receipt(a.category).holdersPage(a.firstId,a.count) (src/TapeoutReceiptDistributor.sol#130)
+TapeoutReceiptDistributor._deliver(address,uint256) (src/TapeoutReceiptDistributor.sol#264-286) has external calls inside a loop: _receipt(range.category).safeBatchTransferFrom(address(this),wallet,ids,values,) (src/TapeoutReceiptDistributor.sol#282)
+	Calls stack containing the loop:
+		TapeoutReceiptDistributor.claim(uint256)
+TapeoutReceiptDistributor._deliver(address,uint256) (src/TapeoutReceiptDistributor.sol#264-286) has external calls inside a loop: _receipt(range.category).safeBatchTransferFrom(address(this),wallet,ids,values,) (src/TapeoutReceiptDistributor.sol#282)
+	Calls stack containing the loop:
+		TapeoutReceiptDistributor.deliver(address,uint256)
 Reference: https://github.com/crytic/slither/wiki/Detector-Documentation/#calls-inside-a-loop
 
-Reentrancy in TapeoutMinerPool.activate(bytes32) (src/TapeoutMinerPool.sol#245-258):
+Reentrancy in TapeoutMinerPool._admit(uint256[],bool) (src/TapeoutMinerPool.sol#533-603):
 	External calls:
-	- nandReceipt.finalizeMinting() (src/TapeoutMinerPool.sol#254)
-	- latchReceipt.finalizeMinting() (src/TapeoutMinerPool.sol#255)
+	- _settleOld(i_scope_0) (src/TapeoutMinerPool.sol#570)
+		- mining.claim(key) (src/TapeoutMinerPool.sol#629-635)
 	State variables written after the call(s):
-	- _sync() (src/TapeoutMinerPool.sol#257)
-		- totalAccounted += received (src/TapeoutMinerPool.sol#706)
-Reentrancy in TapeoutMinerPool.depositMiners(uint256[]) (src/TapeoutMinerPool.sol#269-276):
-	External calls:
-	- minerCollection.transferFrom(msg.sender,address(this),tokenIds[i]) (src/TapeoutMinerPool.sol#272)
-	- _registerMiner(tokenIds[i],msg.sender) (src/TapeoutMinerPool.sol#273)
-		- mining.claim(key) (src/TapeoutMinerPool.sol#637)
-	State variables written after the call(s):
-	- _registerMiner(tokenIds[i],msg.sender) (src/TapeoutMinerPool.sol#273)
-		- _minerKeys[tokenId] = key (src/TapeoutMinerPool.sol#632)
-	- _sync() (src/TapeoutMinerPool.sol#275)
-		- totalAccounted += received (src/TapeoutMinerPool.sol#706)
-Reentrancy in TapeoutMinerPool.registerMiners(uint256[]) (src/TapeoutMinerPool.sol#279-285):
-	External calls:
-	- _registerMiner(tokenIds[i],address(0)) (src/TapeoutMinerPool.sol#282)
-		- mining.claim(key) (src/TapeoutMinerPool.sol#637)
-	State variables written after the call(s):
-	- _sync() (src/TapeoutMinerPool.sol#284)
-		- totalAccounted += received (src/TapeoutMinerPool.sol#706)
+	- _checkpoint() (src/TapeoutMinerPool.sol#575)
+		- latchBase = a.latchIncome (src/TapeoutMinerPool.sol#641)
+	- _checkpoint() (src/TapeoutMinerPool.sol#575)
+		- nandBase = a.nandIncome (src/TapeoutMinerPool.sol#640)
+	- _checkpoint() (src/TapeoutMinerPool.sol#575)
+		- participantBase = a.nandIncome + a.latchIncome (src/TapeoutMinerPool.sol#642)
 Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-2
 
-Reentrancy in TapeoutMinerPool.issueReceiptRange(TapeoutMinerPool.Category,address,uint256,uint256) (src/TapeoutMinerPool.sol#214-229):
-	External calls:
-	- receipt.mintBatch(holder,ids) (src/TapeoutMinerPool.sol#227)
-	Event emitted after the call(s):
-	- ReceiptsIssued(category,count,receipt.totalSupply()) (src/TapeoutMinerPool.sol#228)
-Reentrancy in TapeoutMinerPool.issueReceipts(TapeoutMinerPool.Category,address[],uint256[]) (src/TapeoutMinerPool.sol#198-211):
-	External calls:
-	- receipt.mint(holders[i],ids[i]) (src/TapeoutMinerPool.sol#208)
-	Event emitted after the call(s):
-	- ReceiptsIssued(category,ids.length,receipt.totalSupply()) (src/TapeoutMinerPool.sol#210)
-Reentrancy in TapeoutMinerPool.revokeReceipts(TapeoutMinerPool.Category,uint256[]) (src/TapeoutMinerPool.sol#232-240):
-	External calls:
-	- receipt.burn(ids[i]) (src/TapeoutMinerPool.sol#237)
-	Event emitted after the call(s):
-	- ReceiptsRevoked(category,ids) (src/TapeoutMinerPool.sol#239)
-Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-3
-src/TapeoutMinerPool.sol analyzed (29 contracts with 80 detectors), 29 result(s) found
+TapeoutEntitlementReceipt.category (src/TapeoutEntitlementReceipt.sol#22) should be immutable 
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#state-variables-that-could-be-declared-immutable
+. analyzed (85 contracts with 80 detectors), 42 result(s) found

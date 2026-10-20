@@ -1,73 +1,74 @@
-# Baseline: what was reused, and what its evidence does and does not cover
+# Baseline, branch state and evidence reuse
 
-**Repository:** https://github.com/TapeoutMarket/test1
-**Commit used:** `9d86a2673dd3b415e5d8ce35cd818d4e73756116` (`docs: add complete English reports and
-verified Word editions`). Cloned on 2026-10-20; `main` HEAD was exactly this commit, matching the
-reviewed snapshot. The baseline was used as read-only reference material; none of its scripts were run
-against BSC and none of its historical mainnet transaction plans were replayed.
+## 1. Starting point and branch inspection
 
-## 1. Reuse map
+- **Repository:** https://github.com/tapeminecoop/groupmine
+- **Reviewed baseline:** `48a2d74939ee167b4d4bed99e6b1d0e759c6a5db` ("Add TapeOut multi-miner pool with
+  NAND/LATCH receipts (V1)"). This work is on branch `worktree-pooled-mining-v2`, created from it.
+- **Differences found on 2026-10-20.** GitHub `main` equals the baseline. Local `main` has one more
+  commit from a separate session, `6aeb5a9` ("Add historical distributor and size CLI transactions for
+  BSC's gas cap", not pushed): `HistoricalDistributor` splits a V1 historical NAND/LATCH recipient's
+  income among fixed contributor weights, and the V1 CLI sizes its batches for the BSC gas cap. It
+  builds on the historical-share model this specification removes ("no historical shares or
+  multi-round accounting"), so it is not part of this branch. The gas-cap concern it addresses is
+  handled here separately (`sdk/gas.ts`, `SetupGasTest`).
 
-| Baseline (test1 @ 9d86a26) | This repository | How it was adapted |
+## 2. What changed from V1
+
+| Area | V1 (48a2d74) | This version |
 | --- | --- | --- |
-| `src/interfaces/IProtocols.sol` (`IMining`) | `src/interfaces/IMining.sol` | Same three functions; documents the observed semantics the pool relies on |
-| `GroupBuyVault._sync` (`balance + totalPaid − totalAccounted`) | `TapeoutMinerPool._sync` | Unchanged rule, still rejects balance decreases |
-| `GroupBuyVault._pay` (exact sender/recipient deltas) | `TapeoutMinerPool._pay` | Unchanged rule |
-| `GroupBuyVault._harvest` (claim even if `pending == 0`, account actual receipts) | `harvest`, `harvestRange`, registration claim | Many miners; failures isolated per miner and reported (see §3) |
-| Per-ID `claimed`, `accPerShare − claimed[id]`, holder index, `NotHolder` | `claimed(category, id)`, `TapeoutReceipt` holder index | Keyed by `(category, id)`; per-share value derived from the cumulative ledger |
-| Unique-ID ERC-1155 (100 IDs, supply 1) inside the vault | Two standalone `TapeoutReceipt` collections | Share count configurable (`S_N`, `S_L`), minting closed at activation |
-| `test/helpers/Mocks.sol` | `test/helpers/Mocks.sol` | MockMining is multi-miner, models `pending()==0`/`claim()>0`, per-key failures and unknown keys |
-| Accounting invariants (`test/invariant/Accounting.t.sol`) | `test/invariant/PoolInvariant.t.sol` | Rewritten for fee/category/historical buckets and per-ID sums |
-| Foundry/solc settings (0.8.24, Paris, via-IR, optimizer 200, OZ 5.4.0) | `foundry.toml`, `package.json` | Same toolchain pins; plus a `fork` profile (Cancun EVM) |
-| Protocol identity findings (`docs/REAL_PROTOCOL_IDENTITY_REVIEW.md`) | `sdk/constants.ts`, `protocol-check` | Addresses and implementation hashes re-observed on 2026-10-20 (unchanged) |
-| CLI conventions (dry-run default, loopback-only local sends, no key handling) | `cli/pool.ts` | New command set for this product; adds Safe batch export |
+| Receipts | `TapeoutReceipt`, created by the pool constructor; the pool owner issued and finalized | `TapeoutEntitlementReceipt` deployed independently (same code twice) with its own issuer; the pool binds existing addresses by runtime code hash and category |
+| Distribution | owner issued IDs directly to holders (plus a reserve holder) | `TapeoutReceiptDistributor`: funded with receipts, JSON import, finalization, user claims |
+| NAND/LATCH split | manual NAND weight fixed at activation | `N/(N+L)` from the Mining burn data of admitted miners, with a checkpoint per admission |
+| Historical shares | `H_N`/`H_L` paid to historical recipients | removed |
+| Outer split | 2/102 fee to one fee recipient | A 1/102 and B 1/102, independent recipients and payment paths, no other fee |
+| Admission | owner only, any phase; claimed only the incoming miner | fixed whitelist of depositors, after activation; strict five-step boundary that first claims every registered miner |
+| Owner powers | configuration, issuance, deposits | `activate` only |
+| Scale | not assessed against BSC limits | per-transaction gas cap (BEP-652) measured and enforced in tooling |
 
-Regression scenarios carried over from the baseline's unit tests: harvest settles income that
-`pending()` does not report; claims do not depend on Mining; donations and third-party `Mining.claim`
-calls are income; abnormal balance decreases and transfer-fee tokens revert without rewriting history;
-failed payments roll back; positive unclaimed income follows the transferred ID and the former holder
-gets `NotHolder`; zero-value, self and duplicate transfers keep the holder index consistent; an approved
-operator cannot claim until it holds the ID.
+`TapeoutReceipt.sol`, the V1 tests and the V1 example files were removed; their behaviour that still
+applies was carried into the new contracts and tests (§3).
 
-Not carried over (features outside this product): Seaport and CircuitMarket purchase logic, funding,
-withdrawals and refunds, the guardian, the UUPS factory and timelock, ERC-1167 clone templates, and
-redemption — including the old rule that collecting every receipt lets someone withdraw the miner.
+## 3. What was reused
 
-## 2. Inherited evidence (reported by the baseline; not re-run here)
+- **Ledger rules** from V1 (originally `GroupBuyVault` in TapeoutMarket/test1): recognize
+  `balance + totalPaid − totalAccounted`, refuse balance decreases, check exact payment deltas, call
+  `claim` even when `pending()` is zero, isolate harvest failures per miner, per-ID claimed history,
+  holder-only claims, the receipt holder index.
+- **Tests and mocks:** the multi-miner `MockMining` (now with miner records, burn cache and statuses),
+  `MockBEM` fault switches, the receive-hook holder, and V1 regression scenarios (donations and
+  third-party claims are income, fee-on-transfer and balance-decrease reverts, payment rollback,
+  unclaimed income following an ID, approved operators cannot claim, claims independent of Mining).
+- **Tooling:** CLI conventions (plans, Safe batches, loopback-only sends, no keys), the Anvil
+  launcher, the fork runners' structure, ABI export, reconciliation checks.
+- **Protocol facts** (re-observed at block 128,713,128 rather than assumed): contract addresses and
+  implementation identity, `claim` paying the NFT holder, payments while `pending()` reads zero,
+  third parties triggering payments into the pool.
 
-These results come from the baseline's own reports and describe the **previous GroupBuy V1
-implementation** (and, in the legacy reports, the earlier two-share `TestMinerVault`, which had owner
-recovery powers and must not be confused with the 100-share, no-owner `GroupBuyVault`). Some older
-README/readiness files still show historical `NOT_RUN` states; each report is read in its own date and
-scope.
+## 4. Baseline evidence (V1, not re-run)
 
-| Evidence | Reported result | Where |
-| --- | --- | --- |
-| Core contract/SDK validation | 79 Solidity tests/invariant properties, 78 SDK tests, TypeScript checks, local build/format/gas/export, Seaport-source integration with mock assets, Anvil CLI workflow | `CONTRACT_REPORT.md`, `reports/verification.json` |
-| Real BSC state on a local fork | Block 128554249; 23 scenarios, 25 local-fork receipts; acquisition, custody, BEM collection/distribution, entitlement transfer, old exit branches; the `pending()==0` / `claim()>0` defect found, fixed and retested | `docs/REAL_BSC_FORK_TEST_REPORT.md`, `docs/REAL_PROTOCOL_IDENTITY_REVIEW.md` |
-| BSC mainnet | Deployment and governance configured; 11 successful test transactions through block 128591816; one miner (#3204) and 100 receipts; real BEM distribution; unclaimed entitlement moved with receipt #1 and the new holder claimed 0.00000323 BEM; former holder rejected with `NotHolder`; ≥15 confirmations. Mainnet redemption and failed-funding refunds were not completed | `mainnet-test/MAINNET_TEST_REPORT.md`, `mainnet-rewards/BEM_REWARDS_TEST_REPORT.md`, `mainnet-entitlement-transfer/BEM_ENTITLEMENT_TRANSFER_REPORT.md` |
-| Offline tooling regression | 840 passed, 0 failed, 0 skipped (mainnet-tool tests, not Solidity tests or live scenarios); TypeScript typecheck passed; zero RPC calls, signatures or broadcasts | `reports-en/verification/offline-checks.json` |
+Recorded in `docs/VERIFICATION_REPORT.md` at 48a2d74: 56/56 Solidity unit, fuzz and invariant tests;
+11/11 SDK tests; local CLI end-to-end 23/23 checks; real BSC Foundry fork 2/2 tests and CLI fork
+14/14 checks at block 128,611,683 with miners #4630, #2458 and #6241. The V1 fork run recorded all
+three miners reporting `pending() == 0` one hour after a deposit while a harvest still received
+62,867,799 raw BEM, and a third-party `Mining.claim` paying 22,621,885 raw into the pool
+(`git show 48a2d74:reports/fork-lifecycle.json`).
 
-### What the inherited evidence supports for this product
+These results describe V1 code. They are evidence about the protocol, not about this implementation,
+which is covered only by [VERIFICATION_REPORT.md](VERIFICATION_REPORT.md).
 
-It is evidence about the real protocol and about mechanisms this design reuses: the real `Mining.claim`
-pays the NFT's holder (also when called by others) and can pay while `pending()` is zero; BEM
-transfers from a contract to holders behave as plain ERC-20 transfers on the tested paths; per-ID
-claimed history makes unclaimed income follow a receipt on mainnet.
+## 5. Earlier evidence inherited through V1
 
-It does **not** validate the new multi-miner custody, the two receipt collections, manual weights, the
-historical shares, the 100:2 fee, activation and issuance, per-miner failure isolation, or any of this
-repository's code. Those are covered only by the new results in
-[VERIFICATION_REPORT.md](VERIFICATION_REPORT.md).
+From [TapeoutMarket/test1](https://github.com/TapeoutMarket/test1) at
+`9d86a2673dd3b415e5d8ce35cd818d4e73756116` (the previous single-miner GroupBuy design; read, not
+re-run):
 
-## 3. Intentional departures from baseline rules
+| Evidence | Reported result |
+| --- | --- |
+| Real BSC state on a local fork, block 128,554,249 | The `pending() == 0` / `claim() > 0` behaviour found and handled; custody, collection and entitlement transfer scenarios |
+| BSC mainnet test (11 transactions through block 128,591,816) | One miner (#3204), 100 receipts, real BEM distribution; unclaimed entitlement moved with receipt #1 and the new holder claimed it; former holder rejected with `NotHolder` |
 
-- **Harvest failure handling.** The single-miner vault let a reverting `Mining.claim` revert the
-  harvest. With many miners that would let one bad miner block collection from all others, so each
-  miner's claim is isolated: success emits `MinerHarvested(id, amount)` (amount may be 0), failure
-  emits `MinerHarvestFailed(id, reason)` and increments `failed`. The baseline's underlying concern —
-  never turning an error into a fake zero claim, never booking estimates — is preserved, and
-  registration (`depositMiners`/`registerMiners`) still requires a successful real claim.
-- **An owner exists.** Manual configuration and issuance need an operator. Its powers end at
-  activation except adding miners and editing receipt metadata.
-- **No exit path.** By specification there is no miner withdrawal or redemption in this version.
+What this still supports: Mining pays the NFT's holder (also when others call `claim`), BEM behaves
+as a plain ERC-20 on the tested paths, and per-ID claimed history lets unclaimed income follow a
+receipt on mainnet. It says nothing about multi-miner custody, composition-weighted splitting, the
+admission boundary, the distributor or the whitelist.

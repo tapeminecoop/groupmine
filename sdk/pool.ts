@@ -4,21 +4,24 @@ import {
   encodeFunctionData,
   getAddress,
   zeroAddress,
+  type Abi,
   type Address,
   type Hex,
   type PublicClient,
 } from 'viem';
-import { tapeoutMinerPoolAbi, tapeoutReceiptAbi } from './abi.js';
+import { tapeoutEntitlementReceiptAbi, tapeoutMinerPoolAbi, tapeoutReceiptDistributorAbi } from './abi.js';
 import bytecode from './bytecode.json' with { type: 'json' };
-import { CATEGORY, erc20Abi, erc721Abi, miningAbi, type CategoryName } from './constants.js';
-import { configHash, toShares, type PoolConfig } from './config.js';
-import { accrue, residueBound, type Accrual } from './math.js';
-import type { IssuanceCall } from './allocation.js';
+import { CATEGORY, MINER_STATUS_ACTIVE, erc20Abi, erc721Abi, miningAbi, type CategoryName } from './constants.js';
+import { poolDeployment, receiptConstructorArgs, type SystemFile } from './config.js';
+import { accrue, residueBound, type Accrual, type State } from './math.js';
+import type { DistributorInput } from './allocation.js';
 import type { TxPlan } from './tx.js';
 
-const call = (to: Address, data: Hex, description: string): TxPlan => ({ to, data, value: 0n, description });
-const poolCall = (pool: Address, functionName: string, args: readonly unknown[], description: string) =>
-  call(pool, encodeFunctionData({ abi: tapeoutMinerPoolAbi, functionName, args } as never), description);
+const call = (to: Address, abi: Abi, functionName: string, args: readonly unknown[], description: string): TxPlan =>
+  ({ to, data: encodeFunctionData({ abi, functionName, args } as never), value: 0n, description });
+const poolCall = (pool: Address, fn: string, args: readonly unknown[], d: string) => call(pool, tapeoutMinerPoolAbi as Abi, fn, args, d);
+const receiptCall = (r: Address, fn: string, args: readonly unknown[], d: string) => call(r, tapeoutEntitlementReceiptAbi as Abi, fn, args, d);
+const distributorCall = (x: Address, fn: string, args: readonly unknown[], d: string) => call(x, tapeoutReceiptDistributorAbi as Abi, fn, args, d);
 
 export function chunk<T>(items: T[], size: number): T[][] {
   if (size < 1) throw new Error('batch size must be positive');
@@ -27,205 +30,304 @@ export function chunk<T>(items: T[], size: number): T[][] {
   return out;
 }
 
+const ownableAbi = [{ type: 'function', name: 'renounceOwnership', inputs: [], outputs: [], stateMutability: 'nonpayable' },
+  { type: 'function', name: 'owner', inputs: [], outputs: [{ type: 'address' }], stateMutability: 'view' }] as const;
+
 // ------------------------------------------------------------------ transaction plans
 
-export function deployPlan(deployment: ReturnType<typeof import('./config.js').toDeployment>): TxPlan {
-  const data = encodeDeployData({ abi: tapeoutMinerPoolAbi, bytecode: bytecode.TapeoutMinerPool.bytecode as Hex, args: [deployment] });
-  return { to: null, data, value: 0n, description: `deploy TapeoutMinerPool "${deployment.poolName}" owned by ${deployment.owner}` };
+export function deployReceiptPlans(f: SystemFile): TxPlan[] {
+  const args = receiptConstructorArgs(f);
+  const make = (label: string, a: readonly unknown[]) => ({ to: null, value: 0n, description: `deploy ${label} entitlement receipt (issuer ${f.receipts.issuer})`,
+    data: encodeDeployData({ abi: tapeoutEntitlementReceiptAbi as Abi, bytecode: bytecode.TapeoutEntitlementReceipt.bytecode as Hex, args: a }) });
+  return [make('NAND', args.nand), make('LATCH', args.latch)];
 }
 
-export function configurePlan(pool: Address, c: PoolConfig): TxPlan {
-  return poolCall(pool, 'configure', [c], `configure S_N=${c.nandShares} S_L=${c.latchShares} H_N=${c.historicalNandShares} H_L=${c.historicalLatchShares} W_N=${c.nandWeight} (hash ${configHash(c)})`);
+export function deployPoolPlan(f: SystemFile, nandReceipt: Address, latchReceipt: Address): TxPlan {
+  const d = poolDeployment(f, nandReceipt, latchReceipt);
+  return { to: null, value: 0n, description: `deploy TapeoutMinerPool "${d.poolName}" (owner ${d.owner}, ${d.depositors.length} whitelisted depositors)`,
+    data: encodeDeployData({ abi: tapeoutMinerPoolAbi as Abi, bytecode: bytecode.TapeoutMinerPool.bytecode as Hex, args: [d] }) };
 }
 
-export function issuancePlans(pool: Address, calls: IssuanceCall[]): TxPlan[] {
-  return calls.map(c => c.kind === 'range'
-    ? poolCall(pool, 'issueReceiptRange', [CATEGORY[c.category], c.holder, BigInt(c.firstId), BigInt(c.count)], `issue ${c.category} #${c.firstId}..#${c.firstId + c.count - 1} to ${c.holder}`)
-    : poolCall(pool, 'issueReceipts', [CATEGORY[c.category], c.holders, c.ids.map(BigInt)], `issue ${c.ids.length} ${c.category} IDs to listed holders`));
+export function deployDistributorPlan(owner: Address, pool: Address): TxPlan {
+  return { to: null, value: 0n, description: `deploy TapeoutReceiptDistributor (owner ${owner}) for pool ${pool}`,
+    data: encodeDeployData({ abi: tapeoutReceiptDistributorAbi as Abi, bytecode: bytecode.TapeoutReceiptDistributor.bytecode as Hex, args: [owner, pool] }) };
 }
 
-export function activatePlan(pool: Address, hash: Hex): TxPlan {
-  return poolCall(pool, 'activate', [hash], `activate with reviewed config hash ${hash}`);
-}
-
-export function approveMinersPlan(collection: Address, pool: Address): TxPlan {
-  return call(collection, encodeFunctionData({ abi: erc721Abi, functionName: 'setApprovalForAll', args: [pool, true] }), `approve pool ${pool} to pull miners`);
-}
-
-export function depositPlans(pool: Address, tokenIds: bigint[], batchSize = 20): TxPlan[] {
-  return chunk(tokenIds, batchSize).map(ids => poolCall(pool, 'depositMiners', [ids], `deposit miners ${ids.join(',')}`));
-}
-
-export function registerPlans(pool: Address, tokenIds: bigint[], batchSize = 20): TxPlan[] {
-  return chunk(tokenIds, batchSize).map(ids => poolCall(pool, 'registerMiners', [ids], `register miners ${ids.join(',')}`));
-}
-
-export function harvestPlans(pool: Address, tokenIds: bigint[], batchSize = 25): TxPlan[] {
-  return chunk(tokenIds, batchSize).map(ids => poolCall(pool, 'harvest', [ids], `harvest miners ${ids.join(',')}`));
-}
-
-export function harvestRangePlans(pool: Address, minerCount: bigint, batchSize = 25): TxPlan[] {
+export function issuePlans(receipt: Address, label: CategoryName, to: Address, count: number, batch = 500): TxPlan[] {
   const plans: TxPlan[] = [];
-  for (let start = 0n; start < minerCount; start += BigInt(batchSize)) {
-    plans.push(poolCall(pool, 'harvestRange', [start, BigInt(batchSize)], `harvest registry entries ${start}..${start + BigInt(batchSize) - 1n}`));
+  for (let left = count; left > 0; left -= Math.min(batch, left)) {
+    const n = Math.min(batch, left);
+    plans.push(receiptCall(receipt, 'issue', [to, BigInt(n)], `issue the next ${n} ${label} receipt IDs to ${to}`));
   }
   return plans;
 }
 
-export function claimPlans(pool: Address, nandIds: bigint[], latchIds: bigint[], batchSize = 200): TxPlan[] {
+export const finalizeIssuancePlan = (receipt: Address, label: CategoryName) =>
+  receiptCall(receipt, 'finalizeIssuance', [], `finalize ${label} issuance (supply fixed forever)`);
+
+/** Before finalization: burn the highest `count` IDs, which the issuer must still hold (undo over-issuance). */
+export function retractPlans(receipt: Address, label: CategoryName, count: number, batch = 500): TxPlan[] {
+  const plans: TxPlan[] = [];
+  for (let left = count; left > 0; left -= Math.min(batch, left)) {
+    const n = Math.min(batch, left);
+    plans.push(receiptCall(receipt, 'retract', [BigInt(n)], `retract the highest ${n} ${label} receipt IDs (issuer-held, before finalization)`));
+  }
+  return plans;
+}
+
+export function fundPlans(receipt: Address, label: CategoryName, from: Address, distributor: Address, ids: bigint[], batch = 300): TxPlan[] {
+  return chunk(ids, batch).map(part => receiptCall(receipt, 'safeBatchTransferFrom', [from, distributor, part, part.map(() => 1n), '0x'],
+    `move ${part.length} ${label} receipts (#${part[0]}..#${part.at(-1)}) into the distributor`));
+}
+
+export function allocatePlans(distributor: Address, batches: DistributorInput[][]): TxPlan[] {
+  return batches.map(b => distributorCall(distributor, 'allocate', [b],
+    `allocate ${b.reduce((s, e) => s + e.count, 0n)} receipt IDs in ${b.length} ranges`));
+}
+
+export const revokeWalletPlan = (distributor: Address, wallet: Address) => distributorCall(distributor, 'revokeWallet', [wallet], `revoke every range allocated to ${wallet} (before finalization)`);
+export const finalizeAllocationPlan = (distributor: Address) => distributorCall(distributor, 'finalizeAllocation', [], 'finalize the allocation (beneficiaries become immutable; claims open)');
+export const claimReceiptsPlan = (distributor: Address, maxIds: number) => distributorCall(distributor, 'claim', [BigInt(maxIds)], `claim up to ${maxIds} allocated receipts`);
+export const deliverPlan = (distributor: Address, wallet: Address, maxIds: number) => distributorCall(distributor, 'deliver', [wallet, BigInt(maxIds)], `deliver up to ${maxIds} receipts to their beneficiary ${wallet}`);
+
+export const activatePlan = (pool: Address, nandShares: bigint, latchShares: bigint) =>
+  poolCall(pool, 'activate', [nandShares, latchShares], `activate with S_N=${nandShares}, S_L=${latchShares}`);
+
+export const approveMinersPlan = (collection: Address, pool: Address) =>
+  call(collection, erc721Abi as Abi, 'setApprovalForAll', [pool, true], `approve pool ${pool} to pull the caller's miners`);
+
+export const depositPlans = (pool: Address, ids: bigint[], batch: number) =>
+  chunk(ids, batch).map(part => poolCall(pool, 'depositMiners', [part], `admit miners ${part.join(',')} (settles every registered miner first)`));
+
+export const registerPlans = (pool: Address, ids: bigint[], batch: number) =>
+  chunk(ids, batch).map(part => poolCall(pool, 'registerMiners', [part], `admit pool-held miners ${part.join(',')} (settles every registered miner first)`));
+
+export const harvestPlans = (pool: Address, ids: bigint[], batch: number) =>
+  chunk(ids, batch).map(part => poolCall(pool, 'harvest', [part], `harvest miners ${part.join(',')}`));
+
+export function harvestRangePlans(pool: Address, minerCount: bigint, batch: number): TxPlan[] {
+  const plans: TxPlan[] = [];
+  for (let start = 0n; start < minerCount; start += BigInt(batch)) {
+    plans.push(poolCall(pool, 'harvestRange', [start, BigInt(batch)], `harvest registry entries ${start}..${start + BigInt(batch) - 1n}`));
+  }
+  return plans;
+}
+
+export function claimPlans(pool: Address, nandIds: bigint[], latchIds: bigint[], batch = 200): TxPlan[] {
   const items = [...nandIds.map(id => ['NAND', id] as const), ...latchIds.map(id => ['LATCH', id] as const)];
-  return chunk(items, batchSize).map(part => {
+  return chunk(items, batch).map(part => {
     const n = part.filter(([c]) => c === 'NAND').map(([, id]) => id);
     const l = part.filter(([c]) => c === 'LATCH').map(([, id]) => id);
-    return poolCall(pool, 'claimBatch', [n, l], `claim ${n.length} NAND + ${l.length} LATCH IDs`);
+    return poolCall(pool, 'claimBatch', [n, l], `claim BEM for ${n.length} NAND + ${l.length} LATCH receipts`);
   });
 }
 
-export function releasePlans(pool: Address): TxPlan[] {
-  return [
-    poolCall(pool, 'releaseFee', [], 'release accrued fee to the fee recipient'),
-    poolCall(pool, 'releaseHistorical', [CATEGORY.NAND], 'release historical NAND income to its recipient'),
-    poolCall(pool, 'releaseHistorical', [CATEGORY.LATCH], 'release historical LATCH income to its recipient'),
-  ];
-}
+export const releasePlans = (pool: Address) => [
+  poolCall(pool, 'releaseA', [], 'pay recipient A its accrued 1/102'),
+  poolCall(pool, 'releaseB', [], 'pay recipient B its accrued 1/102'),
+];
+
+export const setRecipientPlan = (pool: Address, role: 0 | 1, to: Address) =>
+  poolCall(pool, 'setRecipient', [role, to], `move recipient ${role === 0 ? 'A' : 'B'} to ${to} (sent by the current recipient)`);
+
+export const renouncePlan = (target: Address, label: string) =>
+  call(target, ownableAbi as unknown as Abi, 'renounceOwnership', [], `renounce ownership of the ${label}`);
 
 // ------------------------------------------------------------------ reads
 
-const read = <T>(rpc: PublicClient, pool: Address, functionName: string, args: readonly unknown[] = [], blockNumber?: bigint) =>
-  rpc.readContract({ address: pool, abi: tapeoutMinerPoolAbi, functionName, args, blockNumber } as never) as Promise<T>;
+const readAs = <T>(rpc: PublicClient, address: Address, abi: Abi, functionName: string, args: readonly unknown[] = [], blockNumber?: bigint) =>
+  rpc.readContract({ address, abi, functionName, args, blockNumber } as never) as Promise<T>;
+const readPool = <T>(rpc: PublicClient, pool: Address, fn: string, args: readonly unknown[] = [], b?: bigint) => readAs<T>(rpc, pool, tapeoutMinerPoolAbi as Abi, fn, args, b);
+const readReceipt = <T>(rpc: PublicClient, r: Address, fn: string, args: readonly unknown[] = [], b?: bigint) => readAs<T>(rpc, r, tapeoutEntitlementReceiptAbi as Abi, fn, args, b);
+const readDistributor = <T>(rpc: PublicClient, d: Address, fn: string, args: readonly unknown[] = [], b?: bigint) => readAs<T>(rpc, d, tapeoutReceiptDistributorAbi as Abi, fn, args, b);
+
+export async function readReceiptSummary(rpc: PublicClient, receipt: Address, blockNumber?: bigint) {
+  const [category, name, symbol, owner, issuanceFinalized, supply] = await Promise.all([
+    readReceipt<Hex>(rpc, receipt, 'category', [], blockNumber), readReceipt<string>(rpc, receipt, 'name', [], blockNumber),
+    readReceipt<string>(rpc, receipt, 'symbol', [], blockNumber), readReceipt<Address>(rpc, receipt, 'owner', [], blockNumber),
+    readReceipt<boolean>(rpc, receipt, 'issuanceFinalized', [], blockNumber), readReceipt<bigint>(rpc, receipt, 'totalSupply', [], blockNumber),
+  ]);
+  return { address: receipt, category, name, symbol, owner, issuanceFinalized, supply };
+}
+
+/** IDs of `receipt` currently held by `holder` (scans the holder index). */
+export async function readHeldIds(rpc: PublicClient, receipt: Address, holder: Address, blockNumber?: bigint): Promise<number[]> {
+  const supply = await readReceipt<bigint>(rpc, receipt, 'totalSupply', [], blockNumber);
+  const target = getAddress(holder);
+  const ids: number[] = [];
+  for (let first = 1n; first <= supply; first += 1000n) {
+    const count = supply - first + 1n < 1000n ? supply - first + 1n : 1000n;
+    const holders = await readReceipt<readonly Address[]>(rpc, receipt, 'holdersPage', [first, count], blockNumber);
+    holders.forEach((h, i) => { if (h === target) ids.push(Number(first) + i); });
+  }
+  return ids;
+}
+
+export async function readDistributorSummary(rpc: PublicClient, distributor: Address, blockNumber?: bigint) {
+  const [owner, finalized, totals, walletCount, pool] = await Promise.all([
+    readDistributor<Address>(rpc, distributor, 'owner', [], blockNumber), readDistributor<boolean>(rpc, distributor, 'allocationFinalized', [], blockNumber),
+    readDistributor<readonly [readonly [bigint, bigint], readonly [bigint, bigint], readonly [bigint, bigint]]>(rpc, distributor, 'totals', [], blockNumber),
+    readDistributor<bigint>(rpc, distributor, 'walletCount', [], blockNumber), readDistributor<Address>(rpc, distributor, 'pool', [], blockNumber),
+  ]);
+  const [inventory, allocated, delivered] = totals;
+  return { address: distributor, pool, owner, allocationFinalized: finalized, walletCount,
+    NAND: { inventory: inventory[0], allocated: allocated[0], delivered: delivered[0] }, LATCH: { inventory: inventory[1], allocated: allocated[1], delivered: delivered[1] } };
+}
+
+export interface OnChainRange { category: number; firstId: bigint; count: bigint; delivered: bigint }
+
+export async function readWalletRanges(rpc: PublicClient, distributor: Address, wallet: Address, blockNumber?: bigint) {
+  return readDistributor<readonly OnChainRange[]>(rpc, distributor, 'rangesOf', [wallet], blockNumber);
+}
+
+export const ERC1155_RECEIVER_INTERFACE = '0x4e2312e0' as const;
+const erc165Abi = [{ type: 'function', name: 'supportsInterface', stateMutability: 'view', inputs: [{ name: 'interfaceId', type: 'bytes4' }], outputs: [{ type: 'bool' }] }] as const;
+
+/**
+ * Allocation wallets that could not take delivery: contracts (including EIP-7702 delegated accounts)
+ * that do not declare IERC1155Receiver through ERC-165. The distributor delivers with
+ * safeBatchTransferFrom, so delivery to them reverts, and after finalization their receipts could
+ * never leave the distributor. Plain EOAs need no hook.
+ */
+export async function receiverProblems(rpc: PublicClient, wallets: readonly Address[], blockNumber?: bigint): Promise<string[]> {
+  const problems: string[] = [];
+  for (const group of chunk([...wallets], 20)) {
+    const results = await Promise.all(group.map(async wallet => {
+      const code = await rpc.getCode({ address: wallet, blockNumber });
+      if (!code || code === '0x') return undefined;
+      const declared = await rpc.readContract({ address: wallet, abi: erc165Abi, functionName: 'supportsInterface', args: [ERC1155_RECEIVER_INTERFACE], blockNumber })
+        .catch(() => false);
+      if (declared) return undefined;
+      const kind = code.toLowerCase().startsWith('0xef0100') ? 'an EIP-7702 delegated account' : 'a contract';
+      return `${wallet} is ${kind} that does not declare IERC1155Receiver: delivery would revert and its receipts could never leave the distributor`;
+    }));
+    problems.push(...results.filter((p): p is string => p !== undefined));
+  }
+  return problems;
+}
 
 export interface Reconciliation {
   bemBalance: bigint; unrecognized: bigint; deficit: bigint; totalAccounted: bigint; totalPaid: bigint;
-  feeAccrued: bigint; feePaid: bigint; nandReceiptsAccrued: bigint; nandReceiptsPaid: bigint;
-  latchReceiptsAccrued: bigint; latchReceiptsPaid: bigint; historicalNandAccrued: bigint; historicalNandPaid: bigint;
-  historicalLatchAccrued: bigint; historicalLatchPaid: bigint; residue: bigint;
+  recipientAAccrued: bigint; recipientAPaid: bigint; recipientBAccrued: bigint; recipientBPaid: bigint;
+  nandIncome: bigint; nandReceiptsAccrued: bigint; nandReceiptsPaid: bigint;
+  latchIncome: bigint; latchReceiptsAccrued: bigint; latchReceiptsPaid: bigint; residue: bigint;
 }
 
-export async function readSummary(rpc: PublicClient, pool: Address, blockNumber?: bigint) {
-  const r = <T>(fn: string, args: readonly unknown[] = []) => read<T>(rpc, pool, fn, args, blockNumber);
-  const [name, version, owner, active, activatedAt, activationConfigHash, config, currentConfigHash, nandReceipt, latchReceipt, bem, mining, collection, minerCount, accrual, reconciliation, nandIssuance, latchIssuance] = await Promise.all([
-    r<string>('poolName'), r<string>('VERSION'), r<Address>('owner'), r<boolean>('active'), r<bigint>('activatedAt'), r<Hex>('activationConfigHash'),
-    r<PoolConfig>('config'), r<Hex>('currentConfigHash'), r<Address>('nandReceipt'), r<Address>('latchReceipt'), r<Address>('bem'), r<Address>('mining'),
-    r<Address>('minerCollection'), r<bigint>('minerCount'), r<Accrual>('accrual'), r<Reconciliation>('reconciliation'),
-    r<readonly [bigint, bigint, bigint, boolean]>('issuance', [CATEGORY.NAND]), r<readonly [bigint, bigint, bigint, boolean]>('issuance', [CATEGORY.LATCH]),
+export async function readPoolSummary(rpc: PublicClient, pool: Address, blockNumber?: bigint) {
+  const r = <T>(fn: string, args: readonly unknown[] = []) => readPool<T>(rpc, pool, fn, args, blockNumber);
+  const [name, version, owner, active, activatedAt, nandShares, latchShares, totalNandBurn, totalLatchBurn, compositionPeriod, state, accrual, reconciliation, minerCount, recipientA, recipientB, depositors, nandReceipt, latchReceipt, bem, mining, collection] = await Promise.all([
+    r<string>('poolName'), r<string>('VERSION'), r<Address>('owner'), r<boolean>('active'), r<bigint>('activatedAt'), r<bigint>('nandShares'), r<bigint>('latchShares'),
+    r<bigint>('totalNandBurn'), r<bigint>('totalLatchBurn'), r<bigint>('compositionPeriod'), r<State>('state'), r<Accrual>('accrual'), r<Reconciliation>('reconciliation'),
+    r<bigint>('minerCount'), r<Address>('recipientA'), r<Address>('recipientB'), r<readonly Address[]>('depositors'), r<Address>('nandReceipt'), r<Address>('latchReceipt'),
+    r<Address>('bem'), r<Address>('mining'), r<Address>('minerCollection'),
   ]);
-  const issuance = (v: readonly [bigint, bigint, bigint, boolean]) => ({ shares: v[0], issued: v[1], remaining: v[2], mintingFinalized: v[3] });
-  return { pool, name, version, owner, active, activatedAt, activationConfigHash, config, currentConfigHash, nandReceipt, latchReceipt, bem, mining, collection, minerCount, accrual, reconciliation, issuance: { NAND: issuance(nandIssuance), LATCH: issuance(latchIssuance) } };
+  return { pool, name, version, owner, active, activatedAt, nandShares, latchShares, composition: { totalNandBurn, totalLatchBurn, compositionPeriod },
+    state, accrual, reconciliation, minerCount, recipientA, recipientB, depositors, nandReceipt, latchReceipt, bem, mining, collection };
 }
 
-/** Recompute the accrual off-chain and check the reconciliation identities. */
-export function checkReconciliation(config: PoolConfig, r: Reconciliation) {
-  const expected = accrue(r.totalAccounted, toShares(config));
-  const outstanding = (r.feeAccrued - r.feePaid) + (r.nandReceiptsAccrued - r.nandReceiptsPaid) + (r.latchReceiptsAccrued - r.latchReceiptsPaid)
-    + (r.historicalNandAccrued - r.historicalNandPaid) + (r.historicalLatchAccrued - r.historicalLatchPaid);
+/** Recompute the allocation off-chain and check every ledger identity. */
+export function checkReconciliation(state: State, r: Reconciliation) {
+  const expected = accrue(r.totalAccounted, state);
+  const outstanding = (r.recipientAAccrued - r.recipientAPaid) + (r.recipientBAccrued - r.recipientBPaid)
+    + (r.nandReceiptsAccrued - r.nandReceiptsPaid) + (r.latchReceiptsAccrued - r.latchReceiptsPaid);
   const checks = {
-    offChainMathMatches: expected.fee === r.feeAccrued && expected.nandReceipts === r.nandReceiptsAccrued && expected.latchReceipts === r.latchReceiptsAccrued
-      && expected.historicalNand === r.historicalNandAccrued && expected.historicalLatch === r.historicalLatchAccrued && expected.residue === r.residue,
+    offChainMathMatches: expected.recipientA === r.recipientAAccrued && expected.nandIncome === r.nandIncome && expected.latchIncome === r.latchIncome
+      && expected.nandReceipts === r.nandReceiptsAccrued && expected.latchReceipts === r.latchReceiptsAccrued && expected.residue === r.residue,
+    recipientsAccrueEqually: r.recipientAAccrued === r.recipientBAccrued,
     balanceIdentity: r.bemBalance + r.deficit === outstanding + r.residue + r.unrecognized,
-    paidIdentity: r.totalPaid === r.feePaid + r.nandReceiptsPaid + r.latchReceiptsPaid + r.historicalNandPaid + r.historicalLatchPaid,
-    accruedIdentity: r.totalAccounted === r.feeAccrued + r.nandReceiptsAccrued + r.latchReceiptsAccrued + r.historicalNandAccrued + r.historicalLatchAccrued + r.residue,
+    paidIdentity: r.totalPaid === r.recipientAPaid + r.recipientBPaid + r.nandReceiptsPaid + r.latchReceiptsPaid,
+    accruedIdentity: r.totalAccounted === r.recipientAAccrued + r.recipientBAccrued + r.nandReceiptsAccrued + r.latchReceiptsAccrued + r.residue,
     noDeficit: r.deficit === 0n,
-    residueWithinBound: r.residue <= residueBound(toShares(config)),
-    noBucketOverpaid: r.feePaid <= r.feeAccrued && r.nandReceiptsPaid <= r.nandReceiptsAccrued && r.latchReceiptsPaid <= r.latchReceiptsAccrued
-      && r.historicalNandPaid <= r.historicalNandAccrued && r.historicalLatchPaid <= r.historicalLatchAccrued,
+    residueWithinBound: r.residue <= residueBound(state.nandShares, state.latchShares),
+    noBucketOverpaid: r.recipientAPaid <= r.recipientAAccrued && r.recipientBPaid <= r.recipientBAccrued
+      && r.nandReceiptsPaid <= r.nandReceiptsAccrued && r.latchReceiptsPaid <= r.latchReceiptsAccrued,
+    categoryWithoutReceiptsHasNoIncome: (state.nandShares !== 0n || r.nandIncome === 0n) && (state.latchShares !== 0n || r.latchIncome === 0n),
   };
   return { status: Object.values(checks).every(Boolean) ? 'PASS' as const : 'FAIL' as const, checks, outstanding: {
-    fee: r.feeAccrued - r.feePaid, nandReceipts: r.nandReceiptsAccrued - r.nandReceiptsPaid, latchReceipts: r.latchReceiptsAccrued - r.latchReceiptsPaid,
-    historicalNand: r.historicalNandAccrued - r.historicalNandPaid, historicalLatch: r.historicalLatchAccrued - r.historicalLatchPaid,
+    recipientA: r.recipientAAccrued - r.recipientAPaid, recipientB: r.recipientBAccrued - r.recipientBPaid,
+    nandReceipts: r.nandReceiptsAccrued - r.nandReceiptsPaid, latchReceipts: r.latchReceiptsAccrued - r.latchReceiptsPaid,
   } };
 }
 
 /** Per-ID sum check: sum(claimed[id]) must equal receiptsPaid for each collection. */
-export async function checkPerIdHistories(rpc: PublicClient, pool: Address, config: PoolConfig, blockNumber?: bigint) {
-  const result: Record<CategoryName, { ids: number; claimedSum: bigint; receiptsPaid: bigint; match: boolean }> = {} as never;
-  for (const category of ['NAND', 'LATCH'] as const) {
-    const shares = Number(category === 'NAND' ? config.nandShares : config.latchShares);
+export async function checkPerIdHistories(rpc: PublicClient, pool: Address, shares: Record<CategoryName, bigint>, blockNumber?: bigint) {
+  const out: Record<CategoryName, { ids: number; claimedSum: bigint; receiptsPaid: bigint; match: boolean }> = {} as never;
+  for (const c of ['NAND', 'LATCH'] as const) {
     let claimedSum = 0n;
-    for (const ids of chunk(Array.from({ length: shares }, (_, i) => BigInt(i + 1)), 100)) {
-      const values = await Promise.all(ids.map(id => read<bigint>(rpc, pool, 'claimed', [CATEGORY[category], id], blockNumber)));
+    for (const ids of chunk(Array.from({ length: Number(shares[c]) }, (_, i) => BigInt(i + 1)), 100)) {
+      const values = await Promise.all(ids.map(id => readPool<bigint>(rpc, pool, 'claimed', [CATEGORY[c], id], blockNumber)));
       claimedSum += values.reduce((a, b) => a + b, 0n);
     }
-    const receiptsPaid = await read<bigint>(rpc, pool, 'receiptsPaid', [CATEGORY[category]], blockNumber);
-    result[category] = { ids: shares, claimedSum, receiptsPaid, match: claimedSum === receiptsPaid };
-  }
-  return result;
-}
-
-/** IDs held by `holder` in each collection, with their claimable income. */
-export async function readHoldings(rpc: PublicClient, pool: Address, holder: Address, blockNumber?: bigint) {
-  const target = getAddress(holder);
-  const out: Record<CategoryName, { ids: bigint[]; claimable: bigint[]; total: bigint }> = {} as never;
-  for (const category of ['NAND', 'LATCH'] as const) {
-    const receipt = await read<Address>(rpc, pool, 'receiptOf', [CATEGORY[category]], blockNumber);
-    const shares = await read<bigint>(rpc, pool, 'shareCount', [CATEGORY[category]], blockNumber);
-    const ids: bigint[] = [];
-    for (let first = 1n; first <= shares; first += 1000n) {
-      const count = shares - first + 1n < 1000n ? shares - first + 1n : 1000n;
-      const holders = await rpc.readContract({ address: receipt, abi: tapeoutReceiptAbi, functionName: 'holdersPage', args: [first, count], blockNumber }) as readonly Address[];
-      holders.forEach((h, i) => { if (h === target) ids.push(first + BigInt(i)); });
-    }
-    let claimable: bigint[] = [];
-    let total = 0n;
-    if (ids.length > 0) {
-      const [amounts, sum] = await read<readonly [readonly bigint[], bigint]>(rpc, pool, 'claimableBatch', [CATEGORY[category], ids], blockNumber);
-      claimable = [...amounts];
-      total = sum;
-    }
-    out[category] = { ids, claimable, total };
+    const receiptsPaid = await readPool<bigint>(rpc, pool, 'receiptsPaid', [CATEGORY[c]], blockNumber);
+    out[c] = { ids: Number(shares[c]), claimedSum, receiptsPaid, match: claimedSum === receiptsPaid };
   }
   return out;
 }
 
+/** Receipts `holder` holds (with claimable BEM) and receipts still waiting for it in the distributor. */
+export async function readHoldings(rpc: PublicClient, pool: Address, holder: Address, distributor?: Address, blockNumber?: bigint) {
+  const out: Record<CategoryName, { ids: number[]; claimable: bigint[]; total: bigint }> = {} as never;
+  for (const c of ['NAND', 'LATCH'] as const) {
+    const receipt = await readPool<Address>(rpc, pool, 'receiptOf', [CATEGORY[c]], blockNumber);
+    const ids = await readHeldIds(rpc, receipt, holder, blockNumber);
+    let claimable: bigint[] = [];
+    let total = 0n;
+    if (ids.length > 0) {
+      const [amounts, sum] = await readPool<readonly [readonly bigint[], bigint]>(rpc, pool, 'claimableBatch', [CATEGORY[c], ids.map(BigInt)], blockNumber);
+      claimable = [...amounts];
+      total = sum;
+    }
+    out[c] = { ids, claimable, total };
+  }
+  const waiting = distributor ? await readDistributor<readonly [bigint, bigint]>(rpc, distributor, 'pendingOf', [holder], blockNumber) : undefined;
+  return { holder: getAddress(holder), ...out, ...(waiting ? { inDistributor: { NAND: waiting[0], LATCH: waiting[1] } } : {}) };
+}
+
 export async function readMiners(rpc: PublicClient, pool: Address, withPending = false, blockNumber?: bigint) {
-  const count = await read<bigint>(rpc, pool, 'minerCount', [], blockNumber);
-  const mining = await read<Address>(rpc, pool, 'mining', [], blockNumber);
-  const miners: { tokenId: bigint; key: Hex; pendingEstimate?: bigint }[] = [];
+  const count = await readPool<bigint>(rpc, pool, 'minerCount', [], blockNumber);
+  const mining = await readPool<Address>(rpc, pool, 'mining', [], blockNumber);
+  const miners: { tokenId: bigint; key: Hex; nandBurn?: number; latchBurn?: number; status?: number; pendingEstimate?: bigint }[] = [];
   for (let offset = 0n; offset < count; offset += 500n) {
-    const [tokenIds, keys] = await read<readonly [readonly bigint[], readonly Hex[]]>(rpc, pool, 'minersPage', [offset, 500n], blockNumber);
+    const [tokenIds, keys] = await readPool<readonly [readonly bigint[], readonly Hex[]]>(rpc, pool, 'minersPage', [offset, 500n], blockNumber);
     tokenIds.forEach((tokenId, i) => miners.push({ tokenId, key: keys[i] }));
   }
-  if (withPending) {
+  await Promise.all(miners.map(async m => {
+    const record = await readPool<{ nandBurn: number; latchBurn: number }>(rpc, pool, 'miner', [m.tokenId], blockNumber);
+    m.nandBurn = Number(record.nandBurn);
+    m.latchBurn = Number(record.latchBurn);
+    const live = await rpc.readContract({ address: mining, abi: miningAbi, functionName: 'getMiner', args: [m.key], blockNumber }).catch(() => undefined);
+    m.status = live ? Number(live.status) : undefined;
     // Display only: pending() is an estimate and can be 0 while claim() pays. Never used to skip a claim.
-    await Promise.all(miners.map(async m => {
-      m.pendingEstimate = await rpc.readContract({ address: mining, abi: miningAbi, functionName: 'pending', args: [m.key], blockNumber }).catch(() => undefined);
-    }));
-  }
+    if (withPending) m.pendingEstimate = await rpc.readContract({ address: mining, abi: miningAbi, functionName: 'pending', args: [m.key], blockNumber }).catch(() => undefined);
+  }));
   return miners;
 }
 
-const receiverAbi = [{
-  type: 'function', name: 'onERC1155BatchReceived', stateMutability: 'nonpayable',
-  inputs: [{ name: 'operator', type: 'address' }, { name: 'from', type: 'address' }, { name: 'ids', type: 'uint256[]' }, { name: 'values', type: 'uint256[]' }, { name: 'data', type: 'bytes' }],
-  outputs: [{ name: '', type: 'bytes4' }],
-}] as const;
-
-/**
- * Holders that cannot receive ERC-1155 receipts. Addresses with code (contracts, and EOAs with an
- * EIP-7702 delegation) must return the receiver selector, exactly as the receipt's mint checks.
- */
-export async function receiverProblems(rpc: PublicClient, receipt: Address, pool: Address, holders: Address[]) {
-  const problems: { holder: Address; reason: string }[] = [];
-  for (const holder of [...new Set(holders)]) {
-    const code = await rpc.getCode({ address: holder });
-    if (!code || code === '0x') continue;
-    const kind = code.startsWith('0xef0100') ? `EIP-7702 delegation to 0x${code.slice(8, 48)}` : 'contract';
-    try {
-      const data = encodeFunctionData({ abi: receiverAbi, functionName: 'onERC1155BatchReceived', args: [pool, zeroAddress, [1n], [1n], '0x'] });
-      const result = await rpc.call({ account: receipt, to: holder, data });
-      if (!result.data || result.data.slice(0, 10).toLowerCase() !== '0xbc197c81') problems.push({ holder, reason: `${kind} does not accept ERC-1155 batches` });
-    } catch {
-      problems.push({ holder, reason: `${kind} reverts onERC1155BatchReceived` });
-    }
-  }
-  return problems;
+/** Authoritative composition of candidate miners as the pool will read it at admission. */
+export async function readComposition(rpc: PublicClient, mining: Address, collection: Address, tokenIds: bigint[], blockNumber?: bigint) {
+  return Promise.all(tokenIds.map(async tokenId => {
+    const key = await rpc.readContract({ address: mining, abi: miningAbi, functionName: 'minerKey', args: [collection, tokenId], blockNumber });
+    const [record, cache, owner] = await Promise.all([
+      rpc.readContract({ address: mining, abi: miningAbi, functionName: 'getMiner', args: [key], blockNumber }),
+      rpc.readContract({ address: mining, abi: miningAbi, functionName: 'cachedBurn', args: [collection, tokenId], blockNumber }),
+      rpc.readContract({ address: collection, abi: erc721Abi, functionName: 'ownerOf', args: [tokenId], blockNumber }).catch(() => zeroAddress),
+    ]);
+    const problems: string[] = [];
+    if (Number(record.status) !== MINER_STATUS_ACTIVE) problems.push(`status ${record.status} (only ACTIVE miners earn and can be claimed)`);
+    if (getAddress(record.circuits) !== getAddress(collection) || record.circuitId !== tokenId) problems.push('miner record belongs to a different circuit');
+    if (!cache[0] || Number(cache[1]) !== Number(record.nandBurn) || Number(cache[2]) !== Number(record.latchBurn)) problems.push('miner record and cachedBurn disagree');
+    if (Number(record.nandBurn) + Number(record.latchBurn) === 0) problems.push('burned nothing');
+    return { tokenId, key, owner, status: Number(record.status), nandBurn: Number(record.nandBurn), latchBurn: Number(record.latchBurn),
+      gateCount: Number(record.gateCount), bstar: record.bstar, cachedBurn: { cached: cache[0], nand: Number(cache[1]), latch: Number(cache[2]) }, admissible: problems.length === 0, problems };
+  }));
 }
 
 /** Simulate harvest batches and bisect any batch with failures to name the failing miners. */
 export async function findFailingMiners(rpc: PublicClient, pool: Address, tokenIds: bigint[], from: Address): Promise<bigint[]> {
   const failedOf = async (ids: bigint[]) => {
-    const data = encodeFunctionData({ abi: tapeoutMinerPoolAbi, functionName: 'harvest', args: [ids] });
+    const data = encodeFunctionData({ abi: tapeoutMinerPoolAbi as Abi, functionName: 'harvest', args: [ids] });
     const result = await rpc.call({ account: from, to: pool, data });
-    const [, failed] = decodeFunctionResult({ abi: tapeoutMinerPoolAbi, functionName: 'harvest', data: result.data! }) as readonly [bigint, bigint];
+    const [, failed] = decodeFunctionResult({ abi: tapeoutMinerPoolAbi as Abi, functionName: 'harvest', data: result.data! }) as readonly [bigint, bigint];
     return failed;
   };
   const bisect = async (ids: bigint[]): Promise<bigint[]> => {
@@ -239,4 +341,8 @@ export async function findFailingMiners(rpc: PublicClient, pool: Address, tokenI
 
 export async function bemBalance(rpc: PublicClient, bem: Address, account: Address, blockNumber?: bigint) {
   return rpc.readContract({ address: bem, abi: erc20Abi, functionName: 'balanceOf', args: [account], blockNumber });
+}
+
+export async function ownerOf(rpc: PublicClient, target: Address) {
+  return rpc.readContract({ address: target, abi: ownableAbi, functionName: 'owner' });
 }

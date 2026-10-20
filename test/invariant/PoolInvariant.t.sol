@@ -2,24 +2,44 @@
 pragma solidity 0.8.24;
 
 import {Test} from "forge-std/Test.sol";
-import {PoolTestBase} from "../helpers/PoolTestBase.sol";
+import {SystemTestBase} from "../helpers/SystemTestBase.sol";
 import {TapeoutMinerPool} from "../../src/TapeoutMinerPool.sol";
-import {TapeoutReceipt} from "../../src/TapeoutReceipt.sol";
+import {TapeoutEntitlementReceipt} from "../../src/TapeoutEntitlementReceipt.sol";
 import {PoolMath} from "../../src/PoolMath.sol";
 import {MockBEM, MockMining, MockNFT} from "../helpers/Mocks.sol";
 
-contract PoolHandler is Test {
+/// @dev Drives admissions (some of which must roll back), harvests, third-party claims, donations,
+///      status changes, claims, transfers and recipient payments. It keeps an independent model of the
+///      specification: expected settlement and carried amounts come from Mining's owed balances, and
+///      category totals are replayed with the old/new composition boundary.
+contract SystemHandler is Test {
     TapeoutMinerPool internal pool;
     MockBEM internal bem;
     MockMining internal mining;
     MockNFT internal nft;
+    address internal depositor;
     address[] internal actors;
-    address[] internal recipients;
-    uint256 internal minerCount;
+    address[] internal payees;
 
-    uint256 public lastPerNand;
-    uint256 public lastPerLatch;
+    uint256 internal nextTokenId = 1;
+    uint256[] public registered;
+    uint256[] internal waiting;
+
+    // Reference model.
+    uint256 public gTotal;
+    uint256 public gNandBase;
+    uint256 public gLatchBase;
+    uint256 public gParticipantBase;
+    uint256 public gNandBurn;
+    uint256 public gLatchBurn;
+
+    bool public amountsMatch = true;
+    bool public rollbacksClean = true;
     bool public monotonic = true;
+    uint256 internal lastNand;
+    uint256 internal lastLatch;
+    uint256 internal lastPerNand;
+    uint256 internal lastPerLatch;
     mapping(bytes32 => uint256) public calls;
 
     constructor(
@@ -27,44 +47,163 @@ contract PoolHandler is Test {
         MockBEM bem_,
         MockMining mining_,
         MockNFT nft_,
+        address depositor_,
         address[] memory actors_,
-        address[] memory recipients_,
-        uint256 minerCount_
+        address[] memory payees_
     ) {
         pool = pool_;
         bem = bem_;
         mining = mining_;
         nft = nft_;
+        depositor = depositor_;
         actors = actors_;
-        recipients = recipients_;
-        minerCount = minerCount_;
+        payees = payees_;
+        vm.prank(depositor);
+        nft.setApprovalForAll(address(pool), true);
     }
 
-    function accrue(uint256 minerSeed, uint64 amount, bool hiddenFromPending) external {
-        uint256 tokenId = bound(minerSeed, 1, minerCount);
-        uint256 value = bound(amount, 0, 5e9);
-        if (hiddenFromPending) mining.accrueUnsettled(address(nft), tokenId, value);
-        else mining.accrue(address(nft), tokenId, value);
+    // ------------------------------------------------------------------ model helpers
+
+    function modelCategories() public view returns (uint256 nand, uint256 latch) {
+        uint256 participants = gTotal * 100 / 102;
+        nand = gNandBase;
+        latch = gLatchBase;
+        uint256 weight = gNandBurn + gLatchBurn;
+        if (weight != 0) {
+            uint256 d = participants - gParticipantBase;
+            nand += d * gNandBurn / weight;
+            latch += d * gLatchBurn / weight;
+        }
+    }
+
+    function _unrecognized() internal view returns (uint256) {
+        if (gNandBurn + gLatchBurn == 0) return 0;
+        return bem.balanceOf(address(pool)) + pool.totalPaid() - gTotal;
+    }
+
+    function _key(uint256 id) internal view returns (bytes32) {
+        return mining.minerKey(address(nft), id);
+    }
+
+    function _owed(uint256 id) internal view returns (uint256) {
+        return mining.rewards(_key(id)) + mining.unsettled(_key(id));
+    }
+
+    function _status(uint256 id) internal view returns (uint8 status) {
+        (,, status,,,,,,) = mining.records(_key(id));
+    }
+
+    function _claimable(uint256 id) internal view returns (bool) {
+        return _status(id) == 1 && !mining.keyBroken(_key(id)) && !mining.broken();
+    }
+
+    function _observe() internal {
+        PoolMath.Accrual memory a = pool.accrual();
+        if (
+            a.nandIncome < lastNand || a.latchIncome < lastLatch || a.perNandShare < lastPerNand
+                || a.perLatchShare < lastPerLatch
+        ) monotonic = false;
+        (lastNand, lastLatch, lastPerNand, lastPerLatch) =
+            (a.nandIncome, a.latchIncome, a.perNandShare, a.perLatchShare);
+    }
+
+    // ------------------------------------------------------------------ actions
+
+    function prepareMiner(uint32 nandSeed, uint32 latchSeed, uint64 carrySeed, bool hidden) external {
+        if (registered.length + waiting.length >= 24) return;
+        uint32 n = uint32(bound(nandSeed, 0, 120));
+        uint32 l = uint32(bound(latchSeed, 0, 120));
+        if (n + l == 0) n = 1;
+        uint256 id = nextTokenId++;
+        nft.mint(depositor, id);
+        mining.start(address(nft), id, n, l);
+        uint256 carry = bound(carrySeed, 0, 5e9);
+        if (hidden) mining.accrueUnsettled(address(nft), id, carry);
+        else mining.accrue(address(nft), id, carry);
+        waiting.push(id);
+        calls["prepare"]++;
+    }
+
+    function admit(uint256 countSeed) external {
+        if (waiting.length == 0) return;
+        uint256 k = bound(countSeed, 1, waiting.length > 3 ? 3 : waiting.length);
+        uint256[] memory ids = new uint256[](k);
+        for (uint256 i; i < k; ++i) {
+            ids[i] = waiting[waiting.length - 1 - i];
+        }
+        bool firstAdmission = gNandBurn + gLatchBurn == 0;
+        uint256 preExisting = firstAdmission ? 0 : _unrecognized();
+        uint256 heldBeforeComposition =
+            firstAdmission ? bem.balanceOf(address(pool)) + pool.totalPaid() - gTotal : 0;
+        bool shouldRevert = mining.broken();
+        uint256 expectSettled;
+        for (uint256 i; i < registered.length; ++i) {
+            if (_status(registered[i]) != 1) continue; // Mining pays nothing for inactive miners
+            if (mining.keyBroken(_key(registered[i]))) shouldRevert = true;
+            expectSettled += _owed(registered[i]);
+        }
+        uint256 expectCarried = heldBeforeComposition;
+        uint256 addNand;
+        uint256 addLatch;
+        for (uint256 i; i < k; ++i) {
+            if (mining.keyBroken(_key(ids[i])) || _status(ids[i]) != 1) shouldRevert = true;
+            expectCarried += _owed(ids[i]);
+            (,,, uint32 n, uint32 l,,,,) = mining.records(_key(ids[i]));
+            addNand += n;
+            addLatch += l;
+        }
+        uint256 totalBefore = pool.totalAccounted();
+        uint256 countBefore = pool.minerCount();
+        vm.prank(depositor);
+        try pool.depositMiners(ids) returns (uint256 settled, uint256 carried) {
+            if (shouldRevert) amountsMatch = false;
+            if (settled != expectSettled || carried != expectCarried) amountsMatch = false;
+            // Model: old income under the old composition, checkpoint, new composition, carried income.
+            gTotal += preExisting + settled;
+            (uint256 nand, uint256 latch) = modelCategories();
+            (gNandBase, gLatchBase, gParticipantBase) = (nand, latch, nand + latch);
+            gNandBurn += addNand;
+            gLatchBurn += addLatch;
+            gTotal += carried;
+            for (uint256 i; i < k; ++i) {
+                registered.push(ids[i]);
+                waiting.pop();
+            }
+            calls["admit"]++;
+        } catch {
+            if (!shouldRevert) amountsMatch = false;
+            if (pool.totalAccounted() != totalBefore || pool.minerCount() != countBefore) {
+                rollbacksClean = false;
+            }
+            for (uint256 i; i < k; ++i) {
+                if (nft.ownerOf(ids[i]) != depositor) rollbacksClean = false;
+            }
+            calls["admitReverted"]++;
+        }
+        _observe();
+    }
+
+    function accrueRegistered(uint256 minerSeed, uint64 amount, bool hidden) external {
+        if (registered.length == 0) return;
+        uint256 id = registered[bound(minerSeed, 0, registered.length - 1)];
+        uint256 value = bound(amount, 0, 3e9);
+        if (hidden) mining.accrueUnsettled(address(nft), id, value);
+        else mining.accrue(address(nft), id, value);
         calls["accrue"]++;
     }
 
-    function harvestSome(uint256 seed) external {
-        uint256 count = bound(seed, 1, minerCount);
-        uint256[] memory ids = new uint256[](count);
-        for (uint256 i; i < count; ++i) {
-            ids[i] = bound(uint256(keccak256(abi.encode(seed, i))), 1, minerCount);
+    function harvestAll() external {
+        if (registered.length == 0) return;
+        uint256 expected = _unrecognized();
+        for (uint256 i; i < registered.length; ++i) {
+            if (_claimable(registered[i])) expected += _owed(registered[i]);
         }
-        pool.harvest(ids);
+        uint256 before = pool.totalAccounted();
+        pool.harvestRange(0, registered.length);
+        if (pool.totalAccounted() - before != expected) amountsMatch = false;
+        gTotal += expected;
         _observe();
         calls["harvest"]++;
-    }
-
-    function harvestRange(uint256 start, uint256 count) external {
-        start = bound(start, 0, minerCount - 1);
-        count = bound(count, 1, minerCount);
-        pool.harvestRange(start, count);
-        _observe();
-        calls["harvestRange"]++;
     }
 
     function donate(uint64 amount) external {
@@ -72,41 +211,48 @@ contract PoolHandler is Test {
         calls["donate"]++;
     }
 
-    function thirdPartyMiningClaim(uint256 minerSeed) external {
-        uint256 tokenId = bound(minerSeed, 1, minerCount);
-        bytes32 key = mining.minerKey(address(nft), tokenId);
+    function thirdPartyClaim(uint256 minerSeed) external {
+        if (registered.length == 0) return;
+        uint256 id = registered[bound(minerSeed, 0, registered.length - 1)];
+        if (!_claimable(id)) return;
+        bytes32 key = _key(id);
         vm.prank(address(0xD00D));
         mining.claim(key);
-        calls["thirdPartyClaim"]++;
+        calls["thirdParty"]++;
     }
 
-    function claim(uint256 actorSeed, uint256 seed) external {
+    function setStatus(uint256 minerSeed, bool activeFlag) external {
+        if (registered.length == 0) return;
+        uint256 id = registered[bound(minerSeed, 0, registered.length - 1)];
+        mining.setStatus(address(nft), id, activeFlag ? 1 : 2);
+        calls["status"]++;
+    }
+
+    function breakKey(uint256 minerSeed, bool flag) external {
+        if (registered.length == 0) return;
+        uint256 id = registered[bound(minerSeed, 0, registered.length - 1)];
+        mining.setKeyBroken(address(nft), id, flag);
+        calls["breakKey"]++;
+    }
+
+    function claim(uint256 actorSeed, uint256 pick) external {
+        if (gNandBurn + gLatchBurn == 0) return;
         address actor = actors[bound(actorSeed, 0, actors.length - 1)];
-        uint256[] memory nandIds = _held(TapeoutMinerPool.Category.NAND, actor, seed);
-        uint256[] memory latchIds = _held(TapeoutMinerPool.Category.LATCH, actor, seed >> 128);
-        if (nandIds.length == 0 && latchIds.length == 0) return;
+        uint256[] memory nandIds = _held(pool.nandReceipt(), actor, pick);
+        uint256[] memory latchIds = _held(pool.latchReceipt(), actor, pick >> 64);
+        if (nandIds.length + latchIds.length == 0) return;
+        gTotal += _unrecognized();
         vm.prank(actor);
         pool.claimBatch(nandIds, latchIds);
         _observe();
         calls["claim"]++;
     }
 
-    function claimOne(bool latchCategory, uint256 idSeed) external {
-        TapeoutMinerPool.Category category =
-            latchCategory ? TapeoutMinerPool.Category.LATCH : TapeoutMinerPool.Category.NAND;
-        uint256 id = bound(idSeed, 1, pool.shareCount(category));
-        address holder = pool.receiptOf(category).holderOf(id);
-        vm.prank(holder);
-        pool.claim(category, id);
-        _observe();
-        calls["claimOne"]++;
-    }
-
-    function transferReceipt(bool latchCategory, uint256 idSeed, uint256 toSeed) external {
-        TapeoutMinerPool.Category category =
-            latchCategory ? TapeoutMinerPool.Category.LATCH : TapeoutMinerPool.Category.NAND;
-        TapeoutReceipt receipt = pool.receiptOf(category);
-        uint256 id = bound(idSeed, 1, pool.shareCount(category));
+    function transfer(bool latchCategory, uint256 idSeed, uint256 toSeed) external {
+        TapeoutEntitlementReceipt receipt = latchCategory ? pool.latchReceipt() : pool.nandReceipt();
+        uint256 supply = receipt.totalSupply();
+        if (supply == 0) return;
+        uint256 id = bound(idSeed, 1, supply);
         address from = receipt.holderOf(id);
         address to = actors[bound(toSeed, 0, actors.length - 1)];
         vm.prank(from);
@@ -114,38 +260,25 @@ contract PoolHandler is Test {
         calls["transfer"]++;
     }
 
-    function releaseFee() external {
-        pool.releaseFee();
-        calls["releaseFee"]++;
+    function release(bool b) external {
+        if (gNandBurn + gLatchBurn == 0) return;
+        gTotal += _unrecognized();
+        if (b) pool.releaseB();
+        else pool.releaseA();
+        _observe();
+        calls["release"]++;
     }
 
-    function releaseHistorical(bool latchCategory) external {
-        pool.releaseHistorical(
-            latchCategory ? TapeoutMinerPool.Category.LATCH : TapeoutMinerPool.Category.NAND
-        );
-        calls["releaseHistorical"]++;
-    }
-
-    function rotateRecipient(uint8 roleSeed, uint256 toSeed) external {
-        TapeoutMinerPool.Recipient role = TapeoutMinerPool.Recipient(bound(roleSeed, 0, 2));
-        address current = pool.recipientOf(role);
-        address next = recipients[bound(toSeed, 0, recipients.length - 1)];
-        vm.prank(current);
-        pool.setRecipient(role, next);
-        calls["rotate"]++;
-    }
-
-    function _held(TapeoutMinerPool.Category category, address actor, uint256 seed)
+    function _held(TapeoutEntitlementReceipt receipt, address actor, uint256 pick)
         internal
         view
         returns (uint256[] memory ids)
     {
-        TapeoutReceipt receipt = pool.receiptOf(category);
-        uint256 shares = pool.shareCount(category);
-        uint256[] memory tmp = new uint256[](shares);
+        uint256 supply = receipt.totalSupply();
+        uint256[] memory tmp = new uint256[](supply);
         uint256 n;
-        for (uint256 id = 1; id <= shares; ++id) {
-            if (receipt.holderOf(id) == actor && (seed >> (id % 200)) & 1 == 1) tmp[n++] = id;
+        for (uint256 id = 1; id <= supply; ++id) {
+            if (receipt.holderOf(id) == actor && (pick >> (id % 64)) & 1 == 1) tmp[n++] = id;
         }
         ids = new uint256[](n);
         for (uint256 i; i < n; ++i) {
@@ -153,100 +286,97 @@ contract PoolHandler is Test {
         }
     }
 
-    function _observe() internal {
-        PoolMath.Accrual memory a = pool.accrual();
-        if (a.perNandShare < lastPerNand || a.perLatchShare < lastPerLatch) monotonic = false;
-        lastPerNand = a.perNandShare;
-        lastPerLatch = a.perLatchShare;
+    function registeredCount() external view returns (uint256) {
+        return registered.length;
     }
 }
 
-contract PoolInvariantTest is PoolTestBase {
-    PoolHandler internal handler;
-    address internal dave = makeAddr("dave");
+contract PoolInvariantTest is SystemTestBase {
+    SystemHandler internal handler;
     address[] internal actorList;
-    address[] internal recipientList;
-    TapeoutMinerPool.Config internal config;
-    uint256 internal constant MINERS = 6;
+    address[] internal payeeList;
 
     function setUp() public override {
         super.setUp();
-        config = cfg(13, 7, 3, 2, 61_803_399);
-        setupAndActivate(config, alice, bob, carol, dave);
-        newMinersDeposited(1, MINERS);
+        issue(nandReceipt, alice, 7);
+        issue(nandReceipt, bob, 6);
+        issue(latchReceipt, carol, 5);
+        issue(latchReceipt, dave, 4);
+        finalizeIssuance();
+        activate();
         actorList.push(alice);
         actorList.push(bob);
         actorList.push(carol);
         actorList.push(dave);
-        recipientList.push(feeTo);
-        recipientList.push(histNandTo);
-        recipientList.push(histLatchTo);
-        recipientList.push(makeAddr("r1"));
-        recipientList.push(makeAddr("r2"));
-        handler = new PoolHandler(pool, bem, mining, nft, actorList, recipientList, MINERS);
+        payeeList.push(alice);
+        payeeList.push(bob);
+        payeeList.push(carol);
+        payeeList.push(dave);
+        payeeList.push(recipientA);
+        payeeList.push(recipientB);
+        handler = new SystemHandler(pool, bem, mining, nft, depositor, actorList, payeeList);
         targetContract(address(handler));
     }
 
-    /// @notice Every BEM unit that ever existed went to the pool first; the pool holds what it
-    ///         has not paid, and every payout reached a known holder or recipient.
-    function invariantBemConservation() public view {
-        assertEq(bem.balanceOf(address(pool)) + pool.totalPaid(), bem.totalSupply());
-        uint256 paidOut;
-        for (uint256 i; i < actorList.length; ++i) {
-            paidOut += bem.balanceOf(actorList[i]);
-        }
-        for (uint256 i; i < recipientList.length; ++i) {
-            paidOut += bem.balanceOf(recipientList[i]);
-        }
-        assertEq(paidOut, pool.totalPaid());
-        assertLe(pool.totalAccounted(), bem.totalSupply());
+    function invariantModelMatchesTheLedger() public view {
+        assertTrue(handler.amountsMatch(), "settlement / carried / harvest amounts");
+        assertTrue(handler.rollbacksClean(), "failed admissions changed state");
+        assertEq(pool.totalAccounted(), handler.gTotal(), "recognized total");
+        (uint256 nand, uint256 latch) = handler.modelCategories();
+        PoolMath.Accrual memory a = pool.accrual();
+        assertEq(a.nandIncome, nand, "NAND income vs old/new composition model");
+        assertEq(a.latchIncome, latch, "LATCH income vs old/new composition model");
+        assertEq(pool.totalNandBurn(), handler.gNandBurn());
+        assertEq(pool.totalLatchBurn(), handler.gLatchBurn());
     }
 
-    function invariantLedgerReconciles() public view {
+    function invariantFourAccountConservation() public view {
         assertReconciled();
-        PoolMath.Accrual memory a = pool.accrual();
-        assertLe(a.residue, residueBound(config));
-        assertLe(pool.feePaid(), a.fee);
-        assertLe(pool.historicalPaid(NAND), a.historicalNand);
-        assertLe(pool.historicalPaid(LATCH), a.historicalLatch);
+        uint256 paidOut;
+        for (uint256 i; i < payeeList.length; ++i) {
+            paidOut += bem.balanceOf(payeeList[i]);
+        }
+        assertEq(paidOut, pool.totalPaid(), "payees received exactly what was paid");
+        assertEq(
+            bem.balanceOf(address(pool)) + pool.totalPaid(), bem.totalSupply() - bem.balanceOf(depositor)
+        );
     }
 
-    /// @notice Per-ID claim histories never exceed the cumulative per-share income and sum to
-    ///         exactly what was paid to receipt holders in each collection.
-    function invariantPerIdHistoriesSumToPaid() public view {
+    function invariantPerIdHistories() public view {
         PoolMath.Accrual memory a = pool.accrual();
-        uint256 nandSum;
-        for (uint256 id = 1; id <= config.nandShares; ++id) {
+        uint256 sum;
+        for (uint256 id = 1; id <= pool.nandShares(); ++id) {
             uint256 c = pool.claimed(NAND, id);
             assertLe(c, a.perNandShare);
-            nandSum += c;
-            assertEq(nand.totalSupply(id), 1);
+            sum += c;
         }
-        uint256 latchSum;
-        for (uint256 id = 1; id <= config.latchShares; ++id) {
+        assertEq(sum, pool.receiptsPaid(NAND));
+        sum = 0;
+        for (uint256 id = 1; id <= pool.latchShares(); ++id) {
             uint256 c = pool.claimed(LATCH, id);
             assertLe(c, a.perLatchShare);
-            latchSum += c;
-            assertEq(latch.totalSupply(id), 1);
+            sum += c;
         }
-        assertEq(nandSum, pool.receiptsPaid(NAND));
-        assertEq(latchSum, pool.receiptsPaid(LATCH));
-        assertEq(nand.totalSupply(), config.nandShares);
-        assertEq(latch.totalSupply(), config.latchShares);
+        assertEq(sum, pool.receiptsPaid(LATCH));
+        assertEq(nandReceipt.totalSupply(), 13);
+        assertEq(latchReceipt.totalSupply(), 9);
     }
 
-    function invariantPerShareIncomeNeverDecreases() public view {
+    function invariantEntitlementsNeverDecrease() public view {
         assertTrue(handler.monotonic());
     }
 
-    function invariantMinersStayInCustody() public view {
-        for (uint256 tokenId = 1; tokenId <= MINERS; ++tokenId) {
-            assertEq(nft.ownerOf(tokenId), address(pool));
+    function invariantCompositionAndCustody() public view {
+        uint256 n;
+        uint256 l;
+        for (uint256 i; i < handler.registeredCount(); ++i) {
+            uint256 id = handler.registered(i);
+            TapeoutMinerPool.Miner memory m = pool.miner(id);
+            n += m.nandBurn;
+            l += m.latchBurn;
+            assertEq(nft.ownerOf(id), address(pool));
         }
-    }
-
-    function afterInvariant() external view {
-        // Make sure the campaign exercised the economically relevant paths.
-        assertGt(handler.calls("accrue") + handler.calls("donate"), 0);
+        assertEq(n, pool.totalNandBurn());
+        assertEq(l, pool.totalLatchBurn());
     }
 }

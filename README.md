@@ -1,40 +1,44 @@
-# TapeOut Miner Pool (V1)
+# TapeOut pooled-mining entitlement system
 
-A pool contract that holds many TapeOut miner NFTs on BSC, collects their BEM through the real
-`Mining.claim` path, and distributes the BEM it actually receives through two ERC-1155 receipt
-collections — **NAND** and **LATCH** — plus historical-entitlement recipients and a 2/102 fee.
+On-chain side of a pooled TapeOut mining round on BSC. Contributors receive NAND and LATCH
+entitlement receipts (ERC-1155); the miners built from the pooled materials are held by a custody
+contract that collects their BEM through the real `Mining.claim` path and distributes what it
+actually receives:
 
-Built from the engineering baseline [TapeoutMarket/test1](https://github.com/TapeoutMarket/test1) at
-commit `9d86a2673dd3b415e5d8ce35cd818d4e73756116` (see [docs/BASELINE.md](docs/BASELINE.md)).
+- **1/102** to recipient A and **1/102** to recipient B;
+- **100/102** to receipt holders, split between NAND and LATCH by `N/(N+L)`, the NAND and LATCH
+  actually burned by the admitted miners as reported by Mining;
+- within a category, equally per receipt ID; unclaimed BEM follows the receipt when it is transferred.
 
-## How it works (one paragraph)
+There is one issuance round. Miners built later from leftover materials are admitted into the same
+pool and benefit the existing holders; supplies never change after issuance is finalized.
 
-The operator deploys one `TapeoutMinerPool` per round; its constructor deploys the NAND and LATCH
-receipt collections. During setup the operator configures the manually decided inputs — receipt share
-counts `S_N`/`S_L`, historical shares `H_N`/`H_L`, the NAND weight (8 decimals) and the recipients —
-issues every receipt ID `1..S` from the contribution records (unallocated IDs go to an explicit reserve
-holder) and deposits completed miners. `activate(configHash)` freezes all of it. From then on anyone
-can harvest miners in batches; each receipt holder claims the income attached to the IDs it holds,
-and that unclaimed income travels with an ID when it is transferred. For income `R`:
-`fee = 2R/102`, `NAND = (100R/102)·W_N`, `LATCH = (100R/102)·W_L`, each split equally over `S + H`
-shares, with the historical part paid to its recipient. Accounting is cumulative and exact to the raw
-unit; rounding residue is bounded and retained.
+## Contracts
+
+| Contract | Purpose |
+| --- | --- |
+| [`TapeoutEntitlementReceipt`](src/TapeoutEntitlementReceipt.sol) | Unique-ID ERC-1155 (IDs `1..S`, supply 1 each), deployed separately for NAND and LATCH; batch issuance, then permanent finalization |
+| [`TapeoutReceiptDistributor`](src/TapeoutReceiptDistributor.sol) | Holds the receipts, records the imported allocation, lets each wallet claim its own receipts (no deadline) |
+| [`TapeoutMinerPool`](src/TapeoutMinerPool.sol) | Miner custody, admission by a fixed depositor whitelist with a strict settlement boundary, BEM ledger, claims, A/B payments |
+| [`PoolMath`](src/PoolMath.sol) | Accounting math, mirrored by the SDK |
+
+How it fits together: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Allocation rules and rounding:
+[docs/ACCOUNTING.md](docs/ACCOUNTING.md). Operator runbook: [docs/OPERATIONS.md](docs/OPERATIONS.md).
+What was tested and what remains open: [docs/VERIFICATION_REPORT.md](docs/VERIFICATION_REPORT.md).
+Relationship to the previous version (`48a2d74`) and reused evidence: [docs/BASELINE.md](docs/BASELINE.md).
 
 ## Repository layout
 
 | Path | Contents |
 | --- | --- |
-| `src/TapeoutMinerPool.sol` | Custody, harvesting, ledger, claims, setup/activation |
-| `src/TapeoutReceipt.sol` | Unique-ID ERC-1155 receipt collection (one per category) |
-| `src/PoolMath.sol` | Allocation math |
-| `test/unit`, `test/invariant` | Foundry unit, fuzz and invariant suites (mock protocol) |
-| `test/fork/PoolFork.t.sol` | Real BSC protocol fork test (opt-in) |
-| `sdk/` | TypeScript SDK: ABIs, exact math mirror, config/allocation parsing, transaction plans, readers |
-| `cli/pool.ts` | Operator CLI (plans, Safe batches, local Anvil execution; never handles keys) |
-| `script/DeployPool.s.sol` | Optional Foundry deployment script |
-| `scripts/` | ABI export, local and fork end-to-end runners |
-| `deployments/examples/` | Example pool definition and allocation files |
-| `docs/` | [Architecture](docs/ARCHITECTURE.md) · [Accounting](docs/ACCOUNTING.md) · [Operations](docs/OPERATIONS.md) · [Baseline](docs/BASELINE.md) · [Verification report](docs/VERIFICATION_REPORT.md) |
+| `src/` | The contracts and the `IMining` protocol interface |
+| `test/unit`, `test/invariant` | Foundry unit, fuzz, gas and invariant suites on a mock protocol |
+| `test/fork/PoolFork.t.sol` | Real BSC protocol tests on a pinned fork (run through `scripts/fork-test.ts`) |
+| `sdk/` | TypeScript SDK: ABIs, bytecode, math mirror, config and allocation parsing, transaction plans, readers, gas models |
+| `cli/pool.ts` | Operator CLI: plans, simulations, Safe batches, local Anvil execution; never handles keys |
+| `script/DeployPool.s.sol` | Optional Foundry deployment path (`DeployReceipts`, `DeployPool`) |
+| `scripts/` | Local and fork end-to-end runners, ABI export, report summarizers, composition probe |
+| `deployments/examples/` | Example system configuration and allocation files |
 | `reports/` | Raw outputs referenced by the verification report |
 
 ## Quick start
@@ -50,14 +54,10 @@ forge build && forge test
 ```
 
 ```bash
-npm run test:sdk && npm run typecheck
+npm run test:sdk && npm run typecheck && npm run test:local-e2e
 ```
 
-```bash
-npm run test:local-e2e
-```
-
-Real-protocol checks need an archive-capable BSC RPC endpoint:
+Real-protocol checks need an archive-capable BSC endpoint:
 
 ```bash
 FORK_RPC_URL=https://bsc-mainnet.public.blastapi.io npm run test:fork
@@ -67,15 +67,12 @@ FORK_RPC_URL=https://bsc-mainnet.public.blastapi.io npm run test:fork
 FORK_RPC_URL=https://bsc-mainnet.public.blastapi.io npm run test:fork-e2e
 ```
 
-Operator commands (`preview`, `allocate`, `deploy`, `configure`, `issue`, `activate`, `deposit`,
-`harvest`, `claim`, `release`, `inspect`, `reconcile`, …) are described in
-[docs/OPERATIONS.md](docs/OPERATIONS.md). Example:
+Preview how 1,020 BEM would be split for a given composition and receipt supplies:
 
 ```bash
-npm run pool -- preview --config deployments/examples/pool.bsc.example.json --income 1020
+npm run pool -- preview --income 1020 --nand-burn 90 --latch-burn 10 --nand-shares 1000 --latch-shares 400
 ```
 
 ## Status
 
-V1 candidate, not audited and not deployed to BSC mainnet. What was executed, against what, and what
-remains unverified is in [docs/VERIFICATION_REPORT.md](docs/VERIFICATION_REPORT.md).
+Release candidate. Not audited, not deployed to BSC mainnet, and no live-value transaction was made.

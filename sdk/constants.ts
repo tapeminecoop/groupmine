@@ -23,11 +23,19 @@ export const BSC_IDENTITY = {
 export const ERC1967_IMPLEMENTATION_SLOT = '0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc';
 export const ERC1967_BEACON_SLOT = '0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50';
 
+/** Mining subset with the miner record layout of the official TapeOut frontend ABI. `nandBurn` and
+ *  `latchBurn` are the circuit's local actual burn (consumed NAND/LATCH); see src/interfaces/IMining.sol. */
 export const miningAbi = parseAbi([
   'function minerKey(address collection, uint256 tokenId) view returns (bytes32)',
+  'function getMiner(bytes32 key) view returns ((address circuits,uint64 circuitId,uint32 taskId,uint32 gateCount,uint32 stateCount,uint32 depth,uint64 area,uint32 mult,uint64 since,uint8 status,address registrant,uint32 nandBurn,uint32 latchBurn,uint64 bstar,uint64 bonus,bool optimal,uint64 commitBlock,uint64 firstUnusedId,uint64 stopBlock,uint128 verifWeight,uint128 unverWeight,uint256 debt))',
+  'function cachedBurn(address circuits, uint256 circuitId) view returns (bool cached, uint32 nand, uint32 latch)',
   'function pending(bytes32 key) view returns (uint256)',
   'function claim(bytes32 key)',
+  'function claimMany(bytes32[] keys)',
 ]);
+
+/** Miner status values observed on the deployed contract: only ACTIVE miners can be claimed. */
+export const MINER_STATUS_ACTIVE = 1;
 
 export const erc721Abi = parseAbi([
   'function ownerOf(uint256 tokenId) view returns (address)',
@@ -47,4 +55,9 @@ export const beaconAbi = parseAbi(['function implementation() view returns (addr
 
 export const CATEGORY = { NAND: 0, LATCH: 1 } as const;
 export type CategoryName = keyof typeof CATEGORY;
-export const RECIPIENT = { FEE: 0, HISTORICAL_NAND: 1, HISTORICAL_LATCH: 2 } as const;
+export const RECIPIENT = { A: 0, B: 1 } as const;
+
+/** BEP-652 (EIP-7825), active on BSC mainnet since the Mendel hardfork (2026-04-28 02:30 UTC): a
+ *  transaction's gas limit may not exceed 2^24. Plans are kept within BATCH_GAS_BUDGET of it. */
+export const TX_GAS_CAP = 16_777_216n;
+export const BATCH_GAS_BUDGET = (TX_GAS_CAP * 3n) / 4n;

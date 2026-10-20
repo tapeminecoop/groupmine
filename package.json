@@ -1,9 +1,9 @@
 {
   "name": "tapeout-miner-pool",
-  "version": "1.0.0-rc.1",
+  "version": "2.0.0-rc.1",
   "private": true,
   "type": "module",
-  "description": "TapeOut multi-miner custody pool with NAND/LATCH ERC-1155 receipts and BEM distribution",
+  "description": "TapeOut pooled mining: independent NAND/LATCH entitlement receipts, receipt distributor, and miner custody with composition-weighted BEM distribution",
   "engines": {
     "node": ">=20.19"
   },

@@ -29,53 +29,34 @@ export const tapeoutMinerPoolAbi = [
             "internalType": "address"
           },
           {
+            "name": "nandReceipt",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "latchReceipt",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "recipientA",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "recipientB",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "depositors",
+            "type": "address[]",
+            "internalType": "address[]"
+          },
+          {
             "name": "poolName",
             "type": "string",
             "internalType": "string"
-          },
-          {
-            "name": "nand",
-            "type": "tuple",
-            "internalType": "struct TapeoutMinerPool.ReceiptMetadata",
-            "components": [
-              {
-                "name": "name",
-                "type": "string",
-                "internalType": "string"
-              },
-              {
-                "name": "symbol",
-                "type": "string",
-                "internalType": "string"
-              },
-              {
-                "name": "uri",
-                "type": "string",
-                "internalType": "string"
-              }
-            ]
-          },
-          {
-            "name": "latch",
-            "type": "tuple",
-            "internalType": "struct TapeoutMinerPool.ReceiptMetadata",
-            "components": [
-              {
-                "name": "name",
-                "type": "string",
-                "internalType": "string"
-              },
-              {
-                "name": "symbol",
-                "type": "string",
-                "internalType": "string"
-              },
-              {
-                "name": "uri",
-                "type": "string",
-                "internalType": "string"
-              }
-            ]
           }
         ]
       }
@@ -84,7 +65,7 @@ export const tapeoutMinerPoolAbi = [
   },
   {
     "type": "function",
-    "name": "ENTITLEMENT_PARTS",
+    "name": "MAX_ADMISSION_BATCH",
     "inputs": [],
     "outputs": [
       {
@@ -97,7 +78,7 @@ export const tapeoutMinerPoolAbi = [
   },
   {
     "type": "function",
-    "name": "FEE_PARTS",
+    "name": "MAX_DEPOSITORS",
     "inputs": [],
     "outputs": [
       {
@@ -111,6 +92,45 @@ export const tapeoutMinerPoolAbi = [
   {
     "type": "function",
     "name": "MAX_PAGE",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "MINER_ACTIVE",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint8",
+        "internalType": "uint8"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "PARTICIPANT_PARTS",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "RECIPIENT_PARTS",
     "inputs": [],
     "outputs": [
       {
@@ -149,19 +169,6 @@ export const tapeoutMinerPoolAbi = [
   },
   {
     "type": "function",
-    "name": "WEIGHT_SCALE",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "acceptOwnership",
     "inputs": [],
     "outputs": [],
@@ -183,12 +190,17 @@ export const tapeoutMinerPoolAbi = [
             "internalType": "uint256"
           },
           {
-            "name": "fee",
+            "name": "recipientA",
             "type": "uint256",
             "internalType": "uint256"
           },
           {
-            "name": "entitlement",
+            "name": "recipientB",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "participants",
             "type": "uint256",
             "internalType": "uint256"
           },
@@ -223,16 +235,6 @@ export const tapeoutMinerPoolAbi = [
             "internalType": "uint256"
           },
           {
-            "name": "historicalNand",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "historicalLatch",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
             "name": "residue",
             "type": "uint256",
             "internalType": "uint256"
@@ -247,9 +249,14 @@ export const tapeoutMinerPoolAbi = [
     "name": "activate",
     "inputs": [
       {
-        "name": "expectedConfigHash",
-        "type": "bytes32",
-        "internalType": "bytes32"
+        "name": "expectedNandShares",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "expectedLatchShares",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "outputs": [],
@@ -264,19 +271,6 @@ export const tapeoutMinerPoolAbi = [
         "name": "",
         "type": "uint64",
         "internalType": "uint64"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "activationConfigHash",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "bytes32",
-        "internalType": "bytes32"
       }
     ],
     "stateMutability": "view"
@@ -434,184 +428,13 @@ export const tapeoutMinerPoolAbi = [
   },
   {
     "type": "function",
-    "name": "config",
+    "name": "compositionPeriod",
     "inputs": [],
     "outputs": [
       {
         "name": "",
-        "type": "tuple",
-        "internalType": "struct TapeoutMinerPool.Config",
-        "components": [
-          {
-            "name": "nandShares",
-            "type": "uint64",
-            "internalType": "uint64"
-          },
-          {
-            "name": "latchShares",
-            "type": "uint64",
-            "internalType": "uint64"
-          },
-          {
-            "name": "historicalNandShares",
-            "type": "uint64",
-            "internalType": "uint64"
-          },
-          {
-            "name": "historicalLatchShares",
-            "type": "uint64",
-            "internalType": "uint64"
-          },
-          {
-            "name": "nandWeight",
-            "type": "uint32",
-            "internalType": "uint32"
-          },
-          {
-            "name": "feeRecipient",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "historicalNandRecipient",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "historicalLatchRecipient",
-            "type": "address",
-            "internalType": "address"
-          }
-        ]
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "configHash",
-    "inputs": [
-      {
-        "name": "c",
-        "type": "tuple",
-        "internalType": "struct TapeoutMinerPool.Config",
-        "components": [
-          {
-            "name": "nandShares",
-            "type": "uint64",
-            "internalType": "uint64"
-          },
-          {
-            "name": "latchShares",
-            "type": "uint64",
-            "internalType": "uint64"
-          },
-          {
-            "name": "historicalNandShares",
-            "type": "uint64",
-            "internalType": "uint64"
-          },
-          {
-            "name": "historicalLatchShares",
-            "type": "uint64",
-            "internalType": "uint64"
-          },
-          {
-            "name": "nandWeight",
-            "type": "uint32",
-            "internalType": "uint32"
-          },
-          {
-            "name": "feeRecipient",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "historicalNandRecipient",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "historicalLatchRecipient",
-            "type": "address",
-            "internalType": "address"
-          }
-        ]
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
-    ],
-    "stateMutability": "pure"
-  },
-  {
-    "type": "function",
-    "name": "configure",
-    "inputs": [
-      {
-        "name": "c",
-        "type": "tuple",
-        "internalType": "struct TapeoutMinerPool.Config",
-        "components": [
-          {
-            "name": "nandShares",
-            "type": "uint64",
-            "internalType": "uint64"
-          },
-          {
-            "name": "latchShares",
-            "type": "uint64",
-            "internalType": "uint64"
-          },
-          {
-            "name": "historicalNandShares",
-            "type": "uint64",
-            "internalType": "uint64"
-          },
-          {
-            "name": "historicalLatchShares",
-            "type": "uint64",
-            "internalType": "uint64"
-          },
-          {
-            "name": "nandWeight",
-            "type": "uint32",
-            "internalType": "uint32"
-          },
-          {
-            "name": "feeRecipient",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "historicalNandRecipient",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "historicalLatchRecipient",
-            "type": "address",
-            "internalType": "address"
-          }
-        ]
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "currentConfigHash",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "bytes32",
-        "internalType": "bytes32"
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "stateMutability": "view"
@@ -626,31 +449,29 @@ export const tapeoutMinerPoolAbi = [
         "internalType": "uint256[]"
       }
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "feeClaimable",
-    "inputs": [],
     "outputs": [
       {
-        "name": "",
+        "name": "settledOldIncome",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "carriedIncome",
         "type": "uint256",
         "internalType": "uint256"
       }
     ],
-    "stateMutability": "view"
+    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
-    "name": "feePaid",
+    "name": "depositors",
     "inputs": [],
     "outputs": [
       {
         "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
+        "type": "address[]",
+        "internalType": "address[]"
       }
     ],
     "stateMutability": "view"
@@ -710,164 +531,35 @@ export const tapeoutMinerPoolAbi = [
   },
   {
     "type": "function",
-    "name": "historicalClaimable",
+    "name": "isDepositor",
     "inputs": [
       {
-        "name": "category",
-        "type": "uint8",
-        "internalType": "enum TapeoutMinerPool.Category"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "historicalPaid",
-    "inputs": [
-      {
-        "name": "category",
-        "type": "uint8",
-        "internalType": "enum TapeoutMinerPool.Category"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "historicalShareCount",
-    "inputs": [
-      {
-        "name": "category",
-        "type": "uint8",
-        "internalType": "enum TapeoutMinerPool.Category"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "isMiner",
-    "inputs": [
-      {
-        "name": "tokenId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "registered",
-        "type": "bool",
-        "internalType": "bool"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "issuance",
-    "inputs": [
-      {
-        "name": "category",
-        "type": "uint8",
-        "internalType": "enum TapeoutMinerPool.Category"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "shares",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "issued",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "remaining",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "mintingFinalized",
-        "type": "bool",
-        "internalType": "bool"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "issueReceiptRange",
-    "inputs": [
-      {
-        "name": "category",
-        "type": "uint8",
-        "internalType": "enum TapeoutMinerPool.Category"
-      },
-      {
-        "name": "holder",
+        "name": "account",
         "type": "address",
         "internalType": "address"
-      },
-      {
-        "name": "firstId",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "count",
-        "type": "uint256",
-        "internalType": "uint256"
       }
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    "outputs": [
+      {
+        "name": "allowed",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
   },
   {
     "type": "function",
-    "name": "issueReceipts",
-    "inputs": [
+    "name": "latchBase",
+    "inputs": [],
+    "outputs": [
       {
-        "name": "category",
-        "type": "uint8",
-        "internalType": "enum TapeoutMinerPool.Category"
-      },
-      {
-        "name": "holders",
-        "type": "address[]",
-        "internalType": "address[]"
-      },
-      {
-        "name": "ids",
-        "type": "uint256[]",
-        "internalType": "uint256[]"
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -877,7 +569,66 @@ export const tapeoutMinerPoolAbi = [
       {
         "name": "",
         "type": "address",
-        "internalType": "contract TapeoutReceipt"
+        "internalType": "contract TapeoutEntitlementReceipt"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "latchShares",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "miner",
+    "inputs": [
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "internalType": "struct TapeoutMinerPool.Miner",
+        "components": [
+          {
+            "name": "key",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "nandBurn",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "latchBurn",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "admittedInPeriod",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "registered",
+            "type": "bool",
+            "internalType": "bool"
+          }
+        ]
       }
     ],
     "stateMutability": "view"
@@ -934,25 +685,6 @@ export const tapeoutMinerPoolAbi = [
   },
   {
     "type": "function",
-    "name": "minerKeyOf",
-    "inputs": [
-      {
-        "name": "tokenId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "minersPage",
     "inputs": [
       {
@@ -995,13 +727,39 @@ export const tapeoutMinerPoolAbi = [
   },
   {
     "type": "function",
+    "name": "nandBase",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "nandReceipt",
     "inputs": [],
     "outputs": [
       {
         "name": "",
         "type": "address",
-        "internalType": "contract TapeoutReceipt"
+        "internalType": "contract TapeoutEntitlementReceipt"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "nandShares",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "stateMutability": "view"
@@ -1015,6 +773,19 @@ export const tapeoutMinerPoolAbi = [
         "name": "",
         "type": "address",
         "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "participantBase",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "stateMutability": "view"
@@ -1061,12 +832,17 @@ export const tapeoutMinerPoolAbi = [
             "internalType": "uint256"
           },
           {
-            "name": "fee",
+            "name": "recipientA",
             "type": "uint256",
             "internalType": "uint256"
           },
           {
-            "name": "entitlement",
+            "name": "recipientB",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "participants",
             "type": "uint256",
             "internalType": "uint256"
           },
@@ -1101,16 +877,6 @@ export const tapeoutMinerPoolAbi = [
             "internalType": "uint256"
           },
           {
-            "name": "historicalNand",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "historicalLatch",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
             "name": "residue",
             "type": "uint256",
             "internalType": "uint256"
@@ -1134,7 +900,7 @@ export const tapeoutMinerPoolAbi = [
       {
         "name": "",
         "type": "address",
-        "internalType": "contract TapeoutReceipt"
+        "internalType": "contract TapeoutEntitlementReceipt"
       }
     ],
     "stateMutability": "view"
@@ -1160,7 +926,59 @@ export const tapeoutMinerPoolAbi = [
   },
   {
     "type": "function",
-    "name": "recipientOf",
+    "name": "recipientA",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "recipientAPaid",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "recipientB",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "recipientBPaid",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "recipientClaimable",
     "inputs": [
       {
         "name": "role",
@@ -1171,8 +989,8 @@ export const tapeoutMinerPoolAbi = [
     "outputs": [
       {
         "name": "",
-        "type": "address",
-        "internalType": "address"
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "stateMutability": "view"
@@ -1213,12 +1031,27 @@ export const tapeoutMinerPoolAbi = [
             "internalType": "uint256"
           },
           {
-            "name": "feeAccrued",
+            "name": "recipientAAccrued",
             "type": "uint256",
             "internalType": "uint256"
           },
           {
-            "name": "feePaid",
+            "name": "recipientAPaid",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "recipientBAccrued",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "recipientBPaid",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "nandIncome",
             "type": "uint256",
             "internalType": "uint256"
           },
@@ -1233,32 +1066,17 @@ export const tapeoutMinerPoolAbi = [
             "internalType": "uint256"
           },
           {
+            "name": "latchIncome",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
             "name": "latchReceiptsAccrued",
             "type": "uint256",
             "internalType": "uint256"
           },
           {
             "name": "latchReceiptsPaid",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "historicalNandAccrued",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "historicalNandPaid",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "historicalLatchAccrued",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "historicalLatchPaid",
             "type": "uint256",
             "internalType": "uint256"
           },
@@ -1282,12 +1100,23 @@ export const tapeoutMinerPoolAbi = [
         "internalType": "uint256[]"
       }
     ],
-    "outputs": [],
+    "outputs": [
+      {
+        "name": "settledOldIncome",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "carriedIncome",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
     "stateMutability": "nonpayable"
   },
   {
     "type": "function",
-    "name": "releaseFee",
+    "name": "releaseA",
     "inputs": [],
     "outputs": [
       {
@@ -1300,14 +1129,8 @@ export const tapeoutMinerPoolAbi = [
   },
   {
     "type": "function",
-    "name": "releaseHistorical",
-    "inputs": [
-      {
-        "name": "category",
-        "type": "uint8",
-        "internalType": "enum TapeoutMinerPool.Category"
-      }
-    ],
+    "name": "releaseB",
+    "inputs": [],
     "outputs": [
       {
         "name": "amount",
@@ -1321,42 +1144,6 @@ export const tapeoutMinerPoolAbi = [
     "type": "function",
     "name": "renounceOwnership",
     "inputs": [],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "revokeReceipts",
-    "inputs": [
-      {
-        "name": "category",
-        "type": "uint8",
-        "internalType": "enum TapeoutMinerPool.Category"
-      },
-      {
-        "name": "ids",
-        "type": "uint256[]",
-        "internalType": "uint256[]"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "setReceiptURI",
-    "inputs": [
-      {
-        "name": "category",
-        "type": "uint8",
-        "internalType": "enum TapeoutMinerPool.Category"
-      },
-      {
-        "name": "uri_",
-        "type": "string",
-        "internalType": "string"
-      }
-    ],
     "outputs": [],
     "stateMutability": "nonpayable"
   },
@@ -1399,6 +1186,56 @@ export const tapeoutMinerPoolAbi = [
   },
   {
     "type": "function",
+    "name": "state",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "internalType": "struct PoolMath.State",
+        "components": [
+          {
+            "name": "nandBase",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "latchBase",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "participantBase",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "totalNandBurn",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "totalLatchBurn",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "nandShares",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "latchShares",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "sync",
     "inputs": [],
     "outputs": [
@@ -1413,6 +1250,32 @@ export const tapeoutMinerPoolAbi = [
   {
     "type": "function",
     "name": "totalAccounted",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "totalLatchBurn",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "totalNandBurn",
     "inputs": [],
     "outputs": [
       {
@@ -1467,58 +1330,16 @@ export const tapeoutMinerPoolAbi = [
     "name": "Activated",
     "inputs": [
       {
-        "name": "configHash",
-        "type": "bytes32",
-        "indexed": true,
-        "internalType": "bytes32"
+        "name": "nandShares",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
       },
       {
-        "name": "config",
-        "type": "tuple",
+        "name": "latchShares",
+        "type": "uint256",
         "indexed": false,
-        "internalType": "struct TapeoutMinerPool.Config",
-        "components": [
-          {
-            "name": "nandShares",
-            "type": "uint64",
-            "internalType": "uint64"
-          },
-          {
-            "name": "latchShares",
-            "type": "uint64",
-            "internalType": "uint64"
-          },
-          {
-            "name": "historicalNandShares",
-            "type": "uint64",
-            "internalType": "uint64"
-          },
-          {
-            "name": "historicalLatchShares",
-            "type": "uint64",
-            "internalType": "uint64"
-          },
-          {
-            "name": "nandWeight",
-            "type": "uint32",
-            "internalType": "uint32"
-          },
-          {
-            "name": "feeRecipient",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "historicalNandRecipient",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "historicalLatchRecipient",
-            "type": "address",
-            "internalType": "address"
-          }
-        ]
+        "internalType": "uint256"
       },
       {
         "name": "activatedAt",
@@ -1531,80 +1352,74 @@ export const tapeoutMinerPoolAbi = [
   },
   {
     "type": "event",
-    "name": "Configured",
+    "name": "CompositionCheckpoint",
     "inputs": [
       {
-        "name": "configHash",
-        "type": "bytes32",
+        "name": "period",
+        "type": "uint256",
         "indexed": true,
-        "internalType": "bytes32"
+        "internalType": "uint256"
       },
       {
-        "name": "config",
-        "type": "tuple",
+        "name": "totalAccounted",
+        "type": "uint256",
         "indexed": false,
-        "internalType": "struct TapeoutMinerPool.Config",
-        "components": [
-          {
-            "name": "nandShares",
-            "type": "uint64",
-            "internalType": "uint64"
-          },
-          {
-            "name": "latchShares",
-            "type": "uint64",
-            "internalType": "uint64"
-          },
-          {
-            "name": "historicalNandShares",
-            "type": "uint64",
-            "internalType": "uint64"
-          },
-          {
-            "name": "historicalLatchShares",
-            "type": "uint64",
-            "internalType": "uint64"
-          },
-          {
-            "name": "nandWeight",
-            "type": "uint32",
-            "internalType": "uint32"
-          },
-          {
-            "name": "feeRecipient",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "historicalNandRecipient",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "historicalLatchRecipient",
-            "type": "address",
-            "internalType": "address"
-          }
-        ]
+        "internalType": "uint256"
+      },
+      {
+        "name": "nandBase",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "latchBase",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "participantBase",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
       }
     ],
     "anonymous": false
   },
   {
     "type": "event",
-    "name": "FeeReleased",
+    "name": "Deployed",
     "inputs": [
       {
-        "name": "recipient",
+        "name": "nandReceipt",
         "type": "address",
-        "indexed": true,
+        "indexed": false,
         "internalType": "address"
       },
       {
-        "name": "amount",
-        "type": "uint256",
+        "name": "latchReceipt",
+        "type": "address",
         "indexed": false,
-        "internalType": "uint256"
+        "internalType": "address"
+      },
+      {
+        "name": "recipientA",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "recipientB",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "depositors",
+        "type": "address[]",
+        "indexed": false,
+        "internalType": "address[]"
       }
     ],
     "anonymous": false
@@ -1642,24 +1457,12 @@ export const tapeoutMinerPoolAbi = [
   },
   {
     "type": "event",
-    "name": "HistoricalReleased",
+    "name": "InactiveMinerSkipped",
     "inputs": [
       {
-        "name": "category",
-        "type": "uint8",
-        "indexed": true,
-        "internalType": "enum TapeoutMinerPool.Category"
-      },
-      {
-        "name": "recipient",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "amount",
+        "name": "tokenId",
         "type": "uint256",
-        "indexed": false,
+        "indexed": true,
         "internalType": "uint256"
       }
     ],
@@ -1677,6 +1480,12 @@ export const tapeoutMinerPoolAbi = [
       },
       {
         "name": "totalAccounted",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "compositionPeriod",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
@@ -1745,13 +1554,62 @@ export const tapeoutMinerPoolAbi = [
         "internalType": "address"
       },
       {
-        "name": "index",
+        "name": "nandBurn",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
       },
       {
-        "name": "collected",
+        "name": "latchBurn",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "MinersAdmitted",
+    "inputs": [
+      {
+        "name": "depositor",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "period",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "count",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "settledOldIncome",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "carriedIncome",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "totalNandBurn",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "totalLatchBurn",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
@@ -1830,50 +1688,6 @@ export const tapeoutMinerPoolAbi = [
   },
   {
     "type": "event",
-    "name": "ReceiptsIssued",
-    "inputs": [
-      {
-        "name": "category",
-        "type": "uint8",
-        "indexed": true,
-        "internalType": "enum TapeoutMinerPool.Category"
-      },
-      {
-        "name": "count",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      },
-      {
-        "name": "issuedTotal",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "ReceiptsRevoked",
-    "inputs": [
-      {
-        "name": "category",
-        "type": "uint8",
-        "indexed": true,
-        "internalType": "enum TapeoutMinerPool.Category"
-      },
-      {
-        "name": "ids",
-        "type": "uint256[]",
-        "indexed": false,
-        "internalType": "uint256[]"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
     "name": "RecipientChanged",
     "inputs": [
       {
@@ -1893,6 +1707,31 @@ export const tapeoutMinerPoolAbi = [
         "type": "address",
         "indexed": true,
         "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "RecipientPaid",
+    "inputs": [
+      {
+        "name": "role",
+        "type": "uint8",
+        "indexed": true,
+        "internalType": "enum TapeoutMinerPool.Recipient"
+      },
+      {
+        "name": "recipient",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
       }
     ],
     "anonymous": false
@@ -1920,19 +1759,41 @@ export const tapeoutMinerPoolAbi = [
   },
   {
     "type": "error",
-    "name": "ConfigHashMismatch",
+    "name": "CompositionMismatch",
     "inputs": [
       {
-        "name": "expected",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      },
-      {
-        "name": "actual",
-        "type": "bytes32",
-        "internalType": "bytes32"
+        "name": "tokenId",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ]
+  },
+  {
+    "type": "error",
+    "name": "DuplicateMiner",
+    "inputs": [
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "EmptyComposition",
+    "inputs": [
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "IncompatibleReceipt",
+    "inputs": []
   },
   {
     "type": "error",
@@ -1942,6 +1803,11 @@ export const tapeoutMinerPoolAbi = [
   {
     "type": "error",
     "name": "InvalidBatch",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidDepositors",
     "inputs": []
   },
   {
@@ -1956,39 +1822,23 @@ export const tapeoutMinerPoolAbi = [
   },
   {
     "type": "error",
-    "name": "InvalidWeight",
-    "inputs": [
-      {
-        "name": "nandWeight",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ]
-  },
-  {
-    "type": "error",
-    "name": "IssuanceIncomplete",
-    "inputs": [
-      {
-        "name": "category",
-        "type": "uint8",
-        "internalType": "enum TapeoutMinerPool.Category"
-      },
-      {
-        "name": "issued",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "required",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ]
+    "name": "IssuanceNotFinalized",
+    "inputs": []
   },
   {
     "type": "error",
     "name": "MinerAlreadyRegistered",
+    "inputs": [
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "MinerNotActive",
     "inputs": [
       {
         "name": "tokenId",
@@ -2005,24 +1855,34 @@ export const tapeoutMinerPoolAbi = [
         "name": "tokenId",
         "type": "uint256",
         "internalType": "uint256"
+      },
+      {
+        "name": "holder",
+        "type": "address",
+        "internalType": "address"
       }
     ]
   },
   {
     "type": "error",
-    "name": "MissingRecipient",
-    "inputs": [
-      {
-        "name": "role",
-        "type": "uint8",
-        "internalType": "enum TapeoutMinerPool.Recipient"
-      }
-    ]
+    "name": "NoShares",
+    "inputs": []
   },
   {
     "type": "error",
     "name": "NotActive",
     "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "NotDepositor",
+    "inputs": [
+      {
+        "name": "caller",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
   },
   {
     "type": "error",
@@ -2096,22 +1956,17 @@ export const tapeoutMinerPoolAbi = [
   },
   {
     "type": "error",
-    "name": "ShareCountBelowIssued",
+    "name": "SettlementFailed",
     "inputs": [
       {
-        "name": "category",
-        "type": "uint8",
-        "internalType": "enum TapeoutMinerPool.Category"
-      },
-      {
-        "name": "shares",
+        "name": "tokenId",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "highestMintedId",
-        "type": "uint256",
-        "internalType": "uint256"
+        "name": "reason",
+        "type": "bytes",
+        "internalType": "bytes"
       }
     ]
   },
@@ -2119,6 +1974,22 @@ export const tapeoutMinerPoolAbi = [
     "type": "error",
     "name": "Unauthorized",
     "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "UnexpectedShareCounts",
+    "inputs": [
+      {
+        "name": "nandShares",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "latchShares",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
   },
   {
     "type": "error",
@@ -2138,7 +2009,7 @@ export const tapeoutMinerPoolAbi = [
   },
   {
     "type": "error",
-    "name": "ZeroDenominator",
+    "name": "UnsupportedCategory",
     "inputs": [
       {
         "name": "category",
@@ -2149,10 +2020,15 @@ export const tapeoutMinerPoolAbi = [
   }
 ] as const;
 
-export const tapeoutReceiptAbi = [
+export const tapeoutEntitlementReceiptAbi = [
   {
     "type": "constructor",
     "inputs": [
+      {
+        "name": "category_",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
       {
         "name": "name_",
         "type": "string",
@@ -2167,9 +2043,40 @@ export const tapeoutReceiptAbi = [
         "name": "uri_",
         "type": "string",
         "internalType": "string"
+      },
+      {
+        "name": "issuer",
+        "type": "address",
+        "internalType": "address"
       }
     ],
     "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "LATCH",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "MAX_ISSUE_BATCH",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -2183,6 +2090,26 @@ export const tapeoutReceiptAbi = [
       }
     ],
     "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "NAND",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "acceptOwnership",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
@@ -2234,16 +2161,16 @@ export const tapeoutReceiptAbi = [
   },
   {
     "type": "function",
-    "name": "burn",
-    "inputs": [
+    "name": "category",
+    "inputs": [],
+    "outputs": [
       {
-        "name": "id",
-        "type": "uint256",
-        "internalType": "uint256"
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
       }
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -2266,23 +2193,10 @@ export const tapeoutReceiptAbi = [
   },
   {
     "type": "function",
-    "name": "finalizeMinting",
+    "name": "finalizeIssuance",
     "inputs": [],
     "outputs": [],
     "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "highestMintedId",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -2353,43 +2267,7 @@ export const tapeoutReceiptAbi = [
   },
   {
     "type": "function",
-    "name": "mint",
-    "inputs": [
-      {
-        "name": "to",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "id",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "mintBatch",
-    "inputs": [
-      {
-        "name": "to",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "ids",
-        "type": "uint256[]",
-        "internalType": "uint256[]"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "mintingFinalized",
+    "name": "issuanceFinalized",
     "inputs": [],
     "outputs": [
       {
@@ -2399,6 +2277,30 @@ export const tapeoutReceiptAbi = [
       }
     ],
     "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "issue",
+    "inputs": [
+      {
+        "name": "to",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "count",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "firstId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
@@ -2415,7 +2317,7 @@ export const tapeoutReceiptAbi = [
   },
   {
     "type": "function",
-    "name": "pool",
+    "name": "owner",
     "inputs": [],
     "outputs": [
       {
@@ -2425,6 +2327,39 @@ export const tapeoutReceiptAbi = [
       }
     ],
     "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "pendingOwner",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "renounceOwnership",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "retract",
+    "inputs": [
+      {
+        "name": "count",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
@@ -2589,6 +2524,19 @@ export const tapeoutReceiptAbi = [
   },
   {
     "type": "function",
+    "name": "transferOwnership",
+    "inputs": [
+      {
+        "name": "newOwner",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "uri",
     "inputs": [
       {
@@ -2646,16 +2594,104 @@ export const tapeoutReceiptAbi = [
   },
   {
     "type": "event",
-    "name": "MintingFinalized",
+    "name": "IssuanceFinalized",
     "inputs": [
       {
         "name": "supply",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "Issued",
+    "inputs": [
+      {
+        "name": "to",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
       },
       {
-        "name": "highestMintedId",
+        "name": "firstId",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "count",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "supply",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "OwnershipTransferStarted",
+    "inputs": [
+      {
+        "name": "previousOwner",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "newOwner",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "OwnershipTransferred",
+    "inputs": [
+      {
+        "name": "previousOwner",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "newOwner",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "Retracted",
+    "inputs": [
+      {
+        "name": "firstId",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "count",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "supply",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
@@ -2755,17 +2791,6 @@ export const tapeoutReceiptAbi = [
       }
     ],
     "anonymous": false
-  },
-  {
-    "type": "error",
-    "name": "AlreadyMinted",
-    "inputs": [
-      {
-        "name": "id",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ]
   },
   {
     "type": "error",
@@ -2887,12 +2912,27 @@ export const tapeoutReceiptAbi = [
   },
   {
     "type": "error",
+    "name": "InvalidCategory",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidCount",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "InvalidPage",
     "inputs": []
   },
   {
     "type": "error",
-    "name": "InvalidReceiptId",
+    "name": "IssuanceClosed",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "NotIssuerHeld",
     "inputs": [
       {
         "name": "id",
@@ -2903,13 +2943,735 @@ export const tapeoutReceiptAbi = [
   },
   {
     "type": "error",
-    "name": "MintingClosed",
+    "name": "OwnableInvalidOwner",
+    "inputs": [
+      {
+        "name": "owner",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "OwnableUnauthorizedAccount",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  }
+] as const;
+
+export const tapeoutReceiptDistributorAbi = [
+  {
+    "type": "constructor",
+    "inputs": [
+      {
+        "name": "owner_",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "pool_",
+        "type": "address",
+        "internalType": "contract TapeoutMinerPool"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "MAX_PAGE",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "MAX_RANGE",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "acceptOwnership",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "allocate",
+    "inputs": [
+      {
+        "name": "entries",
+        "type": "tuple[]",
+        "internalType": "struct TapeoutReceiptDistributor.AllocationInput[]",
+        "components": [
+          {
+            "name": "category",
+            "type": "uint8",
+            "internalType": "enum TapeoutMinerPool.Category"
+          },
+          {
+            "name": "wallet",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "firstId",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "count",
+            "type": "uint64",
+            "internalType": "uint64"
+          }
+        ]
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "allocationFinalized",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "beneficiaryOf",
+    "inputs": [
+      {
+        "name": "category",
+        "type": "uint8",
+        "internalType": "enum TapeoutMinerPool.Category"
+      },
+      {
+        "name": "id",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "claim",
+    "inputs": [
+      {
+        "name": "maxIds",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "delivered",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "deliver",
+    "inputs": [
+      {
+        "name": "wallet",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "maxIds",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "delivered",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "finalizeAllocation",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "latchReceipt",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract TapeoutEntitlementReceipt"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "nandReceipt",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract TapeoutEntitlementReceipt"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "onERC1155BatchReceived",
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "from",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "ids",
+        "type": "uint256[]",
+        "internalType": "uint256[]"
+      },
+      {
+        "name": "values",
+        "type": "uint256[]",
+        "internalType": "uint256[]"
+      },
+      {
+        "name": "",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes4",
+        "internalType": "bytes4"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "onERC1155Received",
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "from",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "id",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "value",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes4",
+        "internalType": "bytes4"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "owner",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "pendingOf",
+    "inputs": [
+      {
+        "name": "wallet",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "nandCount",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "latchCount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "pendingOwner",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "pool",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract TapeoutMinerPool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "rangesOf",
+    "inputs": [
+      {
+        "name": "wallet",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple[]",
+        "internalType": "struct TapeoutReceiptDistributor.Range[]",
+        "components": [
+          {
+            "name": "category",
+            "type": "uint8",
+            "internalType": "enum TapeoutMinerPool.Category"
+          },
+          {
+            "name": "firstId",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "count",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "delivered",
+            "type": "uint64",
+            "internalType": "uint64"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "renounceOwnership",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "revokeWallet",
+    "inputs": [
+      {
+        "name": "wallet",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "supportsInterface",
+    "inputs": [
+      {
+        "name": "interfaceId",
+        "type": "bytes4",
+        "internalType": "bytes4"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "pure"
+  },
+  {
+    "type": "function",
+    "name": "totals",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "inventory",
+        "type": "uint256[2]",
+        "internalType": "uint256[2]"
+      },
+      {
+        "name": "allocated",
+        "type": "uint256[2]",
+        "internalType": "uint256[2]"
+      },
+      {
+        "name": "delivered",
+        "type": "uint256[2]",
+        "internalType": "uint256[2]"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "transferOwnership",
+    "inputs": [
+      {
+        "name": "newOwner",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "walletCount",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "walletsPage",
+    "inputs": [
+      {
+        "name": "offset",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "limit",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "page",
+        "type": "address[]",
+        "internalType": "address[]"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "event",
+    "name": "Allocated",
+    "inputs": [
+      {
+        "name": "wallet",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "category",
+        "type": "uint8",
+        "indexed": true,
+        "internalType": "enum TapeoutMinerPool.Category"
+      },
+      {
+        "name": "firstId",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "count",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "AllocationFinalized",
+    "inputs": [
+      {
+        "name": "nandCount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "latchCount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "wallets",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "Delivered",
+    "inputs": [
+      {
+        "name": "wallet",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "category",
+        "type": "uint8",
+        "indexed": true,
+        "internalType": "enum TapeoutMinerPool.Category"
+      },
+      {
+        "name": "firstId",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "count",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "InventoryReceived",
+    "inputs": [
+      {
+        "name": "category",
+        "type": "uint8",
+        "indexed": true,
+        "internalType": "enum TapeoutMinerPool.Category"
+      },
+      {
+        "name": "from",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "count",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "OwnershipTransferStarted",
+    "inputs": [
+      {
+        "name": "previousOwner",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "newOwner",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "OwnershipTransferred",
+    "inputs": [
+      {
+        "name": "previousOwner",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "newOwner",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "WalletRevoked",
+    "inputs": [
+      {
+        "name": "wallet",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "nandCount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "latchCount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "error",
+    "name": "AllocationClosed",
     "inputs": []
   },
   {
     "type": "error",
-    "name": "NotMinted",
+    "name": "AllocationOpen",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "AlreadyAllocated",
     "inputs": [
+      {
+        "name": "category",
+        "type": "uint8",
+        "internalType": "enum TapeoutMinerPool.Category"
+      },
+      {
+        "name": "id",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "wallet",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ConsumedRewardHistory",
+    "inputs": [
+      {
+        "name": "category",
+        "type": "uint8",
+        "internalType": "enum TapeoutMinerPool.Category"
+      },
       {
         "name": "id",
         "type": "uint256",
@@ -2919,14 +3681,131 @@ export const tapeoutReceiptAbi = [
   },
   {
     "type": "error",
-    "name": "OnlyPool",
+    "name": "InvalidAddress",
     "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidAllocation",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidAmount",
+    "inputs": [
+      {
+        "name": "id",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "value",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "InvalidPage",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InventoryNotCovered",
+    "inputs": [
+      {
+        "name": "category",
+        "type": "uint8",
+        "internalType": "enum TapeoutMinerPool.Category"
+      },
+      {
+        "name": "allocated",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "inventory",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "IssuanceNotFinalized",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "NotInInventory",
+    "inputs": [
+      {
+        "name": "category",
+        "type": "uint8",
+        "internalType": "enum TapeoutMinerPool.Category"
+      },
+      {
+        "name": "id",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "NothingToDeliver",
+    "inputs": [
+      {
+        "name": "wallet",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "OwnableInvalidOwner",
+    "inputs": [
+      {
+        "name": "owner",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "OwnableUnauthorizedAccount",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ReentrancyGuardReentrantCall",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "UnsupportedToken",
+    "inputs": [
+      {
+        "name": "token",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
   }
 ] as const;
 
 export const mockBEMAbi = [{"type":"constructor","inputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"allowance","inputs":[{"name":"owner","type":"address","internalType":"address"},{"name":"spender","type":"address","internalType":"address"}],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"approve","inputs":[{"name":"spender","type":"address","internalType":"address"},{"name":"value","type":"uint256","internalType":"uint256"}],"outputs":[{"name":"","type":"bool","internalType":"bool"}],"stateMutability":"nonpayable"},{"type":"function","name":"balanceOf","inputs":[{"name":"a","type":"address","internalType":"address"}],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"brokenBalance","inputs":[],"outputs":[{"name":"","type":"bool","internalType":"bool"}],"stateMutability":"view"},{"type":"function","name":"brokenTransfer","inputs":[],"outputs":[{"name":"","type":"bool","internalType":"bool"}],"stateMutability":"view"},{"type":"function","name":"burn","inputs":[{"name":"from","type":"address","internalType":"address"},{"name":"n","type":"uint256","internalType":"uint256"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"decimals","inputs":[],"outputs":[{"name":"","type":"uint8","internalType":"uint8"}],"stateMutability":"pure"},{"type":"function","name":"mint","inputs":[{"name":"to","type":"address","internalType":"address"},{"name":"n","type":"uint256","internalType":"uint256"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"name","inputs":[],"outputs":[{"name":"","type":"string","internalType":"string"}],"stateMutability":"view"},{"type":"function","name":"setFaults","inputs":[{"name":"balanceFault","type":"bool","internalType":"bool"},{"name":"transferFault","type":"bool","internalType":"bool"},{"name":"tax","type":"bool","internalType":"bool"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"symbol","inputs":[],"outputs":[{"name":"","type":"string","internalType":"string"}],"stateMutability":"view"},{"type":"function","name":"taxed","inputs":[],"outputs":[{"name":"","type":"bool","internalType":"bool"}],"stateMutability":"view"},{"type":"function","name":"totalSupply","inputs":[],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"transfer","inputs":[{"name":"to","type":"address","internalType":"address"},{"name":"value","type":"uint256","internalType":"uint256"}],"outputs":[{"name":"","type":"bool","internalType":"bool"}],"stateMutability":"nonpayable"},{"type":"function","name":"transferFrom","inputs":[{"name":"from","type":"address","internalType":"address"},{"name":"to","type":"address","internalType":"address"},{"name":"value","type":"uint256","internalType":"uint256"}],"outputs":[{"name":"","type":"bool","internalType":"bool"}],"stateMutability":"nonpayable"},{"type":"event","name":"Approval","inputs":[{"name":"owner","type":"address","indexed":true,"internalType":"address"},{"name":"spender","type":"address","indexed":true,"internalType":"address"},{"name":"value","type":"uint256","indexed":false,"internalType":"uint256"}],"anonymous":false},{"type":"event","name":"Transfer","inputs":[{"name":"from","type":"address","indexed":true,"internalType":"address"},{"name":"to","type":"address","indexed":true,"internalType":"address"},{"name":"value","type":"uint256","indexed":false,"internalType":"uint256"}],"anonymous":false},{"type":"error","name":"ERC20InsufficientAllowance","inputs":[{"name":"spender","type":"address","internalType":"address"},{"name":"allowance","type":"uint256","internalType":"uint256"},{"name":"needed","type":"uint256","internalType":"uint256"}]},{"type":"error","name":"ERC20InsufficientBalance","inputs":[{"name":"sender","type":"address","internalType":"address"},{"name":"balance","type":"uint256","internalType":"uint256"},{"name":"needed","type":"uint256","internalType":"uint256"}]},{"type":"error","name":"ERC20InvalidApprover","inputs":[{"name":"approver","type":"address","internalType":"address"}]},{"type":"error","name":"ERC20InvalidReceiver","inputs":[{"name":"receiver","type":"address","internalType":"address"}]},{"type":"error","name":"ERC20InvalidSender","inputs":[{"name":"sender","type":"address","internalType":"address"}]},{"type":"error","name":"ERC20InvalidSpender","inputs":[{"name":"spender","type":"address","internalType":"address"}]}] as const;
 
-export const mockMiningAbi = [{"type":"constructor","inputs":[{"name":"token","type":"address","internalType":"contract MockBEM"}],"stateMutability":"nonpayable"},{"type":"function","name":"accrue","inputs":[{"name":"collection","type":"address","internalType":"address"},{"name":"tokenId","type":"uint256","internalType":"uint256"},{"name":"amount","type":"uint256","internalType":"uint256"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"accrueUnsettled","inputs":[{"name":"collection","type":"address","internalType":"address"},{"name":"tokenId","type":"uint256","internalType":"uint256"},{"name":"amount","type":"uint256","internalType":"uint256"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"bem","inputs":[],"outputs":[{"name":"","type":"address","internalType":"contract MockBEM"}],"stateMutability":"view"},{"type":"function","name":"broken","inputs":[],"outputs":[{"name":"","type":"bool","internalType":"bool"}],"stateMutability":"view"},{"type":"function","name":"claim","inputs":[{"name":"k","type":"bytes32","internalType":"bytes32"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"claimCount","inputs":[{"name":"","type":"bytes32","internalType":"bytes32"}],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"claims","inputs":[],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"collections","inputs":[{"name":"","type":"bytes32","internalType":"bytes32"}],"outputs":[{"name":"","type":"address","internalType":"address"}],"stateMutability":"view"},{"type":"function","name":"keyBroken","inputs":[{"name":"","type":"bytes32","internalType":"bytes32"}],"outputs":[{"name":"","type":"bool","internalType":"bool"}],"stateMutability":"view"},{"type":"function","name":"lastCaller","inputs":[],"outputs":[{"name":"","type":"address","internalType":"address"}],"stateMutability":"view"},{"type":"function","name":"minerKey","inputs":[{"name":"collection","type":"address","internalType":"address"},{"name":"tokenId","type":"uint256","internalType":"uint256"}],"outputs":[{"name":"","type":"bytes32","internalType":"bytes32"}],"stateMutability":"pure"},{"type":"function","name":"pending","inputs":[{"name":"k","type":"bytes32","internalType":"bytes32"}],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"rewards","inputs":[{"name":"","type":"bytes32","internalType":"bytes32"}],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"setBroken","inputs":[{"name":"flag","type":"bool","internalType":"bool"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"setKeyBroken","inputs":[{"name":"collection","type":"address","internalType":"address"},{"name":"tokenId","type":"uint256","internalType":"uint256"},{"name":"flag","type":"bool","internalType":"bool"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"setZeroReverts","inputs":[{"name":"flag","type":"bool","internalType":"bool"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"start","inputs":[{"name":"collection","type":"address","internalType":"address"},{"name":"tokenId","type":"uint256","internalType":"uint256"}],"outputs":[{"name":"k","type":"bytes32","internalType":"bytes32"}],"stateMutability":"nonpayable"},{"type":"function","name":"started","inputs":[{"name":"","type":"bytes32","internalType":"bytes32"}],"outputs":[{"name":"","type":"bool","internalType":"bool"}],"stateMutability":"view"},{"type":"function","name":"tokenIds","inputs":[{"name":"","type":"bytes32","internalType":"bytes32"}],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"unsettled","inputs":[{"name":"","type":"bytes32","internalType":"bytes32"}],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"zeroReverts","inputs":[],"outputs":[{"name":"","type":"bool","internalType":"bool"}],"stateMutability":"view"},{"type":"error","name":"UnknownMinerKey","inputs":[{"name":"key","type":"bytes32","internalType":"bytes32"}]}] as const;
+export const mockMiningAbi = [{"type":"constructor","inputs":[{"name":"token","type":"address","internalType":"contract MockBEM"}],"stateMutability":"nonpayable"},{"type":"function","name":"accrue","inputs":[{"name":"collection","type":"address","internalType":"address"},{"name":"tokenId","type":"uint256","internalType":"uint256"},{"name":"amount","type":"uint256","internalType":"uint256"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"accrueUnsettled","inputs":[{"name":"collection","type":"address","internalType":"address"},{"name":"tokenId","type":"uint256","internalType":"uint256"},{"name":"amount","type":"uint256","internalType":"uint256"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"bem","inputs":[],"outputs":[{"name":"","type":"address","internalType":"contract MockBEM"}],"stateMutability":"view"},{"type":"function","name":"broken","inputs":[],"outputs":[{"name":"","type":"bool","internalType":"bool"}],"stateMutability":"view"},{"type":"function","name":"cachedBurn","inputs":[{"name":"collection","type":"address","internalType":"address"},{"name":"tokenId","type":"uint256","internalType":"uint256"}],"outputs":[{"name":"","type":"bool","internalType":"bool"},{"name":"","type":"uint32","internalType":"uint32"},{"name":"","type":"uint32","internalType":"uint32"}],"stateMutability":"view"},{"type":"function","name":"claim","inputs":[{"name":"k","type":"bytes32","internalType":"bytes32"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"claimCount","inputs":[{"name":"","type":"bytes32","internalType":"bytes32"}],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"claimMany","inputs":[{"name":"keys","type":"bytes32[]","internalType":"bytes32[]"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"claims","inputs":[],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"getMiner","inputs":[{"name":"k","type":"bytes32","internalType":"bytes32"}],"outputs":[{"name":"m","type":"tuple","internalType":"struct IMining.MinerRecord","components":[{"name":"circuits","type":"address","internalType":"address"},{"name":"circuitId","type":"uint64","internalType":"uint64"},{"name":"taskId","type":"uint32","internalType":"uint32"},{"name":"gateCount","type":"uint32","internalType":"uint32"},{"name":"stateCount","type":"uint32","internalType":"uint32"},{"name":"depth","type":"uint32","internalType":"uint32"},{"name":"area","type":"uint64","internalType":"uint64"},{"name":"mult","type":"uint32","internalType":"uint32"},{"name":"since","type":"uint64","internalType":"uint64"},{"name":"status","type":"uint8","internalType":"uint8"},{"name":"registrant","type":"address","internalType":"address"},{"name":"nandBurn","type":"uint32","internalType":"uint32"},{"name":"latchBurn","type":"uint32","internalType":"uint32"},{"name":"bstar","type":"uint64","internalType":"uint64"},{"name":"bonus","type":"uint64","internalType":"uint64"},{"name":"optimal","type":"bool","internalType":"bool"},{"name":"commitBlock","type":"uint64","internalType":"uint64"},{"name":"firstUnusedId","type":"uint64","internalType":"uint64"},{"name":"stopBlock","type":"uint64","internalType":"uint64"},{"name":"verifWeight","type":"uint128","internalType":"uint128"},{"name":"unverWeight","type":"uint128","internalType":"uint128"},{"name":"debt","type":"uint256","internalType":"uint256"}]}],"stateMutability":"view"},{"type":"function","name":"keyBroken","inputs":[{"name":"","type":"bytes32","internalType":"bytes32"}],"outputs":[{"name":"","type":"bool","internalType":"bool"}],"stateMutability":"view"},{"type":"function","name":"lastCaller","inputs":[],"outputs":[{"name":"","type":"address","internalType":"address"}],"stateMutability":"view"},{"type":"function","name":"minerKey","inputs":[{"name":"collection","type":"address","internalType":"address"},{"name":"tokenId","type":"uint256","internalType":"uint256"}],"outputs":[{"name":"","type":"bytes32","internalType":"bytes32"}],"stateMutability":"pure"},{"type":"function","name":"pending","inputs":[{"name":"k","type":"bytes32","internalType":"bytes32"}],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"records","inputs":[{"name":"","type":"bytes32","internalType":"bytes32"}],"outputs":[{"name":"circuits","type":"address","internalType":"address"},{"name":"circuitId","type":"uint64","internalType":"uint64"},{"name":"status","type":"uint8","internalType":"uint8"},{"name":"nandBurn","type":"uint32","internalType":"uint32"},{"name":"latchBurn","type":"uint32","internalType":"uint32"},{"name":"cached","type":"bool","internalType":"bool"},{"name":"cachedNand","type":"uint32","internalType":"uint32"},{"name":"cachedLatch","type":"uint32","internalType":"uint32"},{"name":"circuitIdOverride","type":"uint64","internalType":"uint64"}],"stateMutability":"view"},{"type":"function","name":"rewards","inputs":[{"name":"","type":"bytes32","internalType":"bytes32"}],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"setBroken","inputs":[{"name":"flag","type":"bool","internalType":"bool"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"setCachedBurn","inputs":[{"name":"collection","type":"address","internalType":"address"},{"name":"tokenId","type":"uint256","internalType":"uint256"},{"name":"cached","type":"bool","internalType":"bool"},{"name":"nand","type":"uint32","internalType":"uint32"},{"name":"latch","type":"uint32","internalType":"uint32"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"setKeyBroken","inputs":[{"name":"collection","type":"address","internalType":"address"},{"name":"tokenId","type":"uint256","internalType":"uint256"},{"name":"flag","type":"bool","internalType":"bool"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"setRecordCircuitId","inputs":[{"name":"collection","type":"address","internalType":"address"},{"name":"tokenId","type":"uint256","internalType":"uint256"},{"name":"circuitId","type":"uint64","internalType":"uint64"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"setStatus","inputs":[{"name":"collection","type":"address","internalType":"address"},{"name":"tokenId","type":"uint256","internalType":"uint256"},{"name":"status","type":"uint8","internalType":"uint8"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"start","inputs":[{"name":"collection","type":"address","internalType":"address"},{"name":"tokenId","type":"uint256","internalType":"uint256"},{"name":"nand","type":"uint32","internalType":"uint32"},{"name":"latch","type":"uint32","internalType":"uint32"}],"outputs":[{"name":"k","type":"bytes32","internalType":"bytes32"}],"stateMutability":"nonpayable"},{"type":"function","name":"unsettled","inputs":[{"name":"","type":"bytes32","internalType":"bytes32"}],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"error","name":"NotActiveMiner","inputs":[{"name":"key","type":"bytes32","internalType":"bytes32"}]}] as const;
 
 export const mockNFTAbi = [{"type":"constructor","inputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"approve","inputs":[{"name":"to","type":"address","internalType":"address"},{"name":"tokenId","type":"uint256","internalType":"uint256"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"balanceOf","inputs":[{"name":"owner","type":"address","internalType":"address"}],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"broken","inputs":[],"outputs":[{"name":"","type":"bool","internalType":"bool"}],"stateMutability":"view"},{"type":"function","name":"getApproved","inputs":[{"name":"tokenId","type":"uint256","internalType":"uint256"}],"outputs":[{"name":"","type":"address","internalType":"address"}],"stateMutability":"view"},{"type":"function","name":"isApprovedForAll","inputs":[{"name":"owner","type":"address","internalType":"address"},{"name":"operator","type":"address","internalType":"address"}],"outputs":[{"name":"","type":"bool","internalType":"bool"}],"stateMutability":"view"},{"type":"function","name":"mint","inputs":[{"name":"to","type":"address","internalType":"address"},{"name":"id","type":"uint256","internalType":"uint256"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"name","inputs":[],"outputs":[{"name":"","type":"string","internalType":"string"}],"stateMutability":"view"},{"type":"function","name":"ownerOf","inputs":[{"name":"tokenId","type":"uint256","internalType":"uint256"}],"outputs":[{"name":"","type":"address","internalType":"address"}],"stateMutability":"view"},{"type":"function","name":"safeTransferFrom","inputs":[{"name":"from","type":"address","internalType":"address"},{"name":"to","type":"address","internalType":"address"},{"name":"tokenId","type":"uint256","internalType":"uint256"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"safeTransferFrom","inputs":[{"name":"from","type":"address","internalType":"address"},{"name":"to","type":"address","internalType":"address"},{"name":"tokenId","type":"uint256","internalType":"uint256"},{"name":"data","type":"bytes","internalType":"bytes"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"setApprovalForAll","inputs":[{"name":"operator","type":"address","internalType":"address"},{"name":"approved","type":"bool","internalType":"bool"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"setBroken","inputs":[{"name":"flag","type":"bool","internalType":"bool"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"supportsInterface","inputs":[{"name":"interfaceId","type":"bytes4","internalType":"bytes4"}],"outputs":[{"name":"","type":"bool","internalType":"bool"}],"stateMutability":"view"},{"type":"function","name":"symbol","inputs":[],"outputs":[{"name":"","type":"string","internalType":"string"}],"stateMutability":"view"},{"type":"function","name":"tokenURI","inputs":[{"name":"tokenId","type":"uint256","internalType":"uint256"}],"outputs":[{"name":"","type":"string","internalType":"string"}],"stateMutability":"view"},{"type":"function","name":"transferFrom","inputs":[{"name":"from","type":"address","internalType":"address"},{"name":"to","type":"address","internalType":"address"},{"name":"id","type":"uint256","internalType":"uint256"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"event","name":"Approval","inputs":[{"name":"owner","type":"address","indexed":true,"internalType":"address"},{"name":"approved","type":"address","indexed":true,"internalType":"address"},{"name":"tokenId","type":"uint256","indexed":true,"internalType":"uint256"}],"anonymous":false},{"type":"event","name":"ApprovalForAll","inputs":[{"name":"owner","type":"address","indexed":true,"internalType":"address"},{"name":"operator","type":"address","indexed":true,"internalType":"address"},{"name":"approved","type":"bool","indexed":false,"internalType":"bool"}],"anonymous":false},{"type":"event","name":"Transfer","inputs":[{"name":"from","type":"address","indexed":true,"internalType":"address"},{"name":"to","type":"address","indexed":true,"internalType":"address"},{"name":"tokenId","type":"uint256","indexed":true,"internalType":"uint256"}],"anonymous":false},{"type":"error","name":"ERC721IncorrectOwner","inputs":[{"name":"sender","type":"address","internalType":"address"},{"name":"tokenId","type":"uint256","internalType":"uint256"},{"name":"owner","type":"address","internalType":"address"}]},{"type":"error","name":"ERC721InsufficientApproval","inputs":[{"name":"operator","type":"address","internalType":"address"},{"name":"tokenId","type":"uint256","internalType":"uint256"}]},{"type":"error","name":"ERC721InvalidApprover","inputs":[{"name":"approver","type":"address","internalType":"address"}]},{"type":"error","name":"ERC721InvalidOperator","inputs":[{"name":"operator","type":"address","internalType":"address"}]},{"type":"error","name":"ERC721InvalidOwner","inputs":[{"name":"owner","type":"address","internalType":"address"}]},{"type":"error","name":"ERC721InvalidReceiver","inputs":[{"name":"receiver","type":"address","internalType":"address"}]},{"type":"error","name":"ERC721InvalidSender","inputs":[{"name":"sender","type":"address","internalType":"address"}]},{"type":"error","name":"ERC721NonexistentToken","inputs":[{"name":"tokenId","type":"uint256","internalType":"uint256"}]}] as const;
 

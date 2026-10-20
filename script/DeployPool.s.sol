@@ -2,42 +2,65 @@
 pragma solidity 0.8.24;
 
 import {Script, console2} from "forge-std/Script.sol";
+import {TapeoutEntitlementReceipt} from "../src/TapeoutEntitlementReceipt.sol";
 import {TapeoutMinerPool} from "../src/TapeoutMinerPool.sol";
+import {TapeoutReceiptDistributor} from "../src/TapeoutReceiptDistributor.sol";
 
-/// @notice Deploys one pool (and, through its constructor, both receipt collections) from a pool
-///         definition JSON (see deployments/examples/pool.bsc.example.json). Economic
-///         configuration, issuance and activation are separate owner transactions (see the CLI).
+/// @notice Optional Foundry deployment path for operators who sign with --ledger / --account.
+///         The CLI (`npm run pool -- deploy-receipts` / `deploy`) produces the same transactions.
 ///
-/// Example (signer chosen by the operator, e.g. --ledger or --account <keystore>):
-///   POOL_CONFIG=deployments/pool.json forge script script/DeployPool.s.sol:DeployPool \
+///   SYSTEM_CONFIG=deployments/system.json forge script script/DeployPool.s.sol:DeployReceipts \
 ///     --rpc-url "$RPC_URL" --ledger --sender <deployer> --broadcast
+///   SYSTEM_CONFIG=deployments/system.json NAND_RECEIPT=0x… LATCH_RECEIPT=0x… \
+///     forge script script/DeployPool.s.sol:DeployPool --rpc-url "$RPC_URL" --ledger --sender <deployer> --broadcast
+contract DeployReceipts is Script {
+    function run() external returns (TapeoutEntitlementReceipt nand, TapeoutEntitlementReceipt latch) {
+        string memory json = vm.readFile(vm.envString("SYSTEM_CONFIG"));
+        require(vm.parseJsonUint(json, ".chainId") == block.chainid, "SYSTEM_CONFIG chainId mismatch");
+        address issuer = vm.parseJsonAddress(json, ".receipts.issuer");
+        vm.startBroadcast();
+        nand = new TapeoutEntitlementReceipt(
+            keccak256("TAPEOUT_NAND_ENTITLEMENT"),
+            vm.parseJsonString(json, ".receipts.nand.name"),
+            vm.parseJsonString(json, ".receipts.nand.symbol"),
+            vm.parseJsonString(json, ".receipts.nand.uri"),
+            issuer
+        );
+        latch = new TapeoutEntitlementReceipt(
+            keccak256("TAPEOUT_LATCH_ENTITLEMENT"),
+            vm.parseJsonString(json, ".receipts.latch.name"),
+            vm.parseJsonString(json, ".receipts.latch.symbol"),
+            vm.parseJsonString(json, ".receipts.latch.uri"),
+            issuer
+        );
+        vm.stopBroadcast();
+        console2.log("NAND receipt", address(nand));
+        console2.log("LATCH receipt", address(latch));
+    }
+}
+
 contract DeployPool is Script {
-    function run() external returns (TapeoutMinerPool pool) {
-        string memory json = vm.readFile(vm.envString("POOL_CONFIG"));
-        require(vm.parseJsonUint(json, ".chainId") == block.chainid, "POOL_CONFIG chainId mismatch");
+    function run() external returns (TapeoutMinerPool pool, TapeoutReceiptDistributor distributor) {
+        string memory json = vm.readFile(vm.envString("SYSTEM_CONFIG"));
+        require(vm.parseJsonUint(json, ".chainId") == block.chainid, "SYSTEM_CONFIG chainId mismatch");
         TapeoutMinerPool.Deployment memory d = TapeoutMinerPool.Deployment({
             owner: vm.parseJsonAddress(json, ".pool.owner"),
             bem: vm.parseJsonAddress(json, ".protocol.bem"),
             mining: vm.parseJsonAddress(json, ".protocol.mining"),
             minerCollection: vm.parseJsonAddress(json, ".protocol.minerCollection"),
-            poolName: vm.parseJsonString(json, ".pool.name"),
-            nand: TapeoutMinerPool.ReceiptMetadata(
-                vm.parseJsonString(json, ".pool.nandReceipt.name"),
-                vm.parseJsonString(json, ".pool.nandReceipt.symbol"),
-                vm.parseJsonString(json, ".pool.nandReceipt.uri")
-            ),
-            latch: TapeoutMinerPool.ReceiptMetadata(
-                vm.parseJsonString(json, ".pool.latchReceipt.name"),
-                vm.parseJsonString(json, ".pool.latchReceipt.symbol"),
-                vm.parseJsonString(json, ".pool.latchReceipt.uri")
-            )
+            nandReceipt: vm.envAddress("NAND_RECEIPT"),
+            latchReceipt: vm.envAddress("LATCH_RECEIPT"),
+            recipientA: vm.parseJsonAddress(json, ".pool.recipientA"),
+            recipientB: vm.parseJsonAddress(json, ".pool.recipientB"),
+            depositors: vm.parseJsonAddressArray(json, ".pool.depositors"),
+            poolName: vm.parseJsonString(json, ".pool.name")
         });
+        address distributorOwner = vm.parseJsonAddress(json, ".distributor.owner");
         vm.startBroadcast();
         pool = new TapeoutMinerPool(d);
+        distributor = new TapeoutReceiptDistributor(distributorOwner, pool);
         vm.stopBroadcast();
         console2.log("TapeoutMinerPool", address(pool));
-        console2.log("NAND receipt", address(pool.nandReceipt()));
-        console2.log("LATCH receipt", address(pool.latchReceipt()));
-        console2.log("owner", pool.owner());
+        console2.log("TapeoutReceiptDistributor", address(distributor));
     }
 }

@@ -1,65 +1,90 @@
 TAP version 13
-# Subtest: shares entries take the lowest free IDs around pinned IDs
-ok 1 - shares entries take the lowest free IDs around pinned IDs
+# Subtest: the specification example validates and gets deterministic contiguous IDs
+ok 1 - the specification example validates and gets deterministic contiguous IDs
   ---
-  duration_ms: 0.917584
+  duration_ms: 1.417458
   ...
-# Subtest: allocation errors: duplicates, out of range, over-allocation, unallocated without reserve, zero holder
-ok 2 - allocation errors: duplicates, out of range, over-allocation, unallocated without reserve, zero holder
+# Subtest: assignment follows the actual inventory, including gaps
+ok 2 - assignment follows the actual inventory, including gaps
   ---
-  duration_ms: 1.23475
+  duration_ms: 0.175333
   ...
-# Subtest: issuance calls use contiguous ranges, chunk by size, batch singles, and resume
-ok 3 - issuance calls use contiguous ranges, chunk by size, batch singles, and resume
+# Subtest: validation rejects duplicates, bad addresses, empty entries and unknown fields
+ok 3 - validation rejects duplicates, bad addresses, empty entries and unknown fields
   ---
-  duration_ms: 0.700208
+  duration_ms: 0.700375
   ...
-# Subtest: config hash equals keccak256(abi.encode(Config)) as computed by cast
-ok 4 - config hash equals keccak256(abi.encode(Config)) as computed by cast
+# Subtest: inventory coverage must be exact and IDs unique
+ok 4 - inventory coverage must be exact and IDs unique
   ---
-  duration_ms: 30.503333
+  duration_ms: 0.091584
   ...
-# Subtest: activation preflight mirrors the contract checks
-ok 5 - activation preflight mirrors the contract checks
+# Subtest: batches respect the per-transaction ID limit and the contract range limit
+ok 5 - batches respect the per-transaction ID limit and the contract range limit
   ---
-  duration_ms: 1.003709
+  duration_ms: 1.1505
   ...
-# Subtest: plans encode the intended calls and export to Safe / cast formats
-ok 6 - plans encode the intended calls and export to Safe / cast formats
+# Subtest: many small wallets are split by gas, not only by ID count
+ok 6 - many small wallets are split by gas, not only by ID count
   ---
-  duration_ms: 2.302375
+  duration_ms: 4.009
   ...
-# Subtest: specification example: 1,020 BEM, 80/20, 900+100 NAND, 80+20 LATCH
-ok 7 - specification example: 1,020 BEM, 80/20, 900+100 NAND, 80+20 LATCH
+# Subtest: specification acceptance example: 9:1 then 1:9 admitted -> NAND 140, LATCH 60, A 2, B 2
+ok 7 - specification acceptance example: 9:1 then 1:9 admitted -> NAND 140, LATCH 60, A 2, B 2
   ---
-  duration_ms: 0.697333
+  duration_ms: 0.915542
   ...
-# Subtest: fee is 2/102 of gross, not 2%
-ok 8 - fee is 2/102 of gross, not 2%
+# Subtest: outer split is 1 + 1 + 100 of 102, not 1% / 1% / 98%
+ok 8 - outer split is 1 + 1 + 100 of 102, not 1% / 1% / 98%
   ---
-  duration_ms: 0.084875
+  duration_ms: 0.065167
   ...
-# Subtest: same vectors as the Solidity tests
-ok 9 - same vectors as the Solidity tests
+# Subtest: same rounding vectors as the Solidity tests
+ok 9 - same rounding vectors as the Solidity tests
   ---
-  duration_ms: 0.310875
+  duration_ms: 0.647541
   ...
-# Subtest: conservation, residue bound and monotonicity over random inputs
-ok 10 - conservation, residue bound and monotonicity over random inputs
+# Subtest: conservation, bounds and monotonicity over random periods
+ok 10 - conservation, bounds and monotonicity over random periods
   ---
-  duration_ms: 6.034333
+  duration_ms: 14.130334
   ...
-# Subtest: weight parsing is exact to 8 decimals and bounded to [0, 1]
-ok 11 - weight parsing is exact to 8 decimals and bounded to [0, 1]
+# Subtest: BEM parsing and formatting
+ok 11 - BEM parsing and formatting
   ---
-  duration_ms: 0.205167
+  duration_ms: 0.255084
   ...
-1..11
-# tests 11
+# Subtest: system file validation mirrors the pool constructor
+ok 12 - system file validation mirrors the pool constructor
+  ---
+  duration_ms: 1.576125
+  ...
+# Subtest: deployment plans carry the intended constructor arguments
+ok 13 - deployment plans carry the intended constructor arguments
+  ---
+  duration_ms: 1.764541
+  ...
+# Subtest: issue, fund, allocate, claim and release plans encode the right calls in bounded batches
+ok 14 - issue, fund, allocate, claim and release plans encode the right calls in bounded batches
+  ---
+  duration_ms: 2.733042
+  ...
+# Subtest: admission gas model stays inside the BSC per-transaction cap
+ok 15 - admission gas model stays inside the BSC per-transaction cap
+  ---
+  duration_ms: 0.108666
+  ...
+# Subtest: allocation wallets must be able to take ERC-1155 delivery
+ok 16 - allocation wallets must be able to take ERC-1155 delivery
+  ---
+  duration_ms: 0.209
+  ...
+1..16
+# tests 16
 # suites 0
-# pass 11
+# pass 16
 # fail 0
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 332.543416
+# duration_ms 339.294667

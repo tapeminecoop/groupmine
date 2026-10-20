@@ -1,64 +1,66 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { accrue, formatBem, formatWeight, parseBem, parseWeight, residueBound, WEIGHT_SCALE, type Shares } from '../../sdk/math.ts';
+import { accrue, checkpoint, formatBem, parseBem, residueBound, type State } from '../../sdk/math.ts';
 
-const shares = (nandShares: number, latchShares: number, historicalNandShares: number, historicalLatchShares: number, weight: string): Shares => ({
-  nandShares: BigInt(nandShares), latchShares: BigInt(latchShares), historicalNandShares: BigInt(historicalNandShares),
-  historicalLatchShares: BigInt(historicalLatchShares), nandWeight: parseWeight(weight),
+const empty = (nandShares: bigint, latchShares: bigint, totalNandBurn = 0n, totalLatchBurn = 0n): State =>
+  ({ nandBase: 0n, latchBase: 0n, participantBase: 0n, totalNandBurn, totalLatchBurn, nandShares, latchShares });
+
+test('specification acceptance example: 9:1 then 1:9 admitted -> NAND 140, LATCH 60, A 2, B 2', () => {
+  const B = (x: number) => BigInt(x) * 10n ** 8n;
+  const before = empty(10n, 10n, 9n, 1n);
+  const old = accrue(B(102), before);
+  assert.deepEqual([old.nandIncome, old.latchIncome, old.recipientA, old.recipientB], [B(90), B(10), B(1), B(1)]);
+  const after = checkpoint(B(102), before, 1n, 9n);
+  const a = accrue(B(204), after);
+  assert.deepEqual([a.nandIncome, a.latchIncome, a.recipientA, a.recipientB, a.residue], [B(140), B(60), B(2), B(2), 0n]);
+  // The forbidden rule (all history at the latest ratio) would give 100 / 100.
+  assert.notEqual(a.nandIncome, (a.participants * after.totalNandBurn) / (after.totalNandBurn + after.totalLatchBurn));
 });
 
-test('specification example: 1,020 BEM, 80/20, 900+100 NAND, 80+20 LATCH', () => {
-  const a = accrue(parseBem('1020'), shares(900, 80, 100, 20, '0.80000000'));
-  assert.equal(a.fee, parseBem('20'));
-  assert.equal(a.nandIncome, parseBem('800'));
-  assert.equal(a.latchIncome, parseBem('200'));
-  assert.equal(a.perNandShare, parseBem('0.8'));
-  assert.equal(a.perLatchShare, parseBem('2'));
-  assert.equal(a.nandReceipts, parseBem('720'));
-  assert.equal(a.historicalNand, parseBem('80'));
-  assert.equal(a.latchReceipts, parseBem('160'));
-  assert.equal(a.historicalLatch, parseBem('40'));
-  assert.equal(a.residue, 0n);
+test('outer split is 1 + 1 + 100 of 102, not 1% / 1% / 98%', () => {
+  const a = accrue(1_020_000n, empty(10n, 10n, 1n, 1n));
+  assert.deepEqual([a.recipientA, a.recipientB, a.participants, a.nandIncome, a.latchIncome], [10_000n, 10_000n, 1_000_000n, 500_000n, 500_000n]);
 });
 
-test('fee is 2/102 of gross, not 2%', () => {
-  const a = accrue(1_000_000n, shares(9, 4, 1, 1, '0.8'));
-  assert.equal(a.fee, 19_607n);
-  assert.equal(a.entitlement, 980_393n);
+test('same rounding vectors as the Solidity tests', () => {
+  const s = empty(10n, 10n, 1n, 1n);
+  assert.equal(accrue(101n, s).participants, 99n);
+  assert.equal(accrue(102n, s).recipientA, 1n);
+  const t = accrue(103n, s);
+  assert.equal(t.recipientA + t.recipientB + t.participants, 102n);
+  // 2:1 period, then a checkpoint carrying one unit.
+  const p1 = empty(10n, 10n, 2n, 1n);
+  const a1 = accrue(10_200n, p1);
+  assert.deepEqual([a1.nandIncome, a1.latchIncome], [6_666n, 3_333n]);
+  const p2 = checkpoint(10_200n, p1, 1n, 1n);
+  assert.equal(p2.participantBase, 9_999n);
+  const a2 = accrue(10_710n, p2);
+  assert.deepEqual([a2.nandIncome, a2.latchIncome], [6_666n + (501n * 3n) / 5n, 3_333n + (501n * 2n) / 5n]);
 });
 
-test('same vectors as the Solidity tests', () => {
-  const a = accrue(10_200n, shares(3, 7, 0, 0, '0.33333333'));
-  assert.deepEqual([a.fee, a.nandIncome, a.latchIncome, a.perNandShare, a.perLatchShare, a.residue], [200n, 3_333n, 6_666n, 1_111n, 952n, 3n]);
-  const h = accrue(102_000n, shares(8, 4, 2, 1, '0.8'));
-  assert.deepEqual([h.perNandShare, h.perLatchShare, h.historicalNand, h.historicalLatch], [8_000n, 4_000n, 16_000n, 4_000n]);
-  const only = accrue(102_000n, shares(0, 4, 5, 0, '0.5'));
-  assert.deepEqual([only.historicalNand, only.perLatchShare], [50_000n, 12_500n]);
-});
-
-test('conservation, residue bound and monotonicity over random inputs', () => {
-  let seed = 12345n;
+test('conservation, bounds and monotonicity over random periods', () => {
+  let seed = 987654321n;
   const rand = (max: bigint) => { seed = (seed * 6364136223846793005n + 1442695040888963407n) % 2n ** 64n; return seed % max; };
-  for (let i = 0; i < 2000; i++) {
-    const s: Shares = { nandShares: rand(5000n), latchShares: rand(5000n) + 1n, historicalNandShares: rand(500n) + 1n, historicalLatchShares: rand(500n), nandWeight: rand(WEIGHT_SCALE + 1n) };
-    const total = rand(10n ** 16n);
-    const a = accrue(total, s);
-    assert.equal(a.fee + a.nandReceipts + a.latchReceipts + a.historicalNand + a.historicalLatch + a.residue, total);
-    assert.ok(a.residue >= 0n && a.residue <= residueBound(s));
-    assert.ok(a.fee * 102n <= total * 2n && (a.fee + 1n) * 102n > total * 2n);
-    const b = accrue(total + rand(10n ** 9n), s);
-    assert.ok(b.perNandShare >= a.perNandShare && b.perLatchShare >= a.perLatchShare && b.fee >= a.fee);
+  for (let i = 0; i < 1500; i++) {
+    const sN = rand(4000n) + 1n, sL = rand(4000n) + 1n;
+    let s = empty(sN, sL, rand(500n) + 1n, rand(500n));
+    let total = 0n;
+    let last = accrue(0n, s);
+    for (let k = 0; k < 4; k++) {
+      total += rand(10n ** 13n);
+      const a = accrue(total, s);
+      assert.equal(a.recipientA + a.recipientB + a.nandReceipts + a.latchReceipts + a.residue, total);
+      assert.ok(a.residue <= residueBound(sN, sL));
+      assert.ok(a.nandIncome >= last.nandIncome && a.latchIncome >= last.latchIncome && a.perNandShare >= last.perNandShare && a.recipientA >= last.recipientA);
+      last = a;
+      s = checkpoint(total, s, rand(300n), rand(300n) + 1n);
+    }
   }
 });
 
-test('weight parsing is exact to 8 decimals and bounded to [0, 1]', () => {
-  assert.equal(parseWeight('0.9'), 90_000_000n);
-  assert.equal(parseWeight('0.90000000'), 90_000_000n);
-  assert.equal(parseWeight('0.00000001'), 1n);
-  assert.equal(parseWeight('1'), WEIGHT_SCALE);
-  assert.equal(parseWeight('0'), 0n);
-  assert.equal(formatWeight(12_345_678n), '0.12345678');
-  for (const bad of ['1.00000001', '0.123456789', '-0.1', '2', '.5', '0,5', '']) assert.throws(() => parseWeight(bad));
+test('BEM parsing and formatting', () => {
   assert.equal(parseBem('0.00000323'), 323n);
-  assert.equal(formatBem(13_697_739n), '0.13697739');
+  assert.equal(parseBem('1020'), 102_000_000_000n);
+  assert.equal(formatBem(27_497_042n), '0.27497042');
+  assert.throws(() => parseBem('1.123456789'));
 });

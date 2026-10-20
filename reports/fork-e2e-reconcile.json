@@ -2,54 +2,60 @@
   "command": "reconcile",
   "status": "PASS",
   "ledgerStatus": "PASS",
-  "blockNumber": "128611707",
-  "blockHash": "0x54dbfeac4efde667f199b64642f0cf180089d3767528a5cca4403a1a453eb1d2",
-  "pool": "0xF2Ede50183Ef94C9f629c78702a34B8e58050E39",
+  "blockNumber": "128713161",
+  "blockHash": "0x4e99940c1f701eaee446b8ae1e1e3746ac9e8543b0afa394a739bf52dd1bd8f8",
+  "pool": "0xEfCCe657d16d300410690bA919e187E0b7Ad0cB2",
+  "composition": {
+    "totalNandBurn": "95",
+    "totalLatchBurn": "78",
+    "compositionPeriod": "3"
+  },
   "reconciliation": {
-    "bemBalance": "2828367283",
+    "bemBalance": "25",
     "unrecognized": "0",
     "deficit": "0",
-    "totalAccounted": "48082242778",
-    "totalPaid": "45253875495",
-    "feeAccrued": "942789074",
-    "feePaid": "942789074",
-    "nandReceiptsAccrued": "33940406610",
-    "nandReceiptsPaid": "32054828465",
-    "latchReceiptsAccrued": "7542312592",
-    "latchReceiptsPaid": "6599523518",
-    "historicalNandAccrued": "3771156290",
-    "historicalNandPaid": "3771156290",
-    "historicalLatchAccrued": "1885578148",
-    "historicalLatchPaid": "1885578148",
-    "residue": "64"
+    "totalAccounted": "21206050537",
+    "totalPaid": "21206050512",
+    "recipientAAccrued": "207902456",
+    "recipientAPaid": "207902456",
+    "recipientBAccrued": "207902456",
+    "recipientBPaid": "207902456",
+    "nandIncome": "20333894742",
+    "nandReceiptsAccrued": "20333894720",
+    "nandReceiptsPaid": "20333894720",
+    "latchIncome": "456350881",
+    "latchReceiptsAccrued": "456350880",
+    "latchReceiptsPaid": "456350880",
+    "residue": "25"
   },
   "checks": {
     "offChainMathMatches": true,
+    "recipientsAccrueEqually": true,
     "balanceIdentity": true,
     "paidIdentity": true,
     "accruedIdentity": true,
     "noDeficit": true,
     "residueWithinBound": true,
-    "noBucketOverpaid": true
+    "noBucketOverpaid": true,
+    "categoryWithoutReceiptsHasNoIncome": true
   },
   "outstanding": {
-    "fee": "0",
-    "nandReceipts": "1885578145",
-    "latchReceipts": "942789074",
-    "historicalNand": "0",
-    "historicalLatch": "0"
+    "recipientA": "0",
+    "recipientB": "0",
+    "nandReceipts": "0",
+    "latchReceipts": "0"
   },
   "perIdHistories": {
     "NAND": {
-      "ids": 90,
-      "claimedSum": "32054828465",
-      "receiptsPaid": "32054828465",
+      "ids": 40,
+      "claimedSum": "20333894720",
+      "receiptsPaid": "20333894720",
       "match": true
     },
     "LATCH": {
-      "ids": 8,
-      "claimedSum": "6599523518",
-      "receiptsPaid": "6599523518",
+      "ids": 12,
+      "claimedSum": "456350880",
+      "receiptsPaid": "456350880",
       "match": true
     }
   }

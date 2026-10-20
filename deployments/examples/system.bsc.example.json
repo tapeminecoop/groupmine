@@ -1,0 +1,23 @@
+{
+  "chainId": 56,
+  "protocol": {
+    "bem": "0x5ce033B2bFCa3Af30b3e8C8457DeaF776A8b695a",
+    "mining": "0x7E2E0DC66a3bD9103E69b766afA62d9f7b697b46",
+    "minerCollection": "0xb1024b89886B9a34Aa4ff5F31C411D708b20a14C"
+  },
+  "receipts": {
+    "issuer": "0x00000000000000000000000000000000000000A1",
+    "nand": { "name": "TapeOut Pool NAND Entitlement", "symbol": "TOPNAND", "uri": "" },
+    "latch": { "name": "TapeOut Pool LATCH Entitlement", "symbol": "TOPLATCH", "uri": "" }
+  },
+  "pool": {
+    "name": "TapeOut Pool 2026-10",
+    "owner": "0x00000000000000000000000000000000000000A1",
+    "recipientA": "0x00000000000000000000000000000000000000AA",
+    "recipientB": "0x00000000000000000000000000000000000000BB",
+    "depositors": ["0x00000000000000000000000000000000000000D1"]
+  },
+  "distributor": {
+    "owner": "0x00000000000000000000000000000000000000A1"
+  }
+}
