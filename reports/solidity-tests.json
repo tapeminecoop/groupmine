@@ -1,0 +1,257 @@
+{
+ "command": "forge test --no-match-path 'test/fork/*' --json",
+ "suites": {
+  "test/invariant/PoolInvariant.t.sol:PoolInvariantTest": {
+   "invariantBemConservation()": {
+    "status": "Success",
+    "invariantRuns": 256,
+    "calls": 16384,
+    "reverts": 0
+   },
+   "invariantLedgerReconciles()": {
+    "status": "Success",
+    "invariantRuns": 256,
+    "calls": 16384,
+    "reverts": 0
+   },
+   "invariantMinersStayInCustody()": {
+    "status": "Success",
+    "invariantRuns": 256,
+    "calls": 16384,
+    "reverts": 0
+   },
+   "invariantPerIdHistoriesSumToPaid()": {
+    "status": "Success",
+    "invariantRuns": 256,
+    "calls": 16384,
+    "reverts": 0
+   },
+   "invariantPerShareIncomeNeverDecreases()": {
+    "status": "Success",
+    "invariantRuns": 256,
+    "calls": 16384,
+    "reverts": 0
+   }
+  },
+  "test/unit/PoolAccounting.t.sol:PoolAccountingTest": {
+   "testAllocationIsPathIndependent()": {
+    "status": "Success",
+    "gas": 1165985
+   },
+   "testEightDecimalWeightPrecision()": {
+    "status": "Success",
+    "gas": 918960
+   },
+   "testFeeIsTwoOver102NotTwoPercent()": {
+    "status": "Success",
+    "gas": 1080664
+   },
+   "testFuzzBucketsAreMonotonic(uint128,uint64,uint32)": {
+    "status": "Success",
+    "fuzzRuns": 512,
+    "meanGas": 10086,
+    "medianGas": 10086
+   },
+   "testFuzzMathProperties(uint128,uint32,uint32,uint32,uint32,uint32)": {
+    "status": "Success",
+    "fuzzRuns": 512,
+    "meanGas": 17370,
+    "medianGas": 17403
+   },
+   "testHistoricalSharesAddToDenominatorAndHaveTheirOwnRecipient()": {
+    "status": "Success",
+    "gas": 1233868
+   },
+   "testRoundingResidueIsBoundedAndNotLost()": {
+    "status": "Success",
+    "gas": 12293120
+   },
+   "testSpecificationExample1020Bem()": {
+    "status": "Success",
+    "gas": 73228469
+   },
+   "testWeightsAndShareCountsVaryIndependently()": {
+    "status": "Success",
+    "gas": 30996
+   },
+   "testZeroHistoricalReleaseIsANoOp()": {
+    "status": "Success",
+    "gas": 827830
+   }
+  },
+  "test/unit/PoolClaims.t.sol:PoolClaimsTest": {
+   "testApprovedOperatorCannotClaimUntilItHoldsTheId()": {
+    "status": "Success",
+    "gas": 320148
+   },
+   "testClaimFromReceiveHookPaysTheNewHolderOnce()": {
+    "status": "Success",
+    "gas": 985938
+   },
+   "testClaimableViewsPredictPayouts()": {
+    "status": "Success",
+    "gas": 378830
+   },
+   "testClaimedHistoryStaysWithTheIdAcrossTransfers()": {
+    "status": "Success",
+    "gas": 320167
+   },
+   "testClaimsRecognizeNewBalanceAndDoNotNeedMining()": {
+    "status": "Success",
+    "gas": 867868
+   },
+   "testDuplicateIdsInOneBatchPayOnce()": {
+    "status": "Success",
+    "gas": 297648
+   },
+   "testFeeAndHistoricalReleasesArePermissionlessPushesToFixedRecipients()": {
+    "status": "Success",
+    "gas": 352035
+   },
+   "testIndividualAndBatchClaimsPayOnlyTheCallersIds()": {
+    "status": "Success",
+    "gas": 468225
+   },
+   "testRecipientRolesMoveOnlyByTheirHolderAndKeepUnreleasedIncome()": {
+    "status": "Success",
+    "gas": 310315
+   },
+   "testRepeatedClaimsPayOnlyNewIncome()": {
+    "status": "Success",
+    "gas": 288695
+   },
+   "testSameNumberedIdsInBothCollectionsAreIndependent()": {
+    "status": "Success",
+    "gas": 536782
+   },
+   "testUnauthorizedInvalidAndEmptyClaimsRevert()": {
+    "status": "Success",
+    "gas": 312571
+   },
+   "testUnclaimedIncomeFollowsTheTransferredReceipt()": {
+    "status": "Success",
+    "gas": 390902
+   }
+  },
+  "test/unit/PoolGas.t.sol:PoolGasTest": {
+   "testGasProfile()": {
+    "status": "Success",
+    "gas": 78916397
+   }
+  },
+  "test/unit/PoolHarvest.t.sol:PoolHarvestTest": {
+   "testBalanceDecreaseAndTransferFeeRevertWithoutRewritingHistory()": {
+    "status": "Success",
+    "gas": 358251
+   },
+   "testBrokenTokenTransferRollsBackClaim()": {
+    "status": "Success",
+    "gas": 214212
+   },
+   "testHarvestAlwaysCallsClaimEvenWhenPendingIsZero()": {
+    "status": "Success",
+    "gas": 729645
+   },
+   "testHarvestCollectsSelectedMinersAndAccountsOnlyActualReceipts()": {
+    "status": "Success",
+    "gas": 957364
+   },
+   "testHarvestReportsFailingMinerWithoutBlockingOthers()": {
+    "status": "Success",
+    "gas": 950212
+   },
+   "testIncomeAccruedBeforeDepositBelongsToThePool()": {
+    "status": "Success",
+    "gas": 499031
+   },
+   "testMinerRegistryViews()": {
+    "status": "Success",
+    "gas": 1217685
+   },
+   "testMiningOutageFailsHarvestsButNotClaims()": {
+    "status": "Success",
+    "gas": 926154
+   },
+   "testRegistrationNeedsAWorkingClaimPath()": {
+    "status": "Success",
+    "gas": 308981
+   },
+   "testRegistrationValidatesCollectionOwnershipAndMiningKey()": {
+    "status": "Success",
+    "gas": 1691310
+   },
+   "testThirdPartyMiningClaimsAndDirectTransfersAreIncome()": {
+    "status": "Success",
+    "gas": 500379
+   },
+   "testUnknownMinerAndEmptyHarvestRevert()": {
+    "status": "Success",
+    "gas": 391031
+   }
+  },
+  "test/unit/PoolSetup.t.sol:PoolSetupTest": {
+   "testActivationRecognizesBemReceivedDuringSetup()": {
+    "status": "Success",
+    "gas": 1448037
+   },
+   "testActivationRequiresCompleteIssuanceRecipientsAndReviewedHash()": {
+    "status": "Success",
+    "gas": 1082865
+   },
+   "testClaimsAndHarvestRequireActivation()": {
+    "status": "Success",
+    "gas": 644755
+   },
+   "testConfigureValidationAndOwnerOnly()": {
+    "status": "Success",
+    "gas": 147833
+   },
+   "testConstructorRejectsMissingProtocolCodeAndBadName()": {
+    "status": "Success",
+    "gas": 352779
+   },
+   "testDeploymentBindsTwoReceiptCollectionsAndProtocol()": {
+    "status": "Success",
+    "gas": 71724
+   },
+   "testHistoricalOnlyCategoryIsValid()": {
+    "status": "Success",
+    "gas": 666350
+   },
+   "testIssuanceChecksRangeDuplicatesRecipientsAndOwner()": {
+    "status": "Success",
+    "gas": 742764
+   },
+   "testIssuanceStatusSeparatesActiveSharesFromCapacity()": {
+    "status": "Success",
+    "gas": 1002617
+   },
+   "testOnlyPoolCanMintBurnFinalizeOrSetUri()": {
+    "status": "Success",
+    "gas": 43846
+   },
+   "testOwnerLosesEconomicPowersAfterActivation()": {
+    "status": "Success",
+    "gas": 1028751
+   },
+   "testReceiptHolderIndexFollowsTransfersAndPages()": {
+    "status": "Success",
+    "gas": 1068879
+   },
+   "testRevokeAndReissueOnlyBeforeActivation()": {
+    "status": "Success",
+    "gas": 1025001
+   },
+   "testShareCountCannotDropBelowAnIssuedId()": {
+    "status": "Success",
+    "gas": 348229
+   },
+   "testZeroDenominatorRejectedOnlyWhenTheCategoryHasWeight()": {
+    "status": "Success",
+    "gas": 478290
+   }
+  }
+ },
+ "total": 56,
+ "passed": 56
+}

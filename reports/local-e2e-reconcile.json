@@ -1,0 +1,56 @@
+{
+  "command": "reconcile",
+  "status": "PASS",
+  "ledgerStatus": "PASS",
+  "blockNumber": "47",
+  "blockHash": "0x0cd833df20b7cf4ad13217eb0540cddcf753dcd3c4e98e6f0c61e95de6036613",
+  "pool": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+  "reconciliation": {
+    "bemBalance": "10424687",
+    "unrecognized": "0",
+    "deficit": "0",
+    "totalAccounted": "21877777",
+    "totalPaid": "11453090",
+    "feeAccrued": "428976",
+    "feePaid": "399564",
+    "nandReceiptsAccrued": "13788504",
+    "nandReceiptsPaid": "6416898",
+    "latchReceiptsAccrued": "4596168",
+    "latchReceiptsPaid": "1782599",
+    "historicalNandAccrued": "2298084",
+    "historicalNandPaid": "2140522",
+    "historicalLatchAccrued": "766028",
+    "historicalLatchPaid": "713507",
+    "residue": "17"
+  },
+  "checks": {
+    "offChainMathMatches": true,
+    "balanceIdentity": true,
+    "paidIdentity": true,
+    "accruedIdentity": true,
+    "noDeficit": true,
+    "residueWithinBound": true,
+    "noBucketOverpaid": true
+  },
+  "outstanding": {
+    "fee": "29412",
+    "nandReceipts": "7371606",
+    "latchReceipts": "2813569",
+    "historicalNand": "157562",
+    "historicalLatch": "52521"
+  },
+  "perIdHistories": {
+    "NAND": {
+      "ids": 12,
+      "claimedSum": "6416898",
+      "receiptsPaid": "6416898",
+      "match": true
+    },
+    "LATCH": {
+      "ids": 6,
+      "claimedSum": "1782599",
+      "receiptsPaid": "1782599",
+      "match": true
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "chainId": 56,
+  "protocol": {
+    "bem": "0x5ce033B2bFCa3Af30b3e8C8457DeaF776A8b695a",
+    "mining": "0x7E2E0DC66a3bD9103E69b766afA62d9f7b697b46",
+    "minerCollection": "0xb1024b89886B9a34Aa4ff5F31C411D708b20a14C"
+  },
+  "pool": {
+    "name": "TapeOut Pool Round 1",
+    "owner": "0x00000000000000000000000000000000000000A1",
+    "nandReceipt": { "name": "TapeOut Pool R1 NAND Receipt", "symbol": "TO1NAND", "uri": "" },
+    "latchReceipt": { "name": "TapeOut Pool R1 LATCH Receipt", "symbol": "TO1LATCH", "uri": "" }
+  },
+  "economics": {
+    "nandShares": 900,
+    "latchShares": 80,
+    "historicalNandShares": 100,
+    "historicalLatchShares": 20,
+    "nandWeight": "0.80000000"
+  },
+  "recipients": {
+    "fee": "0x00000000000000000000000000000000000000F1",
+    "historicalNand": "0x00000000000000000000000000000000000000B1",
+    "historicalLatch": "0x00000000000000000000000000000000000000B2"
+  }
+}

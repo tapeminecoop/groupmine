@@ -1,0 +1,11 @@
+{
+  "claim1IdFirstClaim": 126231,
+  "claimBatch200IdsFirstClaim": 5647190,
+  "claimBatch50IdsFirstClaim": 1441766,
+  "depositMiners10Mock": 1302608,
+  "harvest10MinersMock": 344362,
+  "harvest1MinerMock": 123638,
+  "harvest49MinersMock": 1553290,
+  "issueRange200Ids": 9466404,
+  "releaseFee": 78985
+}

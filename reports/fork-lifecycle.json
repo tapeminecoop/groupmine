@@ -1,0 +1,42 @@
+{
+  "collectedAtDeposit": [
+    19309115055,
+    14504705841,
+    14205169893
+  ],
+  "deployedArtifactSha256": "0x9c7eee078c297e01daf6c7c62bbba61c0d64715286fadc886b3c53b1b3b7fece",
+  "forkBlock": 128611683,
+  "harvestGas": 145723,
+  "harvestReceived": 62867799,
+  "minerHoldersAtFork": [
+    "0xc4278A9baedaE32087aD63907678117DA78FD38D",
+    "0xb9674A6F0Caa175220ec98036886BF64a6Db00A0",
+    "0x8E723D261CcCD5C0fBd90Ed342ea600cc72fD65C"
+  ],
+  "minerIds": [
+    4630,
+    2458,
+    6241
+  ],
+  "minersWithZeroPendingBeforeHarvest": 3,
+  "pendingAtFork": [
+    19308719172,
+    14504309958,
+    14204861472
+  ],
+  "pendingBeforeHarvestAfterOneHour": [
+    0,
+    0,
+    0
+  ],
+  "pendingRightBeforeTransfer": [
+    19308719172,
+    14504705841,
+    14205169893
+  ],
+  "pool": "0x5615dEB798BB3E4dFa0139dFa1b3D433Cc23b72f",
+  "poolBalanceEnd": 19430437265,
+  "thirdPartyClaimReceived": 22621885,
+  "totalAccounted": 48104480473,
+  "totalPaid": 28674043208
+}

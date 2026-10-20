@@ -1,0 +1,33 @@
+{
+  "name": "tapeout-miner-pool",
+  "version": "1.0.0-rc.1",
+  "private": true,
+  "type": "module",
+  "description": "TapeOut multi-miner custody pool with NAND/LATCH ERC-1155 receipts and BEM distribution",
+  "engines": {
+    "node": ">=20.19"
+  },
+  "scripts": {
+    "build": "forge build",
+    "test": "forge test",
+    "test:unit": "forge test --match-path 'test/unit/*'",
+    "test:invariant": "forge test --match-path 'test/invariant/*'",
+    "test:fork": "node --import tsx scripts/fork-test.ts",
+    "test:sdk": "node --import tsx --test test/sdk/*.test.ts",
+    "test:local-e2e": "node --import tsx scripts/local-e2e.ts",
+    "test:fork-e2e": "node --import tsx scripts/fork-e2e.ts",
+    "typecheck": "tsc --noEmit",
+    "export-abi": "node scripts/export-abi.mjs",
+    "pool": "node --import tsx cli/pool.ts"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "5.4.0",
+    "viem": "2.57.2",
+    "zod": "3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "22.13.4",
+    "tsx": "4.19.3",
+    "typescript": "5.7.3"
+  }
+}

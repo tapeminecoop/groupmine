@@ -1,0 +1,101 @@
+{
+  "scope": "REAL_BSC_STATE_LOCAL_FORK_ONLY",
+  "status": "PASS",
+  "startedAt": "2026-10-19T19:54:45.602Z",
+  "completedAt": "2026-10-19T19:55:02.109Z",
+  "source": {
+    "chainId": 56,
+    "forkBlock": "128611683",
+    "blockHash": "0x5a7e2854b81f4c8de85026be37fb691bd53191845741c4ef73716ff759bb20f7",
+    "blockTimestamp": "1792438763",
+    "archiveRpcHost": "bsc-mainnet.public.blastapi.io",
+    "discoveryRpcHost": "bsc-dataseed.bnbchain.org"
+  },
+  "protocol": {
+    "minerCollection": "0xb1024b89886B9a34Aa4ff5F31C411D708b20a14C",
+    "mining": "0x7E2E0DC66a3bD9103E69b766afA62d9f7b697b46",
+    "bem": "0x5ce033B2bFCa3Af30b3e8C8457DeaF776A8b695a"
+  },
+  "minerIds": [
+    "4630",
+    "2458",
+    "6241"
+  ],
+  "discovery": "FORK_MINER_IDS provided",
+  "forgeCommand": "forge test --match-path test/fork/PoolFork.t.sol -vv --json --fork-url https://bsc-mainnet.public.blastapi.io --fork-block-number 128611683 --fork-retries 30 --fork-retry-backoff 3000 --compute-units-per-second 40",
+  "forgeExitCode": 0,
+  "results": [
+    {
+      "name": "testForkPoolLifecycleWithRealMiners()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testForkProtocolIdentity()",
+      "status": "Success",
+      "reason": null
+    }
+  ],
+  "deployedArtifact": {
+    "sha256": "0x9c7eee078c297e01daf6c7c62bbba61c0d64715286fadc886b3c53b1b3b7fece",
+    "matchesSdkBytecodeJson": true,
+    "evmVersionCompiled": "paris",
+    "forkEvmVersion": "cancun"
+  },
+  "observations": {
+    "identity": {
+      "collectionImplementation": "0x8E1D125Def6d3826C278299273a0760D47626068",
+      "forkBlock": 128611683,
+      "miningImplementation": "0xa3DBe873DA37cD4e4a13c7cEf23a7dB6Ca60f898"
+    },
+    "lifecycle": {
+      "collectedAtDeposit": [
+        19309115055,
+        14504705841,
+        14205169893
+      ],
+      "deployedArtifactSha256": "0x9c7eee078c297e01daf6c7c62bbba61c0d64715286fadc886b3c53b1b3b7fece",
+      "forkBlock": 128611683,
+      "harvestGas": 145723,
+      "harvestReceived": 62867799,
+      "minerHoldersAtFork": [
+        "0xc4278A9baedaE32087aD63907678117DA78FD38D",
+        "0xb9674A6F0Caa175220ec98036886BF64a6Db00A0",
+        "0x8E723D261CcCD5C0fBd90Ed342ea600cc72fD65C"
+      ],
+      "minerIds": [
+        4630,
+        2458,
+        6241
+      ],
+      "minersWithZeroPendingBeforeHarvest": 3,
+      "pendingAtFork": [
+        19308719172,
+        14504309958,
+        14204861472
+      ],
+      "pendingBeforeHarvestAfterOneHour": [
+        0,
+        0,
+        0
+      ],
+      "pendingRightBeforeTransfer": [
+        19308719172,
+        14504705841,
+        14205169893
+      ],
+      "pool": "0x5615dEB798BB3E4dFa0139dFa1b3D433Cc23b72f",
+      "poolBalanceEnd": 19430437265,
+      "thirdPartyClaimReceived": 22621885,
+      "totalAccounted": 48104480473,
+      "totalPaid": 28674043208
+    }
+  },
+  "method": [
+    "Fork state is read from BSC at the pinned block; no protocol code or storage is modified (no vm.etch / vm.store / mockCall).",
+    "Miner NFTs are moved from their current EOA holders with fork-only impersonation (vm.prank), then deposited through depositMiners.",
+    "Time is advanced inside the fork only (vm.warp/vm.roll) to let real Mining accrue income."
+  ],
+  "mainnetTransactionsSent": 0,
+  "signaturesCreated": 0
+}
