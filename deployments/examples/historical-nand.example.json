@@ -1,0 +1,9 @@
+{
+  "category": "NAND",
+  "totalWeight": 100,
+  "contributors": [
+    { "account": "0x00000000000000000000000000000000000d0001", "weight": 50, "ref": "historical-contribution-0001" },
+    { "account": "0x00000000000000000000000000000000000d0002", "weight": 30, "ref": "historical-contribution-0002" },
+    { "account": "0x00000000000000000000000000000000000d0003", "weight": 20, "ref": "historical-contribution-0003" }
+  ]
+}

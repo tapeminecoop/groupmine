@@ -2,64 +2,129 @@ TAP version 13
 # Subtest: shares entries take the lowest free IDs around pinned IDs
 ok 1 - shares entries take the lowest free IDs around pinned IDs
   ---
-  duration_ms: 0.917584
+  duration_ms: 1.628666
   ...
 # Subtest: allocation errors: duplicates, out of range, over-allocation, unallocated without reserve, zero holder
 ok 2 - allocation errors: duplicates, out of range, over-allocation, unallocated without reserve, zero holder
   ---
-  duration_ms: 1.23475
+  duration_ms: 1.696166
   ...
 # Subtest: issuance calls use contiguous ranges, chunk by size, batch singles, and resume
 ok 3 - issuance calls use contiguous ranges, chunk by size, batch singles, and resume
   ---
-  duration_ms: 0.700208
+  duration_ms: 0.89925
   ...
 # Subtest: config hash equals keccak256(abi.encode(Config)) as computed by cast
 ok 4 - config hash equals keccak256(abi.encode(Config)) as computed by cast
   ---
-  duration_ms: 30.503333
+  duration_ms: 35.644834
   ...
 # Subtest: activation preflight mirrors the contract checks
 ok 5 - activation preflight mirrors the contract checks
   ---
-  duration_ms: 1.003709
+  duration_ms: 2.571625
   ...
 # Subtest: plans encode the intended calls and export to Safe / cast formats
 ok 6 - plans encode the intended calls and export to Safe / cast formats
   ---
-  duration_ms: 2.302375
+  duration_ms: 4.122542
+  ...
+# Subtest: contributors are sorted by address and hashed like the contract (cast cross-check)
+ok 7 - contributors are sorted by address and hashed like the contract (cast cross-check)
+  ---
+  duration_ms: 46.367459
+  ...
+# Subtest: weights file errors: duplicates, zero address, bad checksum, weight range, checksum total, size, shape
+ok 8 - weights file errors: duplicates, zero address, bad checksum, weight range, checksum total, size, shape
+  ---
+  duration_ms: 22.073875
+  ...
+# Subtest: split mirrors the Solidity vectors: exact floors, bounded residue
+ok 9 - split mirrors the Solidity vectors: exact floors, bounded residue
+  ---
+  duration_ms: 0.16425
+  ...
+# Subtest: split conservation, residue bound and monotonicity over random inputs
+ok 10 - split conservation, residue bound and monotonicity over random inputs
+  ---
+  duration_ms: 19.824083
+  ...
+# Subtest: plans encode the constructor and claim calls
+ok 11 - plans encode the constructor and claim calls
+  ---
+  duration_ms: 27.775416
+  ...
+# Subtest: CLI distributor-check validates the example file and prints the deployment arguments
+ok 12 - CLI distributor-check validates the example file and prints the deployment arguments
+  ---
+  duration_ms: 6.522208
+  ...
+# Subtest: BSC cap and budget: 2^24 (BEP-652) and three quarters of it
+ok 13 - BSC cap and budget: 2^24 (BEP-652) and three quarters of it
+  ---
+  duration_ms: 0.444416
+  ...
+# Subtest: every command maximum fits the budget in its costliest form
+ok 14 - every command maximum fits the budget in its costliest form
+  ---
+  duration_ms: 0.272042
+  ...
+# Subtest: the model is at or above the gas measured by test/unit/BatchGasBudget.t.sol
+ok 15 - the model is at or above the gas measured by test/unit/BatchGasBudget.t.sol
+  ---
+  duration_ms: 0.146292
+  ...
+# Subtest: gas bounds of the plans the CLI builds
+ok 16 - gas bounds of the plans the CLI builds
+  ---
+  duration_ms: 45.587833
+  ...
+# Subtest: oversized plans are refused before anything is signed
+ok 17 - oversized plans are refused before anything is signed
+  ---
+  duration_ms: 7.974625
+  ...
+# Subtest: Safe batches are split so each file (one MultiSend transaction) fits the budget
+ok 18 - Safe batches are split so each file (one MultiSend transaction) fits the budget
+  ---
+  duration_ms: 21.535708
+  ...
+# Subtest: printed cast commands fix the gas limit at the plan bound, and only when given one
+ok 19 - printed cast commands fix the gas limit at the plan bound, and only when given one
+  ---
+  duration_ms: 0.96325
   ...
 # Subtest: specification example: 1,020 BEM, 80/20, 900+100 NAND, 80+20 LATCH
-ok 7 - specification example: 1,020 BEM, 80/20, 900+100 NAND, 80+20 LATCH
+ok 20 - specification example: 1,020 BEM, 80/20, 900+100 NAND, 80+20 LATCH
   ---
-  duration_ms: 0.697333
+  duration_ms: 0.535125
   ...
 # Subtest: fee is 2/102 of gross, not 2%
-ok 8 - fee is 2/102 of gross, not 2%
+ok 21 - fee is 2/102 of gross, not 2%
   ---
-  duration_ms: 0.084875
+  duration_ms: 0.087333
   ...
 # Subtest: same vectors as the Solidity tests
-ok 9 - same vectors as the Solidity tests
+ok 22 - same vectors as the Solidity tests
   ---
-  duration_ms: 0.310875
+  duration_ms: 0.308083
   ...
 # Subtest: conservation, residue bound and monotonicity over random inputs
-ok 10 - conservation, residue bound and monotonicity over random inputs
+ok 23 - conservation, residue bound and monotonicity over random inputs
   ---
-  duration_ms: 6.034333
+  duration_ms: 11.190125
   ...
 # Subtest: weight parsing is exact to 8 decimals and bounded to [0, 1]
-ok 11 - weight parsing is exact to 8 decimals and bounded to [0, 1]
+ok 24 - weight parsing is exact to 8 decimals and bounded to [0, 1]
   ---
-  duration_ms: 0.205167
+  duration_ms: 0.998375
   ...
-1..11
-# tests 11
+1..24
+# tests 24
 # suites 0
-# pass 11
+# pass 24
 # fail 0
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 332.543416
+# duration_ms 773.936375

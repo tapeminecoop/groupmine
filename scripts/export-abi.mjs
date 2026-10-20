@@ -7,7 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const contracts = ['TapeoutMinerPool', 'TapeoutReceipt'];
+const contracts = ['TapeoutMinerPool', 'TapeoutReceipt', 'HistoricalDistributor'];
 const mocks = ['MockBEM', 'MockMining', 'MockNFT'];
 
 async function artifact(source, name) {

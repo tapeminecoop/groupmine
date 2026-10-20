@@ -1,6 +1,32 @@
 {
  "command": "forge test --no-match-path 'test/fork/*' --json",
  "suites": {
+  "test/invariant/DistributorInvariant.t.sol:DistributorInvariantTest": {
+   "invariantBemConservation()": {
+    "status": "Success",
+    "invariantRuns": 256,
+    "calls": 16384,
+    "reverts": 0
+   },
+   "invariantEntitlementsNeverDecrease()": {
+    "status": "Success",
+    "invariantRuns": 256,
+    "calls": 16384,
+    "reverts": 0
+   },
+   "invariantLedgersReconcile()": {
+    "status": "Success",
+    "invariantRuns": 256,
+    "calls": 16384,
+    "reverts": 0
+   },
+   "invariantNoOverpayment()": {
+    "status": "Success",
+    "invariantRuns": 256,
+    "calls": 16384,
+    "reverts": 0
+   }
+  },
   "test/invariant/PoolInvariant.t.sol:PoolInvariantTest": {
    "invariantBemConservation()": {
     "status": "Success",
@@ -33,6 +59,144 @@
     "reverts": 0
    }
   },
+  "test/unit/BatchGasBudget.t.sol:BatchGasBudgetTest": {
+   "testBatchGasStaysWithinTheModelAndBudget()": {
+    "status": "Success",
+    "gas": 141588880
+   }
+  },
+  "test/unit/DistributorAccounting.t.sol:DistributorAccountingTest": {
+   "testAbnormalTokenTransfersRevertWithoutRewritingHistory()": {
+    "status": "Success",
+    "gas": 436365
+   },
+   "testAllocationIsPathIndependent()": {
+    "status": "Success",
+    "gas": 3475019
+   },
+   "testAnyoneCanPushButPaymentsOnlyReachTheContributor()": {
+    "status": "Success",
+    "gas": 240013
+   },
+   "testBalanceDecreaseStopsEveryMoneyPath()": {
+    "status": "Success",
+    "gas": 317783
+   },
+   "testBatchAndRangeClaimsPayEachContributorOnce()": {
+    "status": "Success",
+    "gas": 393211
+   },
+   "testDirectTransfersAreIncomeAndClaimsSyncFirst()": {
+    "status": "Success",
+    "gas": 248406
+   },
+   "testFuzzClaimsAreExactAndNeverOverpay(uint96[6],uint64[4],uint8)": {
+    "status": "Success",
+    "fuzzRuns": 512,
+    "meanGas": 1969464,
+    "medianGas": 1960009
+   },
+   "testFuzzEntitlementsAreMonotonicAndBounded(uint128,uint64,uint96,uint96)": {
+    "status": "Success",
+    "fuzzRuns": 512,
+    "meanGas": 1520475,
+    "medianGas": 1520532
+   },
+   "testInvalidClaimsRevert()": {
+    "status": "Success",
+    "gas": 261987
+   },
+   "testRepeatedClaimsPayOnlyNewIncome()": {
+    "status": "Success",
+    "gas": 267046
+   },
+   "testRoundingResidueIsBoundedAndPaidOutByLaterIncome()": {
+    "status": "Success",
+    "gas": 4912737
+   },
+   "testSplitsIncomeExactlyByWeight()": {
+    "status": "Success",
+    "gas": 352939
+   },
+   "testZeroClaimsChangeNothing()": {
+    "status": "Success",
+    "gas": 245734
+   }
+  },
+  "test/unit/DistributorGas.t.sol:DistributorGasTest": {
+   "testGasProfile()": {
+    "status": "Success",
+    "gas": 62459094
+   }
+  },
+  "test/unit/DistributorPoolIntegration.t.sol:DistributorPoolIntegrationTest": {
+   "testDirectPoolReleaseIsRecognizedByTheNextSync()": {
+    "status": "Success",
+    "gas": 2771788
+   },
+   "testHandoverAfterActivationCarriesUnreleasedIncome()": {
+    "status": "Success",
+    "gas": 5143525
+   },
+   "testManyRoundsConserveBemEndToEnd()": {
+    "status": "Success",
+    "gas": 5357010
+   },
+   "testNestedDistributorSplitsAShareFurther()": {
+    "status": "Success",
+    "gas": 4469762
+   },
+   "testRoleIsLockedToTheDistributor()": {
+    "status": "Success",
+    "gas": 3823465
+   },
+   "testSpecificationExampleReachesIndividualContributors()": {
+    "status": "Success",
+    "gas": 50790790
+   }
+  },
+  "test/unit/DistributorSetup.t.sol:DistributorSetupTest": {
+   "testConstructorRejectsItselfAndThePoolAsContributors()": {
+    "status": "Success",
+    "gas": 192415
+   },
+   "testConstructorRejectsMalformedLists()": {
+    "status": "Success",
+    "gas": 572052
+   },
+   "testConstructorRequiresARealPool()": {
+    "status": "Success",
+    "gas": 136299
+   },
+   "testContributorCountIsCappedAtMax()": {
+    "status": "Success",
+    "gas": 11362504
+   },
+   "testCreationEventCarriesTheReviewedListHash()": {
+    "status": "Success",
+    "gas": 1418779
+   },
+   "testDeploymentBindsPoolCategoryAndFixedList()": {
+    "status": "Success",
+    "gas": 2917162
+   },
+   "testFullListCreationFitsTheInitcodeLimit()": {
+    "status": "Success",
+    "gas": 342663
+   },
+   "testLookupAndPageViews()": {
+    "status": "Success",
+    "gas": 1651253
+   },
+   "testReleaseFromPoolRequiresTheRecipientRole()": {
+    "status": "Success",
+    "gas": 2416238
+   },
+   "testWeightsUseTheFullUint96Range()": {
+    "status": "Success",
+    "gas": 1652010
+   }
+  },
   "test/unit/PoolAccounting.t.sol:PoolAccountingTest": {
    "testAllocationIsPathIndependent()": {
     "status": "Success",
@@ -55,7 +219,7 @@
    "testFuzzMathProperties(uint128,uint32,uint32,uint32,uint32,uint32)": {
     "status": "Success",
     "fuzzRuns": 512,
-    "meanGas": 17370,
+    "meanGas": 17371,
     "medianGas": 17403
    },
    "testHistoricalSharesAddToDenominatorAndHaveTheirOwnRecipient()": {
@@ -252,6 +416,6 @@
    }
   }
  },
- "total": 56,
- "passed": 56
+ "total": 91,
+ "passed": 91
 }

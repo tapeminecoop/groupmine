@@ -15,6 +15,7 @@
     "test:fork": "node --import tsx scripts/fork-test.ts",
     "test:sdk": "node --import tsx --test test/sdk/*.test.ts",
     "test:local-e2e": "node --import tsx scripts/local-e2e.ts",
+    "test:distributor-e2e": "node --import tsx scripts/distributor-e2e.ts",
     "test:fork-e2e": "node --import tsx scripts/fork-e2e.ts",
     "typecheck": "tsc --noEmit",
     "export-abi": "node scripts/export-abi.mjs",

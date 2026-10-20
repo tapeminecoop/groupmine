@@ -1,0 +1,13 @@
+{
+  "batchGasBudget": 12582912,
+  "claimBatchMax": 11364071,
+  "distributorClaimBatchMax": 9473031,
+  "distributorClaimRangeMax": 8724516,
+  "distributorDeployMax": 10935183,
+  "distributorReleaseFromPool": 113941,
+  "issueReceiptRange1": 113179,
+  "issueReceiptRangeMax": 9422103,
+  "issueReceiptsListMax": 10679833,
+  "revokeReceiptsMax": 2067487,
+  "txGasCap": 16777216
+}

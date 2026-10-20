@@ -17,12 +17,16 @@ import {
   harvestRangePlans, impersonate, issuanceCalls, issuancePlans, loadAllocation, loadPoolFile,
   parseBem, readHoldings, readMiners, readSummary, receiverProblems, registerPlans, releasePlans, safeBatch, sendLocal,
   simulate, summarize, tapeoutMinerPoolAbi, tapeoutReceiptAbi, toConfig, toDeployment, toShares, type SentTx, type TxPlan,
+  buildContributorList, checkDistributor, distributorClaimPlans, distributorClaimRangePlans, distributorDeployPlan,
+  distributorEncodedArgs, distributorPoolChecks, distributorReleasePlan, distributorSplit, historicalDistributorAbi,
+  loadWeights, readContributors, readDistributor, type ContributorList,
+  BATCH_GAS_BUDGET, TX_GAS_CAP, assertWithinBudget, checkBatchSize, gasBound, groupForSafe, type BatchKind,
 } from '../sdk/index.js';
 
 type Flags = Record<string, string | boolean>;
-const BOOLEAN = new Set(['send-local', 'impersonate', 'all', 'miners', 'pending', 'deep', 'isolate-failures', 'help']);
-const VALUE = new Set(['config', 'allocation', 'pool', 'rpc-url', 'from', 'holder', 'out', 'safe-json', 'safe', 'income', 'token-ids', 'nand', 'latch', 'batch-size', 'category', 'ids', 'role', 'to']);
-const COMMANDS = ['preview', 'allocate', 'config-hash', 'protocol-check', 'inspect', 'reconcile', 'preflight', 'deploy', 'configure', 'issue', 'revoke', 'activate', 'deposit', 'register', 'harvest', 'claim', 'release', 'set-recipient'] as const;
+const BOOLEAN = new Set(['send-local', 'impersonate', 'all', 'miners', 'pending', 'deep', 'isolate-failures', 'release', 'help']);
+const VALUE = new Set(['config', 'allocation', 'pool', 'rpc-url', 'from', 'holder', 'out', 'safe-json', 'safe', 'income', 'token-ids', 'nand', 'latch', 'batch-size', 'category', 'ids', 'role', 'to', 'weights', 'distributor', 'contributor']);
+const COMMANDS = ['preview', 'allocate', 'config-hash', 'protocol-check', 'inspect', 'reconcile', 'preflight', 'deploy', 'configure', 'issue', 'revoke', 'activate', 'deposit', 'register', 'harvest', 'claim', 'release', 'set-recipient', 'distributor-check', 'distributor-deploy', 'distributor-inspect', 'distributor-claim'] as const;
 
 export const json = (value: unknown) => JSON.stringify(value, (_, v) => (typeof v === 'bigint' ? v.toString() : v), 2);
 
@@ -47,11 +51,16 @@ const str = (f: Flags, k: string) => (typeof f[k] === 'string' ? (f[k] as string
 const need = (f: Flags, k: string) => { const v = str(f, k); if (!v) throw new Error(`Missing --${k}`); return v; };
 const addr = (raw: string) => getAddress(raw);
 const ids = (raw?: string) => (raw ? raw.split(',').filter(Boolean).map(x => { if (!/^\d+$/.test(x)) throw new Error(`Invalid id ${x}`); return BigInt(x); }) : []);
-const batch = (f: Flags, fallback: number) => { const v = Number(str(f, 'batch-size') ?? fallback); if (!Number.isInteger(v) || v < 1) throw new Error('Invalid --batch-size'); return v; };
+const batch = (f: Flags, fallback: number, kind: BatchKind) => { const v = Number(str(f, 'batch-size') ?? fallback); if (!Number.isInteger(v) || v < 1) throw new Error('Invalid --batch-size'); return checkBatchSize(kind, v); };
 const rpcUrl = (f: Flags) => str(f, 'rpc-url') ?? process.env.RPC_URL ?? (() => { throw new Error('Missing --rpc-url (or RPC_URL)'); })();
 
-/** Shared execution path for every write command. */
+/** Shared execution path for every write command. Every plan must fit the per-transaction gas
+ *  budget (BSC caps a transaction's gas limit at 2^24, BEP-652), and its worst-case bound is the gas
+ *  limit for local sends and printed cast commands: a transaction that calls the real Mining contract
+ *  can need more gas when it is included than when it was estimated. */
 async function execute(command: string, flags: Flags, plans: TxPlan[], extra: Record<string, unknown> = {}) {
+  assertWithinBudget(plans);
+  const bounds = plans.map(gasBound);
   const from = str(flags, 'from') ? addr(need(flags, 'from')) : undefined;
   if (flags['send-local']) {
     if (!from) throw new Error('--send-local needs --from (an unlocked or impersonated Anvil account)');
@@ -60,19 +69,39 @@ async function execute(command: string, flags: Flags, plans: TxPlan[], extra: Re
     const node = await assertLocalAnvil(url, rpc);
     if (flags.impersonate) await impersonate(rpc, from);
     const sent: SentTx[] = [];
-    for (const plan of plans) sent.push(await sendLocal(rpc, plan, from));
+    for (const [i, plan] of plans.entries()) sent.push(await sendLocal(rpc, plan, from, bounds[i]));
     return { command, mode: 'SENT_LOCAL_ANVIL', node, from, transactions: sent, ...extra };
   }
   const safePath = str(flags, 'safe-json');
   const chainId = flags['rpc-url'] || process.env.RPC_URL ? await client(rpcUrl(flags)).getChainId() : undefined;
+  const safeFiles: string[] = [];
+  const safeGas: (bigint | undefined)[] = [];
   if (safePath) {
-    await writeFile(safePath, json(safeBatch(plans, chainId ?? 56, `TapeOut pool: ${command}`, str(flags, 'safe') ? addr(need(flags, 'safe')) : undefined)) + '\n');
+    // The Transaction Builder executes a whole batch file as one transaction: split by gas.
+    const groups = groupForSafe(plans);
+    for (const [i, group] of groups.entries()) {
+      const file = groups.length === 1 ? safePath : safePath.replace(/(\.json)?$/, `.${i + 1}$1`);
+      const name = `TapeOut pool: ${command}${groups.length === 1 ? '' : ` (${i + 1} of ${groups.length})`}`;
+      await writeFile(file, json(safeBatch(group, chainId ?? 56, name, str(flags, 'safe') ? addr(need(flags, 'safe')) : undefined)) + '\n');
+      safeFiles.push(file);
+      const gas = group.map(gasBound);
+      safeGas.push(gas.every(g => g !== undefined) ? gas.reduce((sum, g) => sum! + g!, 0n) : undefined);
+    }
   }
   const simulations = from && chainId !== undefined ? await simulateSequentially(client(rpcUrl(flags)), plans, from) : undefined;
   return {
-    command, mode: 'PLAN_ONLY_NOT_SENT', chainId, ...(safePath ? { safeBatchFile: safePath } : {}), ...extra,
-    plans: plans.map((p, i) => ({ description: p.description, to: p.to, value: p.value, data: p.data, cast: castCommand(p), ...(simulations ? { simulation: simulations[i] } : {}) })),
+    command, mode: 'PLAN_ONLY_NOT_SENT', chainId, ...extra,
+    ...(safeFiles.length === 1 ? { safeBatchFile: safeFiles[0], safeBatchMaxGas: safeGas[0] } : {}),
+    ...(safeFiles.length > 1 ? { safeBatchFiles: safeFiles, safeBatchMaxGas: safeGas, safeBatchNote: 'each file is one Safe transaction; execute them in order' } : {}),
+    plans: plans.map((p, i) => ({ description: p.description, to: p.to, value: p.value, data: p.data, maxGas: bounds[i], cast: castCommand(p, bounds[i]), ...(simulations ? { simulation: gasChecked(simulations[i]) } : {}) })),
   };
+}
+
+/** Flag simulated estimates above the budget or the cap (a sign the plan is larger than modelled). */
+function gasChecked<T extends { ok: boolean; gas?: bigint }>(sim: T) {
+  if (!sim.ok || sim.gas === undefined) return sim;
+  if (sim.gas > TX_GAS_CAP) return { ...sim, exceedsTxGasCap: true };
+  return sim.gas > BATCH_GAS_BUDGET ? { ...sim, aboveBatchGasBudget: true } : sim;
 }
 
 /** Plans often depend on earlier ones (approve -> deposit); only the first is simulated precisely. */
@@ -89,6 +118,31 @@ async function poolAndConfig(flags: Flags) {
   const file = await loadPoolFile(need(flags, 'config'));
   return { file, config: toConfig(file) };
 }
+
+/** Exact share of the total weight in percent, floored to 6 decimals (display only). */
+const percent = (weight: bigint, total: bigint) => {
+  const scaled = (weight * 10n ** 8n) / total;
+  return `${scaled / 10n ** 6n}.${(scaled % 10n ** 6n).toString().padStart(6, '0')}%`;
+};
+
+/** The reviewed contributor list in contract order, optionally with the exact split of an income. */
+function describeContributors(list: ContributorList, income?: bigint) {
+  const split = income === undefined ? undefined : distributorSplit(income, list.contributors.map(c => c.weight));
+  return {
+    category: list.category, contributorCount: list.contributors.length, totalWeight: list.totalWeight, contributorsHash: list.contributorsHash,
+    contributors: list.contributors.map(c => ({
+      index: c.index, account: c.account, weight: c.weight, share: percent(c.weight, list.totalWeight), ...(c.ref ? { ref: c.ref } : {}),
+      ...(split ? { amountRaw: split.entitlements[c.index], amountBem: formatBem(split.entitlements[c.index]) } : {}),
+    })),
+    ...(split ? { preview: { incomeRaw: split.total, incomeBem: formatBem(split.total), entitledRaw: split.entitled, residueRaw: split.residue, residueBound: split.residueBound } } : {}),
+  };
+}
+
+/** HistoricalDistributor constructor arguments; the encoded form needs the pool address. */
+const constructorArgsOf = (list: ContributorList, pool?: Address) => ({
+  ...(pool ? { pool } : {}), category: CATEGORY[list.category], accounts: list.contributors.map(c => c.account), weights: list.contributors.map(c => c.weight),
+  ...(pool ? { encodedConstructorArgs: distributorEncodedArgs(pool, list) } : {}),
+});
 
 export async function main(argv = process.argv.slice(2)): Promise<unknown> {
   const { command, flags } = parse(argv);
@@ -117,6 +171,16 @@ export async function main(argv = process.argv.slice(2)): Promise<unknown> {
     const out = str(flags, 'out');
     if (out) await writeFile(out, json({ nand, latch }) + '\n');
     return { command, status: 'ALLOCATION_VALID', summary: [summarize(nand), summarize(latch)], calls: { NAND: issuanceCalls(nand).length, LATCH: issuanceCalls(latch).length }, ...(out ? { file: out } : {}) };
+  }
+
+  if (command === 'distributor-check') {
+    const target = str(flags, 'pool') ? addr(need(flags, 'pool')) : undefined;
+    const list = buildContributorList(await loadWeights(need(flags, 'weights')), target ? [target] : []);
+    const income = str(flags, 'income') ? parseBem(need(flags, 'income')) : undefined;
+    const args = constructorArgsOf(list, target);
+    const out = str(flags, 'out');
+    if (out) await writeFile(out, json({ category: list.category, totalWeight: list.totalWeight, contributorsHash: list.contributorsHash, constructorArgs: args }) + '\n');
+    return { command, status: 'WEIGHTS_VALID', ...describeContributors(list, income), constructorArgs: args, ...(out ? { file: out } : {}) };
   }
 
   const rpc = client(rpcUrl(flags));
@@ -157,6 +221,72 @@ export async function main(argv = process.argv.slice(2)): Promise<unknown> {
       Object.assign(result, { pool: deployed, nandReceipt: summary.nandReceipt, latchReceipt: summary.latchReceipt });
     }
     return result;
+  }
+
+  if (command === 'distributor-deploy') {
+    const target = addr(need(flags, 'pool'));
+    const list = buildContributorList(await loadWeights(need(flags, 'weights')), [target]);
+    const poolChecks = await distributorPoolChecks(rpc, target, list.category);
+    const reviewed = { category: list.category, contributorCount: list.contributors.length, totalWeight: list.totalWeight, contributorsHash: list.contributorsHash };
+    const result = await execute(command, flags, [distributorDeployPlan(target, list)], { ...reviewed, constructorArgs: constructorArgsOf(list, target), poolChecks }) as Record<string, unknown>;
+    const sent = (result.transactions as SentTx[] | undefined)?.[0];
+    if (sent?.contractAddress) {
+      const deployed = addr(sent.contractAddress);
+      const summary = await readDistributor(rpc, deployed);
+      Object.assign(result, { distributor: deployed, onChainContributorsHash: summary.contributorsHash, listHashMatches: summary.contributorsHash === list.contributorsHash });
+    }
+    return result;
+  }
+
+  if (command === 'distributor-inspect') {
+    const distributor = addr(need(flags, 'distributor'));
+    const block = await rpc.getBlock({ blockTag: 'latest' });
+    const summary = await readDistributor(rpc, distributor, block.number);
+    const contributors = flags.deep ? await readContributors(rpc, distributor, summary.contributorCount, block.number) : undefined;
+    const ledger = checkDistributor(summary, contributors);
+    const weightsPath = str(flags, 'weights');
+    const list = weightsPath ? buildContributorList(await loadWeights(weightsPath), [summary.pool]) : undefined;
+    const fileChecks = list ? { categoryMatchesFile: list.category === summary.category, totalWeightMatchesFile: list.totalWeight === summary.totalWeight, contributorsHashMatchesFile: list.contributorsHash === summary.contributorsHash } : undefined;
+    let contributor: Record<string, unknown> | undefined;
+    if (str(flags, 'contributor')) {
+      const who = addr(need(flags, 'contributor'));
+      const view = <T>(functionName: string) => rpc.readContract({ address: distributor, abi: historicalDistributorAbi, functionName, args: [who], blockNumber: block.number } as never) as Promise<T>;
+      contributor = { account: who, isContributor: await view<boolean>('isContributor') };
+      if (contributor.isContributor) {
+        const [index, weight, entitlementRaw, claimedRaw, claimableRaw] = await Promise.all(['indexOf', 'weightOf', 'entitlementOf', 'claimed', 'claimable'].map(fn => view<bigint>(fn)));
+        Object.assign(contributor, { index, weight, entitlementRaw, claimedRaw, claimableRaw, claimableBem: formatBem(claimableRaw) });
+      }
+    }
+    const status = ledger.status === 'PASS' && (!fileChecks || Object.values(fileChecks).every(Boolean)) ? 'PASS' : 'FAIL';
+    const report = { command, status, blockNumber: block.number, blockHash: block.hash, summary, checks: ledger.checks, ...(fileChecks ? { fileChecks } : {}), ...(contributor ? { contributor } : {}), ...(contributors ? { contributors } : {}) };
+    const out = str(flags, 'out');
+    if (out) await writeFile(out, json(report) + '\n');
+    return report;
+  }
+
+  if (command === 'distributor-claim') {
+    const size = batch(flags, 100, 'distributor-claim');
+    const distributor = addr(need(flags, 'distributor'));
+    const listed = [...new Set((str(flags, 'contributor') ?? '').split(',').filter(Boolean).map(addr))];
+    if (flags.all && listed.length) throw new Error('Use either --all or --contributor');
+    if (!flags.all && !listed.length && !flags.release) throw new Error('Nothing to do: pass --all, --contributor ADDR[,ADDR...] and/or --release');
+    const summary = await readDistributor(rpc, distributor);
+    if (flags.release && !summary.isPoolRecipient) throw new Error(`--release needs the distributor to be the pool's historical ${summary.category} recipient (current recipient ${summary.poolRecipient})`);
+    const contributors = await readContributors(rpc, distributor, summary.contributorCount);
+    const unknown = listed.filter(a => !contributors.some(c => c.account === a));
+    if (unknown.length) throw new Error(`Not contributors of ${distributor}: ${unknown.join(', ')}`);
+    // What the plans pay if they run now: recognized income, BEM not yet recognized, and the release.
+    const incoming = summary.reconciliation.unrecognized + (flags.release ? summary.pendingFromPool : 0n);
+    const split = distributorSplit(summary.totalAccounted + incoming, contributors.map(c => c.weight));
+    const payouts = contributors.filter(c => flags.all || listed.includes(c.account))
+      .map(c => ({ account: c.account, amountRaw: split.entitlements[c.index] - c.claimed })).filter(p => p.amountRaw > 0n);
+    const expected = payouts.reduce((sum, p) => sum + p.amountRaw, 0n);
+    if (expected === 0n && !flags.release) return { command, status: 'NOTHING_TO_CLAIM', distributor, category: summary.category };
+    const plans = [
+      ...(flags.release ? [distributorReleasePlan(distributor)] : []),
+      ...(flags.all ? distributorClaimRangePlans(distributor, contributors.length, size) : listed.length ? distributorClaimPlans(distributor, listed, size) : []),
+    ];
+    return execute(command, flags, plans, { distributor, category: summary.category, expectedPayoutRaw: expected, expectedPayoutBem: formatBem(expected), payouts: payouts.map(p => ({ ...p, amountBem: formatBem(p.amountRaw) })) });
   }
 
   const pool = addr(need(flags, 'pool'));
@@ -227,7 +357,7 @@ export async function main(argv = process.argv.slice(2)): Promise<unknown> {
       const pendingHolders = issuance.assignments.filter(a => a.ids.some(id => !issued.has(id))).map(a => a.holder);
       const rejecting = await receiverProblems(rpc, receipt, pool, pendingHolders);
       if (rejecting.length) throw new Error(`${category} holders cannot receive ERC-1155 receipts: ${json(rejecting)}`);
-      plans.push(...issuancePlans(pool, issuanceCalls(issuance, batch(flags, 200), issued)));
+      plans.push(...issuancePlans(pool, issuanceCalls(issuance, batch(flags, 200, 'issue'), issued)));
     }
     return execute(command, flags, plans, { alreadyIssued: skipped });
   }
@@ -246,14 +376,14 @@ export async function main(argv = process.argv.slice(2)): Promise<unknown> {
   if (command === 'deposit' || command === 'register') {
     const tokenIds = ids(need(flags, 'token-ids'));
     if (tokenIds.length === 0) throw new Error('No --token-ids');
-    if (command === 'register') return execute(command, flags, registerPlans(pool, tokenIds, batch(flags, 20)));
+    if (command === 'register') return execute(command, flags, registerPlans(pool, tokenIds, batch(flags, 20, 'register')));
     const summary = await readSummary(rpc, pool);
     const owner = str(flags, 'from') ? addr(need(flags, 'from')) : summary.owner;
     const holders = await Promise.all(tokenIds.map(id => rpc.readContract({ address: summary.collection, abi: erc721Abi, functionName: 'ownerOf', args: [id] })));
     const foreign = tokenIds.filter((_, i) => holders[i] !== owner);
     if (foreign.length) throw new Error(`Miners ${foreign.join(',')} are not held by the pool owner ${owner}`);
     const approved = await rpc.readContract({ address: summary.collection, abi: erc721Abi, functionName: 'isApprovedForAll', args: [owner, pool] });
-    const plans = [...(approved ? [] : [approveMinersPlan(summary.collection, pool)]), ...depositPlans(pool, tokenIds, batch(flags, 20))];
+    const plans = [...(approved ? [] : [approveMinersPlan(summary.collection, pool)]), ...depositPlans(pool, tokenIds, batch(flags, 20, 'deposit'))];
     return execute(command, flags, plans);
   }
 
@@ -267,11 +397,12 @@ export async function main(argv = process.argv.slice(2)): Promise<unknown> {
       failing = await findFailingMiners(rpc, pool, tokenIds, from);
       tokenIds = tokenIds.filter(id => !failing.includes(id));
     }
-    const plans = flags.all && !flags['isolate-failures'] ? harvestRangePlans(pool, summary.minerCount, batch(flags, 25)) : harvestPlans(pool, tokenIds, batch(flags, 25));
+    const plans = flags.all && !flags['isolate-failures'] ? harvestRangePlans(pool, summary.minerCount, batch(flags, 25, 'harvest')) : harvestPlans(pool, tokenIds, batch(flags, 25, 'harvest'));
     return execute(command, flags, plans, { miners: tokenIds.length, excludedFailingMiners: failing });
   }
 
   if (command === 'claim') {
+    const size = batch(flags, 200, 'claim');
     const holder = addr(str(flags, 'holder') ?? need(flags, 'from'));
     const holdings = await readHoldings(rpc, pool, holder);
     let nand = ids(str(flags, 'nand'));
@@ -284,7 +415,7 @@ export async function main(argv = process.argv.slice(2)): Promise<unknown> {
     if (str(flags, 'from') && addr(need(flags, 'from')) !== holder) throw new Error('Claims must be sent by the receipt holder');
     const expected = holdings.NAND.ids.reduce((s, id, i) => (nand.includes(id) ? s + holdings.NAND.claimable[i] : s), 0n)
       + holdings.LATCH.ids.reduce((s, id, i) => (latch.includes(id) ? s + holdings.LATCH.claimable[i] : s), 0n);
-    return execute(command, flags, claimPlans(pool, nand, latch, batch(flags, 200)), { holder, expectedPayoutRaw: expected, expectedPayoutBem: formatBem(expected) });
+    return execute(command, flags, claimPlans(pool, nand, latch, size), { holder, expectedPayoutRaw: expected, expectedPayoutBem: formatBem(expected) });
   }
 
   if (command === 'release') return execute(command, flags, releasePlans(pool));

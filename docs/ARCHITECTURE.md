@@ -27,6 +27,7 @@ external (BSC):  miner collection 0xb102…a14C (beacon proxy) · Mining 0x7E2E�
 | `src/TapeoutReceipt.sol` | Unique-ID ERC-1155 receipt for one category; pool is its only minter | Nothing |
 | `src/PoolMath.sol` | Pure allocation math (see [ACCOUNTING.md](ACCOUNTING.md)) | — |
 | `src/interfaces/IMining.sol` | `minerKey`, `pending`, `claim` (adapted from the baseline) | — |
+| `src/HistoricalDistributor.sol` | Optional historical recipient: splits one category's historical income among fixed contributor weights (§8) | BEM until claimed |
 
 **Why this composition.** Both receipt collections share one income stream, so one ledger with a
 category split is the simplest correct design: there is no cross-contract settlement, no splitting of
@@ -88,9 +89,9 @@ income earned while it held them.
 earns exactly what one receipt ID earns. Their accrued income has a ledger of its own
 (`historicalClaimable`, `historicalPaid`) and is paid by `releaseHistorical(category)` to the
 configured recipient, which may be an EOA, a multisig, or a distribution contract that later splits it
-among individual historical contributors. Each entitlement is counted once: historical rights are
-never also represented by receipt IDs. The recipient role can be handed over only by its current
-holder, carrying its unreleased income with it.
+among individual historical contributors (`HistoricalDistributor`, §8). Each entitlement is counted
+once: historical rights are never also represented by receipt IDs. The recipient role can be handed
+over only by its current holder, carrying its unreleased income with it.
 
 ## 3. Custody and harvesting
 
@@ -178,6 +179,140 @@ the claim revert). See [BASELINE.md](BASELINE.md).
 7. **No rescue path.** Other tokens or NFTs sent to the pool stay there. BEM sent to it is income.
 8. **Residue and lost keys.** At most `1 + (S_N+H_N−1) + (S_L+H_L−1)` raw units remain after
    everyone claims; income of IDs whose holders lose their keys stays in the pool.
-9. **Batch sizes.** Claims, issuance and harvests are bounded by block gas; the CLI batches them
-   (measured costs in [VERIFICATION_REPORT.md](VERIFICATION_REPORT.md)).
+9. **Batch sizes.** BSC rejects any transaction whose gas limit exceeds 16,777,216 (2^24; BEP-652,
+   Mendel hardfork, mainnet 2026-04-28), whatever the block gas limit. The CLI sizes every claim,
+   issuance, deposit and harvest transaction, and every Safe batch file, within 3/4 of that cap
+   (bounds and measured costs in [VERIFICATION_REPORT.md §4](VERIFICATION_REPORT.md#4-gas)).
 10. **Not audited.** Tests, fuzzing, invariants and a fork run are not an independent security audit.
+
+## 8. Historical distributor (optional recipient contract)
+
+`src/HistoricalDistributor.sol` splits one category's historical income among individual historical
+contributors by a manually decided weight list. It changes nothing in the pool, which still pays one
+recipient per category: the distributor is that recipient.
+
+```
+TapeoutMinerPool ── releaseHistorical(NAND) ──> HistoricalDistributor(pool, NAND, list) ── claim ──> contributor accounts
+                 ── releaseHistorical(LATCH) ─> HistoricalDistributor(pool, LATCH, list) ── claim ──> contributor accounts
+```
+
+**Binding.** One distributor per category, deployed after the pool with `(pool, category, accounts,
+weights)`. It takes its BEM address from `pool.bem()`, so it cannot be bound to another token. It
+becomes the recipient either through the configuration before activation (its address is part of the
+activation hash) or after activation through `setRecipient(role, distributor)` sent by the current
+recipient; unreleased income moves with the role, so the previous recipient releases first if it
+should keep what accrued during its tenure. The distributor never calls `setRecipient`, so once it
+holds a role nobody can move it again.
+
+**Contributor list.** Fixed at deployment: 1 to 400 accounts, strictly ascending by address (which
+rejects the zero address and duplicates in one comparison), each with a positive `uint96` weight;
+only ratios matter, so weights can be historical share counts, basis points or raw contribution
+amounts. The distributor itself and the pool cannot be contributors. Each entry is one storage slot
+(account and weight packed). `contributorsHash = keccak256(abi.encode(accounts, weights))` is stored
+so a deployment can be checked against the reviewed file without enumerating it. There is no owner,
+no withdrawal, no upgrade path, and no way to change, add or remove a contributor or its account.
+
+**Why an explicit list and not a Merkle root.** Historical contributor lists are manual and small (the
+example pool has 100 historical NAND shares). Stored on chain, the list lets the contract itself
+enforce what a Merkle root could only promise: weights are positive, accounts are distinct, and the
+total weight is the real sum of the weights, so entitlements can never add up to more than the
+income. A Merkle distributor has to trust an off-chain total; a wrong tree lets early claimants take
+other contributors' income. The on-chain list is also enumerable (`contributorsPage`), so anyone can
+reconcile `Σ claimed = totalPaid` and a keeper can pay every contributor without proofs. The price is
+deployment cost linear in the list, under two protocol limits. The constructor arguments are part of
+the creation transaction's initcode, which EIP-3860 limits to 49,152 bytes (about 8 KB of creation
+code plus 64 bytes per contributor); and BSC rejects any transaction whose gas limit exceeds 16,777,216
+(2^24; BEP-652, EIP-7825). `MAX_CONTRIBUTORS = 400` keeps a full list at 33,865 bytes and 11,180,990
+gas, within the 3/4 of the cap that every planned transaction respects (§7 item 9), so a signer's gas
+buffer still fits. A longer list is split by nesting: a contributor may itself be a
+`HistoricalDistributor` for the same pool and category, whose income arrives through the parent's
+claims (its own `releaseFromPool` is not used).
+
+Both limits were checked on BSC with read-only `eth_estimateGas` calls. At block 128,691,535 a
+49,152-byte creation was accepted and 49,153 bytes were rejected with `max initcode size exceeded`. On
+2026-10-20 (block 128,704,035) five public endpoints running two clients stopped estimating at exactly
+16,777,216 gas while the block gas limit was 70,000,000.
+
+**Accounting.** It follows the pool's rules (§1–§3 and §6 of [ACCOUNTING.md](ACCOUNTING.md)). Over
+the cumulative recognized income `T`, total weight `W = Σ w`, and `n` contributors:
+
+| Quantity | Formula |
+| --- | --- |
+| recognized on every sync | `balance + totalPaid − totalAccounted` (reverts `BalanceDecreased` if negative) |
+| entitlement of contributor `i` | `floor(T · w_i / W)` (`Math.mulDiv`, exact for any `uint96` weights) |
+| claimable | `entitlement_i − claimed_i` |
+| residue (retained) | `T − Σ entitlement_i`, always `0 ≤ residue ≤ n − 1` |
+
+Entitlements are cumulative floors, so they are monotonic and path independent, and residue from one
+payment is paid out by later income instead of accumulating. A claim sets `claimed_i` to the current
+entitlement and pays the difference once; payments require exact balance deltas exactly like the
+pool's `_pay`, so a fee-on-transfer or otherwise abnormal token reverts the claim and leaves the history
+untouched. Anything that raises the distributor's BEM balance is income: pool releases by any caller
+and direct transfers. Identities (`reconciliation()`, checked by `distributor-inspect --deep`):
+
+```
+bemBalance + deficit = totalAccounted − totalPaid + unrecognized
+totalAccounted       = entitled + residue
+Σ claimed_i          = totalPaid,   claimed_i ≤ entitlement_i for every contributor
+```
+
+**Claims and releases.**
+
+| Function | Who | Effect |
+| --- | --- | --- |
+| `releaseFromPool()` | anyone | `pool.releaseHistorical(category)` then sync; reverts `NotPoolRecipient` unless the distributor holds the role |
+| `sync()` | anyone | Recognizes BEM that arrived by any route |
+| `claim(account)` | anyone | Pays `account` its claimable income |
+| `claimBatch(accounts)` | anyone | Same for a list; a duplicated account pays once; an unknown account reverts the batch |
+| `claimRange(start, count)` | anyone | Pays contributors `start..start+count−1` of the sorted list (clamped) |
+
+Payouts always go to the contributor's own fixed account, so a third party can push a payment but
+never redirect one. Unlike receipt IDs these entitlements are not transferable, so a push cannot take
+unclaimed income away from a buyer, which is why receipt claims are holder-only and these are not.
+Claims never call the pool: problems in the pool cannot block income already received.
+
+**Worked example (specification numbers).** 1,020 BEM of pool income with the example configuration
+gives 80 BEM of historical NAND and 40 BEM of historical LATCH. A NAND distributor with weights
+50/30/20 pays 40/24/16 BEM; a LATCH distributor with weights 3/1 pays 30/10 BEM; residue 0
+(`DistributorPoolIntegrationTest.testSpecificationExampleReachesIndividualContributors`).
+
+**Tests.** `test/unit/DistributorSetup.t.sol` (constructor validation, cap, initcode size, views),
+`DistributorAccounting.t.sol` (exact split, residue, repeated/pushed/batch/range claims, token faults,
+path independence, two fuzz tests), `DistributorPoolIntegration.t.sol` (real pool on the mock protocol:
+configured recipient, handover after activation, locked role, direct pool release, nesting, many
+rounds), `test/invariant/DistributorInvariant.t.sol` (two distributors as the pool's recipients:
+conservation against `historicalPaid`, no overpayment, ledger identities, monotonic entitlements).
+
+**Measured costs** (`test/unit/DistributorGas.t.sol` and `BatchGasBudget.t.sol`, written to
+`reports/gas-distributor.json` and `reports/gas-batch.json`; cold storage, excluding the 21,000 base and
+calldata):
+
+| Operation | Gas |
+| --- | ---: |
+| Deploy, 1 / 100 / 400 contributors | 1,379,040 / 3,739,559 / 10,933,121 |
+| Deploy 400, whole transaction on a local Anvil node (Prague rules) | 11,180,990 |
+| `releaseFromPool` | 155,205 |
+| `claim`, first payment | 113,263 |
+| `claimBatch`, 50 / 150 first payments | 3,166,225 / 9,473,031 |
+| `claimRange`, 150 / 200 first payments | 8,724,516 / 11,602,992 |
+| `reconciliation()` view, 400 contributors | 1,039,537 |
+
+The CLI pays at most 150 contributors per transaction (`distributor-claim --batch-size`, default 100).
+Runtime size 6,322 bytes, creation code 8,073 bytes. The Foundry suites run on Paris, which predates
+EIP-3860, so the initcode limit is checked by `testFullListCreationFitsTheInitcodeLimit` and was
+confirmed on Anvil: with this bytecode 638 contributors (49,097 bytes) are the most a creation
+transaction can carry, 639 are rejected before execution.
+
+**Limitations.**
+
+1. **Irreversible.** The list cannot be corrected and the role cannot leave the distributor. Check the
+   deployment against the reviewed file (`distributor-inspect --weights`) before making it a
+   recipient; a wrong distributor that is not yet the recipient is simply abandoned.
+2. **Lost keys and blocked accounts.** Income of a contributor that lost its key stays in the
+   distributor. If BEM ever refused transfers to an account, that contributor's claims (and any batch
+   including it) would revert; the others are unaffected.
+3. **One list per distributor.** If one distributor is made the recipient of both categories, both
+   incomes are pooled and split by the same weights; `releaseFromPool` pulls only its bound category
+   (the other is still released through the pool's own `releaseHistorical`).
+4. **No rescue path.** BEM sent to the distributor is income; other tokens stay there.
+5. **Not audited**, like the rest of this repository.

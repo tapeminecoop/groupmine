@@ -9,7 +9,7 @@ import {
   type Hex,
   type PublicClient,
 } from 'viem';
-import { mockMiningAbi, tapeoutMinerPoolAbi, tapeoutReceiptAbi } from './abi.js';
+import { historicalDistributorAbi, mockMiningAbi, tapeoutMinerPoolAbi, tapeoutReceiptAbi } from './abi.js';
 
 /** An unsigned transaction. Plans are what the CLI prints, simulates, exports for a Safe, or
  *  sends to a local Anvil node; the tooling never handles private keys. */
@@ -29,13 +29,13 @@ export interface SentTx {
   contractAddress?: Address | null;
 }
 
-const errorAbi = [...tapeoutMinerPoolAbi, ...tapeoutReceiptAbi, ...mockMiningAbi].filter(item => item.type === 'error') as Abi;
+const errorAbi = [...tapeoutMinerPoolAbi, ...tapeoutReceiptAbi, ...historicalDistributorAbi, ...mockMiningAbi].filter(item => item.type === 'error') as Abi;
 
 export function client(rpcUrl: string): PublicClient {
   return createPublicClient({ transport: http(rpcUrl, { retryCount: 2, timeout: 60_000 }) });
 }
 
-/** Extract revert data from a viem error and decode it against the pool/receipt errors. */
+/** Extract revert data from a viem error and decode it against the pool/receipt/distributor errors. */
 export function describeError(error: unknown): string {
   if (error instanceof BaseError) {
     let data: Hex | undefined;
@@ -83,10 +83,11 @@ export async function impersonate(rpc: PublicClient, account: Address) {
   await rpc.request({ method: 'anvil_impersonateAccount', params: [account] } as never);
 }
 
-export async function sendLocal(rpc: PublicClient, plan: TxPlan, from: Address): Promise<SentTx> {
+/** `gas`, when given, is the transaction's gas limit; otherwise Anvil uses its own estimate. */
+export async function sendLocal(rpc: PublicClient, plan: TxPlan, from: Address, gas?: bigint): Promise<SentTx> {
   const hash = await rpc.request({
     method: 'eth_sendTransaction',
-    params: [{ from, ...(plan.to ? { to: plan.to } : {}), data: plan.data, value: toHex(plan.value) }],
+    params: [{ from, ...(plan.to ? { to: plan.to } : {}), data: plan.data, value: toHex(plan.value), ...(gas !== undefined ? { gas: toHex(gas) } : {}) }],
   } as never) as Hex;
   const receipt = await rpc.waitForTransactionReceipt({ hash, timeout: 600_000 });
   if (receipt.status !== 'success') {
@@ -116,10 +117,12 @@ export function safeBatch(plans: TxPlan[], chainId: number, name: string, safe?:
   };
 }
 
-/** Equivalent Foundry command; the operator chooses the signer (--ledger, --account, ...). */
-export function castCommand(plan: TxPlan): string {
+/** Equivalent Foundry command; the operator chooses the signer (--ledger, --account, ...). With
+ *  `gasLimit` the command fixes the gas limit instead of using cast's estimate as the limit. */
+export function castCommand(plan: TxPlan, gasLimit?: bigint): string {
   const value = plan.value > 0n ? ` --value ${plan.value}` : '';
+  const gas = gasLimit !== undefined ? ` --gas-limit ${gasLimit}` : '';
   return plan.to
-    ? `cast send --rpc-url "$RPC_URL" <SIGNER_FLAGS>${value} ${plan.to} ${plan.data}`
-    : `cast send --rpc-url "$RPC_URL" <SIGNER_FLAGS>${value} --create ${plan.data}`;
+    ? `cast send --rpc-url "$RPC_URL" <SIGNER_FLAGS>${value}${gas} ${plan.to} ${plan.data}`
+    : `cast send --rpc-url "$RPC_URL" <SIGNER_FLAGS>${value}${gas} --create ${plan.data}`;
 }

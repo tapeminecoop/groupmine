@@ -1,0 +1,1147 @@
+{
+  "scope": "LOCAL_ANVIL_MOCK_PROTOCOL_ONLY",
+  "startedAt": "2026-10-20T07:48:51.666Z",
+  "status": "PASS",
+  "steps": [
+    {
+      "label": "deploy-pool",
+      "argv": [
+        "deploy",
+        "--config",
+        ".runtime/distributor-e2e/pool.json",
+        "--from",
+        "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+        "--send-local"
+      ],
+      "mode": "SENT_LOCAL_ANVIL",
+      "transactions": [
+        {
+          "hash": "0x1b10c26b34b646dc2e9b2145bff2116b008a24173778b2f2f688fcd3af56c2d3",
+          "gasUsed": "7788103",
+          "description": "deploy TapeoutMinerPool \"Distributor E2E Pool\" owned by 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+        }
+      ]
+    },
+    {
+      "label": "distributor-check",
+      "argv": [
+        "distributor-check",
+        "--weights",
+        ".runtime/distributor-e2e/historical-nand.json",
+        "--pool",
+        "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+        "--income",
+        "80",
+        "--out",
+        ".runtime/distributor-e2e/args.json"
+      ],
+      "transactions": [],
+      "result": {
+        "command": "distributor-check",
+        "status": "WEIGHTS_VALID",
+        "category": "NAND",
+        "contributorCount": 3,
+        "totalWeight": "100",
+        "contributorsHash": "0xd7a5bb6836c42f3b4100ae73ef706d12ca923268a743c8b5f04a1ec013050bbc",
+        "contributors": [
+          {
+            "index": 0,
+            "account": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
+            "weight": "30",
+            "share": "30.000000%",
+            "ref": "c2",
+            "amountRaw": "2400000000",
+            "amountBem": "24.00000000"
+          },
+          {
+            "index": 1,
+            "account": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f",
+            "weight": "20",
+            "share": "20.000000%",
+            "ref": "c3",
+            "amountRaw": "1600000000",
+            "amountBem": "16.00000000"
+          },
+          {
+            "index": 2,
+            "account": "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
+            "weight": "50",
+            "share": "50.000000%",
+            "ref": "c1",
+            "amountRaw": "4000000000",
+            "amountBem": "40.00000000"
+          }
+        ],
+        "preview": {
+          "incomeRaw": "8000000000",
+          "incomeBem": "80.00000000",
+          "entitledRaw": "8000000000",
+          "residueRaw": "0",
+          "residueBound": "2"
+        },
+        "constructorArgs": {
+          "pool": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+          "category": 0,
+          "accounts": [
+            "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
+            "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f",
+            "0x976EA74026E726554dB657fA54763abd0C3a0aa9"
+          ],
+          "weights": [
+            "30",
+            "20",
+            "50"
+          ],
+          "encodedConstructorArgs": "0x000000000000000000000000cf7ed3acca5a467e9e704c703e8d87f634fb0fc9000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000300000000000000000000000014dc79964da2c08b23698b3d3cc7ca32193d995500000000000000000000000023618e81e3f5cdf7f54c3d65f7fbc0abf5b21e8f000000000000000000000000976ea74026e726554db657fa54763abd0c3a0aa90000000000000000000000000000000000000000000000000000000000000003000000000000000000000000000000000000000000000000000000000000001e00000000000000000000000000000000000000000000000000000000000000140000000000000000000000000000000000000000000000000000000000000032"
+        },
+        "file": ".runtime/distributor-e2e/args.json"
+      }
+    },
+    {
+      "label": "distributor-deploy-plan",
+      "argv": [
+        "distributor-deploy",
+        "--weights",
+        ".runtime/distributor-e2e/historical-nand.json",
+        "--pool",
+        "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+        "--from",
+        "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
+      ],
+      "mode": "PLAN_ONLY_NOT_SENT",
+      "transactions": [],
+      "result": {
+        "command": "distributor-deploy",
+        "mode": "PLAN_ONLY_NOT_SENT",
+        "chainId": 31337,
+        "category": "NAND",
+        "contributorCount": 3,
+        "totalWeight": "100",
+        "contributorsHash": "0xd7a5bb6836c42f3b4100ae73ef706d12ca923268a743c8b5f04a1ec013050bbc",
+        "constructorArgs": {
+          "pool": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+          "category": 0,
+          "accounts": [
+            "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
+            "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f",
+            "0x976EA74026E726554dB657fA54763abd0C3a0aa9"
+          ],
+          "weights": [
+            "30",
+            "20",
+            "50"
+          ],
+          "encodedConstructorArgs": "0x000000000000000000000000cf7ed3acca5a467e9e704c703e8d87f634fb0fc9000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000300000000000000000000000014dc79964da2c08b23698b3d3cc7ca32193d995500000000000000000000000023618e81e3f5cdf7f54c3d65f7fbc0abf5b21e8f000000000000000000000000976ea74026e726554db657fa54763abd0c3a0aa90000000000000000000000000000000000000000000000000000000000000003000000000000000000000000000000000000000000000000000000000000001e00000000000000000000000000000000000000000000000000000000000000140000000000000000000000000000000000000000000000000000000000000032"
+        },
+        "poolChecks": {
+          "version": "TapeoutMinerPool/1.0.0",
+          "bem": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+          "active": false,
+          "historicalShares": "0",
+          "currentRecipient": "0x0000000000000000000000000000000000000000",
+          "warnings": [
+            "pool has no historical NAND shares (H = 0) in its current setup configuration: the distributor would receive no pool income"
+          ]
+        },
+        "plans": [
+          {
+            "description": "deploy HistoricalDistributor for pool 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 NAND: 3 contributors, total weight 100, list hash 0xd7a5bb6836c42f3b4100ae73ef706d12ca923268a743c8b5f04a1ec013050bbc",
+            "to": null,
+            "value": "0",
+            "maxGas": "1675000",
+            "simulation": {
+              "ok": true,
+              "gas": "1565369"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "label": "distributor-deploy",
+      "argv": [
+        "distributor-deploy",
+        "--weights",
+        ".runtime/distributor-e2e/historical-nand.json",
+        "--pool",
+        "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+        "--from",
+        "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+        "--send-local"
+      ],
+      "mode": "SENT_LOCAL_ANVIL",
+      "transactions": [
+        {
+          "hash": "0xdc190699ba2381067d5a1530201e00a955065f990b05492f7453b7687a66af03",
+          "gasUsed": "1565369",
+          "description": "deploy HistoricalDistributor for pool 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 NAND: 3 contributors, total weight 100, list hash 0xd7a5bb6836c42f3b4100ae73ef706d12ca923268a743c8b5f04a1ec013050bbc"
+        }
+      ]
+    },
+    {
+      "label": "configure",
+      "argv": [
+        "configure",
+        "--pool",
+        "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+        "--config",
+        ".runtime/distributor-e2e/pool.json",
+        "--from",
+        "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+        "--send-local"
+      ],
+      "mode": "SENT_LOCAL_ANVIL",
+      "transactions": [
+        {
+          "hash": "0x81c30757ced0a7cbd48397ad0817f1f87dc4f8662bae649d099940b44d800e3b",
+          "gasUsed": "133563",
+          "description": "configure S_N=900 S_L=80 H_N=100 H_L=20 W_N=80000000 (hash 0x5f6fa5d5da742550273f910cb907975369e494dd338384b879645de1b0144d33)"
+        }
+      ]
+    },
+    {
+      "label": "issue",
+      "argv": [
+        "issue",
+        "--pool",
+        "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+        "--config",
+        ".runtime/distributor-e2e/pool.json",
+        "--allocation",
+        ".runtime/distributor-e2e/allocation.json",
+        "--from",
+        "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+        "--send-local"
+      ],
+      "mode": "SENT_LOCAL_ANVIL",
+      "transactions": [
+        {
+          "hash": "0x1ee83d74c877ada87a1d684abc922df89db071b855d5fa8918012fac44e69ca6",
+          "gasUsed": "9487384",
+          "description": "issue NAND #1..#200 to 0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+        },
+        {
+          "hash": "0x63b20fa3e9e5d89e525b717cc01d7ab34de62c841d65ba65fae3eb2c45698bbd",
+          "gasUsed": "9453184",
+          "description": "issue NAND #201..#400 to 0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+        },
+        {
+          "hash": "0x9aaa38a7fd6938c50e2ec037a0f6a9793f709dc8401aa7a8f4abd6d5514573fa",
+          "gasUsed": "9453196",
+          "description": "issue NAND #401..#600 to 0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+        },
+        {
+          "hash": "0x7ef44bd6dc21f96fe4ce54f82d6911be886fafda49392a32aacf1daaebf1d430",
+          "gasUsed": "9453196",
+          "description": "issue NAND #601..#800 to 0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+        },
+        {
+          "hash": "0x5fb0fc744df7c5431be3b2540488c4d51c80a0a44a3ea436e45e2b74388018f5",
+          "gasUsed": "4753400",
+          "description": "issue NAND #801..#900 to 0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+        },
+        {
+          "hash": "0x371cca4bbcd1dfd85d33282652c1ee6f8161f90b4f8897290ae18223cac29936",
+          "gasUsed": "3847730",
+          "description": "issue LATCH #1..#80 to 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC"
+        }
+      ]
+    },
+    {
+      "label": "activate",
+      "argv": [
+        "activate",
+        "--pool",
+        "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+        "--config",
+        ".runtime/distributor-e2e/pool.json",
+        "--from",
+        "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+        "--send-local"
+      ],
+      "mode": "SENT_LOCAL_ANVIL",
+      "transactions": [
+        {
+          "hash": "0x63ac25114128535168d7dbd59e68a255ca65db82bf4d2faf51dc659fbfce148a",
+          "gasUsed": "162721",
+          "description": "activate with reviewed config hash 0x5f6fa5d5da742550273f910cb907975369e494dd338384b879645de1b0144d33"
+        }
+      ]
+    },
+    {
+      "label": "deposit",
+      "argv": [
+        "deposit",
+        "--pool",
+        "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+        "--token-ids",
+        "1,2,3",
+        "--from",
+        "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+        "--send-local"
+      ],
+      "mode": "SENT_LOCAL_ANVIL",
+      "transactions": [
+        {
+          "hash": "0x855df6b7ca792a88adf7ad92fc19c3637ddf16790b84b1e089bbc2e0bd5aab3a",
+          "gasUsed": "46191",
+          "description": "approve pool 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 to pull miners"
+        },
+        {
+          "hash": "0xeb60a6498cc0cdc4c48437db73269ec1b5052ba4b4df1bd680cb1896f6592ac4",
+          "gasUsed": "496774",
+          "description": "deposit miners 1,2,3"
+        }
+      ]
+    },
+    {
+      "label": "harvest",
+      "argv": [
+        "harvest",
+        "--pool",
+        "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+        "--all",
+        "--from",
+        "0x90f79bf6eb2c4f870365e785982e1f101e93b906",
+        "--send-local"
+      ],
+      "mode": "SENT_LOCAL_ANVIL",
+      "transactions": [
+        {
+          "hash": "0xec3f070cb56e6aee727861cb3c35a27d229a09adf2f3a912c37e0bc8bc834d1e",
+          "gasUsed": "217634",
+          "description": "harvest registry entries 0..24"
+        }
+      ]
+    },
+    {
+      "label": "distributor-inspect",
+      "argv": [
+        "distributor-inspect",
+        "--distributor",
+        "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+        "--weights",
+        ".runtime/distributor-e2e/historical-nand.json",
+        "--deep",
+        "--contributor",
+        "0x976ea74026e726554db657fa54763abd0c3a0aa9"
+      ],
+      "transactions": [],
+      "result": {
+        "command": "distributor-inspect",
+        "status": "PASS",
+        "blockNumber": "25",
+        "blockHash": "0xdae3a3373257032d2bf1fb59930ee4875525e511a6ddf61731d11fddc2d118ef",
+        "summary": {
+          "distributor": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+          "version": "HistoricalDistributor/1.0.0",
+          "pool": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+          "category": "NAND",
+          "role": 1,
+          "bem": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+          "totalWeight": "100",
+          "contributorsHash": "0xd7a5bb6836c42f3b4100ae73ef706d12ca923268a743c8b5f04a1ec013050bbc",
+          "contributorCount": "3",
+          "totalAccounted": "0",
+          "totalPaid": "0",
+          "reconciliation": {
+            "bemBalance": "0",
+            "unrecognized": "0",
+            "deficit": "0",
+            "totalAccounted": "0",
+            "totalPaid": "0",
+            "entitled": "0",
+            "residue": "0"
+          },
+          "pendingFromPool": "8000000000",
+          "poolRecipient": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+          "isPoolRecipient": true
+        },
+        "checks": {
+          "balanceIdentity": true,
+          "accruedIdentity": true,
+          "noDeficit": true,
+          "residueWithinBound": true,
+          "paidWithinAccounted": true,
+          "listMatchesStoredHash": true,
+          "totalWeightMatches": true,
+          "offChainMathMatches": true,
+          "claimedSumMatchesPaid": true,
+          "noContributorOverpaid": true
+        },
+        "fileChecks": {
+          "categoryMatchesFile": true,
+          "totalWeightMatchesFile": true,
+          "contributorsHashMatchesFile": true
+        },
+        "contributor": {
+          "account": "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
+          "isContributor": true,
+          "index": "2",
+          "weight": "50",
+          "entitlementRaw": "0",
+          "claimedRaw": "0",
+          "claimableRaw": "0",
+          "claimableBem": "0.00000000"
+        },
+        "contributors": [
+          {
+            "index": 0,
+            "account": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
+            "weight": "30",
+            "claimed": "0"
+          },
+          {
+            "index": 1,
+            "account": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f",
+            "weight": "20",
+            "claimed": "0"
+          },
+          {
+            "index": 2,
+            "account": "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
+            "weight": "50",
+            "claimed": "0"
+          }
+        ]
+      }
+    },
+    {
+      "label": "distributor-inspect-outsider",
+      "argv": [
+        "distributor-inspect",
+        "--distributor",
+        "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+        "--contributor",
+        "0xa0ee7a142d267c1f36714e4a8f75612f20a79720"
+      ],
+      "transactions": [],
+      "result": {
+        "command": "distributor-inspect",
+        "status": "PASS",
+        "blockNumber": "25",
+        "blockHash": "0xdae3a3373257032d2bf1fb59930ee4875525e511a6ddf61731d11fddc2d118ef",
+        "summary": {
+          "distributor": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+          "version": "HistoricalDistributor/1.0.0",
+          "pool": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+          "category": "NAND",
+          "role": 1,
+          "bem": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+          "totalWeight": "100",
+          "contributorsHash": "0xd7a5bb6836c42f3b4100ae73ef706d12ca923268a743c8b5f04a1ec013050bbc",
+          "contributorCount": "3",
+          "totalAccounted": "0",
+          "totalPaid": "0",
+          "reconciliation": {
+            "bemBalance": "0",
+            "unrecognized": "0",
+            "deficit": "0",
+            "totalAccounted": "0",
+            "totalPaid": "0",
+            "entitled": "0",
+            "residue": "0"
+          },
+          "pendingFromPool": "8000000000",
+          "poolRecipient": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+          "isPoolRecipient": true
+        },
+        "checks": {
+          "balanceIdentity": true,
+          "accruedIdentity": true,
+          "noDeficit": true,
+          "residueWithinBound": true,
+          "paidWithinAccounted": true
+        },
+        "contributor": {
+          "account": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+          "isContributor": false
+        }
+      }
+    },
+    {
+      "label": "distributor-claim-release-all",
+      "argv": [
+        "distributor-claim",
+        "--distributor",
+        "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+        "--release",
+        "--all",
+        "--batch-size",
+        "2",
+        "--from",
+        "0x90f79bf6eb2c4f870365e785982e1f101e93b906",
+        "--send-local"
+      ],
+      "mode": "SENT_LOCAL_ANVIL",
+      "transactions": [
+        {
+          "hash": "0x791b0a978bae2aefb07a122c99e234c7177f2831b19c67e1e6fc218666e8087b",
+          "gasUsed": "159520",
+          "description": "release this category's historical income from the pool into the distributor"
+        },
+        {
+          "hash": "0x4c7cdb4566a1983dd70bd4d9d0cecbdca78ba3a7b178c41e9c0191b9d737c048",
+          "gasUsed": "177253",
+          "description": "pay contributors #0..#1"
+        },
+        {
+          "hash": "0xb2385e5aeb613f89d5a925724ce6b0be3d0744d2f9fbf20c4b86be852d103876",
+          "gasUsed": "97389",
+          "description": "pay contributors #2..#2"
+        }
+      ]
+    },
+    {
+      "label": "distributor-claim-nothing",
+      "argv": [
+        "distributor-claim",
+        "--distributor",
+        "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+        "--contributor",
+        "0x976ea74026e726554db657fa54763abd0c3a0aa9"
+      ],
+      "transactions": [],
+      "result": {
+        "command": "distributor-claim",
+        "status": "NOTHING_TO_CLAIM",
+        "distributor": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+        "category": "NAND"
+      }
+    },
+    {
+      "label": "harvest-2",
+      "argv": [
+        "harvest",
+        "--pool",
+        "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+        "--all",
+        "--from",
+        "0x90f79bf6eb2c4f870365e785982e1f101e93b906",
+        "--send-local"
+      ],
+      "mode": "SENT_LOCAL_ANVIL",
+      "transactions": [
+        {
+          "hash": "0x1adda7e2f53f4ff45530d70f144fe6d4d7c582cc5f5537aefe2d143a524e3f5c",
+          "gasUsed": "149174",
+          "description": "harvest registry entries 0..24"
+        }
+      ]
+    },
+    {
+      "label": "release-pool",
+      "argv": [
+        "release",
+        "--pool",
+        "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+        "--from",
+        "0x90f79bf6eb2c4f870365e785982e1f101e93b906",
+        "--send-local"
+      ],
+      "mode": "SENT_LOCAL_ANVIL",
+      "transactions": [
+        {
+          "hash": "0xd8982347e4e9e808cd7387b2ed3c6b57086a295d0a2f7b58d341c49dd8d87278",
+          "gasUsed": "104823",
+          "description": "release accrued fee to the fee recipient"
+        },
+        {
+          "hash": "0x3b668e799fa61f248ddd5ebf1f0ae279311fa851bdd24f2dde38818a456caf3f",
+          "gasUsed": "90330",
+          "description": "release historical NAND income to its recipient"
+        },
+        {
+          "hash": "0xfd8080e3a2cc49e1e434d9feb8b78a2576b0eb77b8c8ab3f35df76ec61dbffcb",
+          "gasUsed": "107454",
+          "description": "release historical LATCH income to its recipient"
+        }
+      ]
+    },
+    {
+      "label": "distributor-claim-self",
+      "argv": [
+        "distributor-claim",
+        "--distributor",
+        "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+        "--contributor",
+        "0x14dc79964da2c08b23698b3d3cc7ca32193d9955",
+        "--from",
+        "0x14dc79964da2c08b23698b3d3cc7ca32193d9955",
+        "--send-local"
+      ],
+      "mode": "SENT_LOCAL_ANVIL",
+      "transactions": [
+        {
+          "hash": "0x29093656aba9b067f96973c7df5458560c66c706abbb92a85243b9e7e83358d0",
+          "gasUsed": "75190",
+          "description": "pay contributor 0x14dC79964da2C08b23698B3D3cc7Ca32193d9955"
+        }
+      ]
+    },
+    {
+      "label": "distributor-claim-listed",
+      "argv": [
+        "distributor-claim",
+        "--distributor",
+        "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+        "--contributor",
+        "0x976ea74026e726554db657fa54763abd0c3a0aa9,0x23618e81e3f5cdf7f54c3d65f7fbc0abf5b21e8f,0x976ea74026e726554db657fa54763abd0c3a0aa9",
+        "--from",
+        "0xa0ee7a142d267c1f36714e4a8f75612f20a79720",
+        "--send-local"
+      ],
+      "mode": "SENT_LOCAL_ANVIL",
+      "transactions": [
+        {
+          "hash": "0xfa3bd956ec762a3b8c21d470b68df28920a19d3e493e85784801c57f056c7b44",
+          "gasUsed": "92844",
+          "description": "pay 2 listed contributors"
+        }
+      ]
+    },
+    {
+      "label": "distributor-deploy-unbound",
+      "argv": [
+        "distributor-deploy",
+        "--weights",
+        ".runtime/distributor-e2e/historical-nand.json",
+        "--pool",
+        "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+        "--from",
+        "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+        "--send-local"
+      ],
+      "mode": "SENT_LOCAL_ANVIL",
+      "transactions": [
+        {
+          "hash": "0x87d1fbaa27f083ce6a66702cfae8c495a0bb45bdfbbca6f1227e604a82ced739",
+          "gasUsed": "1565369",
+          "description": "deploy HistoricalDistributor for pool 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 NAND: 3 contributors, total weight 100, list hash 0xd7a5bb6836c42f3b4100ae73ef706d12ca923268a743c8b5f04a1ec013050bbc"
+        }
+      ]
+    },
+    {
+      "label": "distributor-inspect-final",
+      "argv": [
+        "distributor-inspect",
+        "--distributor",
+        "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+        "--weights",
+        ".runtime/distributor-e2e/historical-nand.json",
+        "--deep",
+        "--out",
+        ".runtime/distributor-e2e/distributor-inspect.json"
+      ],
+      "transactions": [],
+      "result": {
+        "command": "distributor-inspect",
+        "status": "PASS",
+        "blockNumber": "36",
+        "blockHash": "0x94cd19d0a2979851260cf8238974e6b2bb14d75c33c7b82030467f5ea1cf7e41",
+        "summary": {
+          "distributor": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+          "version": "HistoricalDistributor/1.0.0",
+          "pool": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+          "category": "NAND",
+          "role": 1,
+          "bem": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+          "totalWeight": "100",
+          "contributorsHash": "0xd7a5bb6836c42f3b4100ae73ef706d12ca923268a743c8b5f04a1ec013050bbc",
+          "contributorCount": "3",
+          "totalAccounted": "8008000000",
+          "totalPaid": "8008000000",
+          "reconciliation": {
+            "bemBalance": "0",
+            "unrecognized": "0",
+            "deficit": "0",
+            "totalAccounted": "8008000000",
+            "totalPaid": "8008000000",
+            "entitled": "8008000000",
+            "residue": "0"
+          },
+          "pendingFromPool": "0",
+          "poolRecipient": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+          "isPoolRecipient": true
+        },
+        "checks": {
+          "balanceIdentity": true,
+          "accruedIdentity": true,
+          "noDeficit": true,
+          "residueWithinBound": true,
+          "paidWithinAccounted": true,
+          "listMatchesStoredHash": true,
+          "totalWeightMatches": true,
+          "offChainMathMatches": true,
+          "claimedSumMatchesPaid": true,
+          "noContributorOverpaid": true
+        },
+        "fileChecks": {
+          "categoryMatchesFile": true,
+          "totalWeightMatchesFile": true,
+          "contributorsHashMatchesFile": true
+        },
+        "contributors": [
+          {
+            "index": 0,
+            "account": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
+            "weight": "30",
+            "claimed": "2402400000"
+          },
+          {
+            "index": 1,
+            "account": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f",
+            "weight": "20",
+            "claimed": "1601600000"
+          },
+          {
+            "index": 2,
+            "account": "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
+            "weight": "50",
+            "claimed": "4004000000"
+          }
+        ]
+      }
+    },
+    {
+      "label": "pool-reconcile",
+      "argv": [
+        "reconcile",
+        "--pool",
+        "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+        "--deep"
+      ],
+      "transactions": [],
+      "result": {
+        "command": "reconcile",
+        "status": "PASS",
+        "ledgerStatus": "PASS",
+        "blockNumber": "36",
+        "blockHash": "0x94cd19d0a2979851260cf8238974e6b2bb14d75c33c7b82030467f5ea1cf7e41",
+        "pool": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+        "reconciliation": {
+          "bemBalance": "88088000003",
+          "unrecognized": "0",
+          "deficit": "0",
+          "totalAccounted": "102102000003",
+          "totalPaid": "14014000000",
+          "feeAccrued": "2002000000",
+          "feePaid": "2002000000",
+          "nandReceiptsAccrued": "72072000000",
+          "nandReceiptsPaid": "0",
+          "latchReceiptsAccrued": "16016000000",
+          "latchReceiptsPaid": "0",
+          "historicalNandAccrued": "8008000000",
+          "historicalNandPaid": "8008000000",
+          "historicalLatchAccrued": "4004000000",
+          "historicalLatchPaid": "4004000000",
+          "residue": "3"
+        },
+        "checks": {
+          "offChainMathMatches": true,
+          "balanceIdentity": true,
+          "paidIdentity": true,
+          "accruedIdentity": true,
+          "noDeficit": true,
+          "residueWithinBound": true,
+          "noBucketOverpaid": true
+        },
+        "outstanding": {
+          "fee": "0",
+          "nandReceipts": "72072000000",
+          "latchReceipts": "16016000000",
+          "historicalNand": "0",
+          "historicalLatch": "0"
+        },
+        "perIdHistories": {
+          "NAND": {
+            "ids": 900,
+            "claimedSum": "0",
+            "receiptsPaid": "0",
+            "match": true
+          },
+          "LATCH": {
+            "ids": 80,
+            "claimedSum": "0",
+            "receiptsPaid": "0",
+            "match": true
+          }
+        }
+      }
+    },
+    {
+      "label": "distributor-deploy-400",
+      "argv": [
+        "distributor-deploy",
+        "--weights",
+        ".runtime/distributor-e2e/historical-400.json",
+        "--pool",
+        "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+        "--from",
+        "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+        "--send-local"
+      ],
+      "mode": "SENT_LOCAL_ANVIL",
+      "transactions": [
+        {
+          "hash": "0xf64fa1c39d99e380e15b07d5b6b3446370415bc1578698040eb1a64f787cc71c",
+          "gasUsed": "11180990",
+          "description": "deploy HistoricalDistributor for pool 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 LATCH: 400 contributors, total weight 19090, list hash 0x503fc3668a937a0c6b1aba1a9b22b79a9fe9802708d285f0a6cbdb13180262e1"
+        }
+      ]
+    },
+    {
+      "label": "distributor-inspect-400",
+      "argv": [
+        "distributor-inspect",
+        "--distributor",
+        "0x7a2088a1bFc9d81c55368AE168C2C02570cB814F",
+        "--weights",
+        ".runtime/distributor-e2e/historical-400.json",
+        "--deep"
+      ],
+      "transactions": [],
+      "result": {
+        "command": "distributor-inspect",
+        "status": "PASS",
+        "blockNumber": "37",
+        "blockHash": "0x37d3c880d36f1351e837ed6a55e2d7306075925ec66e6dd60b01a0b0f14240d4",
+        "summary": {
+          "distributor": "0x7a2088a1bFc9d81c55368AE168C2C02570cB814F",
+          "version": "HistoricalDistributor/1.0.0",
+          "pool": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+          "category": "LATCH",
+          "role": 2,
+          "bem": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+          "totalWeight": "19090",
+          "contributorsHash": "0x503fc3668a937a0c6b1aba1a9b22b79a9fe9802708d285f0a6cbdb13180262e1",
+          "contributorCount": "400",
+          "totalAccounted": "0",
+          "totalPaid": "0",
+          "reconciliation": {
+            "bemBalance": "0",
+            "unrecognized": "0",
+            "deficit": "0",
+            "totalAccounted": "0",
+            "totalPaid": "0",
+            "entitled": "0",
+            "residue": "0"
+          },
+          "pendingFromPool": "0",
+          "poolRecipient": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
+          "isPoolRecipient": false
+        },
+        "checks": {
+          "balanceIdentity": true,
+          "accruedIdentity": true,
+          "noDeficit": true,
+          "residueWithinBound": true,
+          "paidWithinAccounted": true,
+          "listMatchesStoredHash": true,
+          "totalWeightMatches": true,
+          "offChainMathMatches": true,
+          "claimedSumMatchesPaid": true,
+          "noContributorOverpaid": true
+        },
+        "fileChecks": {
+          "categoryMatchesFile": true,
+          "totalWeightMatchesFile": true,
+          "contributorsHashMatchesFile": true
+        },
+        "contributors": {
+          "count": 400
+        }
+      }
+    },
+    {
+      "label": "claim-safe-split",
+      "argv": [
+        "claim",
+        "--pool",
+        "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+        "--holder",
+        "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+        "--all",
+        "--safe-json",
+        ".runtime/distributor-e2e/alice-claim.json"
+      ],
+      "mode": "PLAN_ONLY_NOT_SENT",
+      "transactions": [],
+      "result": {
+        "command": "claim",
+        "mode": "PLAN_ONLY_NOT_SENT",
+        "chainId": 31337,
+        "holder": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+        "expectedPayoutRaw": "72072000000",
+        "expectedPayoutBem": "720.72000000",
+        "safeBatchFiles": [
+          ".runtime/distributor-e2e/alice-claim.1.json",
+          ".runtime/distributor-e2e/alice-claim.2.json",
+          ".runtime/distributor-e2e/alice-claim.3.json"
+        ],
+        "safeBatchMaxGas": [
+          "12400000",
+          "12400000",
+          "3200000"
+        ],
+        "safeBatchNote": "each file is one Safe transaction; execute them in order",
+        "plans": [
+          {
+            "description": "claim 200 NAND + 0 LATCH IDs",
+            "to": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+            "value": "0",
+            "maxGas": "6200000"
+          },
+          {
+            "description": "claim 200 NAND + 0 LATCH IDs",
+            "to": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+            "value": "0",
+            "maxGas": "6200000"
+          },
+          {
+            "description": "claim 200 NAND + 0 LATCH IDs",
+            "to": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+            "value": "0",
+            "maxGas": "6200000"
+          },
+          {
+            "description": "claim 200 NAND + 0 LATCH IDs",
+            "to": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+            "value": "0",
+            "maxGas": "6200000"
+          },
+          {
+            "description": "claim 100 NAND + 0 LATCH IDs",
+            "to": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+            "value": "0",
+            "maxGas": "3200000"
+          }
+        ]
+      }
+    },
+    {
+      "label": "release-safe-single",
+      "argv": [
+        "release",
+        "--pool",
+        "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+        "--safe-json",
+        ".runtime/distributor-e2e/release.json"
+      ],
+      "mode": "PLAN_ONLY_NOT_SENT",
+      "transactions": [],
+      "result": {
+        "command": "release",
+        "mode": "PLAN_ONLY_NOT_SENT",
+        "chainId": 31337,
+        "safeBatchFile": ".runtime/distributor-e2e/release.json",
+        "safeBatchMaxGas": "750000",
+        "plans": [
+          {
+            "description": "release accrued fee to the fee recipient",
+            "to": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+            "value": "0",
+            "maxGas": "250000"
+          },
+          {
+            "description": "release historical NAND income to its recipient",
+            "to": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+            "value": "0",
+            "maxGas": "250000"
+          },
+          {
+            "description": "release historical LATCH income to its recipient",
+            "to": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+            "value": "0",
+            "maxGas": "250000"
+          }
+        ]
+      }
+    },
+    {
+      "label": "claim-simulated",
+      "argv": [
+        "claim",
+        "--pool",
+        "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+        "--holder",
+        "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+        "--nand",
+        "1,2,3",
+        "--from",
+        "0x70997970c51812dc3a010c7d01b50e0d17dc79c8"
+      ],
+      "mode": "PLAN_ONLY_NOT_SENT",
+      "transactions": [],
+      "result": {
+        "command": "claim",
+        "mode": "PLAN_ONLY_NOT_SENT",
+        "chainId": 31337,
+        "holder": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+        "expectedPayoutRaw": "240240000",
+        "expectedPayoutBem": "2.40240000",
+        "plans": [
+          {
+            "description": "claim 3 NAND + 0 LATCH IDs",
+            "to": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+            "value": "0",
+            "maxGas": "290000",
+            "simulation": {
+              "ok": true,
+              "gas": "197066"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "label": "release-plan-for-cast",
+      "argv": [
+        "release",
+        "--pool",
+        "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9"
+      ],
+      "mode": "PLAN_ONLY_NOT_SENT",
+      "transactions": [],
+      "result": {
+        "command": "release",
+        "mode": "PLAN_ONLY_NOT_SENT",
+        "chainId": 31337,
+        "plans": [
+          {
+            "description": "release accrued fee to the fee recipient",
+            "to": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+            "value": "0",
+            "maxGas": "250000"
+          },
+          {
+            "description": "release historical NAND income to its recipient",
+            "to": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+            "value": "0",
+            "maxGas": "250000"
+          },
+          {
+            "description": "release historical LATCH income to its recipient",
+            "to": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+            "value": "0",
+            "maxGas": "250000"
+          }
+        ]
+      }
+    }
+  ],
+  "checks": {
+    "gasWithinModel:deploy-pool": true,
+    "gasLimitIsPlanMaxGas:deploy-pool": true,
+    "checkValid": true,
+    "deployPlanOnly": true,
+    "deployPlanHasCastCreate": true,
+    "poolChecksWarnBeforeConfiguration": true,
+    "safeCannotCreate": true,
+    "gasWithinModel:distributor-deploy": true,
+    "gasLimitIsPlanMaxGas:distributor-deploy": true,
+    "deployedListHashMatches": true,
+    "gasWithinModel:configure": true,
+    "gasLimitIsPlanMaxGas:configure": true,
+    "gasWithinModel:issue": true,
+    "gasLimitIsPlanMaxGas:issue": true,
+    "issuedInBatchesOf200": true,
+    "gasWithinModel:activate": true,
+    "gasLimitIsPlanMaxGas:activate": true,
+    "gasWithinModel:deposit": true,
+    "gasLimitIsPlanMaxGas:deposit": true,
+    "gasWithinModel:harvest": true,
+    "gasLimitIsPlanMaxGas:harvest": true,
+    "harvested1020Bem": true,
+    "inspectPass": true,
+    "isPoolRecipientWithPendingIncome": true,
+    "fileMatchesDeployment": true,
+    "contributorViewBeforeRelease": true,
+    "outsiderIsNotAContributor": true,
+    "gasWithinModel:distributor-claim-release-all": true,
+    "gasLimitIsPlanMaxGas:distributor-claim-release-all": true,
+    "releaseAndTwoClaimBatches": true,
+    "expectedPayoutPrinted": true,
+    "contributor1Paid40Bem": true,
+    "contributor2Paid24Bem": true,
+    "contributor3Paid16Bem": true,
+    "keeperPaidNothing": true,
+    "nothingToClaim": true,
+    "gasWithinModel:harvest-2": true,
+    "gasLimitIsPlanMaxGas:harvest-2": true,
+    "gasWithinModel:release-pool": true,
+    "gasLimitIsPlanMaxGas:release-pool": true,
+    "gasWithinModel:distributor-claim-self": true,
+    "gasLimitIsPlanMaxGas:distributor-claim-self": true,
+    "selfClaimPaysOnlyItself": true,
+    "gasWithinModel:distributor-claim-listed": true,
+    "gasLimitIsPlanMaxGas:distributor-claim-listed": true,
+    "listedClaimIsOneTransaction": true,
+    "cliRejectsNonContributor": true,
+    "gasWithinModel:distributor-deploy-unbound": true,
+    "gasLimitIsPlanMaxGas:distributor-deploy-unbound": true,
+    "cliRejectsReleaseWithoutRole": true,
+    "contractRejectsReleaseWithoutRole": true,
+    "finalInspectPass": true,
+    "distributorReceivedAllHistoricalNand": true,
+    "contributorsHoldTotalPaid": true,
+    "poolReconcilePass": true,
+    "gasWithinModel:distributor-deploy-400": true,
+    "gasLimitIsPlanMaxGas:distributor-deploy-400": true,
+    "fullListDeployed": true,
+    "fullListInspectPass": true,
+    "weightsFileAbove400Refused": true,
+    "issueBatchAbove200Refused": true,
+    "distributorBatchAbove150Refused": true,
+    "oversizedRevokeRefused": true,
+    "safeClaimSplitIntoThreeFiles": true,
+    "safeFileWithinBudget:alice-claim.1.json": true,
+    "safeFileWithinBudget:alice-claim.2.json": true,
+    "safeFileWithinBudget:alice-claim.3.json": true,
+    "safeFilesCoverEveryPlanOnce": true,
+    "smallSafeBatchStaysOneFile": true,
+    "simulationWithinModelNotFlagged": true,
+    "printedCastCommandUsesPlanGasLimit": true
+  },
+  "final": {
+    "pool": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+    "distributor": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+    "summary": {
+      "distributor": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+      "version": "HistoricalDistributor/1.0.0",
+      "pool": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+      "category": "NAND",
+      "role": 1,
+      "bem": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+      "totalWeight": "100",
+      "contributorsHash": "0xd7a5bb6836c42f3b4100ae73ef706d12ca923268a743c8b5f04a1ec013050bbc",
+      "contributorCount": "3",
+      "totalAccounted": "8008000000",
+      "totalPaid": "8008000000",
+      "reconciliation": {
+        "bemBalance": "0",
+        "unrecognized": "0",
+        "deficit": "0",
+        "totalAccounted": "8008000000",
+        "totalPaid": "8008000000",
+        "entitled": "8008000000",
+        "residue": "0"
+      },
+      "pendingFromPool": "0",
+      "poolRecipient": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+      "isPoolRecipient": true
+    },
+    "checks": {
+      "balanceIdentity": true,
+      "accruedIdentity": true,
+      "noDeficit": true,
+      "residueWithinBound": true,
+      "paidWithinAccounted": true,
+      "listMatchesStoredHash": true,
+      "totalWeightMatches": true,
+      "offChainMathMatches": true,
+      "claimedSumMatchesPaid": true,
+      "noContributorOverpaid": true
+    }
+  }
+}

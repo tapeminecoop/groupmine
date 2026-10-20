@@ -1,7 +1,7 @@
 {
   "scope": "REAL_BSC_STATE_LOCAL_ANVIL_FORK_ONLY",
   "status": "PASS",
-  "startedAt": "2026-10-19T19:55:02.567Z",
+  "startedAt": "2026-10-20T07:51:41.976Z",
   "source": {
     "chainId": 56,
     "forkBlock": "128611683",
@@ -59,7 +59,7 @@
       "mode": "SENT_LOCAL_ANVIL",
       "transactions": [
         {
-          "hash": "0x1cfc1d2e055ae6996fd5123048e52e8190e9083ccbb4fd08b0528cd0228a6f15",
+          "hash": "0x6a99e80d18e36d3a3a82e170f8577f53e009b4d54b104dfd75613d2fc7762321",
           "gasUsed": "7788283",
           "blockNumber": "128611684",
           "description": "deploy TapeoutMinerPool \"Fork E2E Pool\" owned by 0x79664ffa4E0B2b5cBE22e90f9F35eD4441D33313"
@@ -81,7 +81,7 @@
       "mode": "SENT_LOCAL_ANVIL",
       "transactions": [
         {
-          "hash": "0x144ab0a131209b745edb4f6ed5fefc280a7ea0ba0de80766aaccf636655808f9",
+          "hash": "0x51aacb164bd682ee471d2b19707f8ab48fbd2a248a1e060e6d6db49539ad84f0",
           "gasUsed": "133563",
           "blockNumber": "128611685",
           "description": "configure S_N=90 S_L=8 H_N=10 H_L=2 W_N=80000000 (hash 0x8110b1ad2b528ce965688ac981583d62097c05ac960e3e3eeafa686f9a7fdd90)"
@@ -105,37 +105,37 @@
       "mode": "SENT_LOCAL_ANVIL",
       "transactions": [
         {
-          "hash": "0xd0ecef57dbbc56cd711c83f2e9e9324a1d8aeb9e46bfa8b5319509aaec2a8640",
+          "hash": "0xd39bd453d1176e8e2242503a1b76b7603557db961890516700a7205337820cb2",
           "gasUsed": "1968074",
           "blockNumber": "128611686",
           "description": "issue NAND #1..#40 to 0x3E00411EBE3E83a87D1E501E1c5203d4e7360EfB"
         },
         {
-          "hash": "0x0d508e7f6fabf01d43dd5581cd4e9bc3a405ad9230bfff5fc028abd7f3c14f12",
+          "hash": "0x9fe6a009b813673ef17b2e9f031d74b2654d1d00573d16b96d86c30842a5691e",
           "gasUsed": "2168834",
           "blockNumber": "128611687",
           "description": "issue NAND #41..#85 to 0x372FDd298ba83D6Bd653D734b667280B7b4Db53F"
         },
         {
-          "hash": "0x31f98bc28e6ab176d2ff520adc28e2e0b2dba9dc69ad83454da4f003dd05f5c7",
+          "hash": "0x70b36c2607e60c3b6a29cfea654237dcb42b8a05bdd0bd3e18b6c9f8d3feec5a",
           "gasUsed": "289305",
           "blockNumber": "128611688",
           "description": "issue NAND #86..#90 to 0x296a7dB2fe9DD6c3E196F00cC8233CDF743a6A6e"
         },
         {
-          "hash": "0xcde3e0111edb42bbad02bc8f38c8917686081782cb939d12f7500089f0deff90",
+          "hash": "0x70af069808e79219c633c0a437e19239df5f359fcf640ca6fc84143a21976d63",
           "gasUsed": "276527",
           "blockNumber": "128611689",
           "description": "issue LATCH #1..#4 to 0x3E00411EBE3E83a87D1E501E1c5203d4e7360EfB"
         },
         {
-          "hash": "0xab6ab8fc6b00c78904446f834efb0e690100d5a39ee7adfff868246960f5f06c",
+          "hash": "0xfe7684104732cf9f1b02b969ca3c3bc5ccac0769345280ab527cd56e11e87fdc",
           "gasUsed": "195353",
           "blockNumber": "128611690",
           "description": "issue LATCH #5..#7 to 0xA6e170f65255EBEf5735F33De054a02E4dF35606"
         },
         {
-          "hash": "0x33b3ae8ae811dc0573577ca1c6bb19878ae09c0c109ea5a6af835efc96356d39",
+          "hash": "0x03f12c8d3227715ca6b0ea619ce3437440bd5aca9d39616b700f63a8e49bc02d",
           "gasUsed": "99697",
           "blockNumber": "128611691",
           "description": "issue 1 LATCH IDs to listed holders"
@@ -218,13 +218,13 @@
       "mode": "SENT_LOCAL_ANVIL",
       "transactions": [
         {
-          "hash": "0x790141f4a614e50ad27733801a1f1e1eb79da5b98ec654b9440d6c382ab39190",
+          "hash": "0x04d47d38253282f81e7faa98a03a102e5da62b6544b339a3c55fc7fe3a5c39c4",
           "gasUsed": "54375",
           "blockNumber": "128611695",
           "description": "approve pool 0xF2Ede50183Ef94C9f629c78702a34B8e58050E39 to pull miners"
         },
         {
-          "hash": "0x2f919075d6f67855daeb906bee8ffeb21f3896c2d064b66cfdd7f532f51040a8",
+          "hash": "0x6452a836e95bfb6d83dae5d504bf502d9b54560d43e13db9775f41e691b124b5",
           "gasUsed": "269071",
           "blockNumber": "128611696",
           "description": "deposit miners 4630"
@@ -246,7 +246,7 @@
       "mode": "SENT_LOCAL_ANVIL",
       "transactions": [
         {
-          "hash": "0x625684af27fa6a487c2dc1c37f69f8c74f75c8478a6b3719e1f967763a432a18",
+          "hash": "0xcabf3446406556f5df842e0646423feba56a13697504924b4db8f20d2c3a3fb4",
           "gasUsed": "181990",
           "blockNumber": "128611697",
           "description": "activate with reviewed config hash 0x8110b1ad2b528ce965688ac981583d62097c05ac960e3e3eeafa686f9a7fdd90"
@@ -268,8 +268,8 @@
       "mode": "SENT_LOCAL_ANVIL",
       "transactions": [
         {
-          "hash": "0xe619b9cbba79c1f2fd70d9a4819e72641f666cd82dd9bdf97f3224d0ab7204e4",
-          "gasUsed": "322589",
+          "hash": "0x10ebf9c45790dd293cc43cbbe3c720218c8bcfc77d1992907719808fd20d358a",
+          "gasUsed": "337178",
           "blockNumber": "128611698",
           "description": "deposit miners 2458,6241"
         }
@@ -290,7 +290,7 @@
       "mode": "SENT_LOCAL_ANVIL",
       "transactions": [
         {
-          "hash": "0x7017c1a1f5f2a6f57f75b3b62ba18ede5cbca95443f457a898229354a47fc9c5",
+          "hash": "0xf9e4f16ef4a5c51ee3691ec4a1475e02e20957140756260d4704e1cb2577cb2a",
           "gasUsed": "205615",
           "blockNumber": "128611700",
           "description": "harvest miners 4630,2458,6241"
@@ -311,7 +311,7 @@
       "mode": "SENT_LOCAL_ANVIL",
       "transactions": [
         {
-          "hash": "0x5df55d2be5a5a53b1a5c627c13cfa46bc147c6a22591e95bd3c33c463d876a43",
+          "hash": "0x038f00ec16dd1c14fbeafa17bede26507ea0f7f05e01c746490e04a450eff92a",
           "gasUsed": "1375863",
           "blockNumber": "128611701",
           "description": "claim 40 NAND + 4 LATCH IDs"
@@ -356,7 +356,8 @@
             "to": "0xF2Ede50183Ef94C9f629c78702a34B8e58050E39",
             "value": "0",
             "data": "0xff45ee31000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000002e0000000000000000000000000000000000000000000000000000000000000000",
-            "cast": "cast send --rpc-url \"$RPC_URL\" <SIGNER_FLAGS> 0xF2Ede50183Ef94C9f629c78702a34B8e58050E39 0xff45ee31000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000002e0000000000000000000000000000000000000000000000000000000000000000",
+            "maxGas": "230000",
+            "cast": "cast send --rpc-url \"$RPC_URL\" <SIGNER_FLAGS> --gas-limit 230000 0xF2Ede50183Ef94C9f629c78702a34B8e58050E39 0xff45ee31000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000002e0000000000000000000000000000000000000000000000000000000000000000",
             "simulation": {
               "ok": false,
               "error": "NotHolder(0, 46)"
@@ -379,7 +380,7 @@
       "mode": "SENT_LOCAL_ANVIL",
       "transactions": [
         {
-          "hash": "0xd3680153c345978277e0678dff7579e71c322ee98b6b758fb310c88d62bac4c9",
+          "hash": "0xdb1bacbb0d2c2ae1601d553bfc1cdd9749d62932d5f0895b59981ccf8cf6d086",
           "gasUsed": "207939",
           "blockNumber": "128611703",
           "description": "claim 1 NAND + 3 LATCH IDs"
@@ -400,7 +401,7 @@
       "mode": "SENT_LOCAL_ANVIL",
       "transactions": [
         {
-          "hash": "0xe36100c72a1b1463a01cdb75fe753faff60d0a3cb610056c71542c8eb3c44d02",
+          "hash": "0x2aee4f047bfdcce82a4b36a900480c3e8948de1499ca41c4b1b2441d9bfce3b7",
           "gasUsed": "1316780",
           "blockNumber": "128611704",
           "description": "claim 44 NAND + 0 LATCH IDs"
@@ -420,19 +421,19 @@
       "mode": "SENT_LOCAL_ANVIL",
       "transactions": [
         {
-          "hash": "0xf5cfdcfbc0a33ada7389302a046b05e12f4c0fe66fb384cc7b1bad11c04fe86d",
+          "hash": "0x2ddaecda2ae8365060257d3e930dc670d29def516ad169541c05cd8e3c015fa3",
           "gasUsed": "102086",
           "blockNumber": "128611705",
           "description": "release accrued fee to the fee recipient"
         },
         {
-          "hash": "0xf201e087fd2b5c9716555cc42ea78708c5940fdc5ffb8a76c06972df95bf5c5b",
+          "hash": "0xeaa91584ebce7e15ff232893899423da87060a0cbd5e593853bc28e5906c0bff",
           "gasUsed": "104693",
           "blockNumber": "128611706",
           "description": "release historical NAND income to its recipient"
         },
         {
-          "hash": "0x55fcd0af3ee759e2f8d373ee171aaa3718c648aa0e67d9cb88c923f03912fa97",
+          "hash": "0x7d8e174c6d835725b913b9fed897215ce9593583206d3c72325f13785b5fabf5",
           "gasUsed": "104717",
           "blockNumber": "128611707",
           "description": "release historical LATCH income to its recipient"
@@ -455,25 +456,25 @@
         "status": "PASS",
         "ledgerStatus": "PASS",
         "blockNumber": "128611707",
-        "blockHash": "0x54dbfeac4efde667f199b64642f0cf180089d3767528a5cca4403a1a453eb1d2",
+        "blockHash": "0x251787bfabf70030df14c71a9dd86524061fded0623e9e40e2cad866cdad107e",
         "pool": "0xF2Ede50183Ef94C9f629c78702a34B8e58050E39",
         "reconciliation": {
-          "bemBalance": "2828367283",
+          "bemBalance": "2828383676",
           "unrecognized": "0",
           "deficit": "0",
-          "totalAccounted": "48082242778",
-          "totalPaid": "45253875495",
-          "feeAccrued": "942789074",
-          "feePaid": "942789074",
-          "nandReceiptsAccrued": "33940406610",
-          "nandReceiptsPaid": "32054828465",
-          "latchReceiptsAccrued": "7542312592",
-          "latchReceiptsPaid": "6599523518",
-          "historicalNandAccrued": "3771156290",
-          "historicalNandPaid": "3771156290",
-          "historicalLatchAccrued": "1885578148",
-          "historicalLatchPaid": "1885578148",
-          "residue": "64"
+          "totalAccounted": "48082522191",
+          "totalPaid": "45254138515",
+          "feeAccrued": "942794552",
+          "feePaid": "942794552",
+          "nandReceiptsAccrued": "33940603890",
+          "nandReceiptsPaid": "32055014785",
+          "latchReceiptsAccrued": "7542356416",
+          "latchReceiptsPaid": "6599561864",
+          "historicalNandAccrued": "3771178210",
+          "historicalNandPaid": "3771178210",
+          "historicalLatchAccrued": "1885589104",
+          "historicalLatchPaid": "1885589104",
+          "residue": "19"
         },
         "checks": {
           "offChainMathMatches": true,
@@ -486,22 +487,22 @@
         },
         "outstanding": {
           "fee": "0",
-          "nandReceipts": "1885578145",
-          "latchReceipts": "942789074",
+          "nandReceipts": "1885589105",
+          "latchReceipts": "942794552",
           "historicalNand": "0",
           "historicalLatch": "0"
         },
         "perIdHistories": {
           "NAND": {
             "ids": 90,
-            "claimedSum": "32054828465",
-            "receiptsPaid": "32054828465",
+            "claimedSum": "32055014785",
+            "receiptsPaid": "32055014785",
             "match": true
           },
           "LATCH": {
             "ids": 8,
-            "claimedSum": "6599523518",
-            "receiptsPaid": "6599523518",
+            "claimedSum": "6599561864",
+            "receiptsPaid": "6599561864",
             "match": true
           }
         }
@@ -543,14 +544,14 @@
         "pendingBeforeTransfer": "14204861472"
       }
     ],
-    "carriedIncomeAtFirstDeposit": "19309253300",
+    "carriedIncomeAtFirstDeposit": "19309297287",
     "pendingBeforeHarvestAfterOneHour": [
-      "0",
+      "25136",
       "0",
       "0"
     ],
-    "harvestedAfterOneHour": "62867797",
-    "transferredEntitlementNand46": "377115629"
+    "harvestedAfterOneHour": "62980249",
+    "transferredEntitlementNand46": "377117821"
   },
   "mainnetTransactionsSent": 0,
   "signaturesCreated": 0,
@@ -566,6 +567,6 @@
     "historicalNand": "0x4279390222695972bc2f651A55224D4448DfA221",
     "historicalLatch": "0x0476b3E7b48025A325D0332165049039249c6595"
   },
-  "completedAt": "2026-10-19T19:55:29.844Z",
+  "completedAt": "2026-10-20T07:52:32.143Z",
   "localForkTransactions": 23
 }

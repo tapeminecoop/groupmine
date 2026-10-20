@@ -27,13 +27,14 @@ unit; rounding residue is bounded and retained.
 | `src/TapeoutMinerPool.sol` | Custody, harvesting, ledger, claims, setup/activation |
 | `src/TapeoutReceipt.sol` | Unique-ID ERC-1155 receipt collection (one per category) |
 | `src/PoolMath.sol` | Allocation math |
+| `src/HistoricalDistributor.sol` | Optional historical recipient that splits one category's historical income among fixed contributor weights ([architecture §8](docs/ARCHITECTURE.md#8-historical-distributor-optional-recipient-contract), CLI `distributor-*` commands) |
 | `test/unit`, `test/invariant` | Foundry unit, fuzz and invariant suites (mock protocol) |
 | `test/fork/PoolFork.t.sol` | Real BSC protocol fork test (opt-in) |
 | `sdk/` | TypeScript SDK: ABIs, exact math mirror, config/allocation parsing, transaction plans, readers |
 | `cli/pool.ts` | Operator CLI (plans, Safe batches, local Anvil execution; never handles keys) |
 | `script/DeployPool.s.sol` | Optional Foundry deployment script |
 | `scripts/` | ABI export, local and fork end-to-end runners |
-| `deployments/examples/` | Example pool definition and allocation files |
+| `deployments/examples/` | Example pool definition, allocation and historical weights files |
 | `docs/` | [Architecture](docs/ARCHITECTURE.md) · [Accounting](docs/ACCOUNTING.md) · [Operations](docs/OPERATIONS.md) · [Baseline](docs/BASELINE.md) · [Verification report](docs/VERIFICATION_REPORT.md) |
 | `reports/` | Raw outputs referenced by the verification report |
 

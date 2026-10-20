@@ -1,6 +1,6 @@
 {
   "scope": "LOCAL_ANVIL_MOCK_PROTOCOL_ONLY",
-  "startedAt": "2026-10-19T19:54:38.599Z",
+  "startedAt": "2026-10-20T07:49:45.772Z",
   "status": "PASS",
   "steps": [
     {
@@ -16,7 +16,7 @@
       "mode": "SENT_LOCAL_ANVIL",
       "transactions": [
         {
-          "hash": "0x33d705098edf5d1a586ef8cdf3e49931fb5e620804044dd06caa323dc426ebe6",
+          "hash": "0xc908c96c39dfb95e0f8e404999e005bde548dd88762a56485a97715d1afdc32d",
           "gasUsed": "7788319",
           "description": "deploy TapeoutMinerPool \"Local E2E Pool\" owned by 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
         }
@@ -37,7 +37,7 @@
       "mode": "SENT_LOCAL_ANVIL",
       "transactions": [
         {
-          "hash": "0x75d45d2e9ef5abe171d9c1755a5bdee33cfe1ec86db07c6b0fa065a5e74ec987",
+          "hash": "0xe200a8e05061403a0f2de38f4b22ecebe580433efff1238fa0c9062fb07bc468",
           "gasUsed": "133575",
           "description": "configure S_N=12 S_L=6 H_N=2 H_L=1 W_N=75000000 (hash 0xf60f7c693439b1b1f1998eecadc1c826e7323d730aa4bbf6a56369d35f8afd69)"
         }
@@ -66,37 +66,37 @@
       "mode": "SENT_LOCAL_ANVIL",
       "transactions": [
         {
-          "hash": "0xcfae7bd1c20e0701be7951773adf252f09e7228dadf6b6fd53617e42a42482ad",
+          "hash": "0xba35f6a16528be12e7b7c6c5472b38211c9d42d905647aa9b2d1d04d2c610aaf",
           "gasUsed": "276519",
           "description": "issue NAND #1..#4 to 0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
         },
         {
-          "hash": "0xd38c3c127712070582b0a1edb21128e9e1f70cef0bd557a75d7fde321887de72",
+          "hash": "0x452c071d2d39dd14036ba34ad4921208ae1fb34a560aba8cea380b62d4dce3f3",
           "gasUsed": "99960",
           "description": "issue NAND #5..#5 to 0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
         },
         {
-          "hash": "0x1b5b5f6693cb5b74036627419dfd32eac33a6c79390eaaebeb350148433589c2",
+          "hash": "0x8ec5a57ae2feb4a38f324052aa9d3221e75ebbaf4fbb6cf4a900da8a740f7a13",
           "gasUsed": "242307",
           "description": "issue NAND #6..#9 to 0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC"
         },
         {
-          "hash": "0xc529773c59bd5a4c765843b13666987009574359db1b0e60b682f882ec4e3307",
+          "hash": "0xe52e2699ef89c1dd383a2933499dd371b3ce14c83332c66fcd1641ec2a9e7f5b",
           "gasUsed": "148346",
           "description": "issue NAND #10..#11 to 0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65"
         },
         {
-          "hash": "0xa8d0e5664d77538f32cd4c7d4f5292f05227d5b66403a5dfe4df3a330aac8386",
+          "hash": "0x9ef2070ef9907aa4181a3e5ebaa45381f8ff8b8f557293b80467077e9c1c474a",
           "gasUsed": "99677",
           "description": "issue 1 NAND IDs to listed holders"
         },
         {
-          "hash": "0x96c886ad4cd92f02caeffa654271482c24f66b771873799131d1ca5b5209df41",
+          "hash": "0x12ef3a15335d6b0f471efdd8720585ef1017fd2b7b23953ddfcab22f30a86cfe",
           "gasUsed": "229553",
           "description": "issue LATCH #1..#3 to 0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
         },
         {
-          "hash": "0xf30176a6caa212bbcebd1c24c7bc075b4b4cfbfbb82d119621e45fa5e2338a83",
+          "hash": "0x5f8f2cb2ad3eadabb4534fe9a083472a5c14b4a7c160a33f196ded0cfe034d3c",
           "gasUsed": "204268",
           "description": "issue 3 LATCH IDs to listed holders"
         }
@@ -172,12 +172,12 @@
       "mode": "SENT_LOCAL_ANVIL",
       "transactions": [
         {
-          "hash": "0xbbd848ae5f7cf5658c99c9794f93dfd6a51acaec59299d1c10246008433c0b2b",
+          "hash": "0x1b069901cb905e120a215166a5cacf707c38f1cc38cc354627ef429e18422a95",
           "gasUsed": "46191",
           "description": "approve pool 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 to pull miners"
         },
         {
-          "hash": "0x8b7b218a19f71220691d9ec0eec21de1db37cd39b94cd80027e384df445d27fe",
+          "hash": "0xa68ee741133051bdf9400468fdb2843cc82eb8fcd89c013ab52b2b5f10d6f830",
           "gasUsed": "431906",
           "description": "deposit miners 101,102"
         }
@@ -198,7 +198,7 @@
       "mode": "SENT_LOCAL_ANVIL",
       "transactions": [
         {
-          "hash": "0x0c5c08cc3073372512f105f8570c0fce0d3c034e9a0d1f7f8d6aa00037c725e7",
+          "hash": "0x111c30148a58d004a2b3141dc7d995744e3c50cc2d1462f819d021de4484f422",
           "gasUsed": "184086",
           "description": "activate with reviewed config hash 0xf60f7c693439b1b1f1998eecadc1c826e7323d730aa4bbf6a56369d35f8afd69"
         }
@@ -219,7 +219,7 @@
       "mode": "SENT_LOCAL_ANVIL",
       "transactions": [
         {
-          "hash": "0x960325372ec4ba3eee1e72af87d1dbcbf36459fff7e569bd8b73da2ca50c9756",
+          "hash": "0xa3dea727bbcfbcfee2d66b78b3c579c293fcfc23dae4dc1326fb924b43907016",
           "gasUsed": "306499",
           "description": "deposit miners 103,104"
         }
@@ -241,12 +241,12 @@
       "mode": "SENT_LOCAL_ANVIL",
       "transactions": [
         {
-          "hash": "0xdc593590e863093197dfdc6e5d79a2d9481cc57b48910e460b737edc06cdc52b",
+          "hash": "0xd831c2a17346db3043a7135774b535c6c6b284d26ede6e86a07c35740ad0fd5e",
           "gasUsed": "157830",
           "description": "harvest registry entries 0..2"
         },
         {
-          "hash": "0xdb9a57bc8d524371aa84e82603f4a7973d0b9f65ea9e64dfca218a8be27589f7",
+          "hash": "0xc37f60a339760caa5cd97d5adda476a8b1f380ff6ffb0ae489957d143bcbaa4a",
           "gasUsed": "102750",
           "description": "harvest registry entries 3..5"
         }
@@ -266,7 +266,7 @@
       "mode": "SENT_LOCAL_ANVIL",
       "transactions": [
         {
-          "hash": "0x0b7c4dd652760e7b2a2a1326376cac69fd16d50dc0fe7b15b8d37596e757cb65",
+          "hash": "0x7463ab861418cc35a9d6147597acd037a9269ab4a47d47fd1847eaef57083868",
           "gasUsed": "373637",
           "description": "claim 5 NAND + 3 LATCH IDs"
         }
@@ -286,7 +286,7 @@
       "mode": "SENT_LOCAL_ANVIL",
       "transactions": [
         {
-          "hash": "0x05c5e4582a068a1ddeed9442532fa51b40b43a9cdb9a80704765463db45bd50d",
+          "hash": "0x3dd50dc0b15132da034211478eeb9128700f9181defc58e9d257743ebee3731b",
           "gasUsed": "202895",
           "description": "claim 4 NAND + 0 LATCH IDs"
         }
@@ -306,7 +306,7 @@
       "mode": "SENT_LOCAL_ANVIL",
       "transactions": [
         {
-          "hash": "0x195fa5807da6ace9632b25354918ea8de9c7d1828b25c3823d52f434e3183a72",
+          "hash": "0x79619f3f3dad0187965e08bbfcf1b7eeeadd167ff81c33dce3719b8988f6e6ee",
           "gasUsed": "172392",
           "description": "harvest registry entries 0..24"
         }
@@ -340,7 +340,8 @@
             "to": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
             "value": "0",
             "data": "0xff45ee3100000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000",
-            "cast": "cast send --rpc-url \"$RPC_URL\" <SIGNER_FLAGS> 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 0xff45ee3100000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000",
+            "maxGas": "230000",
+            "cast": "cast send --rpc-url \"$RPC_URL\" <SIGNER_FLAGS> --gas-limit 230000 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 0xff45ee3100000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000",
             "simulation": {
               "ok": false,
               "error": "NotHolder(0, 1)"
@@ -363,7 +364,7 @@
       "mode": "SENT_LOCAL_ANVIL",
       "transactions": [
         {
-          "hash": "0x2c0f4dfcc0a673142de0d8e2e4df943fa9bc3c78b2c40fd7ba9c96284c3465be",
+          "hash": "0x4ed00836c05dd6ddf36e3289927ec9098bc68c9f0491f968f90fb23a8f83bc16",
           "gasUsed": "165657",
           "description": "claim 2 NAND + 1 LATCH IDs"
         }
@@ -382,17 +383,17 @@
       "mode": "SENT_LOCAL_ANVIL",
       "transactions": [
         {
-          "hash": "0x1acedbefbefd3779f28b0e568fb074bcca4d981c6a6c84865d6b62a05e577101",
+          "hash": "0x42b1c2ae9d7255850345595fd5b70ef0c94d29d52fddeb19dfc8cdb748b1f23d",
           "gasUsed": "104823",
           "description": "release accrued fee to the fee recipient"
         },
         {
-          "hash": "0xac075398d75213ecdfaa4eed3bdb059fa635abe4f489652d852f2ff4f6b8a0f6",
+          "hash": "0x3c3e43d1fb9080ed00141db536efb21c7225d3322e82e4f7702d88b518fce9da",
           "gasUsed": "107430",
           "description": "release historical NAND income to its recipient"
         },
         {
-          "hash": "0x8a4e82469d781b9b2386d71ef0ca1a36d36a399a10a7658670754f429b23b65f",
+          "hash": "0x2b7a692f7ebd1483c05ee8116e41fc933388a6c50041246406f7b642632c7984",
           "gasUsed": "107454",
           "description": "release historical LATCH income to its recipient"
         }
@@ -413,7 +414,7 @@
       "mode": "SENT_LOCAL_ANVIL",
       "transactions": [
         {
-          "hash": "0xf50d804283328b48c9658f1fc2d86ed64b047a7c2dd3bf428303a5f5c4bda73e",
+          "hash": "0x152e90e04e156039370c282a57c6269fa954fcaf1c22efdb5153dd2d7144b642",
           "gasUsed": "165146",
           "description": "harvest miners 101,102,104"
         }
@@ -435,27 +436,31 @@
         "mode": "PLAN_ONLY_NOT_SENT",
         "chainId": 31337,
         "safeBatchFile": ".runtime/local-e2e/release.safe.json",
+        "safeBatchMaxGas": "750000",
         "plans": [
           {
             "description": "release accrued fee to the fee recipient",
             "to": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
             "value": "0",
             "data": "0x2490a901",
-            "cast": "cast send --rpc-url \"$RPC_URL\" <SIGNER_FLAGS> 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 0x2490a901"
+            "maxGas": "250000",
+            "cast": "cast send --rpc-url \"$RPC_URL\" <SIGNER_FLAGS> --gas-limit 250000 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 0x2490a901"
           },
           {
             "description": "release historical NAND income to its recipient",
             "to": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
             "value": "0",
             "data": "0x09ad60be0000000000000000000000000000000000000000000000000000000000000000",
-            "cast": "cast send --rpc-url \"$RPC_URL\" <SIGNER_FLAGS> 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 0x09ad60be0000000000000000000000000000000000000000000000000000000000000000"
+            "maxGas": "250000",
+            "cast": "cast send --rpc-url \"$RPC_URL\" <SIGNER_FLAGS> --gas-limit 250000 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 0x09ad60be0000000000000000000000000000000000000000000000000000000000000000"
           },
           {
             "description": "release historical LATCH income to its recipient",
             "to": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
             "value": "0",
             "data": "0x09ad60be0000000000000000000000000000000000000000000000000000000000000001",
-            "cast": "cast send --rpc-url \"$RPC_URL\" <SIGNER_FLAGS> 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 0x09ad60be0000000000000000000000000000000000000000000000000000000000000001"
+            "maxGas": "250000",
+            "cast": "cast send --rpc-url \"$RPC_URL\" <SIGNER_FLAGS> --gas-limit 250000 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 0x09ad60be0000000000000000000000000000000000000000000000000000000000000001"
           }
         ]
       }
@@ -476,7 +481,7 @@
         "status": "PASS",
         "ledgerStatus": "PASS",
         "blockNumber": "47",
-        "blockHash": "0x0cd833df20b7cf4ad13217eb0540cddcf753dcd3c4e98e6f0c61e95de6036613",
+        "blockHash": "0x853245ce358e9769d0e37b5abe2778fe79b0c3b82b539fdff65c2731b55a2e7c",
         "pool": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
         "reconciliation": {
           "bemBalance": "10424687",
@@ -560,7 +565,7 @@
     "version": "TapeoutMinerPool/1.0.0",
     "owner": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
     "active": true,
-    "activatedAt": "1792439678",
+    "activatedAt": "1792482586",
     "activationConfigHash": "0xf60f7c693439b1b1f1998eecadc1c826e7323d730aa4bbf6a56369d35f8afd69",
     "config": {
       "nandShares": "12",
