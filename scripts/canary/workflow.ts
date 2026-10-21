@@ -4,7 +4,7 @@ import { allocationArtifact, allocationBatches, assignIds, loadAllocationFile, v
 import { inventoryRecordFor, parseAllocationArtifact, readAllocationState, verifyAllocation } from '../../sdk/verify.ts';
 import { erc20Abi, miningAbi } from '../../sdk/constants.ts';
 import { artifact, IDS, nftAbi, P, preflight, redact, save } from './common.ts';
-import { verifyExpectedRevert } from './revert-verifier.ts';
+import { recordNegativeTest, stopClassification, verifyExpectedRevert } from './revert-verifier.ts';
 import { Runner } from './transactions.ts';
 
 export async function workflow(r: Runner, interrupted = false) {
@@ -43,14 +43,14 @@ export async function workflow(r: Runner, interrupted = false) {
   };
   // Negative tests decide on revert bytes from the structured RPC error data, ABI-decoded as the expected
   // error and arguments (scripts/canary/revert-verifier.ts), never on message text. PASS continues;
-  // FAIL (wrong error, wrong arguments, unexpected success) and UNVERIFIED (no/malformed data or
-  // transport failure after bounded retries at one block) both stop the normal workflow, recorded
-  // distinctly. Recovery runs independently afterwards either way.
+  // FAIL (wrong error, wrong arguments, unexpected success, another chain than 56) and UNVERIFIED
+  // (no/malformed data or transport failure after bounded retries at one block, or chain/block metadata
+  // that could not be obtained, in which case nothing is called) both stop the normal workflow after
+  // the evidence is saved, recorded distinctly (stopClassification). Recovery runs independently
+  // afterwards either way.
   const rejected = async (name: string, from: Address, to: Address, data: Hex, expected: { name: string; args: readonly unknown[] }) => {
-    const evidence = await verifyExpectedRevert({ rpc: r.rpc, from, to, data, expected: { abi: pabi, ...expected }, attempts: 3, retryDelayMs: 2_000 });
-    results.assertions[name] = { status: evidence.verdict, evidence: { simulationOnly: true, ...evidence } };
-    save(`${dir}/results.json`, results);
-    if (evidence.verdict !== 'PASS') throw Error(`ASSERTION_${evidence.verdict} ${name} (${evidence.kind})`);
+    const evidence = await verifyExpectedRevert({ rpc: r.rpc, from, to, data, expected: { abi: pabi, ...expected }, expectedChainId: 56, attempts: 3, retryDelayMs: 2_000 });
+    recordNegativeTest(results, name, evidence, () => save(`${dir}/results.json`, results));
   };
   const exactClaim = async (name: string, holder: Address, nand: bigint[], latch: bigint[], helper = false) => {
     const before = await bem(holder);
@@ -204,7 +204,7 @@ export async function workflow(r: Runner, interrupted = false) {
   } catch (e) {
     businessError = redact(e);
     results.error = businessError;
-    results.status = 'BUSINESS_TEST_FAILED_RECOVERING';
+    Object.assign(results, stopClassification(e));
     save(`${dir}/results.json`, results);
   }
 

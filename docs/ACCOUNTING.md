@@ -59,7 +59,8 @@ no receipt, cannot be configured or migrated, and neither recipient may be set t
   checked). If either transfer fails, or the token moves amounts other than requested, the whole
   release reverts: neither the role nor C is paid and no counter moves.
 - **Independent of claims.** Harvest, sync and admission accrue C (it is part of `T`) but never pay
-  it; `claim`/`claimBatch` never transfer to the sink and never depend on a release. A token that
+  it. `claim`/`claimBatch` accrue C too when their `_sync` recognizes newly held BEM, but they never
+  transfer to the sink and never depend on a release. A token that
   refused transfers to the sink would block releases (A, B and C together) but not receipt claims.
 
 ## 4. Composition periods

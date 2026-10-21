@@ -1,0 +1,20 @@
+{
+  "TapeoutMinerPool": {
+    "build": 59,
+    "distinctImmutables": 5,
+    "sdk": 59,
+    "offsetsEqual": true
+  },
+  "TapeoutReceiptDistributor": {
+    "build": 11,
+    "distinctImmutables": 3,
+    "sdk": 11,
+    "offsetsEqual": true
+  },
+  "TapeoutEntitlementReceipt": {
+    "build": 0,
+    "distinctImmutables": 0,
+    "sdk": 0,
+    "offsetsEqual": true
+  }
+}

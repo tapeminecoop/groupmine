@@ -16,3 +16,16 @@ The changed canary runner must be rebuilt, fork-rehearsed and re-approved before
 | --- | --- | --- | --- |
 | `0003-fee-split-change-report-claims-accrue-c.patch` | `docs/FEE_SPLIT_CHANGE_REPORT.md` | P2-1 | Entry-point table: `claim`/`claimBatch` do accrue C (they run `_sync`); they never pay it. Documentation only. |
 | `0004-sdk-version-guard-for-tuple-layout.patch` | `sdk/pool.ts` | T2-1 | `readPoolSummary` refuses a pool whose `VERSION` is not a 2.1.0-layout version, so `inspect`/`reconcile` cannot silently decode a 2.0.0 tuple with the 2.1.0 ABI (or the reverse). Not applied; regression: `test/audit2/FeeSplitConsumers.t.sol`, `test/audit2/fee-split-consumers.test.ts`. |
+
+## Status of these proposals (2026-10-21, remediation of the 8cf31dc reviews)
+
+The patch files above are kept unchanged as proposals. What became of each:
+
+| Patch | Status | Where |
+| --- | --- | --- |
+| `0001-canary-structured-revert-matcher.patch` | Superseded by `c3cb933`: a stricter verifier without the text fallback | `scripts/canary/revert-verifier.ts`, `test/sdk/canary-revert.test.ts` (docs/AUDIT_REMEDIATION_REPORT.md) |
+| `0002-allocation-tooling-supply-and-finalize-preflight.patch` | Superseded by `c3cb933`: supply coverage and the finalize preflight implemented in the SDK and CLI | `sdk/verify.ts`, `cli/pool.ts`, `test/audit/verify-supply-gap.test.ts` (docs/AUDIT_REMEDIATION_REPORT.md) |
+| `0003-fee-split-change-report-claims-accrue-c.patch` | Implemented with different wording and a dated erratum | `docs/FEE_SPLIT_CHANGE_REPORT.md` §3; regression `PoolFeeSplitTest.testClaimsRecognizeHeldIncomeAndAccrueCWithoutPayingIt` |
+| `0004-sdk-version-guard-for-tuple-layout.patch` | Superseded: the proposal checked `VERSION` after the concurrent reads had already decoded the tuples. The implementation reads `VERSION` first, refuses unreadable versions, covers `inspect`, `reconcile` and `composition`, and accepts the canary-2 layout only on a loopback development node | `sdk/pool.ts` (`assertReadLayout`), `cli/pool.ts`; regressions `test/sdk/read-layout.test.ts` |
+
+See docs/FEE_SPLIT_AUDIT_REMEDIATION_REPORT.md.

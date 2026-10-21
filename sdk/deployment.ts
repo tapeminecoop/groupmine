@@ -5,10 +5,10 @@ import { LATCH_CATEGORY, NAND_CATEGORY, type Addresses, type SystemFile } from '
 
 /**
  * Deployed identity of the production contracts. A runtime template (compiled runtime with immutable
- * slots unfilled) is not a deployed code hash: the pool (49 immutable references) and the distributor
- * (11) carry constructor-filled values, so their deployed hashes differ per deployment. Identity is
- * therefore the deployed code compared with the template outside the immutable slots, plus the actual
- * bindings read from the contracts.
+ * slots unfilled) is not a deployed code hash: the pool and the distributor carry constructor-filled
+ * values at the offsets their generated `immutableReferences` list (sdk/bytecode.json, exported from
+ * the build), so their deployed hashes differ per deployment. Identity is therefore the deployed code
+ * compared with the template outside those slots, plus the actual bindings read from the contracts.
  */
 
 export type ContractName = 'TapeoutEntitlementReceipt' | 'TapeoutReceiptDistributor' | 'TapeoutMinerPool';

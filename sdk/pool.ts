@@ -1,4 +1,5 @@
 import {
+  BaseError,
   decodeFunctionResult,
   encodeDeployData,
   encodeFunctionData,
@@ -297,10 +298,55 @@ export interface Reconciliation {
   latchIncome: bigint; latchReceiptsAccrued: bigint; latchReceiptsPaid: bigint; residue: bigint;
 }
 
-export async function readPoolSummary(rpc: PublicClient, pool: Address, blockNumber?: bigint) {
+/**
+ * Read-layout policy (follow-up reviews: Fable T2-1, GPT ABI requirement). 2.1.0 inserted the sink fields
+ * into the tuples of `accrual()`, `previewAccrual()` and `reconciliation()` without changing their
+ * selectors, so a decoder for another layout misreads them without an error. The standard readers read
+ * `VERSION` first and decode those tuples only for a version whose layout this SDK has.
+ *
+ * A self-reported version does not authenticate code. Write commands keep the stronger controls: the
+ * runtime-template, immutable-binding and addresses-file checks of `checkDeployment`.
+ */
+export const READ_LAYOUT_VERSIONS = ['TapeoutMinerPool/2.1.0'] as const;
+/** The local-only canary candidate has the same layout. It is decoded only when the caller opts in (the
+ *  CLI does so on a loopback development node, where canary rehearsals run); that is never an approval. */
+export const LOCAL_CANARY_LAYOUT_VERSIONS = ['RecoverableTapeoutMinerPool/canary-2-local'] as const;
+export interface ReadLayoutPolicy { allowLocalCanary?: boolean }
+
+/** The read-layout policy for a planning node of `kind` (see `executionContext`). */
+export const readLayoutPolicyFor = (kind: string): ReadLayoutPolicy => ({ allowLocalCanary: kind === 'LOCAL_DEV_NODE' });
+
+/** A read failure for an error message: viem's short message without request details, URLs removed. */
+const readFailure = (error: unknown) => (error instanceof BaseError ? error.shortMessage : error instanceof Error ? error.message : String(error))
+  .replace(/https?:\/\/[^\s"'<>]+/g, '[RPC]').slice(0, 300);
+
+/**
+ * `VERSION` of `pool` at `blockNumber` if this SDK decodes its tuple layout; otherwise throws before any
+ * version-sensitive tuple is read. An unreadable, missing or malformed `VERSION` is refused as well, never
+ * taken for compatibility. No result is cached: each check belongs to its own node, pool and block.
+ */
+export async function assertReadLayout(rpc: PublicClient, pool: Address, blockNumber?: bigint, policy: ReadLayoutPolicy = {}): Promise<string> {
+  let version: unknown;
+  try {
+    version = await readPool<string>(rpc, pool, 'VERSION', [], blockNumber);
+  } catch (error) {
+    throw new Error(`pool ${pool}: VERSION() could not be read (${readFailure(error)}); refusing to decode its accrual and reconciliation tuples`);
+  }
+  const supported: string[] = [...READ_LAYOUT_VERSIONS, ...(policy.allowLocalCanary ? LOCAL_CANARY_LAYOUT_VERSIONS : [])];
+  if (typeof version !== 'string' || !supported.includes(version)) {
+    const canary = (LOCAL_CANARY_LAYOUT_VERSIONS as readonly string[]).includes(String(version)) ? ' (the local canary layout is read only on a loopback development node)' : '';
+    throw new Error(`pool ${pool} reports VERSION ${JSON.stringify(version)}; this SDK decodes accrual(), previewAccrual() and reconciliation() only for ${supported.join(', ')}${canary}. Use the SDK release that matches the pool.`);
+  }
+  return version;
+}
+
+/** Pool state for operators: `VERSION` is checked first (`assertReadLayout`), then everything is read at
+ *  the same block. */
+export async function readPoolSummary(rpc: PublicClient, pool: Address, blockNumber?: bigint, policy: ReadLayoutPolicy = {}) {
+  const version = await assertReadLayout(rpc, pool, blockNumber, policy);
   const r = <T>(fn: string, args: readonly unknown[] = []) => readPool<T>(rpc, pool, fn, args, blockNumber);
-  const [name, version, owner, active, activatedAt, nandShares, latchShares, totalNandBurn, totalLatchBurn, compositionPeriod, state, accrual, reconciliation, minerCount, recipientA, recipientB, sink, depositors, nandReceipt, latchReceipt, bem, mining, collection] = await Promise.all([
-    r<string>('poolName'), r<string>('VERSION'), r<Address>('owner'), r<boolean>('active'), r<bigint>('activatedAt'), r<bigint>('nandShares'), r<bigint>('latchShares'),
+  const [name, owner, active, activatedAt, nandShares, latchShares, totalNandBurn, totalLatchBurn, compositionPeriod, state, accrual, reconciliation, minerCount, recipientA, recipientB, sink, depositors, nandReceipt, latchReceipt, bem, mining, collection] = await Promise.all([
+    r<string>('poolName'), r<Address>('owner'), r<boolean>('active'), r<bigint>('activatedAt'), r<bigint>('nandShares'), r<bigint>('latchShares'),
     r<bigint>('totalNandBurn'), r<bigint>('totalLatchBurn'), r<bigint>('compositionPeriod'), r<State>('state'), r<Accrual>('accrual'), r<Reconciliation>('reconciliation'),
     r<bigint>('minerCount'), r<Address>('recipientA'), r<Address>('recipientB'), r<Address>('SINK'), r<readonly Address[]>('depositors'), r<Address>('nandReceipt'), r<Address>('latchReceipt'),
     r<Address>('bem'), r<Address>('mining'), r<Address>('minerCollection'),

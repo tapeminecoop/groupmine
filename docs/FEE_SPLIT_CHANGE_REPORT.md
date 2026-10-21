@@ -1,5 +1,9 @@
 # Fee split change report: 80 : 1 : 1 : 2 with automatic sink settlement
 
+> **Erratum, 2026-10-21.** The follow-up reviews of `8cf31dc` found one wrong statement here: the §3 entry
+> point table said claims do not accrue C. It is corrected in place with a dated note. Everything else is
+> as first published; the remediation is in docs/FEE_SPLIT_AUDIT_REMEDIATION_REPORT.md.
+
 Date: 2026-10-21. Candidate `TapeoutMinerPool/2.1.0` (package `2.1.0-rc.1`), branch
 `claude/fee-split-c-sink`, starting from `c3cb93375737de7ec63baa9f390edd0c15a5c7a4`. That commit equalled
 `origin/main` (nothing ahead or behind), and the working tree was clean, so there was no unrelated work
@@ -93,7 +97,14 @@ recognized. C is paid even when the role is due zero (`T = 42`). The payment is 
 | --- | --- | --- |
 | `releaseA`, `releaseB` | yes | yes, all unpaid C |
 | `harvest`, `harvestRange`, `sync`, `depositMiners`, `registerMiners` | yes | never |
-| `claim`, `claimBatch` | no | never |
+| `claim`, `claimBatch` | yes, when their `_sync` recognizes newly held BEM (erratum below) | never |
+
+**Erratum (2026-10-21, after the follow-up reviews of `8cf31dc`).** This row first said that `claim` and
+`claimBatch` do not accrue C. They run `_sync` before pricing a claim, so a claim can recognize BEM that
+is held but not yet recognized; that raises `T` and with it C's entitlement. They never transfer C.
+Reported as GPT D-210-01 and Fable P2-1. The contract is unchanged. Regressions:
+`PoolFeeSplitTest.testClaimsRecognizeHeldIncomeAndAccrueCWithoutPayingIt` and the review's
+`FeeSplitBoundaryTest.testClaimsAccrueCByRecognizingHeldIncomeButNeverPayIt`.
 
 ## 4. Atomic policy
 

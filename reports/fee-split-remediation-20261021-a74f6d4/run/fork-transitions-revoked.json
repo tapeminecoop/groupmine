@@ -1,0 +1,8 @@
+{
+  "debt": 213588191,
+  "forkBlock": 128713128,
+  "holder": "0x6C3c29E866d32D5B6a26AdB163B163916bed4602",
+  "miner": 2247,
+  "startError": "0x802cdbc800000000000000000000000000000000000000000000000000000000",
+  "stillRevokedAfterMonth": true
+}

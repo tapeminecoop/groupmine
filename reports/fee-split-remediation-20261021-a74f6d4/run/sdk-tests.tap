@@ -1,0 +1,380 @@
+TAP version 13
+# Subtest: the specification example validates and gets deterministic contiguous IDs
+ok 1 - the specification example validates and gets deterministic contiguous IDs
+  ---
+  duration_ms: 1.564958
+  ...
+# Subtest: assignment follows the actual inventory, including gaps
+ok 2 - assignment follows the actual inventory, including gaps
+  ---
+  duration_ms: 0.204
+  ...
+# Subtest: validation rejects duplicates, bad addresses, empty entries and unknown fields
+ok 3 - validation rejects duplicates, bad addresses, empty entries and unknown fields
+  ---
+  duration_ms: 0.734208
+  ...
+# Subtest: inventory coverage must be exact and IDs unique
+ok 4 - inventory coverage must be exact and IDs unique
+  ---
+  duration_ms: 0.099917
+  ...
+# Subtest: batches respect the per-transaction ID limit and the contract range limit
+ok 5 - batches respect the per-transaction ID limit and the contract range limit
+  ---
+  duration_ms: 7.892542
+  ...
+# Subtest: many small wallets are split by gas, not only by ID count
+ok 6 - many small wallets are split by gas, not only by ID count
+  ---
+  duration_ms: 11.017708
+  ...
+# Subtest: getChainId fails: bounded metadata attempts, a structured UNVERIFIED result, no eth_call and no invented metadata
+ok 7 - getChainId fails: bounded metadata attempts, a structured UNVERIFIED result, no eth_call and no invented metadata
+  ---
+  duration_ms: 18.085375
+  ...
+# Subtest: getBlock fails: a structured UNVERIFIED result with the chain id it did obtain, and no eth_call
+ok 8 - getBlock fails: a structured UNVERIFIED result with the chain id it did obtain, and no eth_call
+  ---
+  duration_ms: 5.280666
+  ...
+# Subtest: missing, malformed or inconsistent metadata fails closed without fabricated evidence
+ok 9 - missing, malformed or inconsistent metadata fails closed without fabricated evidence
+  ---
+  duration_ms: 26.125
+  ...
+# Subtest: metadata that fails once and then succeeds: the call runs at the chosen block, with every attempt recorded
+ok 10 - metadata that fails once and then succeeds: the call runs at the chosen block, with every attempt recorded
+  ---
+  duration_ms: 4.241042
+  ...
+# Subtest: eth_call transport failures stay bounded UNVERIFIED at the pinned block; semantic results are not retried
+ok 11 - eth_call transport failures stay bounded UNVERIFIED at the pinned block; semantic results are not retried
+  ---
+  duration_ms: 5.249958
+  ...
+# Subtest: a node on another chain than expected is a FAIL, not retried, and nothing is called
+ok 12 - a node on another chain than expected is a FAIL, not retried, and nothing is called
+  ---
+  duration_ms: 0.485083
+  ...
+# Subtest: the workflow records an inconclusive check as UNVERIFIED infrastructure, after saving it, and stops normal progress
+ok 13 - the workflow records an inconclusive check as UNVERIFIED infrastructure, after saving it, and stops normal progress
+  ---
+  duration_ms: 5.26275
+  ...
+# Subtest: correct revert bytes in structured data pass, whatever the message says and however they are nested
+ok 14 - correct revert bytes in structured data pass, whatever the message says and however they are nested
+  ---
+  duration_ms: 116.754833
+  ...
+# Subtest: a wrong error, wrong arguments or a misleading Error(string) fail at once and are never retried
+ok 15 - a wrong error, wrong arguments or a misleading Error(string) fail at once and are never retried
+  ---
+  duration_ms: 29.472416
+  ...
+# Subtest: missing, empty, malformed or ambiguous data and transport failures are UNVERIFIED after bounded retries, never PASS
+ok 16 - missing, empty, malformed or ambiguous data and transport failures are UNVERIFIED after bounded retries, never PASS
+  ---
+  duration_ms: 1817.572875
+  ...
+# Subtest: a transient failure followed by correct bytes passes, with every attempt recorded
+ok 17 - a transient failure followed by correct bytes passes, with every attempt recorded
+  ---
+  duration_ms: 25.699375
+  ...
+# Subtest: classification is by decoded bytes only: a non-error object or calldata never counts
+ok 18 - classification is by decoded bytes only: a non-error object or calldata never counts
+  ---
+  duration_ms: 1.194917
+  ...
+# Subtest: a real Anvil node: an actual custom-error revert is verified from its structured data
+ok 19 - a real Anvil node: an actual custom-error revert is verified from its structured data
+  ---
+  duration_ms: 292.036209
+  ...
+# Subtest: normal fee spending preserves reserve; recovery uses its approved portion, never exceeds total
+ok 20 - normal fee spending preserves reserve; recovery uses its approved portion, never exceeds total
+  ---
+  duration_ms: 0.47975
+  ...
+# Subtest: canary is exactly the exhaustive patch of unchanged production accounting
+ok 21 - canary is exactly the exhaustive patch of unchanged production accounting
+  ---
+  duration_ms: 58.718792
+  ...
+# Subtest: runtime identity rejects modified production receipt bytecode
+ok 22 - runtime identity rejects modified production receipt bytecode
+  ---
+  duration_ms: 5.778958
+  ...
+# Subtest: unknown transaction hash blocks journal retry instead of sending again
+ok 23 - unknown transaction hash blocks journal retry instead of sending again
+  ---
+  duration_ms: 9.281542
+  ...
+# Subtest: offline deploy-receipts keeps the configured chain 56: in the output and as --chain 56 in both creation commands
+ok 24 - offline deploy-receipts keeps the configured chain 56: in the output and as --chain 56 in both creation commands
+  ---
+  duration_ms: 250.212958
+  ...
+# Subtest: another configured chain is kept, and no binding leaks from one invocation into the next
+ok 25 - another configured chain is kept, and no binding leaks from one invocation into the next
+  ---
+  duration_ms: 5.185708
+  ...
+# Subtest: a node serving another chain is refused before any plan or Safe batch file exists
+ok 26 - a node serving another chain is refused before any plan or Safe batch file exists
+  ---
+  duration_ms: 302.869709
+  ...
+# Subtest: a loopback node on the configured chain: the plans name it as the planning node and target it, with --chain
+ok 27 - a loopback node on the configured chain: the plans name it as the planning node and target it, with --chain
+  ---
+  duration_ms: 281.519333
+  ...
+# Subtest: every plan carries a bound, and the bound is the printed gas limit
+ok 28 - every plan carries a bound, and the bound is the printed gas limit
+  ---
+  duration_ms: 1.786
+  ...
+# Subtest: admission bounds grow with the miners each batch must settle first
+ok 29 - admission bounds grow with the miners each batch must settle first
+  ---
+  duration_ms: 1.044666
+  ...
+# Subtest: plans over the budget are refused and oversize batch sizes rejected
+ok 30 - plans over the budget are refused and oversize batch sizes rejected
+  ---
+  duration_ms: 0.211334
+  ...
+# Subtest: Safe batches are split so each file fits one transaction, the Safe overhead included
+ok 31 - Safe batches are split so each file fits one transaction, the Safe overhead included
+  ---
+  duration_ms: 0.274833
+  ...
+# Subtest: a fragmented wallet is delivered in planned steps whose bounds ignore completed ranges
+ok 32 - a fragmented wallet is delivered in planned steps whose bounds ignore completed ranges
+  ---
+  duration_ms: 25.030042
+  ...
+# Subtest: review T-02: a delivery planned for one cursor still fits when others deliver first
+ok 33 - review T-02: a delivery planned for one cursor still fits when others deliver first
+  ---
+  duration_ms: 26.770917
+  ...
+# Subtest: the reachable-state bound equals a brute-force search over random wallets, including NAND and LATCH ranges
+ok 34 - the reachable-state bound equals a brute-force search over random wallets, including NAND and LATCH ranges
+  ---
+  duration_ms: 61.693833
+  ...
+# Subtest: deliveries never share a Safe transaction: a stale one reverts alone
+ok 35 - deliveries never share a Safe transaction: a stale one reverts alone
+  ---
+  duration_ms: 0.34
+  ...
+# Subtest: review P-01: claim inputs are sets per category; NAND \#1 and LATCH \#1 stay separate
+ok 36 - review P-01: claim inputs are sets per category; NAND \#1 and LATCH \#1 stay separate
+  ---
+  duration_ms: 0.54725
+  ...
+# Subtest: maxDeliverable matches a step-by-step search
+ok 37 - maxDeliverable matches a step-by-step search
+  ---
+  duration_ms: 10.367084
+  ...
+# Subtest: delivery and revocation bounds follow the wallet ranges
+ok 38 - delivery and revocation bounds follow the wallet ranges
+  ---
+  duration_ms: 0.4175
+  ...
+# Subtest: specification acceptance example under the 105-part weights: NAND 140, LATCH 60, A 2.5, B 2.5, C 5
+ok 39 - specification acceptance example under the 105-part weights: NAND 140, LATCH 60, A 2.5, B 2.5, C 5
+  ---
+  duration_ms: 0.690625
+  ...
+# Subtest: outer split is 80 + 1 + 1 + 2 of 84 (100 : 1.25 : 1.25 : 2.5), not a 95% / 5% fee
+ok 40 - outer split is 80 + 1 + 1 + 2 of 84 (100 : 1.25 : 1.25 : 2.5), not a 95% / 5% fee
+  ---
+  duration_ms: 0.081416
+  ...
+# Subtest: small totals: independent floors, C is floor(2T/84) and not 2 * floor(T/84)
+ok 41 - small totals: independent floors, C is floor(2T/84) and not 2 * floor(T/84)
+  ---
+  duration_ms: 0.20475
+  ...
+# Subtest: same rounding vectors as the Solidity tests
+ok 42 - same rounding vectors as the Solidity tests
+  ---
+  duration_ms: 0.06525
+  ...
+# Subtest: conservation, bounds and monotonicity over random periods
+ok 43 - conservation, bounds and monotonicity over random periods
+  ---
+  duration_ms: 14.182667
+  ...
+# Subtest: residue bound: 3 outer units, 1 category unit, S - 1 per collection
+ok 44 - residue bound: 3 outer units, 1 category unit, S - 1 per collection
+  ---
+  duration_ms: 0.084875
+  ...
+# Subtest: BEM parsing and formatting
+ok 45 - BEM parsing and formatting
+  ---
+  duration_ms: 0.186375
+  ...
+# Subtest: system file validation mirrors the pool constructor
+ok 46 - system file validation mirrors the pool constructor
+  ---
+  duration_ms: 1.728292
+  ...
+# Subtest: release plans: each call pays its role and C, with the 300k bound
+ok 47 - release plans: each call pays its role and C, with the 300k bound
+  ---
+  duration_ms: 0.474667
+  ...
+# Subtest: reconciliation includes unpaid C and checks each outer part from T on its own
+ok 48 - reconciliation includes unpaid C and checks each outer part from T on its own
+  ---
+  duration_ms: 0.270792
+  ...
+# Subtest: deployment plans carry the intended constructor arguments
+ok 49 - deployment plans carry the intended constructor arguments
+  ---
+  duration_ms: 2.546958
+  ...
+# Subtest: issue, fund, allocate, claim and release plans encode the right calls in bounded batches
+ok 50 - issue, fund, allocate, claim and release plans encode the right calls in bounded batches
+  ---
+  duration_ms: 3.29475
+  ...
+# Subtest: review O-05: printed commands are bound to the planning chain, and fork plans to the fork node
+ok 51 - review O-05: printed commands are bound to the planning chain, and fork plans to the fork node
+  ---
+  duration_ms: 0.26075
+  ...
+# Subtest: admission gas model stays inside the BSC per-transaction cap
+ok 52 - admission gas model stays inside the BSC per-transaction cap
+  ---
+  duration_ms: 0.077792
+  ...
+# Subtest: allocation wallets must be able to take ERC-1155 delivery
+ok 53 - allocation wallets must be able to take ERC-1155 delivery
+  ---
+  duration_ms: 0.317708
+  ...
+# Subtest: 2.1.0: VERSION is read first, then every field decodes at the same block, sink fields included
+ok 54 - 2.1.0: VERSION is read first, then every field decodes at the same block, sink fields included
+  ---
+  duration_ms: 309.568083
+  ...
+# Subtest: 2.0.0, unknown, empty or future versions are refused before any tuple is read
+ok 55 - 2.0.0, unknown, empty or future versions are refused before any tuple is read
+  ---
+  duration_ms: 1.625542
+  ...
+# Subtest: an unreadable, missing or malformed VERSION is refused, never taken for compatibility
+ok 56 - an unreadable, missing or malformed VERSION is refused, never taken for compatibility
+  ---
+  duration_ms: 2.822292
+  ...
+# Subtest: the local canary-2 layout is decoded only when the caller opts in; only loopback development nodes opt in
+ok 57 - the local canary-2 layout is decoded only when the caller opts in; only loopback development nodes opt in
+  ---
+  duration_ms: 1.811375
+  ...
+# Subtest: why the gate is needed: a layout this SDK lacks decodes without an error but into the wrong fields
+ok 58 - why the gate is needed: a layout this SDK lacks decodes without an error but into the wrong fields
+  ---
+  duration_ms: 1.250334
+  ...
+# Subtest: CLI on a loopback node: a real 2.1.0 pool is inspected and reconciled
+ok 59 - CLI on a loopback node: a real 2.1.0 pool is inspected and reconciled
+  ---
+  duration_ms: 25.661541
+  ...
+# Subtest: CLI on a loopback node: the canary-2 layout is read there; the SDK default refuses it
+ok 60 - CLI on a loopback node: the canary-2 layout is read there; the SDK default refuses it
+  ---
+  duration_ms: 12.363708
+  ...
+# Subtest: CLI: inspect, reconcile and composition refuse a 2.0.0 VERSION and an unreadable one
+ok 61 - CLI: inspect, reconcile and composition refuse a 2.0.0 VERSION and an unreadable one
+  ---
+  duration_ms: 10.380958
+  ...
+# Subtest: a complete, matching artifact is ready before finalization and matches after it
+ok 62 - a complete, matching artifact is ready before finalization and matches after it
+  ---
+  duration_ms: 3.341125
+  ...
+# Subtest: review T-01: a distributor of pool P does not verify against a configuration naming pool Q
+ok 63 - review T-01: a distributor of pool P does not verify against a configuration naming pool Q
+  ---
+  duration_ms: 0.939084
+  ...
+# Subtest: review case: an artifact that omits an allocated wallet is a mismatch
+ok 64 - review case: an artifact that omits an allocated wallet is a mismatch
+  ---
+  duration_ms: 0.224
+  ...
+# Subtest: review case: an empty wallet list never verifies a distribution
+ok 65 - review case: an empty wallet list never verifies a distribution
+  ---
+  duration_ms: 0.88225
+  ...
+# Subtest: review case: wrong chain, distributor or receipts are mismatches even when wallet rows match
+ok 66 - review case: wrong chain, distributor or receipts are mismatches even when wallet rows match
+  ---
+  duration_ms: 1.414
+  ...
+# Subtest: ID-level differences are reported in both directions
+ok 67 - ID-level differences are reported in both directions
+  ---
+  duration_ms: 0.402583
+  ...
+# Subtest: an internally inconsistent artifact is a mismatch
+ok 68 - an internally inconsistent artifact is a mismatch
+  ---
+  duration_ms: 0.476125
+  ...
+# Subtest: revoked wallets stay listed on chain without ranges and are not part of the allocation
+ok 69 - revoked wallets stay listed on chain without ranges and are not part of the allocation
+  ---
+  duration_ms: 0.968708
+  ...
+# Subtest: verification stays meaningful after partial and complete delivery and later transfers
+ok 70 - verification stays meaningful after partial and complete delivery and later transfers
+  ---
+  duration_ms: 1.205875
+  ...
+# Subtest: a matching artifact is not ready while finalization would fail
+ok 71 - a matching artifact is not ready while finalization would fail
+  ---
+  duration_ms: 0.636917
+  ...
+# Subtest: review T-3: 90 of 100 issued receipts funded and assigned is not a ready full round
+ok 72 - review T-3: 90 of 100 issued receipts funded and assigned is not a ready full round
+  ---
+  duration_ms: 1.021291
+  ...
+# Subtest: review T-5: the reviewed JSON is tied to the artifact by hash, counts and the deterministic assignment
+ok 73 - review T-5: the reviewed JSON is tied to the artifact by hash, counts and the deterministic assignment
+  ---
+  duration_ms: 1.831083
+  ...
+# Subtest: review T-5: without inventory provenance the assignment is UNVERIFIED, never certified from today's state
+ok 74 - review T-5: without inventory provenance the assignment is UNVERIFIED, never certified from today's state
+  ---
+  duration_ms: 1.628584
+  ...
+1..74
+# tests 74
+# suites 0
+# pass 74
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5804.110458

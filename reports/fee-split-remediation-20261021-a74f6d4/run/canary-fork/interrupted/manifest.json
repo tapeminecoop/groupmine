@@ -1,0 +1,59 @@
+{
+  "schema": "recoverable-canary-run/1",
+  "mode": "fork",
+  "runId": "local-candidate-5ee3c28b-03f6-448a-afab-76fdb1f1f6d4-interrupted",
+  "candidateDigest": "b276c69fa4226c46e9b29955d9cf3b11545f084bfba5a41553cd5d2d0de8101f",
+  "owner": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+  "contracts": {
+    "nand": "0x9461750ece26bfc1b5173c436b1a7224dc90ea1c",
+    "latch": "0x0ddbbf77f8d07fed18d38086e105ff3d8855142c",
+    "helper": "0x8424fcb139d8ba8d02a4be7d9cd61fcfd42db9c5",
+    "pool": "0x40aea668137089a51e6ad4a6ab26045ccb20efc0",
+    "distributor": "0xb00e455ba5d98542e1dc76b20f1d3fde8f036e3f"
+  },
+  "identities": {
+    "nand": {
+      "codeHash": "0x7f59d20c18c4dec6ddf617a9f085a87d4622efc279fbc1438e5293333288ec8f",
+      "bytes": 8743,
+      "immutableTemplateMatched": true
+    },
+    "latch": {
+      "codeHash": "0x7f59d20c18c4dec6ddf617a9f085a87d4622efc279fbc1438e5293333288ec8f",
+      "bytes": 8743,
+      "immutableTemplateMatched": true
+    },
+    "helper": {
+      "codeHash": "0x2ce583befa6d63a3b5cbba943f4d10f8c852424418607de012bfe2e304cebcba",
+      "bytes": 3410,
+      "immutableTemplateMatched": true
+    },
+    "pool": {
+      "codeHash": "0x58ad3b5f42557815972a4e011cd47734f70e9873c7a8c8525884c8057d60b5f5",
+      "bytes": 22074,
+      "immutableTemplateMatched": true
+    },
+    "distributor": {
+      "codeHash": "0x88b26c70b3047a6ff29392cea0389a1470de9f3b56f98e8df4d0eac7bc7586ee",
+      "bytes": 7680,
+      "immutableTemplateMatched": true
+    }
+  },
+  "totalFeeRaw": "812483980000000",
+  "maxRunFee": "100000000000000000",
+  "maxTxFee": "20000000000000000",
+  "recoveryReserve": "10000000000000000",
+  "feePriceCeiling": "100000000",
+  "forkGasPrice": "50000000",
+  "minConfirmations": 1,
+  "maxWaitSeconds": 300,
+  "accrualIntervalSeconds": 60,
+  "dir": ".runtime/canary-local/local-candidate-5ee3c28b-03f6-448a-afab-76fdb1f1f6d4/interrupted",
+  "startedAt": "2026-10-21T12:39:00.970Z",
+  "status": "IN_PROGRESS",
+  "forkSource": {
+    "block": "128812145",
+    "blockHash": "0x383f1f97b08e13da4cbfc88908ec57643a0f186ee89de5d0a7a765f920f4a922"
+  },
+  "nextNonce": 85,
+  "poolDeployBlock": "128812149"
+}

@@ -83,7 +83,7 @@ test('correct revert bytes in structured data pass, whatever the message says an
     assert.deepEqual(result.decoded, { name: 'NotHolder', args: [0, 1n] });
     assert.equal(hits.calls, 1);
     // The record pins the call: chain, block, caller, target, calldata, raw bytes, expectation.
-    assert.deepEqual([result.chainId, result.block.number, result.caller, result.target, result.calldata, result.revertData], [56, 16n, CALLER, TARGET, CALLDATA, DATA.toLowerCase()]);
+    assert.deepEqual([result.chainId, result.block?.number, result.caller, result.target, result.calldata, result.revertData], [56, 16n, CALLER, TARGET, CALLDATA, DATA.toLowerCase()]);
   }
   // The frozen predicate missed the first shape (a generic message): the false negative of the mainnet run.
   assert.equal(frozen('Execution reverted for an unknown reason.'), false);

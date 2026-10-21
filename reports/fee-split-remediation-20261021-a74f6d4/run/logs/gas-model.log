@@ -1,0 +1,71 @@
+$ forge test --match-path test/unit/GasModel.t.sol -vv
+# exit 0
+
+## stdout
+No files changed, compilation skipped
+
+Ran 11 tests for test/unit/GasModel.t.sol:GasModelTest
+[PASS] testAllocationModelCoversManySmallRangesAndOneLargeRange() (gas: 47001041)
+Logs:
+  allocate ranges 85 10537916 12555000
+  allocate 400 ids 10389163 10980000
+
+[PASS] testCallsRunAsSeparateTransactions() (gas: 60225)
+[PASS] testClaimModelCoversTheLargestPlannedBatch() (gas: 31833140)
+Logs:
+  claimBatch 386 10919659 12552000
+
+[PASS] testDeliveryModelCoversOneLargeAndManySmallRanges() (gas: 39784363)
+Logs:
+  deliver 300 ids, 1 range 9070541 11300000
+  deliver 60 ranges 2744335 8320000
+
+[PASS] testDeploymentModelsCoverTheLargestConfigurations() (gas: 18852216)
+Logs:
+  deploy receipt 2293918 3000000
+  deploy pool (16 depositors) 5670339 7000000
+  deploy distributor 1774013 2500000
+
+[PASS] testFragmentedWalletDeliversInPlannedTransactions() (gas: 28764179)
+Logs:
+  deliver 91 4144902 12567000
+  deliver 91 4113202 12567000
+  deliver 1 88279 237000
+
+[PASS] testFundBatchModelCoversMovingReceiptsIntoTheDistributor() (gas: 25578222)
+Logs:
+  fund batch 300 10060637 12100000
+
+[PASS] testIssueBatchModelCoversIssuingToTheOperatorAndToTheDistributor() (gas: 22434500)
+Logs:
+  issue batch 231 12574000
+    to operator 10767507
+    to distributor 11626387
+
+[PASS] testReleasesFitTheirBoundInEitherOrder() (gas: 3138824)
+Logs:
+  release first A / then B 206731 154155 300000
+  release first B / then A 205455 155431 300000
+
+[PASS] testRevokeModelCoversLargeAndFragmentedWallets() (gas: 128598761)
+Logs:
+  revoke 1500 ids 6460236 12160000
+  revoke 85 ranges 811871 3330000
+
+[PASS] testSingleCallsFitTheirBounds() (gas: 3502569)
+Logs:
+  finalizeIssuance 49150
+  finalizeAllocation 69765
+  activate 109668
+  setApprovalForAll 48933
+  releaseA / releaseB 197583 132955
+  setRecipient 30761
+  renounceOwnership 26291
+
+Suite result: ok. 11 passed; 0 failed; 0 skipped; finished in 22.23ms (92.18ms CPU time)
+
+Ran 1 test suite in 113.30ms (22.23ms CPU time): 11 tests passed, 0 failed, 0 skipped (11 total tests)
+
+
+## stderr
+

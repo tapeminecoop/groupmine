@@ -462,6 +462,21 @@ contract PoolFeeSplitTest is SystemTestBase {
         assertReconciled();
     }
 
+    /// @notice A claim runs `_sync`: BEM held but not yet recognized becomes income, which raises C's
+    ///         entitlement, while the claim never pays C (follow-up reviews D-210-01 / P2-1).
+    function testClaimsRecognizeHeldIncomeAndAccrueCWithoutPayingIt() public {
+        admitNew(1, 3, 1);
+        _income(84_000); // held, not yet recognized
+        assertEq(pool.totalAccounted(), 0);
+        assertEq(pool.accrual().sink, 0);
+        assertEq(claimAs(alice, one(1), none()), 6_000, "NAND #1: 80,000 * 3/4 / 10");
+        assertEq(pool.totalAccounted(), 84_000, "the claim recognized the held BEM");
+        assertEq(pool.accrual().sink, _c(84_000), "C accrued");
+        assertEq(pool.sinkPaid(), 0, "C was not paid");
+        assertEq(bem.balanceOf(SINK), 0);
+        assertReconciled();
+    }
+
     function testSyncAfterEachPaymentFindsNoDeficitAndNothingNew() public {
         admitNew(1, 1, 1);
         _income(84_000);

@@ -1,0 +1,74 @@
+{
+  "a74f6d4: getChainId fails": {
+    "threw": "fetch failed",
+    "structuredResult": false,
+    "requests": {
+      "getChainId": 1,
+      "getBlock": 0,
+      "eth_call": 0
+    }
+  },
+  "a74f6d4: getBlock fails": {
+    "threw": "fetch failed",
+    "structuredResult": false,
+    "requests": {
+      "getChainId": 1,
+      "getBlock": 1,
+      "eth_call": 0
+    }
+  },
+  "a74f6d4: control: metadata available": {
+    "returned": {
+      "verdict": "PASS",
+      "kind": "EXPECTED_REVERT",
+      "metadataAttempts": "none",
+      "ethCallAttempts": 1
+    },
+    "requests": {
+      "getChainId": 1,
+      "getBlock": 1,
+      "eth_call": 1
+    }
+  },
+  "remediated: getChainId fails": {
+    "returned": {
+      "verdict": "UNVERIFIED",
+      "kind": "METADATA_UNAVAILABLE",
+      "stage": "chain-metadata",
+      "metadataAttempts": 3,
+      "ethCallAttempts": 0
+    },
+    "requests": {
+      "getChainId": 3,
+      "getBlock": 0,
+      "eth_call": 0
+    }
+  },
+  "remediated: getBlock fails": {
+    "returned": {
+      "verdict": "UNVERIFIED",
+      "kind": "METADATA_UNAVAILABLE",
+      "stage": "block-metadata",
+      "metadataAttempts": 4,
+      "ethCallAttempts": 0
+    },
+    "requests": {
+      "getChainId": 1,
+      "getBlock": 3,
+      "eth_call": 0
+    }
+  },
+  "remediated: control: metadata available": {
+    "returned": {
+      "verdict": "PASS",
+      "kind": "EXPECTED_REVERT",
+      "metadataAttempts": 2,
+      "ethCallAttempts": 1
+    },
+    "requests": {
+      "getChainId": 1,
+      "getBlock": 1,
+      "eth_call": 1
+    }
+  }
+}

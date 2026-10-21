@@ -32,7 +32,12 @@ forks: [docs/MINING_LIFECYCLE.md](docs/MINING_LIFECYCLE.md).
 The current candidate is `TapeoutMinerPool/2.1.0` (package `2.1.0-rc.1`). What changed from 2.0.0 (the
 fee split and the sink), how it was verified on local chains and BSC forks, and what remains open:
 [docs/FEE_SPLIT_CHANGE_REPORT.md](docs/FEE_SPLIT_CHANGE_REPORT.md), with the run's evidence in
-[reports/fee-split-20261021-c3cb933/](reports/fee-split-20261021-c3cb933/).
+[reports/fee-split-20261021-c3cb933/](reports/fee-split-20261021-c3cb933/). The follow-up internal reviews
+of that candidate (`8cf31dc`: [Fable](docs/INTERNAL_FEE_SPLIT_REVIEW_8cf31dc_FABLE.md), with its tests in
+`test/audit2/` and evidence in `reports/internal-review-8cf31dc/`, plus a separately supplied GPT
+report) and their tooling-only remediation, which changes no contract:
+[docs/FEE_SPLIT_AUDIT_REMEDIATION_REPORT.md](docs/FEE_SPLIT_AUDIT_REMEDIATION_REPORT.md), with evidence in
+[reports/fee-split-remediation-20261021-a74f6d4/](reports/fee-split-remediation-20261021-a74f6d4/).
 
 **Historical, for the 2.0.0 candidate (100 : 1 : 1 of 102, no sink).** These describe the earlier
 split and are kept unchanged; none of them validates 2.1.0:
@@ -54,6 +59,7 @@ split and are kept unchanged; none of them validates 2.1.0:
 | `src/` | The contracts and the `IMining` protocol interface |
 | `test/unit`, `test/invariant` | Foundry unit, fuzz, gas and invariant suites on a mock protocol |
 | `test/audit/` | The internal review's suites (as committed with the review, with only their split-dependent parts and the Python reference model adapted to 2.1.0; the originals are at `b846c0c`; the differential test needs `--ffi` for the model) |
+| `test/audit2/` | The 2.1.0 follow-up review's suites (Fable, `a74f6d4`), kept as committed |
 | `test/remediation/` | Regressions for the review findings: delivery race, duplicate-ID claim preview, rounding policy |
 | `src/canary/` | Recoverable canary contracts (canary only; not part of the production system) |
 | `test/fork/` | Real BSC protocol tests on a pinned fork: identity, composition, admission boundary, the sink transfer on real BEM, Mining lifecycle and status transitions (run through `scripts/fork-test.ts`) |

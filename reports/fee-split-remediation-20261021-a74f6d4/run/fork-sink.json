@@ -1,0 +1,18 @@
+{
+  "bem": "0x5ce033B2bFCa3Af30b3e8C8457DeaF776A8b695a",
+  "bemRuntimeBytes": 2205,
+  "bemRuntimeCodeHash": "0x982ba79538b51e54ee1382f57522098af0635b0f67f2574d393b29ed0958b344",
+  "bemTotalSupplyAfterFirstRelease": 39451273037263,
+  "bemTotalSupplyAfterSecondHarvest": 39451301773926,
+  "bemTotalSupplyAfterSecondReleases": 39451301773926,
+  "bemTotalSupplyBefore": 39451273037263,
+  "firstReleaseRoleA": 251992444,
+  "firstReleaseSink": 503984888,
+  "forkBlock": 128713128,
+  "secondHarvestReceived": 28736663,
+  "sink": "0x000000000000000000000000000000000000dEaD",
+  "sinkBalanceAfter": 244931900284,
+  "sinkBalanceBefore": 244427231190,
+  "sinkPaid": 504669094,
+  "totalAccounted": 21196101976
+}

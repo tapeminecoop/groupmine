@@ -1,0 +1,29 @@
+{
+  "schema": "tapeout-preservation/1",
+  "label": "before-a74f6d4",
+  "src": {
+    "src/PoolMath.sol": "c7ab82e43c2a2d0b8d010499307cde1a2a3bcd7ece0d13780bcf07a9a55719e7",
+    "src/TapeoutEntitlementReceipt.sol": "f5657c2827ca9650983d4eac567583b8bb70f09079e73d6906ce12433b4de910",
+    "src/TapeoutMinerPool.sol": "6a2d0c34b42ff97c755843860eb6c9b4353860fa15a08ea582efbe17cc8f5e6d",
+    "src/TapeoutReceiptDistributor.sol": "67f0b24fa54783b16595cd8b0fa5e4e4ecea5888cd53c58af55294c2e7f18659",
+    "src/canary/CanaryParticipant.sol": "5a7bcd8273280b3ecedde9e60bce1b53e308cc7d507b5da4bacb76fb35eef7aa",
+    "src/canary/RecoverableTapeoutMinerPool.sol": "ec75b303d806ba7028f14a0b1279744cbf41353ea7fabf6152cd95aef07ed960",
+    "src/interfaces/IMining.sol": "c8d8c41b57f55bc38a8d5c6712b74062a588519ec5b024fa19f11043cd1dbf12"
+  },
+  "files": {
+    "sdk/abi.ts": "9e50b2dafb7019796a37803ff9b5585a34c85252567464454649120adc98a61d",
+    "sdk/bytecode.json": "92abf4a9711c52e3d8efe51a51dad0bb4591fce32fc3951fad884d606773f345",
+    "foundry.toml": "f748e4561d6eb9a2fa7ff0ac9b62b659f5c568e4c6f37e2e57d244f54f337d24",
+    "remappings.txt": "7db29ab99ec9f13cfd2dc2c9c746f77e57f85c17c6186a15204e1dfdcfadd29c",
+    "package.json": "76187c66b7d5c8751db61bc78efc84ab6059524bf4f597f903f5938c5b8e8123",
+    "package-lock.json": "d70274d90a29f7fd2e3139b1d1d0e42eea69f391c1640613261f80d6518005b8"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "5.4.0"
+  },
+  "sdkImmutableReferenceOccurrences": {
+    "TapeoutMinerPool": 59,
+    "TapeoutEntitlementReceipt": 0,
+    "TapeoutReceiptDistributor": 11
+  }
+}

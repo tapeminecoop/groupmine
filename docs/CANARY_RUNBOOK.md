@@ -73,12 +73,18 @@ only and is never evidence.
 | Result | Outcomes | Effect |
 | --- | --- | --- |
 | PASS | the expected error and arguments | the workflow continues |
-| FAIL | another error, other arguments, or no revert | the normal workflow stops; recovery follows |
-| UNVERIFIED | no, empty, malformed or ambiguous revert data, or a transport failure, after 3 read-only attempts at the same block | the normal workflow stops; recovery follows |
+| FAIL | another error, other arguments, or no revert; or a node that serves another chain than 56 (`CHAIN_MISMATCH`, nothing called) | the normal workflow stops; recovery follows |
+| UNVERIFIED | no, empty, malformed or ambiguous revert data, or a transport failure, after 3 read-only attempts at the same block; or the chain id or the block could not be obtained and validated in 3 attempts (`METADATA_UNAVAILABLE`, nothing called) | the normal workflow stops; recovery follows |
 
 Each record names the chain, block number and hash, caller, target, calldata, raw revert data,
-decoded result and every attempt. An inconclusive negative test never lets live actions continue,
-and the bounded retries never delay or replace recovery.
+decoded result and every attempt, metadata attempts included (stage, attempt, diagnostic). A record
+holds only the metadata actually obtained. An inconclusive negative test never lets live actions
+continue, and the bounded retries never delay or replace recovery. The workflow saves the record
+before it stops, and marks the stop as `NEGATIVE_TEST_UNVERIFIED_RECOVERING` (stop reason
+`INCONCLUSIVE_NEGATIVE_TEST`) instead of a business-test failure.
+
+Calls are pinned by block number, and the block's hash is recorded. That is not EIP-1898 hash
+pinning: it does not prove the simulated state was independent of a reorganization.
 
 This replaces the original matcher, which searched viem's message text for "revert" and the
 selector. On the mainnet run that matcher produced the two false negatives recorded in

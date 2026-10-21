@@ -172,7 +172,8 @@ async function main() {
     const results = Object.entries(suites).flatMap(([suite, s]) => Object.entries(s.test_results).map(([name, r]) => ({ suite: suite.split(':').pop(), name, status: r.status })));
     return { ok: results.length > 0 && results.every(r => r.status === 'Success'), summary: { total: results.length, passed: results.filter(r => r.status === 'Success').length, results } };
   });
-  const auditSdkTests = (await readdir('test/audit')).filter(f => f.endsWith('.test.ts')).map(f => `test/audit/${f}`);
+  // The internal reviews' TypeScript tests: test/audit (f2c8e50) and test/audit2 (the 2.1.0 follow-up).
+  const auditSdkTests = (await Promise.all(['test/audit', 'test/audit2'].map(async d => (await readdir(d)).filter(f => f.endsWith('.test.ts')).map(f => `${d}/${f}`)))).flat();
   await step('audit-sdk-tests', 'node', ['--import', 'tsx', '--test', '--test-reporter=tap', ...auditSdkTests], async o => {
     const num = (k: string) => Number(new RegExp(`^# ${k} (\\d+)$`, 'm').exec(o.stdout)?.[1] ?? -1);
     return { ok: num('fail') === 0 && num('tests') > 0, summary: { tests: num('tests'), pass: num('pass'), fail: num('fail') } };

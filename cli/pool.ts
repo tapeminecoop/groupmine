@@ -20,7 +20,7 @@ import {
   deployPoolPlan, deployReceiptPlans, describeError, erc20Abi, erc721Abi, finalizeAllocationPlan, finalizeIssuancePlan,
   findFailingMiners, formatBem, fundPlans, harvestPlans, harvestRangePlans, impersonate, issuePlans, loadAddresses,
   loadAllocationFile, loadSystemFile, maxAdmissionBatch, maxRegisteredForAdmission, parseBem, readComposition,
-  readDistributorSummary, readHeldIds, readHoldings, readMiners, readPoolSummary, readReceiptSummary, readWalletRanges,
+  readDistributorSummary, readHeldIds, readHoldings, readLayoutPolicyFor, readMiners, readPoolSummary, readReceiptSummary, readWalletRanges,
   receiverProblems, registerPlans, releasePlans, renouncePlan, residueBound, retractPlans, revokeWalletPlan, runs, safeBatch, sendLocal, setRecipientPlan, simulate,
   systemProblems, tapeoutMinerPoolAbi, validateAllocation, type Addresses, type CategoryName, type SentTx, type TxPlan,
   parseAllocationArtifact, readAllocationState, tapeoutEntitlementReceiptAbi, tapeoutReceiptDistributorAbi, verifyAllocation,
@@ -105,6 +105,12 @@ async function execute(command: string, flags: Flags, plans: TxPlan[], extra: Re
   if (context && binding.expectedChainId !== undefined && context.chainId !== binding.expectedChainId) {
     throw new Error(`The node serves chain ${context.chainId} but the reviewed files name chain ${binding.expectedChainId}; refusing to plan`);
   }
+  // The chain the plans are for: the planning node's (checked above against the reviewed files) or,
+  // offline (deploy-receipts without an RPC), the chain the reviewed system file names. An offline chain
+  // is configured, not observed: `--chain` binds a later signature to it, but nothing here shows which
+  // network a later RPC serves.
+  const chainId = context?.chainId ?? binding.expectedChainId;
+  const chainSource = context ? 'PLANNING_NODE' : chainId !== undefined ? 'CONFIGURED_NOT_RPC_VERIFIED' : undefined;
   const bound = { ...(context ? { context } : {}), ...(binding.deployment ? { deployment: binding.deployment } : {}) };
   if (flags['send-local']) {
     if (!from) throw new Error('--send-local needs --from (an unlocked or impersonated Anvil account)');
@@ -141,13 +147,15 @@ async function execute(command: string, flags: Flags, plans: TxPlan[], extra: Re
   // target that node; otherwise $RPC_URL must be the planning endpoint, checkable by the block hash.
   const castRpc = context?.kind === 'LOCAL_DEV_NODE' ? printableLoopback(rpcUrl(flags)) : undefined;
   return {
-    command, mode: 'PLAN_ONLY_NOT_SENT', chainId: context?.chainId, ...(from ? { sender: from } : {}), ...bound, ...extra,
+    command, mode: 'PLAN_ONLY_NOT_SENT', chainId, ...(chainSource ? { chainSource } : {}),
+    ...(chainSource === 'CONFIGURED_NOT_RPC_VERIFIED' ? { chainNote: `chain ${chainId} is taken from the reviewed file; no node was queried, so the network a later RPC serves is not verified here` } : {}),
+    ...(from ? { sender: from } : {}), ...bound, ...extra,
     ...(context ? { castRpc: castRpc
       ? { url: castRpc, note: 'planned on a local development node: the commands target it, never $RPC_URL' }
       : { url: '$RPC_URL', note: `RPC_URL must be the endpoint these plans were made on: for block ${context.planningBlock.number} it returns hash ${context.planningBlock.hash}` } } : {}),
     ...(safeFiles.length ? { safeBatchFiles: safeFiles, ...(safeFiles.length > 1 ? { safeBatchNote: 'each file is one Safe transaction; execute them in order' } : {}) } : {}),
     plans: plans.map((p, i) => ({ description: p.description, to: p.to, value: p.value, data: p.data, maxGas: p.gas, ...(p.standalone ? { standalone: true } : {}),
-      cast: castCommand(p, context?.chainId, castRpc), ...(simulations ? { simulation: simulations[i] } : {}) })),
+      cast: castCommand(p, chainId, castRpc), ...(simulations ? { simulation: simulations[i] } : {}) })),
   };
 }
 
@@ -443,9 +451,12 @@ export async function main(argv = process.argv.slice(2)): Promise<unknown> {
   }
 
   const pool = poolOf(addresses);
+  // Read commands have no deployment check: the pool's VERSION gates its tuple layout (sdk/pool.ts
+  // assertReadLayout). The local canary-2 layout is readable on a loopback development node only.
+  const readPolicy = async () => readLayoutPolicyFor((await executionContext(rpc, rpcUrl(flags))).kind);
 
   if (command === 'composition') {
-    const s = await readPoolSummary(rpc, pool);
+    const s = await readPoolSummary(rpc, pool, undefined, await readPolicy());
     return { command, miners: await readComposition(rpc, s.mining, s.collection, idList(need(flags, 'token-ids'))) };
   }
 
@@ -566,7 +577,7 @@ export async function main(argv = process.argv.slice(2)): Promise<unknown> {
 
   if (command === 'inspect') {
     const block = await rpc.getBlock({ blockTag: 'latest' });
-    const summary = await readPoolSummary(rpc, pool, block.number);
+    const summary = await readPoolSummary(rpc, pool, block.number, await readPolicy());
     const receipts = await Promise.all([readReceiptSummary(rpc, addr(addresses.nandReceipt), block.number), readReceiptSummary(rpc, addr(addresses.latchReceipt), block.number)]);
     const distributor = addresses.distributor ? await readDistributorSummary(rpc, addr(addresses.distributor), block.number) : undefined;
     const holder = str(flags, 'holder');
@@ -580,7 +591,7 @@ export async function main(argv = process.argv.slice(2)): Promise<unknown> {
 
   if (command === 'reconcile') {
     const block = await rpc.getBlock({ blockTag: 'latest' });
-    const summary = await readPoolSummary(rpc, pool, block.number);
+    const summary = await readPoolSummary(rpc, pool, block.number, await readPolicy());
     const ledger = checkReconciliation(summary.state, summary.reconciliation);
     const perId = flags.deep ? await checkPerIdHistories(rpc, pool, { NAND: summary.nandShares, LATCH: summary.latchShares }, block.number) : undefined;
     const { status: ledgerStatus, ...ledgerDetail } = ledger;

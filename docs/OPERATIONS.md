@@ -62,7 +62,9 @@ npm run pool -- verify-deployment --addresses deployments/addresses.json --syste
 ```
 
 A runtime template hash, as printed by the build or the reports, is not a deployed code hash: the
-pool fills 49 immutable slots at deployment and the distributor 11. Deployed identity is the masked
+pool and the distributor fill immutable slots at deployment, at the offsets listed under
+`immutableReferences` in `sdk/bytecode.json` (generated from the build; for 2.1.0, 59 occurrences in
+the pool, 11 in the distributor and none in the receipts). Deployed identity is the masked
 comparison plus the bindings read from the contracts. These are operator guards. They cannot stop an
 owner from calling a contract directly, and state can change between planning and execution, so
 review the exact payload at signing time.
@@ -115,9 +117,16 @@ contracts get deployed:
 npm run pool -- deploy-receipts --system deployments/system.json
 ```
 
-Two independent deployments of the same receipt code (NAND and LATCH). Record both addresses. Then
-issue each collection's full supply, to the issuer's wallet or straight into the distributor once it
-exists:
+Two independent deployments of the same receipt code (NAND and LATCH). Record both addresses.
+
+This is the one command that can plan without an RPC. Its output then takes the chain from the system
+file (`chainSource: CONFIGURED_NOT_RPC_VERIFIED`), and both printed `cast` commands carry `--chain`
+with it, so a signature is valid only on that chain. No node was queried, so make sure the `$RPC_URL`
+you send with serves that chain. With an RPC, a node that serves another chain is refused before
+anything is planned.
+
+Then issue each collection's full supply, to the issuer's wallet or straight into the distributor once
+it exists:
 
 ```bash
 npm run pool -- issue --addresses deployments/addresses.json --category NAND --to 0xIssuer --count 1000 --from 0xIssuer
@@ -383,3 +392,12 @@ the worst case measured is about 207k (test/unit/GasModel.t.sol).
 - Useful events: `MinersAdmitted`, `CompositionCheckpoint`, `RevokedMinerSkipped`,
   `MinerHarvestFailed`, `IncomeRecognized`, `ReceiptIncomeClaimed`, `RecipientPaid`, `SinkPaid`,
   `Delivered`.
+
+`inspect`, `reconcile` and `composition` read the pool's `VERSION` first. They decode its accrual and
+reconciliation tuples only for `TapeoutMinerPool/2.1.0`, because 2.1.0 changed those layouts without
+changing the selectors. `RecoverableTapeoutMinerPool/canary-2-local` is also read, but only on a loopback
+development node. Any other, missing or unreadable version is refused with a diagnostic, never decoded.
+`VERSION` is self-reported: it keeps this tooling from misreading a layout, but it does not
+authenticate code. The deployment check on every write and `verify-deployment` do that. A dashboard or
+script built on the 2.0.0 ABI misreads a 2.1.0 pool silently and must move to the 2.1.0 ABI; this SDK
+cannot protect it.
