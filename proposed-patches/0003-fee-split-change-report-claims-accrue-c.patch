@@ -1,0 +1,11 @@
+--- a/docs/FEE_SPLIT_CHANGE_REPORT.md
++++ b/docs/FEE_SPLIT_CHANGE_REPORT.md
+@@ -93,7 +93,7 @@
+ | --- | --- | --- |
+ | `releaseA`, `releaseB` | yes | yes, all unpaid C |
+ | `harvest`, `harvestRange`, `sync`, `depositMiners`, `registerMiners` | yes | never |
+-| `claim`, `claimBatch` | no | never |
++| `claim`, `claimBatch` | yes: they run `_sync` and can recognize BEM held but not yet recognized, which raises `T` and so C's accrual | never |
+ 
+ ## 4. Atomic policy
+ 

@@ -1,0 +1,22 @@
+--- a/sdk/pool.ts
++++ b/sdk/pool.ts
+@@ -296,6 +296,9 @@
+   nandIncome: bigint; nandReceiptsAccrued: bigint; nandReceiptsPaid: bigint;
+   latchIncome: bigint; latchReceiptsAccrued: bigint; latchReceiptsPaid: bigint; residue: bigint;
+ }
++
++/** Pools whose accrual/reconciliation tuples have the 2.1.0 layout (sink fields present). */
++const LAYOUT_VERSIONS = new Set(['TapeoutMinerPool/2.1.0', 'RecoverableTapeoutMinerPool/canary-2-local']);
+ 
+ export async function readPoolSummary(rpc: PublicClient, pool: Address, blockNumber?: bigint) {
+   const r = <T>(fn: string, args: readonly unknown[] = []) => readPool<T>(rpc, pool, fn, args, blockNumber);
+@@ -305,6 +308,9 @@
+     r<bigint>('minerCount'), r<Address>('recipientA'), r<Address>('recipientB'), r<Address>('SINK'), r<readonly Address[]>('depositors'), r<Address>('nandReceipt'), r<Address>('latchReceipt'),
+     r<Address>('bem'), r<Address>('mining'), r<Address>('minerCollection'),
+   ]);
++  // accrual(), previewAccrual() and reconciliation() changed layout in 2.1.0 without changing selectors:
++  // refuse to interpret a pool whose VERSION does not promise the layout this SDK decodes.
++  if (!LAYOUT_VERSIONS.has(version)) throw new Error(`pool ${pool} reports VERSION ${JSON.stringify(version)}; this SDK decodes the 2.1.0 tuple layouts only (${[...LAYOUT_VERSIONS].join(', ')})`);
+   return { pool, name, version, owner, active, activatedAt, nandShares, latchShares, composition: { totalNandBurn, totalLatchBurn, compositionPeriod },
+     state, accrual, reconciliation, minerCount, recipientA, recipientB, sink, depositors, nandReceipt, latchReceipt, bem, mining, collection };
+ }

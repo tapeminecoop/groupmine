@@ -9,3 +9,10 @@ None of these is applied. They are proposals against the frozen candidate; `src/
 
 The changed canary runner must be rebuilt, fork-rehearsed and re-approved before any further live run
 (`docs/CANARY_RUNBOOK.md`): the candidate fingerprint covers `scripts/canary/`.
+
+## Follow-up review of 8cf31dc (2.1.0 fee split), 2026-10-21
+
+| Patch | Target | Finding | Note |
+| --- | --- | --- | --- |
+| `0003-fee-split-change-report-claims-accrue-c.patch` | `docs/FEE_SPLIT_CHANGE_REPORT.md` | P2-1 | Entry-point table: `claim`/`claimBatch` do accrue C (they run `_sync`); they never pay it. Documentation only. |
+| `0004-sdk-version-guard-for-tuple-layout.patch` | `sdk/pool.ts` | T2-1 | `readPoolSummary` refuses a pool whose `VERSION` is not a 2.1.0-layout version, so `inspect`/`reconcile` cannot silently decode a 2.0.0 tuple with the 2.1.0 ABI (or the reverse). Not applied; regression: `test/audit2/FeeSplitConsumers.t.sol`, `test/audit2/fee-split-consumers.test.ts`. |

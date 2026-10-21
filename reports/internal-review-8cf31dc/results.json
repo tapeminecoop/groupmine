@@ -1,0 +1,177 @@
+{
+  "schema": "fable-fee-split-review-results/1",
+  "candidate": "8cf31dc97e8f6c88bfdf9a983089bceda8baadcb",
+  "baseline": "c3cb93375737de7ec63baa9f390edd0c15a5c7a4",
+  "reviewedAt": "2026-10-21",
+  "scope": "local Anvil, local BSC forks and read-only public RPC only; nothing signed or broadcast; no .env loaded; canary:live/recover/prepare never run",
+  "toolchain": {
+    "forge": "1.4.3-stable (fa9f934)",
+    "solc": "0.8.24 paris via-ir 200 runs",
+    "node": "v20.19.5",
+    "viem": "2.57.2",
+    "openzeppelin": "5.4.0",
+    "slither": "not installed (NOT_EXECUTED)"
+  },
+  "executions": [
+    {
+      "step": "npm ci --ignore-scripts; forge clean; forge build; forge test",
+      "status": "PASS",
+      "detail": "151 passed, 1 failed (AuditDifferential needs --ffi; passed in the ffi run), 4 fork tests skipped without RPC; 156 total",
+      "log": "01-build-and-forge-test.log"
+    },
+    {
+      "step": "npm run test:sdk",
+      "status": "PASS",
+      "detail": "55/55",
+      "log": "02-sdk-typecheck.log"
+    },
+    {
+      "step": "npm run typecheck",
+      "status": "PASS",
+      "detail": "no errors",
+      "log": "02-sdk-typecheck.log"
+    },
+    {
+      "step": "node --import tsx --test test/audit2/fee-split-consumers.test.ts",
+      "status": "PASS",
+      "detail": "3/3",
+      "log": "02-sdk-typecheck.log"
+    },
+    {
+      "step": "node --import tsx --test test/sdk/canary-revert.test.ts test/audit/revert-matcher.test.ts test/audit/verify-supply-gap.test.ts",
+      "status": "PASS",
+      "detail": "16/16",
+      "log": "02-sdk-typecheck.log"
+    },
+    {
+      "step": "forge test --match-path 'test/audit2/*' -vv (review-only suite)",
+      "status": "PASS",
+      "detail": "30/30 after three corrections to the review's own tests (documented in the report)",
+      "log": "03-audit2-fork-audit-gas-e2e.log"
+    },
+    {
+      "step": "npm run test:fork (FORK_BLOCK=128713128, recorded miners)",
+      "status": "PASS",
+      "detail": "17/17; block hash 0x760f050b\u2026081f; observation files byte-identical to the recorded run, including fork-sink.json",
+      "log": "03-audit2-fork-audit-gas-e2e.log"
+    },
+    {
+      "step": "forge test --match-path 'test/audit/*' --ffi (candidate's adapted review suite)",
+      "status": "PASS",
+      "detail": "10/10 incl. 401 differential runs against the implementer-adapted test/audit/model.py",
+      "log": "03-audit2-fork-audit-gas-e2e.log"
+    },
+    {
+      "step": "forge test --match-contract GasModelTest -vv",
+      "status": "PASS",
+      "detail": "11/11; releases 197,583/132,955 and 206,731->154,155 / 205,455->155,431 of 300,000; pool deployment 5,670,339 of 7,000,000",
+      "log": "03-audit2-fork-audit-gas-e2e.log"
+    },
+    {
+      "step": "npm run test:local-e2e",
+      "status": "PASS",
+      "detail": "64 steps, every check true",
+      "log": "03-audit2-fork-audit-gas-e2e.log"
+    },
+    {
+      "step": "git archive c3cb933 -> scratch forge build (baseline identity)",
+      "status": "PASS",
+      "detail": "receipt 0x7f59d20c\u2026, distributor 0xcf370db1\u2026, pool 0x5655ce42\u2026, helper 0xd32e89e9\u2026 equal the recorded before-identity; metadata-stripped: receipt identical, distributor and helper identical, pool changed (19,060 -> 20,724 B)",
+      "log": "baseline-c3cb933/build.log"
+    },
+    {
+      "step": "node scripts/canary/build-source.mjs --check",
+      "status": "PASS",
+      "detail": "canary-2 equals the exhaustive adaptation of production source sha256 6a2d0c34\u20265e6d; recorded production-canary.diff equals a regenerated diff apart from timestamp headers",
+      "log": "(inline)"
+    },
+    {
+      "step": "fingerprint() of scripts/canary/common.ts on the 2.1.0 tree",
+      "status": "PASS",
+      "detail": "throws 'Source HEAD differs from reviewed baseline': prepare/fork/live/verify-local refuse the 2.1.0 tree; no key, env or RPC involved",
+      "log": "(inline)"
+    },
+    {
+      "step": "read-only BEM check at head 128,926,659 (cast)",
+      "status": "PASS",
+      "detail": "code 2,205 B, keccak 0x982ba795\u2026b344 (unchanged since 128,713,128); no ERC-1967 slot; no burn/owner/paused selectors; MAX_SUPPLY 2,100,000,000,000,000 raw; totalSupply 40,125,958,035,713; balanceOf(0x\u2026dEaD) 244,793,334,435",
+      "log": "(inline)"
+    },
+    {
+      "step": "npm run test:fork-e2e / test:fork-safe-e2e",
+      "status": "NOT_EXECUTED",
+      "detail": "author-recorded only (23 checks / 255 checks, 24 Safe transactions)",
+      "log": "-"
+    },
+    {
+      "step": "Slither",
+      "status": "NOT_EXECUTED",
+      "detail": "not installed; the recorded 79 entries were triaged by source",
+      "log": "-"
+    },
+    {
+      "step": "canary-2 local rehearsal (fork-local-candidate.ts)",
+      "status": "NOT_EXECUTED",
+      "detail": "author-recorded only (43 PASS complete run; interrupted run + standalone recovery)",
+      "log": "-"
+    }
+  ],
+  "findings": [
+    {
+      "id": "P2-1",
+      "area": "production",
+      "severity": "Informational",
+      "status": "SOURCE_CONFIRMED",
+      "title": "Change report says claim/claimBatch do not accrue C; they call _sync and can recognize held BEM, so C accrues (never paid). Documentation only.",
+      "test": "test/audit2/FeeSplitBoundary.t.sol::testClaimsAccrueCByRecognizingHeldIncomeButNeverPayIt"
+    },
+    {
+      "id": "P2-2",
+      "area": "production",
+      "severity": "Informational",
+      "status": "VERIFIED_BY_EXECUTION (mock only)",
+      "title": "Between the two transfers of a release, unguarded views over-read by the sink amount; reachable only with a token that calls back during transfer; no state change possible.",
+      "test": "test/audit2/FeeSplitCallbacks.t.sol::testTransientViewOverReadBetweenTheTwoTransfersIsReadOnly"
+    },
+    {
+      "id": "P2-3",
+      "area": "production",
+      "severity": "-",
+      "status": "ACCEPTED_POLICY",
+      "title": "A sink-specific transfer failure blocks A/B releases (atomic policy); claims, harvests, syncs and admissions unaffected.",
+      "test": "test/audit2/FeeSplitAtomic.t.sol"
+    },
+    {
+      "id": "T2-1",
+      "area": "tooling",
+      "severity": "Low",
+      "status": "VERIFIED_BY_EXECUTION",
+      "title": "accrual/previewAccrual/reconciliation keep their selectors with fields inserted; a 2.0.0 decoder reads shifted values silently. CLI writes and verify-deployment check runtime templates; read commands (inspect, reconcile) do not check VERSION.",
+      "test": "test/audit2/FeeSplitConsumers.t.sol; test/audit2/fee-split-consumers.test.ts"
+    },
+    {
+      "id": "T2-2",
+      "area": "tooling",
+      "severity": "-",
+      "status": "NOT_EXECUTED",
+      "title": "Slither not re-run; the two new incorrect-equality entries (outflow == 0) are a ledger-derived early return with no impact.",
+      "test": "-"
+    },
+    {
+      "id": "C2-1",
+      "area": "canary",
+      "severity": "-",
+      "status": "VERIFIED_BY_EXECUTION",
+      "title": "canary-2 is local-only; approved canary-1 path refuses the 2.1.0 tree; recovery authority unchanged; historical PARTIAL run untouched.",
+      "test": "build-source --check; fingerprint(); historical-unchanged.json"
+    },
+    {
+      "id": "E2-1",
+      "area": "external",
+      "severity": "-",
+      "status": "EXTERNAL_DEPENDENCY",
+      "title": "BEM: plain non-proxy ERC-20 with a 21,000,000 BEM cap; transfers to 0x\u2026dEaD are ordinary, totalSupply unchanged (fork), nobody is known to control the address; the sink does not free cap space.",
+      "test": "fork-sink.json; cast at head"
+    }
+  ]
+}
