@@ -13,9 +13,9 @@ timestamps, exit code and log are in [`reports/run-manifest.json`](../reports/ru
 - Toolchain: Foundry 1.4.3, solc 0.8.24 (Paris, via-IR, optimizer 200 runs), Node 20.19.5, viem 2.57.2,
   OpenZeppelin 5.4.0, Slither 0.11.3.
 
-Runtime code hashes of the tested artifacts:
+Runtime template hashes of the tested artifacts:
 
-| Contract | Runtime code hash | Runtime | Initcode |
+| Contract | Runtime template hash | Runtime | Initcode |
 | --- | --- | ---: | ---: |
 | `TapeoutEntitlementReceipt` | `0x7f59d20c…ec8f` | 8,743 B | 10,361 B |
 | `TapeoutReceiptDistributor` | `0xcf370db1…0ada` | 7,680 B | 8,289 B |
@@ -23,6 +23,14 @@ Runtime code hashes of the tested artifacts:
 
 The SDK files in the tree equal a fresh export from this build, and the build is byte-identical after
 Slither's clean rebuild.
+
+*Correction, 2026-10-21 (internal security reviews of f2c8e50; Fable P-5, GPT §9.2).* This table was
+first labelled "runtime code hashes". These are runtime templates, the compiled runtime with
+immutable slots unfilled. Only the receipt has no immutables, so only its deployed code hash equals
+its template. A deployed pool fills 49 immutable slots and a distributor 11, so their deployed hashes
+differ per deployment. Check a deployed instance with `npm run pool -- verify-deployment`, which
+compares outside the immutable slots and reads the bindings
+([AUDIT_REMEDIATION_REPORT.md](AUDIT_REMEDIATION_REPORT.md)).
 
 **Scope.** Local tests against a mock protocol; real BSC protocol state on local forks; read-only
 public-chain RPC calls for discovery. No public-chain deployment, no live-value transaction and no
@@ -94,6 +102,7 @@ Fork tests:
 | `PoolForkTest` | 5 |
 | `PoolBoundaryForkTest` | 4 |
 | `MiningLifecycleForkTest` | 2 |
+| `MiningTransitionsForkTest` (added 2026-10-21; §3.2, run with the suite: 16 / 16) | 5 |
 
 ## 3. Real-protocol evidence
 
@@ -114,18 +123,27 @@ blocks stated with them.
 The pool binds to these addresses and checks none of this on-chain; `protocol-check` is an off-chain
 operator check.
 
-### 3.2 Mining lifecycle (`reports/fork-lifecycle*.json`, `reports/probe-lifecycle*.json`)
+### 3.2 Mining lifecycle (`reports/fork-lifecycle*.json`, `reports/fork-transitions-*.json`, `reports/probe-*.json`)
+
+*Updated 2026-10-21 (release gate U-01).* The two claims this table first left UNVERIFIED are now
+established, and four rows were added. "VERIFIED (code)" means derived from Mining's deployed bytecode
+by `scripts/mining-analysis/lifecycle.py` (133 checks, `reports/mining-lifecycle-analysis.json`).
+Details and limits: [MINING_LIFECYCLE.md](MINING_LIFECYCLE.md). Correction: the stop cooldown is
+1,200 **blocks** (`block.number > stopBlock + 1200`), not 1,200 seconds.
 
 | Claim | Status | Evidence |
 | --- | --- | --- |
 | Statuses: 0 not mining, 1 active, 2 revoked, 3 cooling | PASS | official frontend mapping; scan of 21,000 records at block 128,741,865: 17,809 active, 3,157 status 0 (all never started), 11 revoked, 23 cooling |
 | `stop` is callable only by the current NFT holder | PASS | fork: the original registrant (after the NFT moved) and a stranger cannot; the holder can |
 | `stop` pays the holder all collectible income first | PASS | fork: the holder received exactly what a claim at the same timestamp pays (20,088,946,042 raw), with a `Claimed` event; history: #672's stop at block 118,184,257 paid 3,261,924 raw in the same transaction |
-| After `stop`, nothing more is collectible, also after the 1,200 s cooldown | PASS | fork: claims revert (`0x5f9bb3be`) and no further payment after cooldown + 1 day |
-| Revocation (`challenge`, by anyone) pays the holder first | PASS (history) | #2247 at block 119,597,281 (tx `0x2234e269…`): `Claimed` 1,454,667 raw to the holder, then `Revoked`; #7555 at block 119,590,644 (tx `0xaf7b1a23…`): `Claimed` 799,121 raw, then `Revoked` |
-| A revoked circuit can never mine again | UNVERIFIED | official frontend text ("permanently revoked … can never mine again"); a `start` could not be executed |
-| A COOLING miner can restart after the cooldown; its old debt is reset | UNVERIFIED | frontend text says `start` accepts circuits past their cooldown; not executed. Irrelevant to pool-held miners, which cannot be stopped |
-| `pendingLive` (frontend ABI) | not implemented | the deployed implementation reverts with empty data, also for ACTIVE miners |
+| After `stop`, nothing more is collectible, also after the 1,200-block cooldown | PASS | fork: claims revert (`0x5f9bb3be`) and no further payment after cooldown + 1 day |
+| Revocation (`challenge`, by anyone) pays the holder first | PASS (history and fork replay) | #2247 at block 119,597,281 (tx `0x2234e269…`): `Claimed` 1,454,667 raw to the holder, then `Revoked`; replaying that transaction on a fork of block 119,597,280 pays exactly 1,454,667 raw, what a claim pays at that moment, and removes the miner's weight (12) from the total. #7555 at block 119,590,644 (tx `0xaf7b1a23…`): `Claimed` 799,121 raw, then `Revoked` |
+| A revoked circuit can never mine again | PASS; VERIFIED (code) | code: the status byte is written only by `start` (accepts status 0, or 3 past the cooldown), `stop` (status 1) and `challenge` (status 1, or 3 within the cooldown). Fork: #2247's holder cannot `start` (`0x802cdbc8`), `stop`, `reclaim` or claim it, at the pinned block and after the replayed revocation, also a month later |
+| A revoked miner earns and pays nothing after its revocation; its `debt` is frozen | PASS; VERIFIED (code) | code: weight removed at the revocation and never restored for status 2; BEM is minted only by settlement, entered only for status 1; `pending` is 0 unless the status is 1. Fork: `pending` 0, claims refused and record unchanged a month later. `debt` is the accumulator checkpoint, not an amount owed |
+| A COOLING miner can restart after the cooldown; its old debt is reset | PASS; VERIFIED (code) | fork: #672's holder restarts it (a stranger cannot, `0xa8ee9629`); status 1, `stopBlock` cleared, weight 3 restored, debt 5,408,752 → 35,610,025 (current accumulator), nothing pending at the restart, 531,091 raw claimable a day later. After a stop, `start` is refused at `stopBlock + 1200` and accepted at `stopBlock + 1201`. Irrelevant to pool-held miners, which cannot be stopped |
+| A stopped miner can still be revoked during its cooldown, without payment, and not afterwards while cooling | PASS; VERIFIED (code) | fork of block 119,597,280: after #2247's holder stops it, its real challenge revokes it at `stopBlock + 1200` with no `Claimed`; at `stopBlock + 1201` the challenge reverts (`0x5f9bb3be`) and the holder can restart |
+| Mining's implementation can no longer be replaced | VERIFIED (code and state) | `upgradeToAndCall` and every owner write require `msg.sender == owner`; the owner is zero at block 128,713,128 and the initializer cannot run again; the 130-byte proxy cannot write storage |
+| `pendingLive` (frontend ABI) | not implemented | the deployed implementation has no such function (reverts with empty data, also for ACTIVE miners) |
 
 ### 3.3 Composition (`reports/fork-composition.json`, `reports/probe-circuit-burn.json`)
 
@@ -270,8 +288,10 @@ No finding led to a code change.
 2. **Protocol authority.** The miner collection's beacon owner can still change the collection; the
    pool does not check implementations. Semantic changes behind an unchanged interface would not be
    caught.
-3. **Lifecycle claims marked UNVERIFIED in §3.2.** Restart semantics and the permanence of
-   revocation rest on the official frontend, not on executed transactions.
+3. **Lifecycle (updated 2026-10-21).** Restart semantics and the permanence of revocation are now
+   established for Mining implementation `0xa3DB…f898` from its bytecode and on forks (§3.2,
+   MINING_LIFECYCLE.md). They depend on `protocol-check` matching at the release block. A start from
+   status 0 on this implementation was established from the code only, not executed.
 4. **Composition.** No ACTIVE miner currently references sub-circuits, so the local-versus-recursive
    distinction is shown only on a non-admissible circuit.
 5. **Registration window.** `registerMiners` books income claimed before registration under the then
@@ -299,4 +319,7 @@ FORK_RPC_URL=https://bsc-mainnet.public.blastapi.io SLITHER=$(which slither) npm
 Individual parts: `forge test --no-match-path 'test/fork/*'`, `npm run test:sdk`, `npm run typecheck`,
 `npm run test:local-e2e`, and with `FORK_RPC_URL` set, `npm run test:fork` (pinned inputs as recorded
 in the manifest), `npm run test:fork-e2e` and `npm run test:fork-safe-e2e`. Read-only probes: `scripts/probe-lifecycle.ts`,
-`scripts/probe-revocation.ts`, `scripts/probe-circuit-burn.ts`, `scripts/probe-references.ts`.
+`scripts/probe-revocation.ts`, `scripts/probe-circuit-burn.ts`, `scripts/probe-references.ts`,
+`scripts/probe-start.ts`, `scripts/probe-restarts.ts`, `scripts/probe-implementation-history.ts`.
+Mining bytecode analysis: `node --import tsx scripts/fetch-mining-code.ts 128713128 reports/mining-code`,
+then `python3 -I scripts/mining-analysis/lifecycle.py`.

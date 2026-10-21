@@ -5,9 +5,9 @@ import { tapeoutMinerPoolAbi, tapeoutReceiptDistributorAbi } from '../../sdk/abi
 import { BATCH_GAS_BUDGET, TX_GAS_CAP } from '../../sdk/constants.ts';
 import {
   CLAIM_GAS, DELIVER_GAS, HARVEST_GAS, ISSUE_GAS, SAFE_EXEC_GAS, admissionGasEstimate, assertWithinBudget, checkBatchSize, deliveryBatches, deliveryGas,
-  groupForSafe, maxDeliverable, maxIdsPerTx, revokeGas, safeBatchGas, safePayloadBytes,
+  groupForSafe, maxDeliverable, maxIdsPerTx, maxSafeDeliverable, reachableDeliveryGas, revokeGas, safeBatchGas, safePayloadBytes, worstReachableRanges,
 } from '../../sdk/gas.ts';
-import { claimPlans, deliveryPlans, depositPlans, harvestRangePlans, issuePlans, releasePlans } from '../../sdk/pool.ts';
+import { canonicalClaimIds, claimPlans, deliveryPlans, depositPlans, harvestRangePlans, issuePlans, releasePlans } from '../../sdk/pool.ts';
 import { castCommand, type TxPlan } from '../../sdk/tx.ts';
 
 const A = '0x00000000000000000000000000000000000000aa' as const;
@@ -74,6 +74,92 @@ test('a fragmented wallet is delivered in planned steps whose bounds ignore comp
   const partial = [{ count: 5n, delivered: 5n }, { count: 10n, delivered: 4n }, { count: 3n, delivered: 0n }];
   assert.deepEqual(deliveryBatches(partial, 4).map(b => b.maxIds), [4, 4, 1]);
   assert.equal(deliveryBatches(partial, 100)[0].gas, DELIVER_GAS.base + 2n * DELIVER_GAS.perRange + 9n * DELIVER_GAS.perId);
+});
+
+/** Brute force: deliver `m` IDs starting at every pending offset the cursor can reach (others may have
+ *  delivered any prefix first), emulating the distributor's range loop; returns the worst cost. */
+function worstOverReachableStarts(ranges: { count: bigint; delivered: bigint }[], m: number) {
+  const runs = ranges.map(r => Number(r.count - r.delivered)).filter(n => n > 0);
+  const total = runs.reduce((s, n) => s + n, 0);
+  let worst = { maxTouched: 0, gas: 0n };
+  for (let k = 0; k < total; k++) {
+    let skip = k, left = Math.min(m, total - k), touched = 0, taken = 0;
+    for (const n of runs) {
+      if (skip >= n) { skip -= n; continue; }
+      if (left === 0) break;
+      const take = Math.min(n - skip, left);
+      touched++; taken += take; left -= take; skip = 0;
+    }
+    const gas = DELIVER_GAS.base + DELIVER_GAS.perId * BigInt(taken) + DELIVER_GAS.perRange * BigInt(touched);
+    worst = { maxTouched: Math.max(worst.maxTouched, touched), gas: gas > worst.gas ? gas : worst.gas };
+  }
+  return worst;
+}
+
+test('review T-02: a delivery planned for one cursor still fits when others deliver first', () => {
+  // One wallet: IDs 1..300 in one range, then 300 single-ID ranges (301..600).
+  const wallet = [{ count: 300n, delivered: 0n }, ...Array.from({ length: 300 }, () => ({ count: 1n, delivered: 0n }))];
+  // The snapshot-only cost the previous planner used: 300 IDs in one range, 11,300,000 gas. If a keeper
+  // delivers that range first, the same call walks 300 single-ID ranges (model bound 41,200,000).
+  assert.equal(deliveryGas(wallet, 300), 11_300_000n);
+  assert.equal(reachableDeliveryGas(wallet, 300), 41_200_000n);
+  // Every emitted call is bounded for any reachable cursor position, and stays within the budget.
+  const batches = deliveryBatches(wallet, 300);
+  assert.deepEqual(batches.map(b => b.maxIds), [91, 91, 91, 91, 91, 91, 54]);
+  assert.deepEqual(batches.map(b => b.gas), [...Array(6).fill(12_567_000n), DELIVER_GAS.base + 54n * (DELIVER_GAS.perId + DELIVER_GAS.perRange)]);
+  for (const b of batches) {
+    assert.ok(b.gas <= BATCH_GAS_BUDGET);
+    assert.equal(worstOverReachableStarts(wallet, b.maxIds).gas, b.gas);
+  }
+  assert.equal(maxSafeDeliverable(wallet), 91);
+  // A contiguous wallet keeps large deliveries: one range can never become fragmented.
+  assert.deepEqual(deliveryBatches([{ count: 300n, delivered: 0n }], 300).map(b => [b.maxIds, b.gas]), [[300, 11_300_000n]]);
+  // Partial progress: the bound covers starting anywhere in the partly delivered range too.
+  const partial = [{ count: 300n, delivered: 150n }, ...wallet.slice(1)];
+  assert.equal(worstOverReachableStarts(partial, 91).gas, reachableDeliveryGas(partial, 91));
+  // The mixed wallet of test/remediation/DeliveryRace.t.sol: NAND 1..200, 100 single LATCH ranges, NAND 201..300.
+  const mixed = [{ count: 200n, delivered: 0n }, ...Array.from({ length: 100 }, () => ({ count: 1n, delivered: 0n })), { count: 100n, delivered: 0n }];
+  assert.deepEqual(deliveryBatches(mixed, 300).slice(0, 4).map(b => [b.maxIds, b.gas]), Array(4).fill([91, 12_567_000n]));
+});
+
+test('the reachable-state bound equals a brute-force search over random wallets, including NAND and LATCH ranges', () => {
+  let seed = 11;
+  const rand = (m: number) => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed % m; };
+  for (let t = 0; t < 60; t++) {
+    // Ranges as a wallet's rangesOf returns them: NAND runs and LATCH runs interleaved, some partly delivered.
+    const ranges = Array.from({ length: 1 + rand(40) }, () => {
+      const count = BigInt(1 + (rand(3) === 0 ? rand(200) : rand(4)));
+      return { count, delivered: rand(4) === 0 ? BigInt(rand(Number(count) + 1)) : 0n };
+    });
+    for (const m of [1, 2, 7, 50, 91, 300]) {
+      const brute = worstOverReachableStarts(ranges, m);
+      // Exactly the most ranges any reachable start touches, and never below any reachable cost.
+      assert.equal(worstReachableRanges(ranges, m), brute.maxTouched);
+      assert.ok(reachableDeliveryGas(ranges, m) >= brute.gas, `bound below a reachable cost for ${m} IDs`);
+    }
+    for (const b of deliveryBatches(ranges, 300)) assert.ok(b.gas <= BATCH_GAS_BUDGET && b.gas >= worstOverReachableStarts(ranges, b.maxIds).gas);
+  }
+});
+
+test('deliveries never share a Safe transaction: a stale one reverts alone', () => {
+  const ranges = [{ category: 0, firstId: 1n, count: 5n, delivered: 0n }];
+  const deliveries = deliveryPlans(A, A, ranges, 2, true);
+  assert.equal(deliveries.length, 3);
+  assert.ok(deliveries.every(p => p.standalone === true));
+  assert.deepEqual(groupForSafe([plan(1n), ...deliveries, plan(1n)]).map(g => g.length), [1, 1, 1, 1, 1]);
+  assert.deepEqual(groupForSafe([plan(1n), plan(1n)]).map(g => g.length), [2]);
+});
+
+test('review P-01: claim inputs are sets per category; NAND #1 and LATCH #1 stay separate', () => {
+  const c = canonicalClaimIds([1n, 1n, 2n, 1n], [1n, 3n, 3n]);
+  assert.deepEqual([c.NAND, c.LATCH], [[1n, 2n], [1n, 3n]]);
+  assert.deepEqual(c.duplicates, { NAND: [1n, 1n], LATCH: [3n] });
+  assert.equal(c.normalized, true);
+  assert.equal(canonicalClaimIds([1n], [1n]).normalized, false);
+  // The plan builder refuses duplicates instead of silently changing the caller's input.
+  assert.throws(() => claimPlans(A, [1n, 1n], []), /each ID once per category/);
+  const [p] = claimPlans(A, c.NAND, c.LATCH);
+  assert.deepEqual(decodeFunctionData({ abi: tapeoutMinerPoolAbi as Abi, data: p.data }).args, [[1n, 2n], [1n, 3n]]);
 });
 
 test('maxDeliverable matches a step-by-step search', () => {

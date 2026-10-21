@@ -22,6 +22,9 @@ export interface TxPlan {
   value: bigint;
   description: string;
   gas?: bigint;
+  /** The plan may revert because others acted first (a delivery someone else completed); a Safe batch
+   *  never bundles it with other plans, so its revert cannot roll them back. */
+  standalone?: boolean;
 }
 
 export interface SentTx {
@@ -136,11 +139,39 @@ export function safeBatch(plans: TxPlan[], chainId: number, name: string, safe?:
 }
 
 /** Equivalent Foundry command; the operator chooses the signer (--ledger, --account, ...). A planned
- *  bound becomes `--gas-limit`, so cast does not size the limit from its own estimate. */
-export function castCommand(plan: TxPlan): string {
+ *  bound becomes `--gas-limit`, so cast does not size the limit from its own estimate. With the
+ *  planning chain id, `--chain` makes the signature valid only on that chain, so a `$RPC_URL` that
+ *  points elsewhere cannot silently carry the plan to another network. `rpc` is set only for a
+ *  loopback development node (a local fork answers chain id 56 too): the command then targets that
+ *  node, never `$RPC_URL`. A remote URL is never printed (it may hold credentials). */
+export function castCommand(plan: TxPlan, chainId?: number, rpc?: string): string {
   const value = plan.value > 0n ? ` --value ${plan.value}` : '';
   const gas = plan.gas !== undefined ? ` --gas-limit ${plan.gas}` : '';
+  const chain = chainId !== undefined ? ` --chain ${chainId}` : '';
+  const url = rpc !== undefined ? `"${rpc}"` : '"$RPC_URL"';
   return plan.to
-    ? `cast send --rpc-url "$RPC_URL" <SIGNER_FLAGS>${value}${gas} ${plan.to} ${plan.data}`
-    : `cast send --rpc-url "$RPC_URL" <SIGNER_FLAGS>${value}${gas} --create ${plan.data}`;
+    ? `cast send --rpc-url ${url}${chain} <SIGNER_FLAGS>${value}${gas} ${plan.to} ${plan.data}`
+    : `cast send --rpc-url ${url}${chain} <SIGNER_FLAGS>${value}${gas} --create ${plan.data}`;
+}
+
+/** The origin of a loopback URL without credentials, or undefined: safe to print in a command. */
+export function printableLoopback(rpcUrl: string): string | undefined {
+  const url = new URL(rpcUrl);
+  if (url.username || url.password || !['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname)) return undefined;
+  return url.origin;
+}
+
+/** What the planning node is, without its URL: a local development node (Anvil, Hardhat) answers
+ *  with chain id 56 when it forks BSC, so the chain id alone does not tell a fork from mainnet. */
+export async function executionContext(rpc: PublicClient, rpcUrl: string) {
+  const url = new URL(rpcUrl);
+  const loopback = ['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname);
+  const client = String(await rpc.request({ method: 'web3_clientVersion' } as never).catch(() => 'unknown'));
+  const devNode = /anvil|hardhat|ganache/i.test(client);
+  const block = await rpc.getBlock({ blockTag: 'latest' });
+  return {
+    chainId: await rpc.getChainId(), kind: devNode ? (loopback ? 'LOCAL_DEV_NODE' : 'REMOTE_DEV_NODE') : loopback ? 'LOCAL_NODE' : 'REMOTE_NODE',
+    client: devNode ? client : 'remote node', planningBlock: { number: block.number, hash: block.hash },
+    note: devNode ? 'local development chain or fork: transactions here never reach a public network' : 'a public-network node: these plans are for the network it serves',
+  };
 }

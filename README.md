@@ -27,6 +27,13 @@ How it fits together: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Allocation r
 What was tested and what remains open: [docs/VERIFICATION_REPORT.md](docs/VERIFICATION_REPORT.md).
 Relationship to the previous version (`48a2d74`) and reused evidence: [docs/BASELINE.md](docs/BASELINE.md).
 A plan for a future recoverable live test (not executed): [docs/LIVE_TEST_PLAN.md](docs/LIVE_TEST_PLAN.md).
+The bounded mainnet canary that was run: [MAINNET_TEST_REPORT.md](MAINNET_TEST_REPORT.md) (recorded
+outcome `PARTIAL_AUTOMATION_FAILED_RECOVERY_AND_ACCOUNTING_PASS`), runbook
+[docs/CANARY_RUNBOOK.md](docs/CANARY_RUNBOOK.md).
+The internal security reviews of `f2c8e50` ([Fable](docs/INTERNAL_SECURITY_REVIEW_f2c8e50.md), plus an
+attached GPT review) and their remediation: [docs/AUDIT_REMEDIATION_REPORT.md](docs/AUDIT_REMEDIATION_REPORT.md).
+The Mining status lifecycle the pool relies on, established from Mining's deployed bytecode and on
+forks: [docs/MINING_LIFECYCLE.md](docs/MINING_LIFECYCLE.md).
 
 ## Repository layout
 
@@ -34,12 +41,16 @@ A plan for a future recoverable live test (not executed): [docs/LIVE_TEST_PLAN.m
 | --- | --- |
 | `src/` | The contracts and the `IMining` protocol interface |
 | `test/unit`, `test/invariant` | Foundry unit, fuzz, gas and invariant suites on a mock protocol |
-| `test/fork/` | Real BSC protocol tests on a pinned fork: identity, composition, admission boundary, Mining lifecycle (run through `scripts/fork-test.ts`) |
+| `test/audit/` | The internal review's suites (as committed with the review; the differential test needs `--ffi` for its Python reference model) |
+| `test/remediation/` | Regressions for the review findings: delivery race, duplicate-ID claim preview, rounding policy |
+| `src/canary/` | Recoverable canary contracts (canary only; not part of the production system) |
+| `test/fork/` | Real BSC protocol tests on a pinned fork: identity, composition, admission boundary, Mining lifecycle and status transitions (run through `scripts/fork-test.ts`) |
 | `sdk/` | TypeScript SDK: ABIs, bytecode, math mirror, config and allocation parsing, transaction plans, readers, gas models |
 | `cli/pool.ts` | Operator CLI: plans, simulations, Safe batches, local Anvil execution; never handles keys |
 | `script/DeployPool.s.sol` | Optional Foundry deployment path (`DeployReceipts`, `DeployPool`) |
 | `scripts/` | Local and fork end-to-end runners (including Safe execution of the CLI's batch files), the `verify` runner, ABI export, report summarizers, read-only protocol probes |
-| `deployments/examples/` | Example system configuration and allocation files |
+| `scripts/mining-analysis/` | Static analysis of Mining's deployed bytecode for the status lifecycle (Python 3, standard library only) |
+| `deployments/examples/` | Example system file, addresses file (the reviewed deployment manifest), allocation file and allocation artifact |
 | `reports/` | Raw outputs referenced by the verification report |
 
 ## Quick start

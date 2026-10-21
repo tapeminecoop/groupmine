@@ -1,0 +1,25 @@
+$ node --import tsx scripts/largest-wallet-check.ts
+# exit 0
+
+## stdout
+{
+  "status": "PASS",
+  "parameters": {
+    "largestWallet": {
+      "NAND": 1200,
+      "LATCH": 300
+    },
+    "otherWallet": {
+      "NAND": 10,
+      "LATCH": 5
+    }
+  },
+  "revocation": "FITS_ONE_TRANSACTION",
+  "deliveries": 5,
+  "claimTransactions": 8,
+  "report": "reports/largest-wallet.json"
+}
+
+
+## stderr
+

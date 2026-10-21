@@ -28,6 +28,9 @@ const clean = (s: string) => {
 };
 const tail = (s: string, n = 120_000) => (s.length > n ? `[… ${s.length - n} earlier characters omitted …]\n${s.slice(-n)}` : s);
 // Pinned real-protocol inputs (verified miners at this block); override through the environment.
+/** The canary's original wallet (public address, from the historical run's records); impersonated on a
+ *  local fork only. */
+const CANARY_OWNER = '0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129';
 const FORK_ENV = {
   FORK_BLOCK: process.env.FORK_BLOCK ?? '128713128', FORK_NAND_MINER: process.env.FORK_NAND_MINER ?? '12733',
   FORK_LATCH_MINER: process.env.FORK_LATCH_MINER ?? '13948', FORK_INACTIVE_TOKEN: process.env.FORK_INACTIVE_TOKEN ?? '648',
@@ -139,10 +142,14 @@ async function main() {
     }
     return { ok: Object.values(unchanged).every(Boolean) && Object.values(same).every(Boolean), summary: { sdkFilesUnchangedByExport: unchanged, sdkBytecodeMatchesBuild: same } };
   });
-  await step('format-check', 'forge', ['fmt', '--check'], async o => ({ ok: o.status === 0, summary: o.status === 0 ? 'formatted' : 'unformatted files' }));
+  // The project's own Solidity. test/audit is the internal review's suite, kept byte-for-byte as the
+  // review committed it (unformatted there), so it is not part of this gate.
+  await step('format-check', 'forge', ['fmt', '--check', 'src', 'script', 'test/unit', 'test/invariant', 'test/fork', 'test/helpers', 'test/remediation'],
+    async o => ({ ok: o.status === 0, summary: o.status === 0 ? 'formatted (src, script, test/{unit,invariant,fork,helpers,remediation})' : 'unformatted files' }));
 
   await rm('reports/invariant-coverage.csv', { force: true });
-  await step('solidity-tests', 'forge', ['test', '--no-match-path', 'test/fork/*', '--json'], async o => {
+  // test/audit holds the internal review's suites; its differential test needs FFI (its own step below).
+  await step('solidity-tests', 'forge', ['test', '--no-match-path', 'test/{fork,audit}/*', '--json'], async o => {
     await writeFile('.runtime/forge-tests.json', o.stdout);
     const s = run('node', ['scripts/summarize-forge.mjs', '.runtime/forge-tests.json', 'reports/invariant-coverage.csv']);
     await rm('reports/invariant-coverage.csv', { force: true });
@@ -155,6 +162,19 @@ async function main() {
     const lines = o.stdout.split('\n').filter(l => /^\s{2,}\S/.test(l) && /\d/.test(l) && !/^\s*\[/.test(l)).map(l => l.trim());
     const passed = (o.stdout.match(/\[PASS\]/g) ?? []).length;
     return { ok: /Suite result: ok/.test(o.stdout), summary: { passed, gasUsedAndLimits: lines } };
+  });
+
+  // The internal review's Solidity suite. FFI runs only `python3 -I test/audit/model.py <trace>` (the
+  // review's reference model: standard library only, no file, process or network access).
+  await step('audit-tests', 'forge', ['test', '--match-path', 'test/audit/*', '--ffi', '--json'], async o => {
+    const suites = JSON.parse(o.stdout) as Record<string, { test_results: Record<string, { status: string }> }>;
+    const results = Object.entries(suites).flatMap(([suite, s]) => Object.entries(s.test_results).map(([name, r]) => ({ suite: suite.split(':').pop(), name, status: r.status })));
+    return { ok: results.length > 0 && results.every(r => r.status === 'Success'), summary: { total: results.length, passed: results.filter(r => r.status === 'Success').length, results } };
+  });
+  const auditSdkTests = (await readdir('test/audit')).filter(f => f.endsWith('.test.ts')).map(f => `test/audit/${f}`);
+  await step('audit-sdk-tests', 'node', ['--import', 'tsx', '--test', '--test-reporter=tap', ...auditSdkTests], async o => {
+    const num = (k: string) => Number(new RegExp(`^# ${k} (\\d+)$`, 'm').exec(o.stdout)?.[1] ?? -1);
+    return { ok: num('fail') === 0 && num('tests') > 0, summary: { tests: num('tests'), pass: num('pass'), fail: num('fail') } };
   });
 
   const sdkTests = (await readdir('test/sdk')).filter(f => f.endsWith('.test.ts')).map(f => `test/sdk/${f}`);
@@ -173,6 +193,11 @@ async function main() {
     return { ok: r.status === 'PASS', summary: { status: r.status, checks: Object.keys(r.checks).length, failed: Object.entries(r.checks).filter(([, v]) => !v).map(([k]) => k), steps: r.steps.length, localTransactions: txs } };
   });
 
+  await step('largest-wallet', 'node', ['--import', 'tsx', 'scripts/largest-wallet-check.ts'], async () => {
+    const r = await readJson('reports/largest-wallet.json');
+    return { ok: r.status === 'PASS', summary: { status: r.status, parameters: r.parameters, revocation: r.revocation, deliveries: r.deliveries, claimTransactions: r.claimTransactions, launchGate: r.launchGate } };
+  });
+
   if (process.env.FORK_RPC_URL) {
     await step('fork-tests', 'node', ['--import', 'tsx', 'scripts/fork-test.ts'], async () => {
       const r = await readJson('reports/fork-test.json');
@@ -187,8 +212,16 @@ async function main() {
       return { ok: r.status === 'PASS', summary: { status: r.status, checks: Object.keys(r.checks).length, failed: Object.entries(r.checks).filter(([, v]) => !v).map(([k]) => k),
         safeTransactions: r.safeTransactions.length, localForkTransactions: r.localForkTransactions, gas: r.observations.gas } };
     });
+    // The corrected canary workflow on a local fork, as a new local candidate (never the approved one).
+    const canaryOut = 'reports/canary-local-rehearsal';
+    await rm(canaryOut, { recursive: true, force: true });
+    await step('canary-fork-rehearsal', 'node', ['--import', 'tsx', 'scripts/canary/fork-local-candidate.ts', '--owner', process.env.CANARY_OWNER ?? CANARY_OWNER, '--fork-rpc', process.env.FORK_RPC_URL,
+      '--out', canaryOut, ...(process.env.CANARY_FORK_BLOCK ? ['--block', process.env.CANARY_FORK_BLOCK] : [])], async () => {
+      const r = await readJson(`${canaryOut}/summary.json`);
+      return { ok: r.status === 'PASS', summary: { status: r.status, runIdentity: r.runIdentity, candidate: r.candidate.digest, forkSource: r.forkSource, runs: r.runs.map((x: { status: string; assertions: unknown; negativeTests: unknown }) => ({ status: x.status, assertions: x.assertions, negativeTests: x.negativeTests })) } };
+    });
   } else {
-    for (const name of ['fork-tests', 'fork-e2e', 'fork-safe-e2e']) steps.push({ name, command: '-', status: 'SKIPPED', reason: 'FORK_RPC_URL not set' });
+    for (const name of ['fork-tests', 'fork-e2e', 'fork-safe-e2e', 'canary-fork-rehearsal']) steps.push({ name, command: '-', status: 'SKIPPED', reason: 'FORK_RPC_URL not set' });
   }
 
   if (process.env.SLITHER) {
@@ -209,6 +242,17 @@ async function main() {
   } else {
     steps.push({ name: 'slither', command: '-', status: 'SKIPPED', reason: 'SLITHER not set' });
   }
+
+  // Existing Solidity implementations, ABIs, creation bytecode and runtime templates against a baseline
+  // identity captured before the remediation (test fixtures are not part of it). After Slither, the
+  // artifacts come from its clean rebuild.
+  await step('contract-identity', 'node', ['--import', 'tsx', 'scripts/contract-identity.ts', '--out', 'reports/contract-identity.json'], async () => {
+    const after = await readJson('reports/contract-identity.json');
+    if (!process.env.IDENTITY_BASELINE) return { ok: true, summary: { sourcesSha256: after.sourcesSha256, compared: 'no baseline given' } };
+    const c = run('node', ['--import', 'tsx', 'scripts/contract-identity.ts', '--compare', process.env.IDENTITY_BASELINE, 'reports/contract-identity.json']);
+    const result = JSON.parse(c.stdout);
+    return { ok: c.status === 0 && result.status === 'IDENTICAL', summary: { ...result, sourcesSha256: after.sourcesSha256, cleanRebuild: !!process.env.SLITHER } };
+  });
 
   const manifest = {
     schema: 'tapeout-run-manifest/1', startedAt, finishedAt: new Date().toISOString(),

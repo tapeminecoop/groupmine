@@ -1,0 +1,300 @@
+{
+  "scope": "LOCAL_BSC_FORK_ONLY",
+  "status": "INTERRUPTED_FOR_STANDALONE_RECOVERY",
+  "assertions": {
+    "recovery-fixed-before-any-approval": {
+      "status": "PASS",
+      "evidence": null
+    },
+    "complete-allocation-verified": {
+      "status": "PASS",
+      "evidence": {
+        "status": "READY_TO_FINALIZE",
+        "mode": "full-round",
+        "blockNumber": "128812158",
+        "blockHash": "0xff17b61aee5499c375bf6eaee8008760f59673697ee9c9c2384f1426d08614b2",
+        "identity": {
+          "chainId": {
+            "expected": 56,
+            "artifact": 56,
+            "chain": 56
+          },
+          "distributor": {
+            "expected": "0xb00e455ba5d98542e1dc76b20f1d3fde8f036e3f",
+            "artifact": "0xb00e455ba5d98542e1dc76b20f1d3fde8f036e3f",
+            "chain": "0xb00E455Ba5d98542E1Dc76b20f1d3fde8F036E3f"
+          },
+          "pool": {
+            "expected": "0x40aea668137089a51e6ad4a6ab26045ccb20efc0",
+            "distributorPool": "0x40aea668137089a51e6Ad4A6aB26045CcB20efc0"
+          },
+          "receipts": {
+            "NAND": {
+              "expected": "0x9461750ece26bfc1b5173c436b1a7224dc90ea1c",
+              "artifact": "0x9461750ece26bfc1b5173c436b1a7224dc90ea1c",
+              "distributor": "0x9461750ECE26bfc1b5173C436B1A7224dc90EA1c",
+              "pool": "0x9461750ECE26bfc1b5173C436B1A7224dc90EA1c",
+              "category": "0x3a21099afcdd2a9c70a396879f9a993ecef026f2655bde3020c6f057720eebfb",
+              "categoryMatches": true
+            },
+            "LATCH": {
+              "expected": "0x0ddbbf77f8d07fed18d38086e105ff3d8855142c",
+              "artifact": "0x0ddbbf77f8d07fed18d38086e105ff3d8855142c",
+              "distributor": "0x0ddBBF77f8d07FEd18d38086E105FF3d8855142C",
+              "pool": "0x0ddBBF77f8d07FEd18d38086E105FF3d8855142C",
+              "category": "0xe6a67351fcf7d33ca0f77690db36dd300301b060e10693ad35e1c42c828dd427",
+              "categoryMatches": true
+            }
+          }
+        },
+        "coverage": {
+          "NAND": {
+            "supply": "4",
+            "issuanceFinalized": true,
+            "acceptedInventory": "4",
+            "assigned": "4",
+            "delivered": "0",
+            "undelivered": "4",
+            "unassignedInventory": "0",
+            "excluded": {
+              "count": 0,
+              "ids": "",
+              "holders": []
+            }
+          },
+          "LATCH": {
+            "supply": "2",
+            "issuanceFinalized": true,
+            "acceptedInventory": "2",
+            "assigned": "2",
+            "delivered": "0",
+            "undelivered": "2",
+            "unassignedInventory": "0",
+            "excluded": {
+              "count": 0,
+              "ids": "",
+              "holders": []
+            }
+          }
+        },
+        "review": {
+          "status": "VERIFIED",
+          "sha256": {
+            "file": "15e9d82d7c8e5584b97e3c1fbcbaa50648d32d7fcde79fce839c21063425a8cb",
+            "artifact": "15e9d82d7c8e5584b97e3c1fbcbaa50648d32d7fcde79fce839c21063425a8cb",
+            "matches": true
+          },
+          "assignment": {
+            "status": "VERIFIED",
+            "inventorySource": "recorded inventory (block 128812158) reproduced by the accepted inventory at block 128812158"
+          },
+          "wallets": 2,
+          "totals": {
+            "NAND": 4,
+            "LATCH": 2
+          }
+        },
+        "mismatches": [],
+        "mismatchCount": 0,
+        "readinessGaps": [],
+        "verified": {
+          "wallets": 2,
+          "listedWallets": 2,
+          "ids": {
+            "NAND": "4",
+            "LATCH": "2"
+          },
+          "delivered": {
+            "NAND": "0",
+            "LATCH": "0"
+          },
+          "holdingsChecked": 6,
+          "allocationFinalized": false
+        }
+      }
+    },
+    "owner-renounced-recovery-retained": {
+      "status": "PASS",
+      "evidence": null
+    },
+    "phase-A-composition-2-0": {
+      "status": "PASS",
+      "evidence": {
+        "depositor": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+        "period": "1",
+        "count": "1",
+        "settledOldIncome": "0",
+        "carriedIncome": "186440",
+        "totalNandBurn": "2",
+        "totalLatchBurn": "0"
+      }
+    },
+    "phase-A-positive-actual-revenue": {
+      "status": "PASS",
+      "evidence": {
+        "pendingBeforeHarvestRaw": "0",
+        "actualReceivedRaw": "637",
+        "observation": "Pending is never used to decide whether to claim or as an exact payout promise"
+      }
+    },
+    "phase-A-subset-claim-exact": {
+      "status": "PASS",
+      "evidence": {
+        "expectedRaw": "91704",
+        "paidRaw": "91704",
+        "formatted": "0.00091704",
+        "grossIncomeFromTransfers": "187077",
+        "expectedById": [
+          {
+            "category": 0,
+            "id": "1",
+            "previous": "0",
+            "perShare": "45852",
+            "amount": "45852"
+          },
+          {
+            "category": 0,
+            "id": "2",
+            "previous": "0",
+            "perShare": "45852",
+            "amount": "45852"
+          }
+        ]
+      }
+    },
+    "retain-positive-unpaid-receipt": {
+      "status": "PASS",
+      "evidence": {
+        "receipt": "NAND #3",
+        "unpaidRaw": "45852"
+      }
+    }
+  },
+  "observations": {
+    "initial": {
+      "scope": "READ_ONLY_BSC_SNAPSHOT",
+      "chainId": 56,
+      "block": "128812145",
+      "blockHash": "0x383f1f97b08e13da4cbfc88908ec57643a0f186ee89de5d0a7a765f920f4a922",
+      "timestamp": "1792529026",
+      "owner": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+      "checks": {
+        "miningImplementation": true,
+        "miningCode": true,
+        "beacon": true,
+        "collectionImplementation": true,
+        "bemDecimals": true,
+        "ownerIsEOA": true,
+        "bemRuntime": true,
+        "miningRuntime": true,
+        "minerCollectionRuntime": true,
+        "collectionImplementationCode": true,
+        "miner3204": true,
+        "miner12485": true
+      },
+      "protocol": {
+        "minerCollection": {
+          "address": "0xb1024b89886B9a34Aa4ff5F31C411D708b20a14C",
+          "codeHash": "0xd8c4b0216e0aadd615fbd134465b6af060a11769edc7c844d8f14d1b8a783992"
+        },
+        "mining": {
+          "address": "0x7E2E0DC66a3bD9103E69b766afA62d9f7b697b46",
+          "codeHash": "0xed6b710a769987f50494d713f278817992e3266e45898a990be878efc2fcbbce"
+        },
+        "bem": {
+          "address": "0x5ce033B2bFCa3Af30b3e8C8457DeaF776A8b695a",
+          "codeHash": "0x982ba79538b51e54ee1382f57522098af0635b0f67f2574d393b29ed0958b344"
+        }
+      },
+      "miningImplementation": "0xa3dbe873da37cd4e4a13c7cef23a7db6ca60f898",
+      "collectionImplementation": "0x8E1D125Def6d3826C278299273a0760D47626068",
+      "miners": [
+        {
+          "id": "3204",
+          "key": "0xb0e5b7d325dead6144886258056fb8e27ff5f6192aaa90fd0b45682c297c1c0d",
+          "owner": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+          "record": {
+            "circuits": "0xb1024b89886B9a34Aa4ff5F31C411D708b20a14C",
+            "circuitId": "3204",
+            "taskId": 1,
+            "gateCount": 2,
+            "stateCount": 0,
+            "depth": 2,
+            "area": "2",
+            "mult": 1,
+            "since": "1789703832",
+            "status": 1,
+            "registrant": "0x27D9672FBc61d5e47E2000863C1645ad406c1EB5",
+            "nandBurn": 2,
+            "latchBurn": 0,
+            "bstar": "2",
+            "bonus": "0",
+            "optimal": false,
+            "commitBlock": "0",
+            "firstUnusedId": "0",
+            "stopBlock": "0",
+            "verifWeight": "2",
+            "unverWeight": "0",
+            "debt": "82618143"
+          },
+          "cachedBurn": [
+            true,
+            2,
+            0
+          ],
+          "circuitBurn": [
+            2,
+            0
+          ],
+          "pendingRaw": "184510",
+          "approved": "0x0000000000000000000000000000000000000000"
+        },
+        {
+          "id": "12485",
+          "key": "0x1eab22e4977aa21abc69cf940272969e412c3e3e085180b3e4b30e37f299ca0b",
+          "owner": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+          "record": {
+            "circuits": "0xb1024b89886B9a34Aa4ff5F31C411D708b20a14C",
+            "circuitId": "12485",
+            "taskId": 74,
+            "gateCount": 2,
+            "stateCount": 1,
+            "depth": 1,
+            "area": "8",
+            "mult": 1,
+            "since": "1788230460",
+            "status": 1,
+            "registrant": "0xBc01D306B919614e66a43b176796F2116cFdA9A0",
+            "nandBurn": 1,
+            "latchBurn": 1,
+            "bstar": "2",
+            "bonus": "0",
+            "optimal": false,
+            "commitBlock": "0",
+            "firstUnusedId": "0",
+            "stopBlock": "0",
+            "verifWeight": "2",
+            "unverWeight": "0",
+            "debt": "82618310"
+          },
+          "cachedBurn": [
+            true,
+            1,
+            1
+          ],
+          "circuitBurn": [
+            1,
+            1
+          ],
+          "pendingRaw": "184343",
+          "approved": "0x0000000000000000000000000000000000000000"
+        }
+      ],
+      "bnbRaw": "10000000000000000000",
+      "bemRaw": "9404214",
+      "bemDecimals": 8,
+      "warning": "pending is an observation, not a promise of claim payout"
+    }
+  },
+  "sourceDigest": "6e5afe8faf7b3045a756b7cab2d18f131b74712b6d5b71ba2b7d5e9a44988bd0"
+}

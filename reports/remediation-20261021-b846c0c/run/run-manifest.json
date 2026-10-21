@@ -1,0 +1,580 @@
+{
+  "schema": "tapeout-run-manifest/1",
+  "startedAt": "2026-10-20T20:38:27.013Z",
+  "finishedAt": "2026-10-20T20:51:01.382Z",
+  "scope": "local Anvil chains and local BSC forks only; no public-chain transactions, no signatures",
+  "source": {
+    "baseCommit": "b846c0c7c08eb296e3e73614eefa253d8ca99fc8",
+    "branch": "claude/security-review-remediation",
+    "uncommittedChangesOutsideReports": 34,
+    "changedFiles": [
+      " M README.md",
+      " M cli/pool.ts",
+      " M docs/ACCOUNTING.md",
+      " M docs/CANARY_RUNBOOK.md",
+      " M docs/OPERATIONS.md",
+      " M docs/VERIFICATION_REPORT.md",
+      " M scripts/canary/workflow.ts",
+      " M scripts/export-abi.mjs",
+      " M scripts/fork-e2e.ts",
+      " M scripts/fork-safe-e2e.ts",
+      " M scripts/local-e2e.ts",
+      " M scripts/verify-all.ts",
+      " M sdk/allocation.ts",
+      " M sdk/bytecode.json",
+      " M sdk/gas.ts",
+      " M sdk/index.ts",
+      " M sdk/pool.ts",
+      " M sdk/tx.ts",
+      " M sdk/verify.ts",
+      " M test/audit/verify-supply-gap.test.ts",
+      " M test/sdk/gas.test.ts",
+      " M test/sdk/plans.test.ts",
+      " M test/sdk/verify.test.ts",
+      "?? deployments/examples/addresses.bsc.example.json",
+      "?? deployments/examples/allocation.artifact.example.json",
+      "?? scripts/canary/fork-local-candidate.ts",
+      "?? scripts/canary/revert-verifier.ts",
+      "?? scripts/contract-identity.ts",
+      "?? scripts/largest-wallet-check.ts",
+      "?? sdk/deployment.ts",
+      "?? test/remediation/ClaimPreview.t.sol",
+      "?? test/remediation/DeliveryRace.t.sol",
+      "?? test/remediation/RoundingPolicy.t.sol",
+      "?? test/sdk/canary-revert.test.ts"
+    ],
+    "sourceTreeSha256": "065a969b33ff6b04123b2c396281a2bd1a45c5762646d91f9d3d0a48af2d3d8f",
+    "sourceTreeFiles": 130,
+    "note": "sourceTreeSha256 hashes every non-ignored file except reports/, docs/ and *.md (path and sha256 per line); recompute with `node --import tsx scripts/verify-all.ts --fingerprint` on the commit that contains this run"
+  },
+  "tools": {
+    "forge": "forge Version: 1.4.3-stable",
+    "solc": "0.8.24",
+    "evmVersion": "paris",
+    "viaIR": true,
+    "optimizer": true,
+    "optimizerRuns": 200,
+    "node": "v20.19.5",
+    "os": "darwin 24.5.0",
+    "npm": {
+      "viem": "2.57.2",
+      "zod": "3.24.2",
+      "openzeppelin": "5.4.0",
+      "typescript": "5.7.3",
+      "tsx": "4.19.3"
+    },
+    "slither": "0.11.3"
+  },
+  "artifacts": {
+    "TapeoutEntitlementReceipt": {
+      "creationSha256": "b4b05cc13a0ab68fa9e1c107390554aede947d6d2efe8a528924a4c54835e799",
+      "creationKeccak256": "0xebe115e818b3a8f988fa334fcc0366d1d94df8bea716486a55a9b7b713f4790f",
+      "runtimeCodeHash": "0x7f59d20c18c4dec6ddf617a9f085a87d4622efc279fbc1438e5293333288ec8f",
+      "runtimeBytes": 8743,
+      "initcodeBytes": 10361
+    },
+    "TapeoutReceiptDistributor": {
+      "creationSha256": "4383061a4ff73e9a587bd4a7f0979e4309b4f16364a35a237016f26881cc589b",
+      "creationKeccak256": "0xe692733f4ea3629017d1050d386aca52b4ff384705e659000e35347935f17acc",
+      "runtimeCodeHash": "0xcf370db1582af44f0e527d510d7ef139195bb800dcc1aa9499bf793d2b720ada",
+      "runtimeBytes": 7680,
+      "initcodeBytes": 8289
+    },
+    "TapeoutMinerPool": {
+      "creationSha256": "eacfe5cdd35cae9357b09e7785702be5f7e85d470a6e3c91f1741565a39447a0",
+      "creationKeccak256": "0xd23582afa0be336b48b74931002e47c0fb417822de0c08418341b67f6effc5c9",
+      "runtimeCodeHash": "0x5655ce42aae94fda411c93b73b7f7a1ec0712117504288bd122383a3a17a2c26",
+      "runtimeBytes": 19113,
+      "initcodeBytes": 30896
+    }
+  },
+  "forkInputs": {
+    "rpcHost": "bsc-mainnet.public.blastapi.io",
+    "FORK_BLOCK": "128713128",
+    "FORK_NAND_MINER": "12733",
+    "FORK_LATCH_MINER": "13948",
+    "FORK_INACTIVE_TOKEN": "648",
+    "FORK_SCALE_MINERS": "4183,1574,6940,4307,4655,3207,13617,7924,11127,4951,3932,10031,14559,16112,8714,2161,6767,11214,6453,14011,16944,15731,7541,5930"
+  },
+  "steps": [
+    {
+      "name": "build-sizes",
+      "command": "forge build --sizes",
+      "startedAt": "2026-10-20T20:38:27.490Z",
+      "finishedAt": "2026-10-20T20:38:27.747Z",
+      "durationSeconds": 0.3,
+      "exitCode": 0,
+      "status": "PASS",
+      "summary": {
+        "TapeoutEntitlementReceipt": "runtime 8,743 B (margin 15,833), initcode 10,361 B (margin 38,791)",
+        "TapeoutMinerPool": "runtime 19,113 B (margin 5,463), initcode 30,896 B (margin 18,256)",
+        "TapeoutReceiptDistributor": "runtime 7,680 B (margin 16,896), initcode 8,289 B (margin 40,863)"
+      },
+      "log": "reports/logs/build-sizes.log"
+    },
+    {
+      "name": "export-abi",
+      "command": "node scripts/export-abi.mjs",
+      "startedAt": "2026-10-20T20:38:27.757Z",
+      "finishedAt": "2026-10-20T20:38:27.813Z",
+      "durationSeconds": 0.1,
+      "exitCode": 0,
+      "status": "PASS",
+      "summary": {
+        "sdkFilesUnchangedByExport": {
+          "sdk/abi.ts": true,
+          "sdk/bytecode.json": true
+        },
+        "sdkBytecodeMatchesBuild": {
+          "TapeoutEntitlementReceipt": true,
+          "TapeoutReceiptDistributor": true,
+          "TapeoutMinerPool": true
+        }
+      },
+      "log": "reports/logs/export-abi.log"
+    },
+    {
+      "name": "format-check",
+      "command": "forge fmt --check src script test/unit test/invariant test/fork test/helpers test/remediation",
+      "startedAt": "2026-10-20T20:38:27.818Z",
+      "finishedAt": "2026-10-20T20:38:27.845Z",
+      "durationSeconds": 0,
+      "exitCode": 0,
+      "status": "PASS",
+      "summary": "formatted (src, script, test/{unit,invariant,fork,helpers,remediation})",
+      "log": "reports/logs/format-check.log"
+    },
+    {
+      "name": "solidity-tests",
+      "command": "forge test --no-match-path test/{fork,audit}/* --json",
+      "startedAt": "2026-10-20T20:38:27.845Z",
+      "finishedAt": "2026-10-20T20:38:35.363Z",
+      "durationSeconds": 7.5,
+      "exitCode": 0,
+      "status": "PASS",
+      "summary": {
+        "total": 122,
+        "passed": 122,
+        "invariantAdmissionPaths": {
+          "runs": 1542,
+          "successfulAdmissions": 3751,
+          "rolledBackAdmissions": 1110,
+          "runsWithAdmission": 1511,
+          "runsWithRollback": 537,
+          "maxRegisteredMiners": 11
+        }
+      },
+      "log": "reports/logs/solidity-tests.log"
+    },
+    {
+      "name": "gas-model",
+      "command": "forge test --match-path test/unit/GasModel.t.sol -vv",
+      "startedAt": "2026-10-20T20:38:35.452Z",
+      "finishedAt": "2026-10-20T20:38:35.935Z",
+      "durationSeconds": 0.5,
+      "exitCode": 0,
+      "status": "PASS",
+      "summary": {
+        "passed": 10,
+        "gasUsedAndLimits": [
+          "allocate ranges 85 10537916 12555000",
+          "allocate 400 ids 10389163 10980000",
+          "claimBatch 386 10913951 12552000",
+          "deliver 300 ids, 1 range 9070541 11300000",
+          "deliver 60 ranges 2744335 8320000",
+          "deploy receipt 2293918 3000000",
+          "deploy pool (16 depositors) 5311642 6000000",
+          "deploy distributor 1773979 2500000",
+          "deliver 91 4144902 12567000",
+          "deliver 91 4113202 12567000",
+          "deliver 1 88279 237000",
+          "fund batch 300 10060637 12100000",
+          "issue batch 231 12574000",
+          "to operator 10767507",
+          "to distributor 11626387",
+          "revoke 1500 ids 6460236 12160000",
+          "revoke 85 ranges 811871 3330000",
+          "finalizeIssuance 49150",
+          "finalizeAllocation 69765",
+          "activate 109624",
+          "setApprovalForAll 48933",
+          "releaseA / releaseB 136814 118504",
+          "setRecipient 30630",
+          "renounceOwnership 26247"
+        ]
+      },
+      "log": "reports/logs/gas-model.log"
+    },
+    {
+      "name": "audit-tests",
+      "command": "forge test --match-path test/audit/* --ffi --json",
+      "startedAt": "2026-10-20T20:38:35.936Z",
+      "finishedAt": "2026-10-20T20:38:55.078Z",
+      "durationSeconds": 19.1,
+      "exitCode": 0,
+      "status": "PASS",
+      "summary": {
+        "total": 10,
+        "passed": 10,
+        "results": [
+          {
+            "suite": "AuditAdmissionLivenessTest",
+            "name": "testPermanentlyNonClaimableOldMinerBlocksEveryLaterAdmissionButNotPayouts()",
+            "status": "Success"
+          },
+          {
+            "suite": "AuditAdmissionLivenessTest",
+            "name": "testRevokedMinersKeepTheirWeightAndKeepCostingGasOnEveryAdmission()",
+            "status": "Success"
+          },
+          {
+            "suite": "AuditClaimOrderTest",
+            "name": "testClaimAndReleaseTimingDoesNotChangeAnyoneElsesEntitlement()",
+            "status": "Success"
+          },
+          {
+            "suite": "AuditClaimOrderTest",
+            "name": "testRoleMigrationPaysUnreleasedIncomeToTheNewAddressAndNothingToTheOld()",
+            "status": "Success"
+          },
+          {
+            "suite": "AuditDifferentialTest",
+            "name": "testFuzzLedgerMatchesIndependentReferenceModel(uint256)",
+            "status": "Success"
+          },
+          {
+            "suite": "AuditDistributorCursorTest",
+            "name": "testLastIdAfterManyCompletedRangesIsDeliveredByAThirdPartyAtTheOneRangeBound()",
+            "status": "Success"
+          },
+          {
+            "suite": "AuditDistributorCursorTest",
+            "name": "testPartialRangeRefusalAndRetryEachAtItsPlannedBound()",
+            "status": "Success"
+          },
+          {
+            "suite": "AuditReceiptEdgesTest",
+            "name": "testDuplicateIdRowsWithAZeroValueKeepTheIndexConsistent()",
+            "status": "Success"
+          },
+          {
+            "suite": "AuditReceiptEdgesTest",
+            "name": "testHookClaimDuringDeliveryPaysOnceAndReentrantDeliveryIsRefused()",
+            "status": "Success"
+          },
+          {
+            "suite": "AuditReceiptEdgesTest",
+            "name": "testZeroValueTransfersCannotForgeInventoryOrMoveTheHolderIndex()",
+            "status": "Success"
+          }
+        ]
+      },
+      "log": "reports/logs/audit-tests.log"
+    },
+    {
+      "name": "audit-sdk-tests",
+      "command": "node --import tsx --test --test-reporter=tap test/audit/revert-matcher.test.ts test/audit/verify-supply-gap.test.ts",
+      "startedAt": "2026-10-20T20:38:55.079Z",
+      "finishedAt": "2026-10-20T20:38:55.729Z",
+      "durationSeconds": 0.7,
+      "exitCode": 0,
+      "status": "PASS",
+      "summary": {
+        "tests": 10,
+        "pass": 10,
+        "fail": 0
+      },
+      "log": "reports/logs/audit-sdk-tests.log"
+    },
+    {
+      "name": "sdk-tests",
+      "command": "node --import tsx --test --test-reporter=tap test/sdk/allocation.test.ts test/sdk/canary-revert.test.ts test/sdk/canary.test.ts test/sdk/gas.test.ts test/sdk/math.test.ts test/sdk/plans.test.ts test/sdk/verify.test.ts",
+      "startedAt": "2026-10-20T20:38:55.732Z",
+      "finishedAt": "2026-10-20T20:39:01.204Z",
+      "durationSeconds": 5.5,
+      "exitCode": 0,
+      "status": "PASS",
+      "summary": {
+        "tests": 51,
+        "pass": 51,
+        "fail": 0
+      },
+      "log": "reports/logs/sdk-tests.log"
+    },
+    {
+      "name": "typecheck",
+      "command": "npx tsc --noEmit",
+      "startedAt": "2026-10-20T20:39:01.205Z",
+      "finishedAt": "2026-10-20T20:39:04.208Z",
+      "durationSeconds": 3,
+      "exitCode": 0,
+      "status": "PASS",
+      "summary": "no errors",
+      "log": "reports/logs/typecheck.log"
+    },
+    {
+      "name": "local-e2e",
+      "command": "node --import tsx scripts/local-e2e.ts",
+      "startedAt": "2026-10-20T20:39:04.210Z",
+      "finishedAt": "2026-10-20T20:39:09.614Z",
+      "durationSeconds": 5.4,
+      "exitCode": 0,
+      "status": "PASS",
+      "summary": {
+        "status": "PASS",
+        "checks": 50,
+        "failed": [],
+        "steps": 63,
+        "localTransactions": 45
+      },
+      "log": "reports/logs/local-e2e.log"
+    },
+    {
+      "name": "largest-wallet",
+      "command": "node --import tsx scripts/largest-wallet-check.ts",
+      "startedAt": "2026-10-20T20:39:09.616Z",
+      "finishedAt": "2026-10-20T20:42:12.250Z",
+      "durationSeconds": 182.6,
+      "exitCode": 0,
+      "status": "PASS",
+      "summary": {
+        "status": "PASS",
+        "parameters": {
+          "largestWallet": {
+            "NAND": 1200,
+            "LATCH": 300
+          },
+          "otherWallet": {
+            "NAND": 10,
+            "LATCH": 5
+          }
+        },
+        "revocation": "FITS_ONE_TRANSACTION",
+        "deliveries": 5,
+        "claimTransactions": 8,
+        "launchGate": "PENDING: run again with the actual largest allocation before finalization (these sizes are parameters, not launch inputs)"
+      },
+      "log": "reports/logs/largest-wallet.log"
+    },
+    {
+      "name": "fork-tests",
+      "command": "node --import tsx scripts/fork-test.ts",
+      "startedAt": "2026-10-20T20:42:12.254Z",
+      "finishedAt": "2026-10-20T20:42:20.451Z",
+      "durationSeconds": 8.2,
+      "exitCode": 0,
+      "status": "PASS",
+      "summary": {
+        "status": "PASS",
+        "forkBlock": "128713128",
+        "blockHash": "0x760f050b7ec66ced2a2745918d7492650150f9d71d3159259412996ebe65081f",
+        "results": [
+          {
+            "name": "testOnlyTheCurrentHolderCanStop()",
+            "status": "Success",
+            "reason": null
+          },
+          {
+            "name": "testStopByHolderSettlesAccruedIncomeThenCools()",
+            "status": "Success",
+            "reason": null
+          },
+          {
+            "name": "testForkBoundaryIsIndependentOfProcessingOrder()",
+            "status": "Success",
+            "reason": null
+          },
+          {
+            "name": "testForkBoundaryWithThreeOldMinersAndAnIncomingBatch()",
+            "status": "Success",
+            "reason": null
+          },
+          {
+            "name": "testForkFirstAdmissionAndZeroSupplyCategory()",
+            "status": "Success",
+            "reason": null
+          },
+          {
+            "name": "testForkPlainTransferThenRegisterWindow()",
+            "status": "Success",
+            "reason": null
+          },
+          {
+            "name": "testForkAdmissionGasScaling()",
+            "status": "Success",
+            "reason": null
+          },
+          {
+            "name": "testForkCompositionMatchesCircuitBurnAndIgnoresReferences()",
+            "status": "Success",
+            "reason": null
+          },
+          {
+            "name": "testForkProtocolIdentityAndCompositionAbi()",
+            "status": "Success",
+            "reason": null
+          },
+          {
+            "name": "testForkStrictAdmissionBoundaryWithRealMiners()",
+            "status": "Success",
+            "reason": null
+          },
+          {
+            "name": "testForkWhitelistAfterRenounceAndBypassRejection()",
+            "status": "Success",
+            "reason": null
+          }
+        ]
+      },
+      "log": "reports/logs/fork-tests.log"
+    },
+    {
+      "name": "fork-e2e",
+      "command": "node --import tsx scripts/fork-e2e.ts",
+      "startedAt": "2026-10-20T20:42:20.452Z",
+      "finishedAt": "2026-10-20T20:42:53.399Z",
+      "durationSeconds": 32.9,
+      "exitCode": 0,
+      "status": "PASS",
+      "summary": {
+        "status": "PASS",
+        "checks": 18,
+        "failed": [],
+        "localForkTransactions": 31
+      },
+      "log": "reports/logs/fork-e2e.log"
+    },
+    {
+      "name": "fork-safe-e2e",
+      "command": "node --import tsx scripts/fork-safe-e2e.ts",
+      "startedAt": "2026-10-20T20:42:53.401Z",
+      "finishedAt": "2026-10-20T20:43:44.902Z",
+      "durationSeconds": 51.5,
+      "exitCode": 0,
+      "status": "PASS",
+      "summary": {
+        "status": "PASS",
+        "checks": 244,
+        "failed": [],
+        "safeTransactions": 23,
+        "localForkTransactions": 43,
+        "gas": {
+          "safeTransactions": 23,
+          "largestEstimate": "11097220",
+          "largestPlannedBound": "12004688",
+          "largestPayloadBytes": 16690,
+          "smallestMargin": "149015",
+          "largestEstimateOverPlans": "8433"
+        }
+      },
+      "log": "reports/logs/fork-safe-e2e.log"
+    },
+    {
+      "name": "canary-fork-rehearsal",
+      "command": "node --import tsx scripts/canary/fork-local-candidate.ts --owner 0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129 --fork-rpc https://bsc-mainnet.public.blastapi.io --out reports/canary-local-rehearsal",
+      "startedAt": "2026-10-20T20:43:44.904Z",
+      "finishedAt": "2026-10-20T20:44:34.938Z",
+      "durationSeconds": 50,
+      "exitCode": 0,
+      "status": "PASS",
+      "summary": {
+        "status": "PASS",
+        "runIdentity": "local-candidate-47ee5b3e-bd11-42ab-b9f9-e40131fe9c97",
+        "candidate": "6e5afe8faf7b3045a756b7cab2d18f131b74712b6d5b71ba2b7d5e9a44988bd0",
+        "forkSource": {
+          "block": "128812145",
+          "blockHash": "0x383f1f97b08e13da4cbfc88908ec57643a0f186ee89de5d0a7a765f920f4a922",
+          "rpcHost": "bsc-mainnet.public.blastapi.io"
+        },
+        "runs": [
+          {
+            "status": "PASS",
+            "assertions": {
+              "PASS": 41
+            },
+            "negativeTests": {
+              "former-holder-claim-rejected": {
+                "status": "PASS",
+                "kind": "EXPECTED_REVERT"
+              },
+              "non-whitelisted-admission-rejected": {
+                "status": "PASS",
+                "kind": "EXPECTED_REVERT"
+              },
+              "closed-pool-admission-rejected": {
+                "status": "PASS",
+                "kind": "EXPECTED_REVERT"
+              },
+              "closed-pool-harvest-rejected": {
+                "status": "PASS",
+                "kind": "EXPECTED_REVERT"
+              }
+            }
+          },
+          {
+            "status": "INTERRUPTED_FOR_STANDALONE_RECOVERY",
+            "assertions": {
+              "PASS": 7
+            },
+            "negativeTests": {}
+          }
+        ]
+      },
+      "log": "reports/logs/canary-fork-rehearsal.log"
+    },
+    {
+      "name": "slither",
+      "command": "$SLITHER . --foundry-compile-all --filter-paths node_modules|lib|test|script --exclude-informational --fail-none --json .runtime/slither-raw.json",
+      "startedAt": "2026-10-20T20:44:34.941Z",
+      "finishedAt": "2026-10-20T20:51:00.765Z",
+      "durationSeconds": 385.8,
+      "exitCode": 0,
+      "status": "PASS",
+      "summary": {
+        "results": 77,
+        "printedResults": 77,
+        "byCheck": {
+          "incorrect-equality (Medium/High)": 2,
+          "reentrancy-no-eth (Medium/Medium)": 11,
+          "uninitialized-local (Medium/Medium)": 6,
+          "calls-loop (Low/Medium)": 54,
+          "reentrancy-benign (Low/Medium)": 3,
+          "immutable-states (Optimization/High)": 1
+        }
+      },
+      "log": "reports/logs/slither.log"
+    },
+    {
+      "name": "artifacts-stable-after-rebuild",
+      "command": "compare artifact hashes before and after the rebuild",
+      "status": "PASS"
+    },
+    {
+      "name": "contract-identity",
+      "command": "node --import tsx scripts/contract-identity.ts --out reports/contract-identity.json",
+      "startedAt": "2026-10-20T20:51:00.831Z",
+      "finishedAt": "2026-10-20T20:51:01.171Z",
+      "durationSeconds": 0.3,
+      "exitCode": 0,
+      "status": "PASS",
+      "summary": {
+        "status": "IDENTICAL",
+        "before": {
+          "file": "reports/remediation-20261021-b846c0c/contract-identity-before.json",
+          "head": "b846c0c7c08eb296e3e73614eefa253d8ca99fc8"
+        },
+        "after": {
+          "file": "reports/contract-identity.json",
+          "head": "b846c0c7c08eb296e3e73614eefa253d8ca99fc8"
+        },
+        "differences": [],
+        "contracts": 7,
+        "sources": 7,
+        "sourcesSha256": "1f0e85b54a4179fe1420024e8ef0e51606e9b8eba2201638aaa3a11d2efda770",
+        "cleanRebuild": true
+      },
+      "log": "reports/logs/contract-identity.log"
+    }
+  ],
+  "overall": "PASS"
+}

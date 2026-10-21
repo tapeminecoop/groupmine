@@ -159,18 +159,28 @@ the pool's reading is the local burn by construction.
 
 ### 4.5 Mining lifecycle the pool relies on
 
-Statuses (official frontend labels): 0 not mining, 1 active, 2 revoked, 3 cooling. Observed on the
-deployed implementation (fork tests and read-only chain history; details in the verification report):
+Statuses (official frontend labels): 0 not mining, 1 active, 2 revoked, 3 cooling. Established for
+Mining implementation `0xa3DB…f898`, which can no longer be replaced because its owner is renounced.
+The evidence is the deployed bytecode, fork tests and read-only chain history; details are in
+[MINING_LIFECYCLE.md](MINING_LIFECYCLE.md) and the verification report §3.2.
 
-- `stop(key)` can be called only by the miner NFT's current holder; it pays the holder exactly what a
-  claim would pay at that moment, then sets COOLING; claims then revert. The pool never calls `stop`,
-  so a pool-held miner cannot become COOLING.
-- `challenge` (anyone, with a counterexample) revokes a miner: the same transaction first pays the
-  holder (`Claimed`), then emits `Revoked`. Revoked circuits can never mine again (official frontend;
-  restart not executable on a fork).
-- Status 0 means never started: no stopped or revoked record was seen returning to 0.
-- Restarting a COOLING miner after its cooldown, and whether old debt is reset then, was not executed;
-  it does not arise for pool-held miners.
+- Only three functions write a miner's status: `start` (→ ACTIVE), `stop` (→ COOLING) and
+  `challenge` (→ REVOKED). Status 0 is never written back.
+- `stop(key)` can be called only by the miner NFT's current holder, and only on an ACTIVE miner. It
+  pays the holder exactly what a claim would pay at that moment, removes the miner's weight and sets
+  COOLING; claims then revert. The pool never calls `stop`, so a pool-held miner cannot become
+  COOLING.
+- `challenge` (anyone, with a task vector the circuit fails) revokes an ACTIVE miner. The same
+  transaction first pays the holder (`Claimed`), then removes the weight and emits `Revoked`. A
+  COOLING miner can also be revoked, without payment, until block `stopBlock + 1,200`.
+- REVOKED is terminal. `start` refuses it, every claim reverts, and nothing accrues to it, since its
+  weight is gone and settlement runs only for ACTIVE miners. Its `debt` field is a frozen accumulator
+  checkpoint, not an amount owed. For a pool-held miner the revocation payment reaches the pool in
+  the challenge transaction, and the next recognition books it (admission step 2 or a harvest).
+- A COOLING miner can be restarted (`start`) only by its holder and only from block
+  `stopBlock + 1,201`. The restart restores the weight and resets the debt to the current
+  accumulator, so the cooling period earns nothing and income accrues from the restart. This does
+  not arise for pool-held miners.
 
 ### 4.4 Harvesting and claims
 

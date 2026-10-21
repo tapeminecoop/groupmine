@@ -61,6 +61,46 @@ settlement, a 3:1 harvest, and the post-return personal-income check. With 60-se
 total explicit waiting budget is 300 seconds. The direct old-miner claim does not replace settlement:
 the second admission must independently receive positive old-period income after the next interval.
 
+## Negative tests: structured revert verification
+
+The negative tests are a former holder's claim, a non-whitelisted admission, and admission and harvest
+after shutdown. Each simulates the call at one pinned block and decides on revert bytes from the
+JSON-RPC error's structured `data`, at any nesting a provider uses
+(`scripts/canary/revert-verifier.ts`). The bytes must ABI-decode to the expected custom error with
+exactly the expected arguments, and re-encode to the same bytes. Message text is kept for diagnosis
+only and is never evidence.
+
+| Result | Outcomes | Effect |
+| --- | --- | --- |
+| PASS | the expected error and arguments | the workflow continues |
+| FAIL | another error, other arguments, or no revert | the normal workflow stops; recovery follows |
+| UNVERIFIED | no, empty, malformed or ambiguous revert data, or a transport failure, after 3 read-only attempts at the same block | the normal workflow stops; recovery follows |
+
+Each record names the chain, block number and hash, caller, target, calldata, raw revert data,
+decoded result and every attempt. An inconclusive negative test never lets live actions continue,
+and the bounded retries never delay or replace recovery.
+
+This replaces the original matcher, which searched viem's message text for "revert" and the
+selector. On the mainnet run that matcher produced the two false negatives recorded in
+`reports/canary/mainnet/canary-588196bf-…/results.json`. That run's recorded outcome stays
+`PARTIAL_AUTOMATION_FAILED_RECOVERY_AND_ACCOUNTING_PASS`: 24 passes and 2 failures, with the final
+pre-shutdown harvest skipped. Later diagnostics do not change it. Its source snapshot and the
+approved-candidate guard pinned to `c4bc022` are unchanged. The corrected runner is a new candidate:
+any further live run needs a rebuild, a fork rehearsal, a new proposal and a new approval.
+
+## Local-candidate rehearsal without keys
+
+```sh
+node --import tsx scripts/canary/fork-local-candidate.ts --owner 0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129 --fork-rpc <READ_ONLY_RPC> --out <DIR>
+```
+
+This runs the corrected workflow on two local Anvil forks: complete, then interrupted with standalone
+recovery. It runs under a new run identity, as a separately fingerprinted `LOCAL_CANDIDATE_NOT_APPROVED`.
+It never loads `.env`, refuses to run if `OWNER_PRIVATE_KEY` is set, impersonates the wallet's public
+address on the fork only, and writes nothing under `reports/canary/`. The identity checks are those of
+the normal rehearsal: `build-source --check`, the runner's deployed-code checks and the protocol
+preflight at the fork block. It is evidence for the corrected tooling, not an approval for a live run.
+
 ## Emergency recovery after interruption
 
 Do not restart the live runner, redeploy or repeat a deposit. The journal records intent, nonce and

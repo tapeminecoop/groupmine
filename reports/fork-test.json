@@ -1,8 +1,8 @@
 {
   "scope": "REAL_BSC_STATE_LOCAL_FORK_ONLY",
   "status": "PASS",
-  "startedAt": "2026-10-20T13:23:01.108Z",
-  "completedAt": "2026-10-20T13:23:07.965Z",
+  "startedAt": "2026-10-21T03:54:02.197Z",
+  "completedAt": "2026-10-21T03:54:33.308Z",
   "source": {
     "chainId": 56,
     "forkBlock": "128713128",
@@ -35,7 +35,7 @@
       "MockNFT": "67c5817f50554ed615ce2521ac2d125e1ba71be286bd2803bb0893b57cfa73e5"
     }
   },
-  "forgeCommand": "forge test --match-path test/fork/* -vv --json --fork-url https://bsc-mainnet.public.blastapi.io --fork-block-number 128713128 --fork-retries 30 --fork-retry-backoff 3000 --compute-units-per-second 40",
+  "forgeCommand": "forge test --match-path test/fork/* -vv --json --fork-url https://bsc-mainnet.public.blastapi.io --fork-block-number 128713128 --fork-retries 30 --fork-retry-backoff 3000 --compute-units-per-second 20",
   "forgeExitCode": 0,
   "results": [
     {
@@ -45,6 +45,31 @@
     },
     {
       "name": "testStopByHolderSettlesAccruedIncomeThenCools()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testCoolingMinerRestartsWithDebtRebased()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testRealRevocationPaysHolderOnceThenNothing()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testRestartNeedsMoreThanTheCooldown()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testRevokedMinerStaysRevokedAndEarnsNothing()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testStopCooldownDecidesBetweenRevocationAndRestart()",
       "status": "Success",
       "reason": null
     },
@@ -249,6 +274,45 @@
       "lastAdmissionGas": 867619,
       "maxMarginalGasPerRegisteredMiner": 27849,
       "registeredAtEnd": 24
+    },
+    "transitionsRevoked": {
+      "debt": 213588191,
+      "forkBlock": 128713128,
+      "holder": "0x6C3c29E866d32D5B6a26AdB163B163916bed4602",
+      "miner": 2247,
+      "startError": "0x802cdbc800000000000000000000000000000000000000000000000000000000",
+      "stillRevokedAfterMonth": true
+    },
+    "transitionsRevocation": {
+      "block": 119597281,
+      "debtAfter": 213588191,
+      "debtBefore": 212133524,
+      "holder": "0x216566D25Be326Cb7aE09bA37b485e644e89a36c",
+      "paidToHolder": 1454667,
+      "weightRemoved": 12
+    },
+    "transitionsCooldown": {
+      "challengeErrorAfterCooldown": "0x5f9bb3be00000000000000000000000000000000000000000000000000000000",
+      "cooldownBlocks": 1200,
+      "restartedAtStopBlockPlusCooldownPlusOne": true,
+      "revocableAtStopBlockPlusCooldown": true,
+      "stopBlock": 119597281,
+      "stopPaid": 1454667
+    },
+    "transitionsRestart": {
+      "claimableOneDayAfterRestart": 531091,
+      "debtAtRestart": 35610025,
+      "debtWhileCooling": 5408752,
+      "forkBlock": 128713128,
+      "holder": "0x343814Ed06F87f34c8f69486c02e06763a552074",
+      "miner": 672,
+      "stopBlock": 118184257,
+      "unverifiedWeight": 3
+    },
+    "transitionsBoundary": {
+      "acceptedAtStopBlockPlusCooldownPlusOne": true,
+      "refusedAtStopBlockPlusCooldown": true,
+      "stopBlock": 128721128
     }
   },
   "method": [
@@ -257,6 +321,7 @@
     "Time is advanced inside the fork only (vm.warp / vm.roll) so real Mining accrues income between admissions.",
     "Expected settlement amounts are observed independently: what a real Mining.claim pays at the same timestamp, measured on a snapshot and undone (vm.snapshotState / vm.revertToState).",
     "Lifecycle experiments impersonate the current NFT holder to call Mining.stop; BEM donations are real claims forwarded by an impersonated holder.",
+    "Status transitions: the current holders restart, stop, reclaim and claim through the real Mining functions; the real revocation of #2247 (tx 0x2234e269…bb14) is replayed from its real sender with its exact calldata on a fork of block 119,597,280, executing at the real block number and timestamp.",
     "Gas is measured with protocol and pool accounts cooled (vm.cool), approximating stand-alone transactions; the 21,000 base cost is excluded."
   ],
   "mainnetTransactionsSent": 0,

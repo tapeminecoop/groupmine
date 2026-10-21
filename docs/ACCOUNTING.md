@@ -74,6 +74,23 @@ from `T`. Within one composition period the allocation depends only on `T`, so r
 one harvest or in many gives identical results. Across periods, the only extra rounding is the
 at-most-one-unit carry above.
 
+**Bounded residue is not a lifetime category-fairness bound.** A checkpoint freezes each category's
+whole-unit income and carries only the single unassigned participant unit, not each category's
+fractional remainder. So admissions can shift lifetime category totals by more than one unit, even
+when they keep the same NAND:LATCH ratio, while the unassigned residue stays within the bound above.
+
+Example (test/remediation/RoundingPolicy.t.sol, raw units):
+- **Setup.** One receipt per category and a 1:2 miner; 3 units are recognized, then one unit in each
+  of seven further periods.
+- **With checkpoints.** A zero-carry 1:2 miner is admitted between periods. At `T = 10` the result is
+  NAND 0, LATCH 8, residue 2.
+- **Without checkpoints.** The same 10 units recognized in one period give NAND 3, LATCH 6, residue 1.
+
+Both results conserve every unit and never reverse an accrued amount. Creating such boundaries needs
+whitelisted admissions of further eligible miners into permanent custody. This is the documented
+policy of this version, pending the owner's explicit economic acceptance. Changing it, for example by
+carrying each category's fraction, would be a separate specification and contract change.
+
 ## 6. Monotonicity
 
 `T` only grows, so `A`, `B` and `P` never decrease. Inside a period both category incomes are

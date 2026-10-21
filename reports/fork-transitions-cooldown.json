@@ -1,0 +1,8 @@
+{
+  "challengeErrorAfterCooldown": "0x5f9bb3be00000000000000000000000000000000000000000000000000000000",
+  "cooldownBlocks": 1200,
+  "restartedAtStopBlockPlusCooldownPlusOne": true,
+  "revocableAtStopBlockPlusCooldown": true,
+  "stopBlock": 119597281,
+  "stopPaid": 1454667
+}

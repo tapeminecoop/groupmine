@@ -16,8 +16,8 @@ import { poolDeployment, receiptConstructorArgs, type SystemFile } from './confi
 import { accrue, residueBound, type Accrual, type State } from './math.js';
 import { allocationBatchGas, type DistributorInput } from './allocation.js';
 import {
-  CALL_GAS, CLAIM_GAS, DEPLOY_GAS, FUND_GAS, HARVEST_GAS, ISSUE_GAS, admissionGasEstimate, deliveryBatches, deliveryGas, idsGas, maxIdsPerTx,
-  revokeGas,
+  CALL_GAS, CLAIM_GAS, DEPLOY_GAS, FUND_GAS, HARVEST_GAS, ISSUE_GAS, admissionGasEstimate, deliveryBatches, idsGas, maxIdsPerTx,
+  reachableDeliveryGas, revokeGas,
 } from './gas.js';
 import type { TxPlan } from './tx.js';
 
@@ -95,19 +95,25 @@ export const revokeWalletPlan = (distributor: Address, wallet: Address, ranges: 
   distributorCall(distributor, 'revokeWallet', [wallet], `revoke every range allocated to ${wallet} (before finalization)`, revokeGas(ranges));
 export const finalizeAllocationPlan = (distributor: Address) =>
   distributorCall(distributor, 'finalizeAllocation', [], 'finalize the allocation (beneficiaries become immutable; claims open)', CALL_GAS.finalizeAllocation);
-export const claimReceiptsPlan = (distributor: Address, maxIds: number, ranges: readonly OnChainRange[]) =>
-  distributorCall(distributor, 'claim', [BigInt(maxIds)], `claim up to ${maxIds} allocated receipts`, deliveryGas(ranges, maxIds));
-export const deliverPlan = (distributor: Address, wallet: Address, maxIds: number, ranges: readonly OnChainRange[]) =>
-  distributorCall(distributor, 'deliver', [wallet, BigInt(maxIds)], `deliver up to ${maxIds} receipts to their beneficiary ${wallet}`, deliveryGas(ranges, maxIds));
+/** One delivery, bounded for any cursor position reachable from `ranges` (others may deliver first). */
+export const claimReceiptsPlan = (distributor: Address, maxIds: number, ranges: readonly OnChainRange[]): TxPlan =>
+  ({ ...distributorCall(distributor, 'claim', [BigInt(maxIds)], `claim up to ${maxIds} allocated receipts`, reachableDeliveryGas(ranges, maxIds)), standalone: true });
+export const deliverPlan = (distributor: Address, wallet: Address, maxIds: number, ranges: readonly OnChainRange[]): TxPlan =>
+  ({ ...distributorCall(distributor, 'deliver', [wallet, BigInt(maxIds)], `deliver up to ${maxIds} receipts to their beneficiary ${wallet}`, reachableDeliveryGas(ranges, maxIds)), standalone: true });
 
-/** Every delivery `wallet` still needs, in order, each sized and bounded for the state the previous
- *  ones leave (`claim` by the wallet itself, or `deliver` pushed by anyone when `push`). */
+/**
+ * Every delivery `wallet` still needs (`claim` by the wallet itself, or `deliver` pushed by anyone when
+ * `push`). Each is bounded for any cursor position reachable from this snapshot, so a call still fits
+ * its gas limit if others deliver part of the wallet first; if they deliver all of it, a remaining call
+ * reverts with NothingToDeliver. Each is `standalone`: never bundled into one Safe transaction.
+ */
 export function deliveryPlans(distributor: Address, wallet: Address, ranges: readonly OnChainRange[], cap: number, push: boolean): TxPlan[] {
   return deliveryBatches(ranges, cap).map(({ maxIds, gas }, i, all) => {
     const step = all.length > 1 ? ` (${i + 1} of ${all.length})` : '';
-    return push
+    const plan = push
       ? distributorCall(distributor, 'deliver', [wallet, BigInt(maxIds)], `deliver up to ${maxIds} receipts to their beneficiary ${wallet}${step}`, gas)
       : distributorCall(distributor, 'claim', [BigInt(maxIds)], `claim up to ${maxIds} allocated receipts${step}`, gas);
+    return { ...plan, standalone: true };
   });
 }
 
@@ -143,7 +149,35 @@ export function harvestRangePlans(pool: Address, minerCount: bigint, batch: numb
   return plans;
 }
 
+/**
+ * Claim inputs as sets: every ID once per category, in first-seen order, with what was dropped. NAND #1
+ * and LATCH #1 are different receipts. The pool's `claimableBatch` view counts a repeated ID once per
+ * occurrence while `claimBatch` pays it once, so a preview and a transaction must use these inputs.
+ */
+export function canonicalClaimIds(nand: readonly bigint[], latch: readonly bigint[]) {
+  const dedupe = (ids: readonly bigint[]) => {
+    const seen = new Set<bigint>();
+    const unique: bigint[] = [];
+    const duplicates: bigint[] = [];
+    for (const id of ids) {
+      if (seen.has(id)) duplicates.push(id);
+      else {
+        seen.add(id);
+        unique.push(id);
+      }
+    }
+    return { unique, duplicates };
+  };
+  const n = dedupe(nand), l = dedupe(latch);
+  return { NAND: n.unique, LATCH: l.unique, duplicates: { NAND: n.duplicates, LATCH: l.duplicates }, normalized: n.duplicates.length + l.duplicates.length > 0 };
+}
+
+/** `claimBatch` plans. Inputs must already be sets per category (see `canonicalClaimIds`). */
 export function claimPlans(pool: Address, nandIds: bigint[], latchIds: bigint[], batch = 200): TxPlan[] {
+  const canonical = canonicalClaimIds(nandIds, latchIds);
+  if (canonical.normalized) {
+    throw new Error(`claimPlans needs each ID once per category; repeated NAND ${canonical.duplicates.NAND.join(',') || '-'} LATCH ${canonical.duplicates.LATCH.join(',') || '-'} (normalize with canonicalClaimIds)`);
+  }
   const items = [...nandIds.map(id => ['NAND', id] as const), ...latchIds.map(id => ['LATCH', id] as const)];
   return chunk(items, batch).map(part => {
     const n = part.filter(([c]) => c === 'NAND').map(([, id]) => id);
@@ -213,23 +247,42 @@ export async function readWalletRanges(rpc: PublicClient, distributor: Address, 
 export const ERC1155_RECEIVER_INTERFACE = '0x4e2312e0' as const;
 const erc165Abi = [{ type: 'function', name: 'supportsInterface', stateMutability: 'view', inputs: [{ name: 'interfaceId', type: 'bytes4' }], outputs: [{ type: 'bool' }] }] as const;
 
+const erc1155ReceiverAbi = [
+  { type: 'function', name: 'onERC1155Received', stateMutability: 'nonpayable', inputs: [{ type: 'address' }, { type: 'address' }, { type: 'uint256' }, { type: 'uint256' }, { type: 'bytes' }], outputs: [{ type: 'bytes4' }] },
+  { type: 'function', name: 'onERC1155BatchReceived', stateMutability: 'nonpayable', inputs: [{ type: 'address' }, { type: 'address' }, { type: 'uint256[]' }, { type: 'uint256[]' }, { type: 'bytes' }], outputs: [{ type: 'bytes4' }] },
+] as const;
+const RECEIVED = { single: '0xf23a6e61', batch: '0xbc197c81' } as const;
+
 /**
- * Allocation wallets that could not take delivery: contracts (including EIP-7702 delegated accounts)
- * that do not declare IERC1155Receiver through ERC-165. The distributor delivers with
- * safeBatchTransferFrom, so delivery to them reverts, and after finalization their receipts could
- * never leave the distributor. Plain EOAs need no hook.
+ * Allocation wallets that could not take delivery. Contracts (including EIP-7702 delegated accounts)
+ * must declare IERC1155Receiver through ERC-165; with `hooks` (the receipt and the distributor), the
+ * single and batch receive hooks are also simulated from the receipt contract and must return their
+ * selectors. Plain EOAs need no hook. A wallet that passes may still be unable to claim from the pool or
+ * transfer later: only its actual implementation shows that (docs/OPERATIONS.md lists the tested ones).
  */
-export async function receiverProblems(rpc: PublicClient, wallets: readonly Address[], blockNumber?: bigint): Promise<string[]> {
+export async function receiverProblems(rpc: PublicClient, wallets: readonly Address[], blockNumber?: bigint, hooks?: { receipt: Address; operator: Address }): Promise<string[]> {
   const problems: string[] = [];
   for (const group of chunk([...wallets], 20)) {
     const results = await Promise.all(group.map(async wallet => {
       const code = await rpc.getCode({ address: wallet, blockNumber });
       if (!code || code === '0x') return undefined;
+      const kind = code.toLowerCase().startsWith('0xef0100') ? 'an EIP-7702 delegated account' : 'a contract';
       const declared = await rpc.readContract({ address: wallet, abi: erc165Abi, functionName: 'supportsInterface', args: [ERC1155_RECEIVER_INTERFACE], blockNumber })
         .catch(() => false);
-      if (declared) return undefined;
-      const kind = code.toLowerCase().startsWith('0xef0100') ? 'an EIP-7702 delegated account' : 'a contract';
-      return `${wallet} is ${kind} that does not declare IERC1155Receiver: delivery would revert and its receipts could never leave the distributor`;
+      if (!declared) return `${wallet} is ${kind} that does not declare IERC1155Receiver: delivery would revert and its receipts could never leave the distributor`;
+      if (!hooks) return undefined;
+      const answer = async (fn: 'onERC1155Received' | 'onERC1155BatchReceived') => {
+        const args = fn === 'onERC1155Received' ? [hooks.operator, hooks.operator, 1n, 1n, '0x'] : [hooks.operator, hooks.operator, [1n], [1n], '0x'];
+        try {
+          const { data } = await rpc.call({ account: hooks.receipt, to: wallet, data: encodeFunctionData({ abi: erc1155ReceiverAbi, functionName: fn, args } as never), blockNumber });
+          return data && data.length >= 10 ? (data.slice(0, 10).toLowerCase() as Hex) : undefined;
+        } catch {
+          return undefined;
+        }
+      };
+      const [single, batch] = await Promise.all([answer('onERC1155Received'), answer('onERC1155BatchReceived')]);
+      if (single === RECEIVED.single && batch === RECEIVED.batch) return undefined;
+      return `${wallet} is ${kind} that declares IERC1155Receiver but its receive hook did not accept a simulated transfer (single ${single ?? 'reverted'}, batch ${batch ?? 'reverted'})`;
     }));
     problems.push(...results.filter((p): p is string => p !== undefined));
   }

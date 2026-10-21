@@ -4,8 +4,9 @@
  *  1. Pins a recent BSC block and discovers (read-only multicall): a NAND-only active miner, an active
  *     miner that burns LATCH, an inactive token, and further active miners for the gas-scaling run —
  *     all held by plain EOAs (impersonated on the fork only).
- *  2. Runs every test in test/fork/ (PoolFork, PoolBoundary, MiningLifecycle; fork profile: Cancun EVM,
- *     Paris artifacts from ./out) and requires all 11 to pass.
+ *  2. Runs every test in test/fork/ (PoolFork, PoolBoundary, MiningLifecycle, MiningTransitions; fork profile:
+ *     Cancun EVM, Paris artifacts from ./out) and requires all 16 to pass. MiningTransitions also forks the
+ *     block before a real revocation (119,597,280) from the same archive endpoint.
  *  3. Writes reports/fork-test.json with the observations each test wrote.
  *
  * Env: FORK_RPC_URL (archive), DISCOVERY_RPC_URL (recent state; defaults to FORK_RPC_URL), FORK_BLOCK,
@@ -98,6 +99,9 @@ async function main() {
     identity: 'reports/fork-identity.json', composition: 'reports/fork-composition.json', boundary: 'reports/fork-boundary.json',
     boundaryMulti: 'reports/fork-boundary-multi.json', boundaryOrder: 'reports/fork-boundary-order.json', registerWindow: 'reports/fork-register-window.json',
     lifecycle: 'reports/fork-lifecycle.json', lifecycleHolderOnly: 'reports/fork-lifecycle-holder.json', gas: 'reports/fork-gas.json',
+    transitionsRevoked: 'reports/fork-transitions-revoked.json', transitionsRevocation: 'reports/fork-transitions-revocation.json',
+    transitionsCooldown: 'reports/fork-transitions-cooldown.json', transitionsRestart: 'reports/fork-transitions-restart.json',
+    transitionsBoundary: 'reports/fork-transitions-boundary.json',
   };
   for (const f of Object.values(observationFiles)) await writeFile(f, '{}\n');
   const run = spawnSync('forge', args, { env: { ...process.env, ...env, FORK_RPC_URL: archiveUrl, FORK_BLOCK: String(forkBlock), FOUNDRY_PROFILE: 'fork' }, encoding: 'utf8', maxBuffer: 128 * 1024 * 1024, timeout: 7_200_000 });
@@ -107,8 +111,9 @@ async function main() {
     .flatMap(suite => Object.entries(suite.test_results ?? {}).map(([name, r]) => ({ name, status: r.status, reason: r.reason ?? null })));
   const readJson = async (file: string) => { try { return JSON.parse(await readFile(file, 'utf8')); } catch { return null; } };
   const bytecode = JSON.parse(await readFile('sdk/bytecode.json', 'utf8'));
-  // Every fork test must have run and passed: PoolForkTest (5), PoolBoundaryForkTest (4), MiningLifecycleForkTest (2).
-  const passed = run.status === 0 && results.length === 11 && results.every(r => r.status === 'Success');
+  // Every fork test must have run and passed: PoolForkTest (5), PoolBoundaryForkTest (4), MiningLifecycleForkTest (2),
+  // MiningTransitionsForkTest (5).
+  const passed = run.status === 0 && results.length === 16 && results.every(r => r.status === 'Success');
   const report = {
     scope: 'REAL_BSC_STATE_LOCAL_FORK_ONLY', status: passed ? 'PASS' : 'FAIL', startedAt, completedAt: new Date().toISOString(),
     source: { chainId: 56, forkBlock, blockHash: block.hash, blockTimestamp: block.timestamp, archiveRpcHost: new URL(archiveUrl).host, discoveryRpcHost: new URL(discoveryUrl).host },
@@ -124,6 +129,7 @@ async function main() {
       'Time is advanced inside the fork only (vm.warp / vm.roll) so real Mining accrues income between admissions.',
       'Expected settlement amounts are observed independently: what a real Mining.claim pays at the same timestamp, measured on a snapshot and undone (vm.snapshotState / vm.revertToState).',
       'Lifecycle experiments impersonate the current NFT holder to call Mining.stop; BEM donations are real claims forwarded by an impersonated holder.',
+      'Status transitions: the current holders restart, stop, reclaim and claim through the real Mining functions; the real revocation of #2247 (tx 0x2234e269…bb14) is replayed from its real sender with its exact calldata on a fork of block 119,597,280, executing at the real block number and timestamp.',
       'Gas is measured with protocol and pool accounts cooled (vm.cool), approximating stand-alone transactions; the 21,000 base cost is excluded.',
     ],
     mainnetTransactionsSent: 0, signaturesCreated: 0,

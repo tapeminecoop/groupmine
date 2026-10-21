@@ -1,0 +1,478 @@
+{
+ "tool": "slither 0.11.3",
+ "command": "slither . --foundry-compile-all --filter-paths \"node_modules|lib|test|script\" --exclude-informational --fail-none",
+ "success": true,
+ "results": 77,
+ "byCheck": {
+  "incorrect-equality (Medium/High)": 2,
+  "reentrancy-no-eth (Medium/Medium)": 11,
+  "uninitialized-local (Medium/Medium)": 6,
+  "calls-loop (Low/Medium)": 54,
+  "reentrancy-benign (Low/Medium)": 3,
+  "immutable-states (Optimization/High)": 1
+ },
+ "findings": [
+  {
+   "check": "incorrect-equality",
+   "impact": "Medium",
+   "confidence": "High",
+   "description": "RecoverableTapeoutMinerPool._pay(address,uint256) (src/canary/RecoverableTapeoutMinerPool.sol#775-784) uses a dangerous strict equality:"
+  },
+  {
+   "check": "incorrect-equality",
+   "impact": "Medium",
+   "confidence": "High",
+   "description": "TapeoutMinerPool._pay(address,uint256) (src/TapeoutMinerPool.sol#729-738) uses a dangerous strict equality:"
+  },
+  {
+   "check": "reentrancy-no-eth",
+   "impact": "Medium",
+   "confidence": "Medium",
+   "description": "Reentrancy in RecoverableTapeoutMinerPool._admit(uint256[],bool) (src/canary/RecoverableTapeoutMinerPool.sol#580-652):"
+  },
+  {
+   "check": "reentrancy-no-eth",
+   "impact": "Medium",
+   "confidence": "Medium",
+   "description": "Reentrancy in RecoverableTapeoutMinerPool._admit(uint256[],bool) (src/canary/RecoverableTapeoutMinerPool.sol#580-652):"
+  },
+  {
+   "check": "reentrancy-no-eth",
+   "impact": "Medium",
+   "confidence": "Medium",
+   "description": "Reentrancy in RecoverableTapeoutMinerPool.harvest(uint256[]) (src/canary/RecoverableTapeoutMinerPool.sol#316-335):"
+  },
+  {
+   "check": "reentrancy-no-eth",
+   "impact": "Medium",
+   "confidence": "Medium",
+   "description": "Reentrancy in TapeoutMinerPool.harvest(uint256[]) (src/TapeoutMinerPool.sol#299-317):"
+  },
+  {
+   "check": "reentrancy-no-eth",
+   "impact": "Medium",
+   "confidence": "Medium",
+   "description": "Reentrancy in TapeoutMinerPool.harvestRange(uint256,uint256) (src/TapeoutMinerPool.sol#320-338):"
+  },
+  {
+   "check": "reentrancy-no-eth",
+   "impact": "Medium",
+   "confidence": "Medium",
+   "description": "Reentrancy in TapeoutMinerPool._admit(uint256[],bool) (src/TapeoutMinerPool.sol#536-606):"
+  },
+  {
+   "check": "reentrancy-no-eth",
+   "impact": "Medium",
+   "confidence": "Medium",
+   "description": "Reentrancy in TapeoutMinerPool._admit(uint256[],bool) (src/TapeoutMinerPool.sol#536-606):"
+  },
+  {
+   "check": "reentrancy-no-eth",
+   "impact": "Medium",
+   "confidence": "Medium",
+   "description": "Reentrancy in RecoverableTapeoutMinerPool._admit(uint256[],bool) (src/canary/RecoverableTapeoutMinerPool.sol#580-652):"
+  },
+  {
+   "check": "reentrancy-no-eth",
+   "impact": "Medium",
+   "confidence": "Medium",
+   "description": "Reentrancy in RecoverableTapeoutMinerPool.harvestRange(uint256,uint256) (src/canary/RecoverableTapeoutMinerPool.sol#338-357):"
+  },
+  {
+   "check": "reentrancy-no-eth",
+   "impact": "Medium",
+   "confidence": "Medium",
+   "description": "Reentrancy in TapeoutMinerPool._admit(uint256[],bool) (src/TapeoutMinerPool.sol#536-606):"
+  },
+  {
+   "check": "reentrancy-no-eth",
+   "impact": "Medium",
+   "confidence": "Medium",
+   "description": "Reentrancy in TapeoutReceiptDistributor._deliver(address,uint256) (src/TapeoutReceiptDistributor.sol#276-299):"
+  },
+  {
+   "check": "uninitialized-local",
+   "impact": "Medium",
+   "confidence": "Medium",
+   "description": "TapeoutMinerPool._admit(uint256[],bool).addNand (src/TapeoutMinerPool.sol#549) is a local variable never initialized"
+  },
+  {
+   "check": "uninitialized-local",
+   "impact": "Medium",
+   "confidence": "Medium",
+   "description": "RecoverableTapeoutMinerPool._admit(uint256[],bool).addLatch (src/canary/RecoverableTapeoutMinerPool.sol#595) is a local variable never initialized"
+  },
+  {
+   "check": "uninitialized-local",
+   "impact": "Medium",
+   "confidence": "Medium",
+   "description": "TapeoutMinerPool._admit(uint256[],bool).addLatch (src/TapeoutMinerPool.sol#550) is a local variable never initialized"
+  },
+  {
+   "check": "uninitialized-local",
+   "impact": "Medium",
+   "confidence": "Medium",
+   "description": "TapeoutReceiptDistributor.revokeWallet(address).removed (src/TapeoutReceiptDistributor.sol#155) is a local variable never initialized"
+  },
+  {
+   "check": "uninitialized-local",
+   "impact": "Medium",
+   "confidence": "Medium",
+   "description": "RecoverableTapeoutMinerPool._admit(uint256[],bool).addNand (src/canary/RecoverableTapeoutMinerPool.sol#594) is a local variable never initialized"
+  },
+  {
+   "check": "uninitialized-local",
+   "impact": "Medium",
+   "confidence": "Medium",
+   "description": "TapeoutReceiptDistributor.onERC1155BatchReceived(address,address,uint256[],uint256[],bytes).accepted (src/TapeoutReceiptDistributor.sol#107) is a local variable never initialized"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "TapeoutMinerPool._settleOld(uint256) (src/TapeoutMinerPool.sol#633-642) has external calls inside a loop: mining.getMiner(key).status != MINER_REVOKED (src/TapeoutMinerPool.sol#637)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "RecoverableTapeoutMinerPool._settleOld(uint256) (src/canary/RecoverableTapeoutMinerPool.sol#679-688) has external calls inside a loop: mining.getMiner(key).status != MINER_REVOKED (src/canary/RecoverableTapeoutMinerPool.sol#683)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "TapeoutMinerPool._claimOne(TapeoutMinerPool.Category,uint256,uint256,uint256) (src/TapeoutMinerPool.sol#679-690) has external calls inside a loop: receiptOf(category).balanceOf(msg.sender,id) != 1 (src/TapeoutMinerPool.sol#685)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "TapeoutMinerPool._admit(uint256[],bool) (src/TapeoutMinerPool.sol#536-606) has external calls inside a loop: minerCollection.transferFrom(msg.sender,address(this),id_scope_2) (src/TapeoutMinerPool.sol#582)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "RecoverableTapeoutMinerPool._settleOld(uint256) (src/canary/RecoverableTapeoutMinerPool.sol#679-688) has external calls inside a loop: mining.claim(key) (src/canary/RecoverableTapeoutMinerPool.sol#681-687)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "RecoverableTapeoutMinerPool._admit(uint256[],bool) (src/canary/RecoverableTapeoutMinerPool.sol#580-652) has external calls inside a loop: revert MinerNotHeld(uint256,address)(id_scope_2,minerCollection.ownerOf(id_scope_2)) (src/canary/RecoverableTapeoutMinerPool.sol#630)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "TapeoutMinerPool._harvestOne(uint256,bytes32,uint256) (src/TapeoutMinerPool.sol#653-665) has external calls inside a loop: balance = bem.balanceOf(address(this)) (src/TapeoutMinerPool.sol#658)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "TapeoutReceiptDistributor._deliver(address,uint256) (src/TapeoutReceiptDistributor.sol#276-299) has external calls inside a loop: _receipt(range.category).safeBatchTransferFrom(address(this),wallet,ids,values,) (src/TapeoutReceiptDistributor.sol#295)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "TapeoutMinerPool._readComposition(uint256) (src/TapeoutMinerPool.sol#610-626) has external calls inside a loop: (cached,cachedNand,cachedLatch) = mining.cachedBurn(address(minerCollection),tokenId) (src/TapeoutMinerPool.sol#619-620)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "RecoverableTapeoutMinerPool._readComposition(uint256) (src/canary/RecoverableTapeoutMinerPool.sol#656-672) has external calls inside a loop: (cached,cachedNand,cachedLatch) = mining.cachedBurn(address(minerCollection),tokenId) (src/canary/RecoverableTapeoutMinerPool.sol#665-666)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "RecoverableTapeoutMinerPool._admit(uint256[],bool) (src/canary/RecoverableTapeoutMinerPool.sol#580-652) has external calls inside a loop: minerCollection.transferFrom(msg.sender,address(this),id_scope_2) (src/canary/RecoverableTapeoutMinerPool.sol#628)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "TapeoutMinerPool._admit(uint256[],bool) (src/TapeoutMinerPool.sol#536-606) has external calls inside a loop: revert MinerNotHeld(uint256,address)(id_scope_2,minerCollection.ownerOf(id_scope_2)) (src/TapeoutMinerPool.sol#584)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "TapeoutMinerPool._harvestOne(uint256,bytes32,uint256) (src/TapeoutMinerPool.sol#653-665) has external calls inside a loop: mining.claim(key) (src/TapeoutMinerPool.sol#657-664)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "RecoverableTapeoutMinerPool._admit(uint256[],bool) (src/canary/RecoverableTapeoutMinerPool.sol#580-652) has external calls inside a loop: mining.claim(keys[i_scope_3]) (src/canary/RecoverableTapeoutMinerPool.sol#648)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "TapeoutMinerPool._readComposition(uint256) (src/TapeoutMinerPool.sol#610-626) has external calls inside a loop: key = mining.minerKey(address(minerCollection),tokenId) (src/TapeoutMinerPool.sol#611)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "RecoverableTapeoutMinerPool._admit(uint256[],bool) (src/canary/RecoverableTapeoutMinerPool.sol#580-652) has external calls inside a loop: minerCollection.ownerOf(id_scope_2) != address(this) (src/canary/RecoverableTapeoutMinerPool.sol#629)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "TapeoutMinerPool._admit(uint256[],bool) (src/TapeoutMinerPool.sol#536-606) has external calls inside a loop: holder = minerCollection.ownerOf(id) (src/TapeoutMinerPool.sol#557)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "RecoverableTapeoutMinerPool._admit(uint256[],bool) (src/canary/RecoverableTapeoutMinerPool.sol#580-652) has external calls inside a loop: holder = minerCollection.ownerOf(id) (src/canary/RecoverableTapeoutMinerPool.sol#603)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "TapeoutReceiptDistributor._acceptOne(TapeoutMinerPool.Category,uint256,uint256) (src/TapeoutReceiptDistributor.sol#261-270) has external calls inside a loop: pool.claimed(category,id) != 0 (src/TapeoutReceiptDistributor.sol#268)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "RecoverableTapeoutMinerPool._readComposition(uint256) (src/canary/RecoverableTapeoutMinerPool.sol#656-672) has external calls inside a loop: r = mining.getMiner(key) (src/canary/RecoverableTapeoutMinerPool.sol#658)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "TapeoutMinerPool._settleOld(uint256) (src/TapeoutMinerPool.sol#633-642) has external calls inside a loop: mining.getMiner(key).status != MINER_REVOKED (src/TapeoutMinerPool.sol#637)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "TapeoutMinerPool._admit(uint256[],bool) (src/TapeoutMinerPool.sol#536-606) has external calls inside a loop: revert MinerNotHeld(uint256,address)(id_scope_2,minerCollection.ownerOf(id_scope_2)) (src/TapeoutMinerPool.sol#584)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "RecoverableTapeoutMinerPool._harvestOne(uint256,bytes32,uint256) (src/canary/RecoverableTapeoutMinerPool.sol#699-711) has external calls inside a loop: balance = bem.balanceOf(address(this)) (src/canary/RecoverableTapeoutMinerPool.sol#704)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "TapeoutMinerPool._admit(uint256[],bool) (src/TapeoutMinerPool.sol#536-606) has external calls inside a loop: minerCollection.ownerOf(id_scope_2) != address(this) (src/TapeoutMinerPool.sol#583)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "RecoverableTapeoutMinerPool._readComposition(uint256) (src/canary/RecoverableTapeoutMinerPool.sol#656-672) has external calls inside a loop: r = mining.getMiner(key) (src/canary/RecoverableTapeoutMinerPool.sol#658)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "RecoverableTapeoutMinerPool._claimOne(RecoverableTapeoutMinerPool.Category,uint256,uint256,uint256) (src/canary/RecoverableTapeoutMinerPool.sol#725-736) has external calls inside a loop: receiptOf(category).balanceOf(msg.sender,id) != 1 (src/canary/RecoverableTapeoutMinerPool.sol#731)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "TapeoutMinerPool._admit(uint256[],bool) (src/TapeoutMinerPool.sol#536-606) has external calls inside a loop: minerCollection.ownerOf(id_scope_2) != address(this) (src/TapeoutMinerPool.sol#583)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "RecoverableTapeoutMinerPool._readComposition(uint256) (src/canary/RecoverableTapeoutMinerPool.sol#656-672) has external calls inside a loop: key = mining.minerKey(address(minerCollection),tokenId) (src/canary/RecoverableTapeoutMinerPool.sol#657)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "RecoverableTapeoutMinerPool._settleOld(uint256) (src/canary/RecoverableTapeoutMinerPool.sol#679-688) has external calls inside a loop: mining.getMiner(key).status != MINER_REVOKED (src/canary/RecoverableTapeoutMinerPool.sol#683)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "TapeoutMinerPool._readComposition(uint256) (src/TapeoutMinerPool.sol#610-626) has external calls inside a loop: r = mining.getMiner(key) (src/TapeoutMinerPool.sol#612)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "TapeoutMinerPool._admit(uint256[],bool) (src/TapeoutMinerPool.sol#536-606) has external calls inside a loop: minerCollection.transferFrom(msg.sender,address(this),id_scope_2) (src/TapeoutMinerPool.sol#582)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "RecoverableTapeoutMinerPool._harvestOne(uint256,bytes32,uint256) (src/canary/RecoverableTapeoutMinerPool.sol#699-711) has external calls inside a loop: mining.claim(key) (src/canary/RecoverableTapeoutMinerPool.sol#703-710)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "RecoverableTapeoutMinerPool._settleOld(uint256) (src/canary/RecoverableTapeoutMinerPool.sol#679-688) has external calls inside a loop: mining.claim(key) (src/canary/RecoverableTapeoutMinerPool.sol#681-687)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "TapeoutMinerPool._admit(uint256[],bool) (src/TapeoutMinerPool.sol#536-606) has external calls inside a loop: holder = minerCollection.ownerOf(id) (src/TapeoutMinerPool.sol#557)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "RecoverableTapeoutMinerPool._readComposition(uint256) (src/canary/RecoverableTapeoutMinerPool.sol#656-672) has external calls inside a loop: key = mining.minerKey(address(minerCollection),tokenId) (src/canary/RecoverableTapeoutMinerPool.sol#657)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "TapeoutMinerPool._harvestOne(uint256,bytes32,uint256) (src/TapeoutMinerPool.sol#653-665) has external calls inside a loop: balance = bem.balanceOf(address(this)) (src/TapeoutMinerPool.sol#658)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "TapeoutMinerPool._settleOld(uint256) (src/TapeoutMinerPool.sol#633-642) has external calls inside a loop: mining.claim(key) (src/TapeoutMinerPool.sol#635-641)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "RecoverableTapeoutMinerPool._harvestOne(uint256,bytes32,uint256) (src/canary/RecoverableTapeoutMinerPool.sol#699-711) has external calls inside a loop: mining.claim(key) (src/canary/RecoverableTapeoutMinerPool.sol#703-710)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "TapeoutMinerPool._readComposition(uint256) (src/TapeoutMinerPool.sol#610-626) has external calls inside a loop: r = mining.getMiner(key) (src/TapeoutMinerPool.sol#612)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "RecoverableTapeoutMinerPool._readComposition(uint256) (src/canary/RecoverableTapeoutMinerPool.sol#656-672) has external calls inside a loop: (cached,cachedNand,cachedLatch) = mining.cachedBurn(address(minerCollection),tokenId) (src/canary/RecoverableTapeoutMinerPool.sol#665-666)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "RecoverableTapeoutMinerPool._admit(uint256[],bool) (src/canary/RecoverableTapeoutMinerPool.sol#580-652) has external calls inside a loop: minerCollection.ownerOf(id_scope_2) != address(this) (src/canary/RecoverableTapeoutMinerPool.sol#629)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "TapeoutMinerPool._settleOld(uint256) (src/TapeoutMinerPool.sol#633-642) has external calls inside a loop: mining.claim(key) (src/TapeoutMinerPool.sol#635-641)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "RecoverableTapeoutMinerPool._admit(uint256[],bool) (src/canary/RecoverableTapeoutMinerPool.sol#580-652) has external calls inside a loop: holder = minerCollection.ownerOf(id) (src/canary/RecoverableTapeoutMinerPool.sol#603)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "RecoverableTapeoutMinerPool._admit(uint256[],bool) (src/canary/RecoverableTapeoutMinerPool.sol#580-652) has external calls inside a loop: revert MinerNotHeld(uint256,address)(id_scope_2,minerCollection.ownerOf(id_scope_2)) (src/canary/RecoverableTapeoutMinerPool.sol#630)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "RecoverableTapeoutMinerPool._admit(uint256[],bool) (src/canary/RecoverableTapeoutMinerPool.sol#580-652) has external calls inside a loop: minerCollection.transferFrom(msg.sender,address(this),id_scope_2) (src/canary/RecoverableTapeoutMinerPool.sol#628)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "TapeoutReceiptDistributor._deliver(address,uint256) (src/TapeoutReceiptDistributor.sol#276-299) has external calls inside a loop: _receipt(range.category).safeBatchTransferFrom(address(this),wallet,ids,values,) (src/TapeoutReceiptDistributor.sol#295)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "TapeoutMinerPool._harvestOne(uint256,bytes32,uint256) (src/TapeoutMinerPool.sol#653-665) has external calls inside a loop: mining.claim(key) (src/TapeoutMinerPool.sol#657-664)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "TapeoutMinerPool._readComposition(uint256) (src/TapeoutMinerPool.sol#610-626) has external calls inside a loop: key = mining.minerKey(address(minerCollection),tokenId) (src/TapeoutMinerPool.sol#611)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "TapeoutMinerPool._admit(uint256[],bool) (src/TapeoutMinerPool.sol#536-606) has external calls inside a loop: mining.claim(keys[i_scope_3]) (src/TapeoutMinerPool.sol#602)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "RecoverableTapeoutMinerPool._harvestOne(uint256,bytes32,uint256) (src/canary/RecoverableTapeoutMinerPool.sol#699-711) has external calls inside a loop: balance = bem.balanceOf(address(this)) (src/canary/RecoverableTapeoutMinerPool.sol#704)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "TapeoutMinerPool._admit(uint256[],bool) (src/TapeoutMinerPool.sol#536-606) has external calls inside a loop: mining.claim(keys[i_scope_3]) (src/TapeoutMinerPool.sol#602)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "TapeoutMinerPool._readComposition(uint256) (src/TapeoutMinerPool.sol#610-626) has external calls inside a loop: (cached,cachedNand,cachedLatch) = mining.cachedBurn(address(minerCollection),tokenId) (src/TapeoutMinerPool.sol#619-620)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "TapeoutReceiptDistributor.allocate(TapeoutReceiptDistributor.AllocationInput[]) (src/TapeoutReceiptDistributor.sol#123-149) has external calls inside a loop: holders = _receipt(a.category).holdersPage(a.firstId,a.count) (src/TapeoutReceiptDistributor.sol#132)"
+  },
+  {
+   "check": "calls-loop",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "RecoverableTapeoutMinerPool._admit(uint256[],bool) (src/canary/RecoverableTapeoutMinerPool.sol#580-652) has external calls inside a loop: mining.claim(keys[i_scope_3]) (src/canary/RecoverableTapeoutMinerPool.sol#648)"
+  },
+  {
+   "check": "reentrancy-benign",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "Reentrancy in RecoverableTapeoutMinerPool._admit(uint256[],bool) (src/canary/RecoverableTapeoutMinerPool.sol#580-652):"
+  },
+  {
+   "check": "reentrancy-benign",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "Reentrancy in RecoverableTapeoutMinerPool.emergencyReturn(uint256) (src/canary/RecoverableTapeoutMinerPool.sol#559-571):"
+  },
+  {
+   "check": "reentrancy-benign",
+   "impact": "Low",
+   "confidence": "Medium",
+   "description": "Reentrancy in TapeoutMinerPool._admit(uint256[],bool) (src/TapeoutMinerPool.sol#536-606):"
+  },
+  {
+   "check": "immutable-states",
+   "impact": "Optimization",
+   "confidence": "High",
+   "description": "TapeoutEntitlementReceipt.category (src/TapeoutEntitlementReceipt.sol#22) should be immutable"
+  }
+ ]
+}

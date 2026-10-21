@@ -62,9 +62,10 @@ export function maxIdsPerTx(model: { base: bigint; perId: bigint }, limit: bigin
 interface WalletRange { count: bigint; delivered: bigint }
 
 /**
- * Bound for delivering up to `maxIds` of a wallet's receipts. The distributor resumes at the wallet's
- * first range with undelivered IDs (its `nextRangeOf` cursor), so completed ranges cost nothing and
- * only the ranges and IDs this delivery transfers count.
+ * Cost of delivering up to `maxIds` of a wallet's receipts if the call starts exactly at this
+ * snapshot's cursor: the distributor resumes at the first range with undelivered IDs (`nextRangeOf`),
+ * so completed ranges cost nothing. Not a safe gas limit when others can deliver first; plans use
+ * `reachableDeliveryGas`.
  */
 export function deliveryGas(ranges: readonly WalletRange[], maxIds: number): bigint {
   let gas = DELIVER_GAS.base;
@@ -80,7 +81,8 @@ export function deliveryGas(ranges: readonly WalletRange[], maxIds: number): big
   return gas;
 }
 
-/** Largest `maxIds` whose delivery stays within `limit` (0 if nothing is pending). */
+/** Largest `maxIds` whose delivery from this snapshot's cursor stays within `limit` (0 if nothing is
+ *  pending). Snapshot only; see `maxSafeDeliverable`. */
 export function maxDeliverable(ranges: readonly WalletRange[], limit: bigint = BATCH_GAS_BUDGET): number {
   let gas = DELIVER_GAS.base;
   let n = 0n;
@@ -98,22 +100,78 @@ export function maxDeliverable(ranges: readonly WalletRange[], limit: bigint = B
   return Number(n);
 }
 
-/** Sizes of successive deliveries that hand over every pending ID, each at most `cap` and within `limit`. */
-export function deliveryBatches(ranges: readonly WalletRange[], cap: number, limit: bigint = BATCH_GAS_BUDGET) {
-  const state = ranges.map(r => ({ count: r.count, delivered: r.delivered }));
-  const batches: { maxIds: number; gas: bigint }[] = [];
-  for (;;) {
-    const n = Math.min(cap, maxDeliverable(state, limit));
-    if (n === 0) return batches;
-    batches.push({ maxIds: n, gas: deliveryGas(state, n) });
-    let left = BigInt(n);
-    for (const r of state) {
-      if (left === 0n) break;
-      const take = r.count - r.delivered < left ? r.count - r.delivered : left;
-      r.delivered += take;
-      left -= take;
+/** Undelivered IDs per range, in delivery order (completed ranges dropped). */
+const pendingRuns = (ranges: readonly WalletRange[]) => ranges.map(r => r.count - r.delivered).filter(n => n > 0n);
+
+/**
+ * Most ranges one delivery of up to `maxIds` IDs can touch from any cursor position reachable from
+ * this state. `deliver` is permissionless and only moves forward, so before a planned call executes
+ * anyone may deliver any number of the wallet's IDs: the call can start at any pending ID. It touches
+ * the most ranges when it starts on the last pending ID of some range.
+ */
+export function worstReachableRanges(ranges: readonly WalletRange[], maxIds: number): number {
+  const runs = pendingRuns(ranges);
+  if (maxIds <= 0 || runs.length === 0) return 0;
+  const prefix = [0n];
+  for (const n of runs) prefix.push(prefix[prefix.length - 1] + n);
+  const need = BigInt(maxIds - 1);
+  let worst = 0;
+  for (let j = 0; j < runs.length; j++) {
+    // One ID from run j, then `need` more from the runs after it.
+    const after = runs.length - 1 - j;
+    let t = after;
+    if (prefix[runs.length] - prefix[j + 1] > need) {
+      let lo = 0;
+      while (lo < t) {
+        const mid = (lo + t) >> 1;
+        if (prefix[j + 1 + mid] - prefix[j + 1] >= need) t = mid;
+        else lo = mid + 1;
+      }
     }
+    if (1 + t > worst) worst = 1 + t;
   }
+  return worst;
+}
+
+/**
+ * Gas bound for `deliver(wallet, maxIds)` / `claim(maxIds)` that holds at every cursor position
+ * reachable from this state (not only at the snapshot's cursor): the most IDs the call can transfer
+ * plus the most ranges it can touch.
+ */
+export function reachableDeliveryGas(ranges: readonly WalletRange[], maxIds: number): bigint {
+  const pending = pendingRuns(ranges).reduce((s, n) => s + n, 0n);
+  const ids = BigInt(maxIds) < pending ? BigInt(maxIds) : pending;
+  return DELIVER_GAS.base + DELIVER_GAS.perId * ids + DELIVER_GAS.perRange * BigInt(worstReachableRanges(ranges, Number(ids)));
+}
+
+/** Largest `maxIds` whose reachable-state bound stays within `limit` (0 if nothing is pending). */
+export function maxSafeDeliverable(ranges: readonly WalletRange[], limit: bigint = BATCH_GAS_BUDGET): number {
+  let lo = 0;
+  let hi = Number(pendingRuns(ranges).reduce((s, n) => s + n, 0n));
+  while (lo < hi) {
+    const mid = Math.ceil((lo + hi) / 2);
+    if (reachableDeliveryGas(ranges, mid) <= limit) lo = mid;
+    else hi = mid - 1;
+  }
+  return lo;
+}
+
+/**
+ * Deliveries that hand over every pending ID, each at most `cap` IDs. Every call carries the bound for
+ * any reachable cursor position, so it still fits its gas limit when others deliver first: a wallet
+ * whose later ranges are fragmented gets smaller calls from the start. If others deliver everything
+ * first, a remaining call reverts cheaply with `NothingToDeliver`.
+ */
+export function deliveryBatches(ranges: readonly WalletRange[], cap: number, limit: bigint = BATCH_GAS_BUDGET) {
+  const pending = Number(pendingRuns(ranges).reduce((s, n) => s + n, 0n));
+  const size = Math.min(cap, maxSafeDeliverable(ranges, limit));
+  const batches: { maxIds: number; gas: bigint }[] = [];
+  if (size === 0) return batches;
+  for (let left = pending; left > 0; left -= Math.min(size, left)) {
+    const n = Math.min(size, left);
+    batches.push({ maxIds: n, gas: reachableDeliveryGas(ranges, n) });
+  }
+  return batches;
 }
 
 /** Bound for `revokeWallet`, which clears every range of the wallet in one call. */
@@ -122,7 +180,7 @@ export function revokeGas(ranges: readonly { count: bigint }[]): bigint {
 }
 
 /** A planned transaction as far as gas is concerned (structurally a TxPlan). */
-interface Sized { description: string; gas?: bigint; data?: string }
+interface Sized { description: string; gas?: bigint; data?: string; standalone?: boolean }
 
 /** Refuse plans whose worst case exceeds the budget (a plan without a bound is left to simulation). */
 export function assertWithinBudget(plans: readonly Sized[]) {
@@ -158,12 +216,14 @@ export function safeBatchGas(plans: readonly Sized[]): bigint {
 
 /** Split plans, in order, into Safe batches: the Transaction Builder executes one batch file as one
  *  transaction. A batch takes further plans while its Safe bound stays within the budget. A plan that
- *  exceeds the budget once the Safe's overhead is added goes alone, and must still fit the cap. */
+ *  exceeds the budget once the Safe's overhead is added goes alone, and must still fit the cap. A
+ *  `standalone` plan (one that may legitimately revert because others acted first, such as a delivery)
+ *  always goes alone, so its revert cannot roll back other plans. */
 export function groupForSafe<T extends Sized>(plans: readonly T[]): T[][] {
   const groups: T[][] = [];
   let current: T[] = [];
   for (const plan of plans) {
-    if (current.length > 0 && safeBatchGas([...current, plan]) > BATCH_GAS_BUDGET) {
+    if (current.length > 0 && (plan.standalone || current[0].standalone || safeBatchGas([...current, plan]) > BATCH_GAS_BUDGET)) {
       groups.push(current);
       current = [];
     }

@@ -1,0 +1,31 @@
+{
+  "readOnly": true,
+  "chainId": 56,
+  "block": "128713128",
+  "blockHash": "0x760f050b7ec66ced2a2745918d7492650150f9d71d3159259412996ebe65081f",
+  "rpcHost": "bsc-mainnet.public.blastapi.io",
+  "proxy": "0x7E2E0DC66a3bD9103E69b766afA62d9f7b697b46",
+  "implementation": {
+    "address": "0xa3DBe873DA37cD4e4a13c7cEf23a7dB6Ca60f898",
+    "bytes": 24574,
+    "keccak256": "0x63b1124d3448fdeb28b163c52142e15a7a464d7ae7d817e51f6c242b62424479",
+    "file": "implementation.hex"
+  },
+  "library": {
+    "address": "0xFbB661Fe281112C601954AbB0a3CDCC697a6E6bA",
+    "bytes": 10136,
+    "keccak256": "0x028ff888dc6b7505d507ffd33ef99d8541a23852d36a0463de235af6772e4737",
+    "file": "library.hex"
+  },
+  "proxyCode": {
+    "bytes": 130,
+    "keccak256": "0xed6b710a769987f50494d713f278817992e3266e45898a990be878efc2fcbbce",
+    "file": "proxy.hex"
+  },
+  "storage": {
+    "ownerSlot": "0x9016d09d72d40fdae2fd8ceac6b6234c7706214fd39c1cd1e609a0528c199300",
+    "owner": "0x0000000000000000000000000000000000000000",
+    "initializableSlot": "0xf0c57e16840df040f15088dc2f81fe391c3923bec73e23a9662efc9c229c6a00",
+    "initializableWord": "0x0000000000000000000000000000000000000000000000000000000000000001"
+  }
+}

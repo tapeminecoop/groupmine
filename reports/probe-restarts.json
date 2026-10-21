@@ -1,0 +1,305 @@
+{
+  "readOnly": true,
+  "block": "128713128",
+  "scannedTokenIds": "1..21000",
+  "records": 21000,
+  "summary": {
+    "0": {
+      "records": 3160,
+      "withStopBlock": 0,
+      "withWeight": 0
+    },
+    "1": {
+      "records": 17806,
+      "withStopBlock": 0,
+      "withWeight": 17806
+    },
+    "2": {
+      "records": 11,
+      "withStopBlock": 0,
+      "withWeight": 0
+    },
+    "3": {
+      "records": 23,
+      "withStopBlock": 23,
+      "withWeight": 0
+    }
+  },
+  "revoked": [
+    {
+      "id": "2247",
+      "key": "0x79c25f50999c54bafa666732345918052bd25cfbf7d716e48d496e84f5e19550",
+      "stopBlock": "0",
+      "verifWeight": "0",
+      "unverWeight": "0",
+      "debt": "213588191"
+    },
+    {
+      "id": "2479",
+      "key": "0x5cb39dff99efbc124dc8e4dc45200ea16893333cb287e98aaa0a37b7b50d81da",
+      "stopBlock": "0",
+      "verifWeight": "0",
+      "unverWeight": "0",
+      "debt": "497705978"
+    },
+    {
+      "id": "2483",
+      "key": "0x56a70709b61c6cbababc4c50a1cd3b7bd6511fc61ced2945c6e5c57fdafcbcd7",
+      "stopBlock": "0",
+      "verifWeight": "0",
+      "unverWeight": "0",
+      "debt": "497765096"
+    },
+    {
+      "id": "7555",
+      "key": "0x2ba334a29b5d6e7b0e2698ec0bc57e694a2af4c0dea95bca257152883c20ae84",
+      "stopBlock": "0",
+      "verifWeight": "0",
+      "unverWeight": "0",
+      "debt": "177777514"
+    },
+    {
+      "id": "9101",
+      "key": "0xc19ba00530124d8d3d5ae7b75b8cb181997b726b3d8ed571104f9bb0c4bee14c",
+      "stopBlock": "0",
+      "verifWeight": "0",
+      "unverWeight": "0",
+      "debt": "145381453"
+    },
+    {
+      "id": "11931",
+      "key": "0x62cd3805221fffe757a9ffd418f1646ec228bf22670fdb39d3531bbf6a2b99d7",
+      "stopBlock": "0",
+      "verifWeight": "0",
+      "unverWeight": "0",
+      "debt": "56406587264"
+    },
+    {
+      "id": "11989",
+      "key": "0x0b08ae2dab7cfdf36d5443eed10a87aa96e021adc8e2d8a2b0d9fde821f56327",
+      "stopBlock": "0",
+      "verifWeight": "0",
+      "unverWeight": "0",
+      "debt": "7120559925"
+    },
+    {
+      "id": "12008",
+      "key": "0xe5a96ab4997595dd377d79974a905d02a5ef42d7cb17d35e142813ed8ba4b7df",
+      "stopBlock": "0",
+      "verifWeight": "0",
+      "unverWeight": "0",
+      "debt": "56550756738"
+    },
+    {
+      "id": "12220",
+      "key": "0x0e111b46165aea0f62dc357a30917a79507e82874ed74d4f35187b485e4da117",
+      "stopBlock": "0",
+      "verifWeight": "0",
+      "unverWeight": "0",
+      "debt": "906659884"
+    },
+    {
+      "id": "12270",
+      "key": "0xdb50a2aafc7e15100bcacc35bdda9ea6bcfb3e8210645e4e7c5d0552455bc724",
+      "stopBlock": "0",
+      "verifWeight": "0",
+      "unverWeight": "0",
+      "debt": "5945897578"
+    },
+    {
+      "id": "13945",
+      "key": "0xcb0c4e092d655e345dff50e4d2d76ebbd3eaeec8824bf763f1fb250341243930",
+      "stopBlock": "0",
+      "verifWeight": "0",
+      "unverWeight": "0",
+      "debt": "757019966"
+    }
+  ],
+  "cooling": [
+    {
+      "id": "672",
+      "key": "0x316f3b07a9b198e744dc2fbdcc35caf613822690c5f2dc8ac45752811103b34f",
+      "stopBlock": "118184257",
+      "verifWeight": "0",
+      "unverWeight": "0",
+      "debt": "5408752"
+    },
+    {
+      "id": "673",
+      "key": "0x7bac02ecce577b73c842dfa3a29da21d0498eff2a3e8fa89d18a58018faa50f5",
+      "stopBlock": "117635584",
+      "verifWeight": "0",
+      "unverWeight": "0",
+      "debt": "3280573"
+    },
+    {
+      "id": "711",
+      "key": "0xaa4f9e468f9b675f2dd7904b58017c48e3febd63f57638bb4344fc774a9301f8",
+      "stopBlock": "117885476",
+      "verifWeight": "0",
+      "unverWeight": "0",
+      "debt": "37148632"
+    },
+    {
+      "id": "968",
+      "key": "0xe8ba250ad776852325b7607fc95c2eaef9428adbbe50e6b29fada75d70aa475f",
+      "stopBlock": "117344316",
+      "verifWeight": "0",
+      "unverWeight": "0",
+      "debt": "1942306"
+    },
+    {
+      "id": "1137",
+      "key": "0x3b28c2c89e1cab2470d9f86cdfb74b9095c9452bfcfb3e2343f48310da235eae",
+      "stopBlock": "117277122",
+      "verifWeight": "0",
+      "unverWeight": "0",
+      "debt": "1092600"
+    },
+    {
+      "id": "1140",
+      "key": "0x4f818744d0e375b21d1b1de5c8436d30e49b9eb427f209b522874c9d7e82ff94",
+      "stopBlock": "117886031",
+      "verifWeight": "0",
+      "unverWeight": "0",
+      "debt": "2882369"
+    },
+    {
+      "id": "1266",
+      "key": "0x790b65c7fcd7e728d70f5d1a4cf9681e7bee4d7f3fb56506e62b0d0218d2fad4",
+      "stopBlock": "118223712",
+      "verifWeight": "0",
+      "unverWeight": "0",
+      "debt": "3699979"
+    },
+    {
+      "id": "1619",
+      "key": "0xa71713101bc6ac86c9b375c43d9b2c35bb5c8860b4821ff054c640614e7d474f",
+      "stopBlock": "123137812",
+      "verifWeight": "0",
+      "unverWeight": "0",
+      "debt": "526166702"
+    },
+    {
+      "id": "2629",
+      "key": "0x738e4ecbd6803822f96dbec910ce3b434d101f86f82442e8043a87303373ab53",
+      "stopBlock": "121827430",
+      "verifWeight": "0",
+      "unverWeight": "0",
+      "debt": "89000320"
+    },
+    {
+      "id": "2793",
+      "key": "0xf1606da7f2b2fe61b74183786ffe28229070fe9908fea73998a605fdacc766d2",
+      "stopBlock": "122426463",
+      "verifWeight": "0",
+      "unverWeight": "0",
+      "debt": "36649530"
+    },
+    {
+      "id": "3420",
+      "key": "0x8603588b6ba5684914e688d2bbc8b6ef587a7c1bffdcdc5ae245c5b7f091a832",
+      "stopBlock": "122426499",
+      "verifWeight": "0",
+      "unverWeight": "0",
+      "debt": "24433148"
+    },
+    {
+      "id": "4696",
+      "key": "0x1554687bef15e3a93943e2976b29bc75cdd8293cd7023722567cbc3c3519c592",
+      "stopBlock": "122426533",
+      "verifWeight": "0",
+      "unverWeight": "0",
+      "debt": "24433269"
+    },
+    {
+      "id": "4835",
+      "key": "0x47c219464daeb39c258a17d28ad356dd1fc03bfbdef9f1bcd6b9fbc7e09ad60a",
+      "stopBlock": "122426564",
+      "verifWeight": "0",
+      "unverWeight": "0",
+      "debt": "6108345"
+    },
+    {
+      "id": "5623",
+      "key": "0xf36329deb89c3bc977af3a1f3719d1e8fa9b3bdbdeaeea25f71d023351a9e5ee",
+      "stopBlock": "118364387",
+      "verifWeight": "0",
+      "unverWeight": "0",
+      "debt": "2012144"
+    },
+    {
+      "id": "5627",
+      "key": "0x78573c6232e00cc1dd2a010f6c5aafe636e986844f293a026fd39763eb0f7f6f",
+      "stopBlock": "118195649",
+      "verifWeight": "0",
+      "unverWeight": "0",
+      "debt": "1816523"
+    },
+    {
+      "id": "6542",
+      "key": "0x1ddff5c0b4249e03ef012aec250c6d4d387dd8717475b1668120eb31a8c889c2",
+      "stopBlock": "118196236",
+      "verifWeight": "0",
+      "unverWeight": "0",
+      "debt": "1817210"
+    },
+    {
+      "id": "7279",
+      "key": "0xbf1f41c7ed755cb31bebddf3785b81b80cc9bcb500abd1c5513177893400a5a7",
+      "stopBlock": "122426626",
+      "verifWeight": "0",
+      "unverWeight": "0",
+      "debt": "36650409"
+    },
+    {
+      "id": "7288",
+      "key": "0x068c48a5d303d9ae3bc49692ec6d404fc1336499ce2c4887b47a3b48521e6d66",
+      "stopBlock": "122426669",
+      "verifWeight": "0",
+      "unverWeight": "0",
+      "debt": "6108439"
+    },
+    {
+      "id": "7491",
+      "key": "0x9850fcb34423b4ead571e41fd4a28e3f199acb3b053089c8892399dacdcb86c7",
+      "stopBlock": "119325218",
+      "verifWeight": "0",
+      "unverWeight": "0",
+      "debt": "33953029"
+    },
+    {
+      "id": "7535",
+      "key": "0x06790b8323acb5b7fe4640f88e09c7c1502733dd3c33e11bef1f580a16f42473",
+      "stopBlock": "117987464",
+      "verifWeight": "0",
+      "unverWeight": "0",
+      "debt": "1569234"
+    },
+    {
+      "id": "8795",
+      "key": "0x247367ee806ad3d7ee21708c7a8534ac2a53c0525819068ae193c8513eb95720",
+      "stopBlock": "118745606",
+      "verifWeight": "0",
+      "unverWeight": "0",
+      "debt": "4847808"
+    },
+    {
+      "id": "9495",
+      "key": "0x6917f9fb5ced4e5a0478258b2152d6ae5c2cfc2cc12c41bbe65d67e832ebb674",
+      "stopBlock": "122426762",
+      "verifWeight": "0",
+      "unverWeight": "0",
+      "debt": "6108524"
+    },
+    {
+      "id": "14663",
+      "key": "0x57041f3031578c9612bf4226cb8e81edfda1246e8f0cd757bbe02a725517befc",
+      "stopBlock": "122326038",
+      "verifWeight": "0",
+      "unverWeight": "0",
+      "debt": "25675369"
+    }
+  ],
+  "restarts": []
+}

@@ -1,0 +1,1862 @@
+{
+ "schema": "tapeout-mining-lifecycle-analysis/1",
+ "source": {
+  "chainId": 56,
+  "block": "128713128",
+  "blockHash": "0x760f050b7ec66ced2a2745918d7492650150f9d71d3159259412996ebe65081f",
+  "proxy": "0x7E2E0DC66a3bD9103E69b766afA62d9f7b697b46",
+  "implementation": {
+   "address": "0xa3DBe873DA37cD4e4a13c7cEf23a7dB6Ca60f898",
+   "bytes": 24574,
+   "keccak256": "0x63b1124d3448fdeb28b163c52142e15a7a464d7ae7d817e51f6c242b62424479",
+   "file": "implementation.hex"
+  },
+  "library": {
+   "address": "0xFbB661Fe281112C601954AbB0a3CDCC697a6E6bA",
+   "bytes": 10136,
+   "keccak256": "0x028ff888dc6b7505d507ffd33ef99d8541a23852d36a0463de235af6772e4737",
+   "file": "library.hex"
+  }
+ },
+ "method": [
+  "Control flow: abstract interpretation of every dispatcher entry, tracking only jump-target constants on the stack (both branches of every JUMPI), memoized on the top 48 stack entries.",
+  "Slots and conditions: bounded symbolic execution (loops unrolled up to 2-6 times, storage and calldata symbolic, external calls return unknowns); conditions are the facts a path established about miner status bytes and the block number. The path from each lifecycle function's entry to its status check is explored in full.",
+  "Sites no symbolic run reaches are classified from the fork trace of a real restart and from the code, as listed under classification.",
+  "Applies to the two code hashes in source only; an upgrade of the Mining proxy invalidates it."
+ ],
+ "storageLayout": {
+  "minersMappingSlot": 8,
+  "record": {
+   "+2 low byte": "status (0 none, 1 active, 2 revoked, 3 cooling)",
+   "+4 bits 64-127": "stopBlock",
+   "+4 bits 128-255": "verified weight",
+   "+5 low 128 bits": "unverified weight",
+   "+6": "debt (accumulator checkpoint)"
+  }
+ },
+ "entries": {
+  "0x0527edc2": "getMiner",
+  "0x05c55d4e": "0x05c55d4e",
+  "0x07477880": "0x07477880",
+  "0x0eb01c71": "0x0eb01c71",
+  "0x0f03daba": "0x0f03daba",
+  "0x1020a55a": "0x1020a55a",
+  "0x10eafa00": "minerKey",
+  "0x115c6409": "0x115c6409",
+  "0x11d5a55c": "bestSlot",
+  "0x135cae0d": "0x135cae0d",
+  "0x13aec6f9": "0x13aec6f9",
+  "0x14f323b5": "0x14f323b5",
+  "0x15706e0c": "0x15706e0c",
+  "0x1808eeb8": "pending",
+  "0x18178358": "0x18178358",
+  "0x2060b9db": "ceCount",
+  "0x2a24c84b": "arm",
+  "0x2a7eba1b": "0x2a7eba1b",
+  "0x2d33823a": "challenge",
+  "0x30c98cf6": "0x30c98cf6",
+  "0x3a55fef3": "0x3a55fef3",
+  "0x3adde9c1": "0x3adde9c1",
+  "0x3b44dc0b": "0x3b44dc0b",
+  "0x3dfb318b": "0x3dfb318b",
+  "0x3f4ba83a": "unpause",
+  "0x3fb27b85": "0x3fb27b85",
+  "0x414d0ac1": "0x414d0ac1",
+  "0x462afa31": "armedAt",
+  "0x4ca6bde2": "0x4ca6bde2",
+  "0x4dbac733": "0x4dbac733",
+  "0x4f1ef286": "upgradeToAndCall",
+  "0x500446c4": "0x500446c4",
+  "0x52d1902d": "proxiableUUID",
+  "0x5556db65": "0x5556db65",
+  "0x55fb3308": "0x55fb3308",
+  "0x565233c4": "0x565233c4",
+  "0x56f6f07d": "0x56f6f07d",
+  "0x57342d74": "0x57342d74",
+  "0x5c975abb": "paused",
+  "0x6074044f": "0x6074044f",
+  "0x631f9852": "0x631f9852",
+  "0x63967742": "totalUnverWeight",
+  "0x63993cac": "0x63993cac",
+  "0x63c4f031": "stop",
+  "0x6687aabd": "circuitBurn",
+  "0x6c3d4470": "cachedBurn",
+  "0x6c957328": "0x6c957328",
+  "0x6d1da431": "0x6d1da431",
+  "0x6f1e9d41": "STOP_COOLDOWN",
+  "0x7129e7c7": "0x7129e7c7",
+  "0x715018a6": "renounceOwnership",
+  "0x71c39a9f": "0x71c39a9f",
+  "0x7879ec31": "initializer",
+  "0x78e97925": "0x78e97925",
+  "0x7af1ca5d": "0x7af1ca5d",
+  "0x7b9a741f": "0x7b9a741f",
+  "0x7cbfcd76": "0x7cbfcd76",
+  "0x7ed51748": "claimMany",
+  "0x83602177": "0x83602177",
+  "0x8456cb59": "pause",
+  "0x86b3fb54": "0x86b3fb54",
+  "0x8da5cb5b": "owner",
+  "0x8e33e616": "0x8e33e616",
+  "0x919c1ada": "kick",
+  "0x96afb365": "reclaim",
+  "0x9faa3c91": "0x9faa3c91",
+  "0xa18136f6": "0xa18136f6",
+  "0xa1f7bf2f": "0xa1f7bf2f",
+  "0xa3494614": "start",
+  "0xac35ba6e": "0xac35ba6e",
+  "0xad3cb1cc": "UPGRADE_INTERFACE_VERSION",
+  "0xb0d60279": "passesCounterexamples",
+  "0xb6cb58a5": "0xb6cb58a5",
+  "0xb8e4f91f": "0xb8e4f91f",
+  "0xbd66528a": "claim",
+  "0xc0463711": "0xc0463711",
+  "0xc737e648": "0xc737e648",
+  "0xc7b21b6c": "commitDesign",
+  "0xcb29bf7d": "0xcb29bf7d",
+  "0xcf6f282c": "0xcf6f282c",
+  "0xd8d56ffb": "0xd8d56ffb",
+  "0xda150e8f": "0xda150e8f",
+  "0xdad0be61": "0xdad0be61",
+  "0xe16ed3de": "designCommits",
+  "0xe3a556c2": "0xe3a556c2",
+  "0xec2f8441": "registerCounterexample",
+  "0xef6aff46": "totalVerifWeight",
+  "0xf2fde38b": "transferOwnership",
+  "0xf9f8bdb7": "0xf9f8bdb7",
+  "0xfa1ea911": "task setup (owner; emits TaskAdded)",
+  "0xfc0c546a": "token",
+  "0xfc6c372a": "0xfc6c372a",
+  "0xfd1b18bb": "0xfd1b18bb"
+ },
+ "writeSites": [
+  {
+   "pc": "0x0640",
+   "reachableFrom": [
+    "task setup (owner; emits TaskAdded)"
+   ],
+   "slotShapes": [
+    "7"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x0762",
+   "reachableFrom": [
+    "task setup (owner; emits TaskAdded)"
+   ],
+   "slotShapes": [
+    "keccak(and((and(sload(7), 0xffffffff) + 1), 0xffffffff), 0x6)"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x076c",
+   "reachableFrom": [
+    "task setup (owner; emits TaskAdded)"
+   ],
+   "slotShapes": [
+    "(keccak(and((and(sload(7), 0xffffffff) + 1), 0xffffffff), 0x6) + 1)"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x07da",
+   "reachableFrom": [
+    "task setup (owner; emits TaskAdded)"
+   ],
+   "slotShapes": [
+    "(keccak(and((and(sload(7), 0xffffffff) + 1), 0xffffffff), 0x6) + 2)"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x07f1",
+   "reachableFrom": [
+    "task setup (owner; emits TaskAdded)"
+   ],
+   "slotShapes": [
+    "(keccak(and((and(sload(7), 0xffffffff) + 1), 0xffffffff), 0x6) + 3)"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x07fc",
+   "reachableFrom": [
+    "task setup (owner; emits TaskAdded)"
+   ],
+   "slotShapes": [
+    "(keccak(and((and(sload(7), 0xffffffff) + 1), 0xffffffff), 0x6) + 4)"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x081a",
+   "reachableFrom": [
+    "task setup (owner; emits TaskAdded)"
+   ],
+   "slotShapes": [
+    "(keccak(and((and(sload(7), 0xffffffff) + 1), 0xffffffff), 0x6) + 5)"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x0968",
+   "reachableFrom": [
+    "task setup (owner; emits TaskAdded)"
+   ],
+   "slotShapes": [
+    "(keccak(and((and(sload(7), 0xffffffff) + 1), 0xffffffff), 0x6) + 3)"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x096c",
+   "reachableFrom": [
+    "task setup (owner; emits TaskAdded)"
+   ],
+   "slotShapes": [
+    "(keccak(and((and(sload(7), 0xffffffff) + 1), 0xffffffff), 0x6) + 4)"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x0b3b",
+   "reachableFrom": [
+    "task setup (owner; emits TaskAdded)"
+   ],
+   "slotShapes": [],
+   "classification": "tasks[id] + 2 (task name string)"
+  },
+  {
+   "pc": "0x0b50",
+   "reachableFrom": [
+    "task setup (owner; emits TaskAdded)"
+   ],
+   "slotShapes": [],
+   "classification": "tasks[id] + 2 data area (string)"
+  },
+  {
+   "pc": "0x0b66",
+   "reachableFrom": [
+    "task setup (owner; emits TaskAdded)"
+   ],
+   "slotShapes": [],
+   "classification": "tasks[id] + 2 data area (string)"
+  },
+  {
+   "pc": "0x0ba5",
+   "reachableFrom": [
+    "task setup (owner; emits TaskAdded)"
+   ],
+   "slotShapes": [],
+   "classification": "tasks[id] + 2 data area (string, clearing)"
+  },
+  {
+   "pc": "0x0ee4",
+   "reachableFrom": [
+    "0xe3a556c2"
+   ],
+   "slotShapes": [
+    "0"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x10cf",
+   "reachableFrom": [
+    "commitDesign"
+   ],
+   "slotShapes": [
+    "keccak(cd[0x24], keccak(and(cd[4], 0xffffffffffffffffffffffffffffffffffffffff), 0x16))"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x11ee",
+   "reachableFrom": [
+    "0xc737e648"
+   ],
+   "slotShapes": [
+    "keccak(and(cd[4], 0xffffffffffffffffffffffffffffffffffffffff), 0x5)"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x1808",
+   "reachableFrom": [
+    "start"
+   ],
+   "slotShapes": [
+    "0xa"
+   ],
+   "classification": "slot 0xa (total verified weight)"
+  },
+  {
+   "pc": "0x182b",
+   "reachableFrom": [
+    "start"
+   ],
+   "slotShapes": [],
+   "classification": "slot 0x11 (counter)"
+  },
+  {
+   "pc": "0x1848",
+   "reachableFrom": [
+    "start"
+   ],
+   "slotShapes": [],
+   "classification": "slot 0x10 (counter; trace)"
+  },
+  {
+   "pc": "0x186c",
+   "reachableFrom": [
+    "start"
+   ],
+   "slotShapes": [],
+   "classification": "record +0 (trace)"
+  },
+  {
+   "pc": "0x189f",
+   "reachableFrom": [
+    "start"
+   ],
+   "slotShapes": [],
+   "classification": "record +0 (trace)"
+  },
+  {
+   "pc": "0x1905",
+   "reachableFrom": [
+    "start"
+   ],
+   "slotShapes": [],
+   "classification": "record +1 (trace)"
+  },
+  {
+   "pc": "0x1954",
+   "reachableFrom": [
+    "start"
+   ],
+   "slotShapes": [],
+   "classification": "record +2: status := 1 (constant stored at 0x15d2, written as the record word; trace)"
+  },
+  {
+   "pc": "0x197a",
+   "reachableFrom": [
+    "start"
+   ],
+   "slotShapes": [],
+   "classification": "record +3 (trace)"
+  },
+  {
+   "pc": "0x19d1",
+   "reachableFrom": [
+    "start"
+   ],
+   "slotShapes": [],
+   "classification": "record +3 (trace)"
+  },
+  {
+   "pc": "0x19ec",
+   "reachableFrom": [
+    "start"
+   ],
+   "slotShapes": [],
+   "classification": "record +4 (trace)"
+  },
+  {
+   "pc": "0x1a43",
+   "reachableFrom": [
+    "start"
+   ],
+   "slotShapes": [],
+   "classification": "record +5 (trace)"
+  },
+  {
+   "pc": "0x1a48",
+   "reachableFrom": [
+    "start"
+   ],
+   "slotShapes": [],
+   "classification": "record +6, debt (trace)"
+  },
+  {
+   "pc": "0x1ae4",
+   "reachableFrom": [
+    "start"
+   ],
+   "slotShapes": [
+    "keccak(and(stk(3), 0xffffffffffffffffffffffffffffffffffffffff), keccak(and(stk(2), 0xffffffff), 0x9))"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x1ae6",
+   "reachableFrom": [
+    "start"
+   ],
+   "slotShapes": [
+    "(keccak(and(stk(3), 0xffffffffffffffffffffffffffffffffffffffff), keccak(and(stk(2), 0xffffffff), 0x9)) + 1)"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x1b77",
+   "reachableFrom": [
+    "start"
+   ],
+   "slotShapes": [
+    "keccak(and(stk(8), 0xffffffffffffffffffffffffffffffffffffffff), keccak(and(stk(2), 0xffffffff), 0x19))"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x1c25",
+   "reachableFrom": [
+    "start"
+   ],
+   "slotShapes": [],
+   "classification": "slot 0xc (trace)"
+  },
+  {
+   "pc": "0x2055",
+   "reachableFrom": [
+    "reclaim"
+   ],
+   "slotShapes": [
+    "(keccak(cd[4], 0x8) + 3)"
+   ],
+   "classification": "miner record +3"
+  },
+  {
+   "pc": "0x209c",
+   "reachableFrom": [
+    "reclaim"
+   ],
+   "slotShapes": [
+    "0xa"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x20c3",
+   "reachableFrom": [
+    "reclaim"
+   ],
+   "slotShapes": [
+    "keccak(and(sload(keccak(cd[4], 0x8)), 0xffffffffffffffffffffffffffffffffffffffff), keccak(shr(0xe0, sload(keccak(cd[4], 0x8))), 0x9))"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x20c5",
+   "reachableFrom": [
+    "reclaim"
+   ],
+   "slotShapes": [
+    "(keccak(and(sload(keccak(cd[4], 0x8)), 0xffffffffffffffffffffffffffffffffffffffff), keccak(shr(0xe0, sload(keccak(cd[4], 0x8))), 0x9)) + 1)"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x212f",
+   "reachableFrom": [
+    "reclaim"
+   ],
+   "slotShapes": [],
+   "classification": "slot 0xa"
+  },
+  {
+   "pc": "0x2155",
+   "reachableFrom": [
+    "reclaim"
+   ],
+   "slotShapes": [],
+   "classification": "record +6 of reclaim's own key (debt := weight * acc / 1e27)"
+  },
+  {
+   "pc": "0x221c",
+   "reachableFrom": [
+    "reclaim"
+   ],
+   "slotShapes": [
+    "keccak(and(sload(keccak(cd[4], 0x8)), 0xffffffffffffffffffffffffffffffffffffffff), keccak(shr(0xe0, sload(keccak(cd[4], 0x8))), 0x19))"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x2345",
+   "reachableFrom": [
+    "kick"
+   ],
+   "slotShapes": [
+    "keccak(and(cd[0x24], 0xffffffffffffffffffffffffffffffffffffffff), keccak(and(cd[4], 0xffffffff), 0x9))"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x2360",
+   "reachableFrom": [
+    "kick"
+   ],
+   "slotShapes": [
+    "keccak(and(cd[0x24], 0xffffffffffffffffffffffffffffffffffffffff), keccak(and(cd[4], 0xffffffff), 0x19))"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x24e6",
+   "reachableFrom": [
+    "pause"
+   ],
+   "slotShapes": [
+    "0xcd5ed15c6e187e77e9aee88184c21f4f2182ab5827cb3b7e07fbedcd63f03300"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x26d8",
+   "reachableFrom": [
+    "initializer"
+   ],
+   "slotShapes": [
+    "0xf0c57e16840df040f15088dc2f81fe391c3923bec73e23a9662efc9c229c6a00"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x274b",
+   "reachableFrom": [
+    "initializer"
+   ],
+   "slotShapes": [
+    "0"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x276c",
+   "reachableFrom": [
+    "initializer"
+   ],
+   "slotShapes": [
+    "1"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x2773",
+   "reachableFrom": [
+    "initializer"
+   ],
+   "slotShapes": [
+    "2"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x277a",
+   "reachableFrom": [
+    "initializer"
+   ],
+   "slotShapes": [
+    "3"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x278e",
+   "reachableFrom": [
+    "initializer"
+   ],
+   "slotShapes": [
+    "4"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x279f",
+   "reachableFrom": [
+    "initializer"
+   ],
+   "slotShapes": [
+    "0xf0c57e16840df040f15088dc2f81fe391c3923bec73e23a9662efc9c229c6a00"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x27fe",
+   "reachableFrom": [
+    "initializer"
+   ],
+   "slotShapes": [
+    "0xf0c57e16840df040f15088dc2f81fe391c3923bec73e23a9662efc9c229c6a00"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x28b1",
+   "reachableFrom": [
+    "0x7129e7c7"
+   ],
+   "slotShapes": [
+    "0x15"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x2a33",
+   "reachableFrom": [
+    "stop"
+   ],
+   "slotShapes": [
+    "(keccak(cd[4], 0x8) + 2)"
+   ],
+   "classification": "miner record +2"
+  },
+  {
+   "pc": "0x2acb",
+   "reachableFrom": [
+    "stop"
+   ],
+   "slotShapes": [
+    "keccak(and(sload(keccak(cd[4], 0x8)), 0xffffffffffffffffffffffffffffffffffffffff), keccak(shr(0xe0, sload(keccak(cd[4], 0x8))), 0x19))"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x2edc",
+   "reachableFrom": [
+    "0x565233c4"
+   ],
+   "slotShapes": [
+    "(keccak(and(cd[4], 0xffffffff), 0x6) + 5)"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x30af",
+   "reachableFrom": [
+    "upgradeToAndCall"
+   ],
+   "slotShapes": [
+    "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x3248",
+   "reachableFrom": [
+    "0x3fb27b85"
+   ],
+   "slotShapes": [
+    "0"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x32b5",
+   "reachableFrom": [
+    "unpause"
+   ],
+   "slotShapes": [
+    "0xcd5ed15c6e187e77e9aee88184c21f4f2182ab5827cb3b7e07fbedcd63f03300"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x3518",
+   "reachableFrom": [
+    "challenge"
+   ],
+   "slotShapes": [
+    "keccak(and(sload(keccak(cd[4], 0x8)), 0xffffffffffffffffffffffffffffffffffffffff), keccak(shr(0xe0, sload(keccak(cd[4], 0x8))), 0x19))"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x3527",
+   "reachableFrom": [
+    "challenge"
+   ],
+   "slotShapes": [
+    "(keccak(cd[4], 0x8) + 2)"
+   ],
+   "classification": "miner record +2"
+  },
+  {
+   "pc": "0x3617",
+   "reachableFrom": [
+    "0x2a7eba1b"
+   ],
+   "slotShapes": [
+    "2"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x36f8",
+   "reachableFrom": [
+    "arm"
+   ],
+   "slotShapes": [
+    "keccak(?K, 0x17)",
+    "keccak(keccak(shl(0x60, cd[4])[0:20], cd[0x24]), 0x17)"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x469f",
+   "reachableFrom": [
+    "0x414d0ac1",
+    "start",
+    "task setup (owner; emits TaskAdded)"
+   ],
+   "slotShapes": [],
+   "classification": "nested mapping keyed by keccak (circuit cache)"
+  },
+  {
+   "pc": "0x47b8",
+   "reachableFrom": [
+    "0x565233c4",
+    "start",
+    "task setup (owner; emits TaskAdded)"
+   ],
+   "slotShapes": [
+    "(keccak(and((and(sload(7), 0xffffffff) + 1), 0xffffffff), 0x6) + 5)",
+    "(keccak(and(cd[4], 0xffffffff), 0x6) + 5)"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x48e2",
+   "reachableFrom": [
+    "arm",
+    "0x63993cac",
+    "task setup (owner; emits TaskAdded)"
+   ],
+   "slotShapes": [],
+   "classification": "mapping 0x12[address][id]"
+  },
+  {
+   "pc": "0x496b",
+   "reachableFrom": [
+    "stop",
+    "reclaim",
+    "start",
+    "commitDesign"
+   ],
+   "slotShapes": [
+    "(keccak(cd[4], 0x8) + 3)",
+    "(keccak(cd[4], 0x8) + 4)",
+    "keccak(cd[0x24], keccak(and(cd[4], 0xffffffffffffffffffffffffffffffffffffffff), 0x16))"
+   ],
+   "classification": "miner record +3,4"
+  },
+  {
+   "pc": "0x4b42",
+   "reachableFrom": [
+    "kick",
+    "reclaim",
+    "start"
+   ],
+   "slotShapes": [],
+   "classification": "record +4 high 128 bits (verified weight; trace: start writes 0 for an unverified restart)"
+  },
+  {
+   "pc": "0x4c75",
+   "reachableFrom": [
+    "initializer",
+    "transferOwnership"
+   ],
+   "slotShapes": [
+    "0x9016d09d72d40fdae2fd8ceac6b6234c7706214fd39c1cd1e609a0528c199300"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x4d6b",
+   "reachableFrom": [
+    "0x18178358",
+    "challenge",
+    "stop",
+    "claimMany",
+    "kick",
+    "reclaim",
+    "start",
+    "claim"
+   ],
+   "slotShapes": [
+    "1"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x4dd1",
+   "reachableFrom": [
+    "0x18178358",
+    "challenge",
+    "stop",
+    "claimMany",
+    "kick",
+    "reclaim",
+    "start",
+    "claim"
+   ],
+   "slotShapes": [
+    "0xb"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x4e0d",
+   "reachableFrom": [
+    "0x18178358",
+    "challenge",
+    "stop",
+    "claimMany",
+    "kick",
+    "reclaim",
+    "start",
+    "claim"
+   ],
+   "slotShapes": [
+    "0xd"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x4e1f",
+   "reachableFrom": [
+    "0x18178358",
+    "challenge",
+    "stop",
+    "claimMany",
+    "kick",
+    "reclaim",
+    "start",
+    "claim"
+   ],
+   "slotShapes": [
+    "0xf"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x4e31",
+   "reachableFrom": [
+    "0x18178358",
+    "challenge",
+    "stop",
+    "claimMany",
+    "kick",
+    "reclaim",
+    "start",
+    "claim"
+   ],
+   "slotShapes": [
+    "0xf"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x507e",
+   "reachableFrom": [
+    "challenge",
+    "stop",
+    "start"
+   ],
+   "slotShapes": [
+    "(keccak(cd[4], 0x8) + 3)"
+   ],
+   "classification": "miner record +3"
+  },
+  {
+   "pc": "0x5091",
+   "reachableFrom": [
+    "challenge",
+    "stop",
+    "start"
+   ],
+   "slotShapes": [
+    "keccak(and(sload(keccak(cd[4], 0x8)), 0xffffffffffffffffffffffffffffffffffffffff), keccak(shr(0xe0, sload(keccak(cd[4], 0x8))), 0x9))"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x5093",
+   "reachableFrom": [
+    "challenge",
+    "stop",
+    "start"
+   ],
+   "slotShapes": [
+    "(keccak(and(sload(keccak(cd[4], 0x8)), 0xffffffffffffffffffffffffffffffffffffffff), keccak(shr(0xe0, sload(keccak(cd[4], 0x8))), 0x9)) + 1)"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x50dd",
+   "reachableFrom": [
+    "challenge",
+    "stop",
+    "claimMany",
+    "kick",
+    "reclaim",
+    "start",
+    "claim"
+   ],
+   "slotShapes": [
+    "(keccak(?K, 0x8) + 6)",
+    "(keccak(cd[(cd[4] + 0x24)], 0x8) + 6)",
+    "(keccak(cd[(cd[4] + 0x44)], 0x8) + 6)",
+    "(keccak(cd[4], 0x8) + 6)",
+    "(keccak(keccak(shl(0x60, and(sload(keccak(cd[4], 0x8)), 0xffffffffffffffffffffffffffffffffffffffff))[0:20], and((and(sload(keccak(\u2026, \u2026)), 0xffffffffffffffff) + 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff), 0xffffffffffffffff)), 0x8) + 6)",
+    "(keccak(keccak(shl(0x60, stk(8))[0:20], and((and(sload(keccak(\u2026, \u2026)), 0xffffffffffffffff) + 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff), 0xffffffffffffffff)), 0x8) + 6)"
+   ],
+   "classification": "miner record +6"
+  },
+  {
+   "pc": "0x51a2",
+   "reachableFrom": [
+    "challenge",
+    "stop",
+    "claimMany",
+    "kick",
+    "reclaim",
+    "start",
+    "claim"
+   ],
+   "slotShapes": [
+    "0xe"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x5335",
+   "reachableFrom": [
+    "challenge",
+    "stop"
+   ],
+   "slotShapes": [
+    "0x10"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x5346",
+   "reachableFrom": [
+    "challenge",
+    "stop"
+   ],
+   "slotShapes": [
+    "0xc"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x5354",
+   "reachableFrom": [
+    "challenge",
+    "stop"
+   ],
+   "slotShapes": [
+    "(keccak(cd[4], 0x8) + 5)"
+   ],
+   "classification": "miner record +5"
+  },
+  {
+   "pc": "0x536a",
+   "reachableFrom": [
+    "challenge",
+    "stop"
+   ],
+   "slotShapes": [
+    "0xa"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x5377",
+   "reachableFrom": [
+    "challenge",
+    "stop"
+   ],
+   "slotShapes": [
+    "(keccak(cd[4], 0x8) + 4)"
+   ],
+   "classification": "miner record +4"
+  },
+  {
+   "pc": "0x538c",
+   "reachableFrom": [
+    "challenge",
+    "stop"
+   ],
+   "slotShapes": [
+    "0x11"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x53db",
+   "reachableFrom": [
+    "0x3fb27b85",
+    "renounceOwnership"
+   ],
+   "slotShapes": [
+    "0x9016d09d72d40fdae2fd8ceac6b6234c7706214fd39c1cd1e609a0528c199300"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x5519",
+   "reachableFrom": [
+    "0x7af1ca5d",
+    "start",
+    "task setup (owner; emits TaskAdded)"
+   ],
+   "slotShapes": [
+    "keccak(cd[0x104], keccak(and(cd[0xe4], 0xffffffffffffffffffffffffffffffffffffffff), 0x14))"
+   ],
+   "classification": "mapping 0x14[address][id] (cached depth)"
+  },
+  {
+   "pc": "0x57b5",
+   "reachableFrom": [
+    "kick",
+    "reclaim",
+    "start"
+   ],
+   "slotShapes": [
+    "(keccak(?K, 0x8) + 3)",
+    "(keccak(keccak(shl(0x60, cd[0x24])[0:20], and((and(sload(keccak(\u2026, \u2026)), 0xffffffffffffffff) + 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff), 0xffffffffffffffff)), 0x8) + 3)",
+    "(keccak(keccak(shl(0x60, stk(8))[0:20], and((and(sload(keccak(\u2026, \u2026)), 0xffffffffffffffff) + 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff), 0xffffffffffffffff)), 0x8) + 3)"
+   ],
+   "classification": "miner record +3"
+  },
+  {
+   "pc": "0x5800",
+   "reachableFrom": [
+    "kick",
+    "reclaim",
+    "start"
+   ],
+   "slotShapes": [
+    "0xa"
+   ],
+   "classification": "other storage"
+  },
+  {
+   "pc": "0x5844",
+   "reachableFrom": [
+    "kick",
+    "reclaim",
+    "start"
+   ],
+   "slotShapes": [],
+   "classification": "slot 0xa"
+  },
+  {
+   "pc": "0x5853",
+   "reachableFrom": [
+    "kick",
+    "reclaim",
+    "start"
+   ],
+   "slotShapes": [],
+   "classification": "record +6 of the demoted ACTIVE record (debt := weight * acc / 1e27)"
+  }
+ ],
+ "statusWrites": [
+  {
+   "pc": "0x1954",
+   "function": "start",
+   "value": 1
+  },
+  {
+   "pc": "0x2a33",
+   "function": "stop",
+   "value": 3
+  },
+  {
+   "pc": "0x3527",
+   "function": "challenge",
+   "value": 2
+  }
+ ],
+ "upgradeAuthority": {
+  "implementationSlotWriters": [
+   "0x30af"
+  ],
+  "ownerSlotWriters": [
+   "0x4c75",
+   "0x53db"
+  ],
+  "initializerSlotWriters": [
+   "0x26d8",
+   "0x279f",
+   "0x27fe"
+  ],
+  "owner": "0x0000000000000000000000000000000000000000",
+  "initializableWord": "0x0000000000000000000000000000000000000000000000000000000000000001",
+  "proxyCode": {
+   "bytes": 130,
+   "keccak256": "0xed6b710a769987f50494d713f278817992e3266e45898a990be878efc2fcbbce",
+   "file": "proxy.hex"
+  },
+  "paths": {
+   "implementation slot 0x30af via upgradeToAndCall": [
+    {
+     "pc": "0x30af",
+     "facts": [
+      "extcodesize(cd[4]) \u2209 {0}",
+      "sub(caller, and(sload(0x9016d09d72d40fdae2fd8ceac6b6234c7706214fd39c1cd1e609a0528c199300), 0xffffffffffffffffffffffffffffffffffffffff)) == 0"
+     ]
+    },
+    {
+     "pc": "0x30af",
+     "facts": [
+      "extcodesize(cd[4]) \u2209 {0}",
+      "sub(caller, and(sload(0x9016d09d72d40fdae2fd8ceac6b6234c7706214fd39c1cd1e609a0528c199300), 0xffffffffffffffffffffffffffffffffffffffff)) == 0"
+     ]
+    }
+   ],
+   "owner slot 0x4c75 via initializer": [
+    {
+     "pc": "0x4c75",
+     "facts": [
+      "and(shr(0x40, sload(0xf0c57e16840df040f15088dc2f81fe391c3923bec73e23a9662efc9c229c6a00)), 0xff) \u2209 {0}",
+      "and(sload(0xf0c57e16840df040f15088dc2f81fe391c3923bec73e23a9662efc9c229c6a00), 0xffffffffffffffff) == 1",
+      "extcodesize(0x7e2e0dc66a3bd9103e69b766afa62d9f7b697b46) == 0"
+     ]
+    },
+    {
+     "pc": "0x4c75",
+     "facts": [
+      "and(shr(0x40, sload(0xf0c57e16840df040f15088dc2f81fe391c3923bec73e23a9662efc9c229c6a00)), 0xff) == 0",
+      "and(sload(0xf0c57e16840df040f15088dc2f81fe391c3923bec73e23a9662efc9c229c6a00), 0xffffffffffffffff) == 1",
+      "extcodesize(0x7e2e0dc66a3bd9103e69b766afa62d9f7b697b46) == 0"
+     ]
+    },
+    {
+     "pc": "0x4c75",
+     "facts": [
+      "and(shr(0x40, sload(0xf0c57e16840df040f15088dc2f81fe391c3923bec73e23a9662efc9c229c6a00)), 0xff) == 0",
+      "and(sload(0xf0c57e16840df040f15088dc2f81fe391c3923bec73e23a9662efc9c229c6a00), 0xffffffffffffffff) == 0"
+     ]
+    }
+   ],
+   "owner slot 0x4c75 via transferOwnership": [
+    {
+     "pc": "0x4c75",
+     "facts": [
+      "sub(caller, and(sload(0x9016d09d72d40fdae2fd8ceac6b6234c7706214fd39c1cd1e609a0528c199300), 0xffffffffffffffffffffffffffffffffffffffff)) == 0"
+     ]
+    }
+   ],
+   "owner slot 0x53db via 0x3fb27b85": [
+    {
+     "pc": "0x53db",
+     "facts": [
+      "sub(caller, and(sload(0x9016d09d72d40fdae2fd8ceac6b6234c7706214fd39c1cd1e609a0528c199300), 0xffffffffffffffffffffffffffffffffffffffff)) == 0"
+     ]
+    }
+   ],
+   "owner slot 0x53db via renounceOwnership": [
+    {
+     "pc": "0x53db",
+     "facts": [
+      "sub(caller, and(sload(0x9016d09d72d40fdae2fd8ceac6b6234c7706214fd39c1cd1e609a0528c199300), 0xffffffffffffffffffffffffffffffffffffffff)) == 0"
+     ]
+    }
+   ],
+   "initializer slot 0x26d8 via initializer": [
+    {
+     "pc": "0x26d8",
+     "facts": [
+      "and(sload(0xf0c57e16840df040f15088dc2f81fe391c3923bec73e23a9662efc9c229c6a00), 0xffffffffffffffff) == 1",
+      "extcodesize(0x7e2e0dc66a3bd9103e69b766afa62d9f7b697b46) == 0"
+     ]
+    },
+    {
+     "pc": "0x26d8",
+     "facts": [
+      "and(shr(0x40, sload(0xf0c57e16840df040f15088dc2f81fe391c3923bec73e23a9662efc9c229c6a00)), 0xff) == 0",
+      "and(sload(0xf0c57e16840df040f15088dc2f81fe391c3923bec73e23a9662efc9c229c6a00), 0xffffffffffffffff) == 0"
+     ]
+    }
+   ],
+   "initializer slot 0x279f via initializer": [
+    {
+     "pc": "0x26d8",
+     "facts": [
+      "and(sload(0xf0c57e16840df040f15088dc2f81fe391c3923bec73e23a9662efc9c229c6a00), 0xffffffffffffffff) == 1",
+      "extcodesize(0x7e2e0dc66a3bd9103e69b766afa62d9f7b697b46) == 0"
+     ]
+    },
+    {
+     "pc": "0x26d8",
+     "facts": [
+      "and(shr(0x40, sload(0xf0c57e16840df040f15088dc2f81fe391c3923bec73e23a9662efc9c229c6a00)), 0xff) == 0",
+      "and(sload(0xf0c57e16840df040f15088dc2f81fe391c3923bec73e23a9662efc9c229c6a00), 0xffffffffffffffff) == 0"
+     ]
+    }
+   ],
+   "initializer slot 0x27fe via initializer": [
+    {
+     "pc": "0x26d8",
+     "facts": [
+      "and(sload(0xf0c57e16840df040f15088dc2f81fe391c3923bec73e23a9662efc9c229c6a00), 0xffffffffffffffff) == 1",
+      "extcodesize(0x7e2e0dc66a3bd9103e69b766afa62d9f7b697b46) == 0"
+     ]
+    },
+    {
+     "pc": "0x26d8",
+     "facts": [
+      "and(shr(0x40, sload(0xf0c57e16840df040f15088dc2f81fe391c3923bec73e23a9662efc9c229c6a00)), 0xff) == 0",
+      "and(sload(0xf0c57e16840df040f15088dc2f81fe391c3923bec73e23a9662efc9c229c6a00), 0xffffffffffffffff) == 0"
+     ]
+    }
+   ]
+  }
+ },
+ "callSites": {
+  "0x0df4": {
+   "op": "DELEGATECALL",
+   "reachableFrom": [
+    "registerCounterexample"
+   ]
+  },
+  "0x448c": {
+   "op": "DELEGATECALL",
+   "reachableFrom": [
+    "arm",
+    "0x30c98cf6",
+    "0x63993cac",
+    "task setup (owner; emits TaskAdded)"
+   ]
+  },
+  "0x48ac": {
+   "op": "DELEGATECALL",
+   "reachableFrom": [
+    "arm",
+    "0x63993cac",
+    "task setup (owner; emits TaskAdded)"
+   ]
+  },
+  "0x49ea": {
+   "op": "DELEGATECALL",
+   "reachableFrom": [
+    "0x414d0ac1",
+    "circuitBurn",
+    "start",
+    "task setup (owner; emits TaskAdded)"
+   ]
+  },
+  "0x4fef": {
+   "op": "DELEGATECALL",
+   "reachableFrom": [
+    "challenge",
+    "start",
+    "task setup (owner; emits TaskAdded)"
+   ]
+  },
+  "0x51d9": {
+   "op": "CALL",
+   "reachableFrom": [
+    "challenge",
+    "stop",
+    "claimMany",
+    "kick",
+    "reclaim",
+    "start",
+    "claim"
+   ]
+  },
+  "0x54da": {
+   "op": "DELEGATECALL",
+   "reachableFrom": [
+    "0x7af1ca5d",
+    "start",
+    "task setup (owner; emits TaskAdded)"
+   ]
+  },
+  "0x5705": {
+   "op": "DELEGATECALL",
+   "reachableFrom": [
+    "kick",
+    "reclaim",
+    "passesCounterexamples"
+   ]
+  },
+  "0x5920": {
+   "op": "DELEGATECALL",
+   "reachableFrom": [
+    "reclaim",
+    "start"
+   ]
+  },
+  "0x5ee4": {
+   "op": "DELEGATECALL",
+   "reachableFrom": [
+    "upgradeToAndCall"
+   ]
+  }
+ },
+ "conditions": {
+  "start: gate passed": {
+   "ends": {
+    "revert": 50,
+    "stop_at": 8
+   },
+   "truncated": false,
+   "points": [
+    {
+     "pc": "0x1505",
+     "facts": "and(sload((keccak(?K, 0x8) + 2)), 0xff) == 0",
+     "paths": 2
+    },
+    {
+     "pc": "0x1505",
+     "facts": "and(sload((keccak(?K, 0x8) + 2)), 0xff) == 3; gt(number, (and(shr(0x40, sload((keccak(?K, 0x8) + 4))), 0xffffffffffffffff) + 0x4b0)) \u2209 {0}",
+     "paths": 2
+    },
+    {
+     "pc": "0x1505",
+     "facts": "and(sload((keccak(keccak(shl(0x60, cd[4])[0:20], cd[0x24]), 0x8) + 2)), 0xff) == 0",
+     "paths": 2
+    },
+    {
+     "pc": "0x1505",
+     "facts": "and(sload((keccak(keccak(shl(0x60, cd[4])[0:20], cd[0x24]), 0x8) + 2)), 0xff) == 3; gt(number, (and(shr(0x40, sload((keccak(keccak(\u2026[0:20], \u2026), 0x8) + 4))), 0xffffffffffffffff) + 0x4b0)) \u2209 {0}",
+     "paths": 2
+    }
+   ]
+  },
+  "stop: first state change": {
+   "ends": {
+    "revert": 454,
+    "stop_at": 122,
+    "loop_bound": 178
+   },
+   "truncated": false,
+   "points": [
+    {
+     "pc": "0x4d6b",
+     "facts": "and(sload((keccak(cd[4], 0x8) + 2)), 0xff) == 1",
+     "paths": 118
+    },
+    {
+     "pc": "0x50dd",
+     "facts": "and(sload((keccak(cd[4], 0x8) + 2)), 0xff) == 1",
+     "paths": 4
+    }
+   ]
+  },
+  "claim: first state change": {
+   "ends": {
+    "revert": 226,
+    "stop_at": 61,
+    "loop_bound": 89
+   },
+   "truncated": false,
+   "points": [
+    {
+     "pc": "0x4d6b",
+     "facts": "and(sload((keccak(cd[4], 0x8) + 2)), 0xff) == 1",
+     "paths": 59
+    },
+    {
+     "pc": "0x50dd",
+     "facts": "and(sload((keccak(cd[4], 0x8) + 2)), 0xff) == 1",
+     "paths": 2
+    }
+   ]
+  },
+  "reclaim: first state change": {
+   "ends": {
+    "revert": 295,
+    "stop_at": 91,
+    "loop_bound": 7
+   },
+   "truncated": false,
+   "points": [
+    {
+     "pc": "0x2055",
+     "facts": "and(sload((keccak(cd[4], 0x8) + 2)), 0xff) == 1",
+     "paths": 6
+    },
+    {
+     "pc": "0x2055",
+     "facts": "and(sload((keccak(cd[4], 0x8) + 2)), 0xff) == 1; and(sload((keccak(keccak(shl(0x60, and(sload(\u2026), 0xffffffffffffffffffffffffffffffffffffffff))[0:20], and((and(\u2026, 0xffffffffffffffff) + 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff), 0xffffffffffffffff)), 0x8) + 2)), 0xff) == 1",
+     "paths": 6
+    },
+    {
+     "pc": "0x2055",
+     "facts": "and(sload((keccak(cd[4], 0x8) + 2)), 0xff) == 1; and(sload((keccak(keccak(shl(0x60, and(sload(\u2026), 0xffffffffffffffffffffffffffffffffffffffff))[0:20], and((and(\u2026, 0xffffffffffffffff) + 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff), 0xffffffffffffffff)), 0x8) + 2)), 0xff) == 3",
+     "paths": 6
+    },
+    {
+     "pc": "0x2055",
+     "facts": "and(sload((keccak(cd[4], 0x8) + 2)), 0xff) == 1; and(sload((keccak(keccak(shl(0x60, and(sload(\u2026), 0xffffffffffffffffffffffffffffffffffffffff))[0:20], and((and(\u2026, 0xffffffffffffffff) + 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff), 0xffffffffffffffff)), 0x8) + 2)), 0xff) == 3; gt(number, (and(sload(keccak(and(sload(keccak(\u2026, 0x8)), 0xffffffffffffffffffffffffffffffffffffffff), keccak(shr(0xe0, sload(\u2026)), 0x19))), 0xffffffffffffffff) + 0x4b0)) \u2209 {0}",
+     "paths": 6
+    },
+    {
+     "pc": "0x2055",
+     "facts": "and(sload((keccak(cd[4], 0x8) + 2)), 0xff) == 1; and(sload((keccak(keccak(shl(0x60, and(sload(\u2026), 0xffffffffffffffffffffffffffffffffffffffff))[0:20], and((and(\u2026, 0xffffffffffffffff) + 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff), 0xffffffffffffffff)), 0x8) + 2)), 0xff) \u2209 {1, 3}",
+     "paths": 6
+    },
+    {
+     "pc": "0x5705",
+     "facts": "and(sload((keccak(cd[4], 0x8) + 2)), 0xff) == 1",
+     "paths": 11
+    },
+    {
+     "pc": "0x5705",
+     "facts": "and(sload((keccak(cd[4], 0x8) + 2)), 0xff) == 1; and(sload((keccak(keccak(shl(0x60, and(sload(\u2026), 0xffffffffffffffffffffffffffffffffffffffff))[0:20], and((and(\u2026, 0xffffffffffffffff) + 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff), 0xffffffffffffffff)), 0x8) + 2)), 0xff) == 1",
+     "paths": 11
+    },
+    {
+     "pc": "0x5705",
+     "facts": "and(sload((keccak(cd[4], 0x8) + 2)), 0xff) == 1; and(sload((keccak(keccak(shl(0x60, and(sload(\u2026), 0xffffffffffffffffffffffffffffffffffffffff))[0:20], and((and(\u2026, 0xffffffffffffffff) + 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff), 0xffffffffffffffff)), 0x8) + 2)), 0xff) == 3",
+     "paths": 11
+    },
+    {
+     "pc": "0x5705",
+     "facts": "and(sload((keccak(cd[4], 0x8) + 2)), 0xff) == 1; and(sload((keccak(keccak(shl(0x60, and(sload(\u2026), 0xffffffffffffffffffffffffffffffffffffffff))[0:20], and((and(\u2026, 0xffffffffffffffff) + 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff), 0xffffffffffffffff)), 0x8) + 2)), 0xff) == 3; gt(number, (and(sload(keccak(and(sload(keccak(\u2026, 0x8)), 0xffffffffffffffffffffffffffffffffffffffff), keccak(shr(0xe0, sload(\u2026)), 0x19))), 0xffffffffffffffff) + 0x4b0)) \u2209 {0}",
+     "paths": 11
+    },
+    {
+     "pc": "0x5705",
+     "facts": "and(sload((keccak(cd[4], 0x8) + 2)), 0xff) == 1; and(sload((keccak(keccak(shl(0x60, and(sload(\u2026), 0xffffffffffffffffffffffffffffffffffffffff))[0:20], and((and(\u2026, 0xffffffffffffffff) + 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff), 0xffffffffffffffff)), 0x8) + 2)), 0xff) \u2209 {1, 3}",
+     "paths": 11
+    },
+    {
+     "pc": "0x5920",
+     "facts": "and(sload((keccak(cd[4], 0x8) + 2)), 0xff) == 1; and(sload((keccak(keccak(shl(0x60, and(sload(\u2026), 0xffffffffffffffffffffffffffffffffffffffff))[0:20], and((and(\u2026, 0xffffffffffffffff) + 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff), 0xffffffffffffffff)), 0x8) + 2)), 0xff) == 1",
+     "paths": 6
+    }
+   ]
+  },
+  "challenge: payout call": {
+   "ends": {
+    "revert": 167,
+    "stop_at": 14,
+    "loop_bound": 16,
+    "ok": 42
+   },
+   "truncated": false,
+   "points": [
+    {
+     "pc": "0x34d7",
+     "facts": "and(sload((keccak(cd[4], 0x8) + 2)), 0xff) == 1",
+     "paths": 14
+    }
+   ]
+  },
+  "challenge: status write": {
+   "ends": {
+    "revert": 20131,
+    "loop_bound": 8220,
+    "stop_at": 11802
+   },
+   "truncated": false,
+   "points": [
+    {
+     "pc": "0x3527",
+     "facts": "and(sload((keccak(cd[4], 0x8) + 2)), 0xff) == 1",
+     "paths": 11760
+    },
+    {
+     "pc": "0x3527",
+     "facts": "and(sload((keccak(cd[4], 0x8) + 2)), 0xff) == 3; gt(number, (and(shr(0x40, sload((keccak(cd[4], 0x8) + 4))), 0xffffffffffffffff) + 0x4b0)) == 0",
+     "paths": 42
+    }
+   ]
+  },
+  "claimMany: settlement": {
+   "ends": {
+    "revert": 8,
+    "ok": 3,
+    "loop_bound": 1,
+    "stop_at": 3
+   },
+   "truncated": false,
+   "points": [
+    {
+     "pc": "0x50ac",
+     "facts": "and(sload((keccak(cd[(cd[4] + 0x24)], 0x8) + 2)), 0xff) == 1",
+     "paths": 1
+    },
+    {
+     "pc": "0x50ac",
+     "facts": "and(sload((keccak(cd[(cd[4] + 0x24)], 0x8) + 2)), 0xff) \u2209 {1}; and(sload((keccak(cd[(cd[4] + 0x44)], 0x8) + 2)), 0xff) == 1",
+     "paths": 1
+    },
+    {
+     "pc": "0x50ac",
+     "facts": "and(sload((keccak(cd[(cd[4] + 0x24)], 0x8) + 2)), 0xff) \u2209 {1}; and(sload((keccak(cd[(cd[4] + 0x44)], 0x8) + 2)), 0xff) \u2209 {1}; and(sload((keccak(cd[(cd[4] + 0x64)], 0x8) + 2)), 0xff) == 1",
+     "paths": 1
+    }
+   ]
+  },
+  "kick: settlement or bonus clear": {
+   "ends": {
+    "revert": 1924,
+    "stop_at": 816,
+    "ok": 408,
+    "loop_bound": 840
+   },
+   "truncated": false,
+   "points": [
+    {
+     "pc": "0x50ac",
+     "facts": "and(sload((keccak(?K, 0x8) + 2)), 0xff) == 1",
+     "paths": 136
+    },
+    {
+     "pc": "0x50ac",
+     "facts": "and(sload((keccak(keccak(shl(0x60, cd[0x24])[0:20], and((and(\u2026, 0xffffffffffffffff) + 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff), 0xffffffffffffffff)), 0x8) + 2)), 0xff) == 1",
+     "paths": 272
+    },
+    {
+     "pc": "0x57b5",
+     "facts": "and(sload((keccak(?K, 0x8) + 2)), 0xff) \u2209 {1}",
+     "paths": 136
+    },
+    {
+     "pc": "0x57b5",
+     "facts": "and(sload((keccak(keccak(shl(0x60, cd[0x24])[0:20], and((and(\u2026, 0xffffffffffffffff) + 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff), 0xffffffffffffffff)), 0x8) + 2)), 0xff) \u2209 {1}",
+     "paths": 272
+    }
+   ]
+  },
+  "reclaim: settlement or bonus clear": {
+   "ends": {
+    "revert": 10314,
+    "stop_at": 5744,
+    "loop_bound": 3942,
+    "unexplored": 32
+   },
+   "truncated": true,
+   "points": [
+    {
+     "pc": "0x50ac",
+     "facts": "and(sload((keccak(?K, 0x8) + 2)), 0xff) == 1; and(sload((keccak(cd[4], 0x8) + 2)), 0xff) == 1; and(sload((keccak(keccak(shl(0x60, and(sload(\u2026), 0xffffffffffffffffffffffffffffffffffffffff))[0:20], and((and(\u2026, 0xffffffffffffffff) + 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff), 0xffffffffffffffff)), 0x8) + 2)), 0xff) == 1",
+     "paths": 1224
+    },
+    {
+     "pc": "0x50ac",
+     "facts": "and(sload((keccak(?K, 0x8) + 2)), 0xff) == 1; and(sload((keccak(cd[4], 0x8) + 2)), 0xff) == 1; and(sload((keccak(keccak(shl(0x60, and(sload(\u2026), 0xffffffffffffffffffffffffffffffffffffffff))[0:20], and((and(\u2026, 0xffffffffffffffff) + 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff), 0xffffffffffffffff)), 0x8) + 2)), 0xff) == 3",
+     "paths": 272
+    },
+    {
+     "pc": "0x50ac",
+     "facts": "and(sload((keccak(?K, 0x8) + 2)), 0xff) == 1; and(sload((keccak(cd[4], 0x8) + 2)), 0xff) == 1; and(sload((keccak(keccak(shl(0x60, and(sload(\u2026), 0xffffffffffffffffffffffffffffffffffffffff))[0:20], and((and(\u2026, 0xffffffffffffffff) + 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff), 0xffffffffffffffff)), 0x8) + 2)), 0xff) == 3; gt(number, (and(sload(keccak(and(sload(keccak(\u2026, 0x8)), 0xffffffffffffffffffffffffffffffffffffffff), keccak(shr(0xe0, sload(\u2026)), 0x19))), 0xffffffffffffffff) + 0x4b0)) \u2209 {0}",
+     "paths": 152
+    },
+    {
+     "pc": "0x50ac",
+     "facts": "and(sload((keccak(?K, 0x8) + 2)), 0xff) == 1; and(sload((keccak(cd[4], 0x8) + 2)), 0xff) == 1; and(sload((keccak(keccak(shl(0x60, and(sload(\u2026), 0xffffffffffffffffffffffffffffffffffffffff))[0:20], and((and(\u2026, 0xffffffffffffffff) + 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff), 0xffffffffffffffff)), 0x8) + 2)), 0xff) \u2209 {1, 3}",
+     "paths": 272
+    },
+    {
+     "pc": "0x50ac",
+     "facts": "and(sload((keccak(?K, 0x8) + 2)), 0xff) \u2209 {1}; and(sload((keccak(cd[4], 0x8) + 2)), 0xff) == 1; and(sload((keccak(keccak(shl(0x60, and(sload(\u2026), 0xffffffffffffffffffffffffffffffffffffffff))[0:20], and((and(\u2026, 0xffffffffffffffff) + 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff), 0xffffffffffffffff)), 0x8) + 2)), 0xff) == 1",
+     "paths": 612
+    },
+    {
+     "pc": "0x50ac",
+     "facts": "and(sload((keccak(?K, 0x8) + 2)), 0xff) \u2209 {1}; and(sload((keccak(cd[4], 0x8) + 2)), 0xff) == 1; and(sload((keccak(keccak(shl(0x60, and(sload(\u2026), 0xffffffffffffffffffffffffffffffffffffffff))[0:20], and((and(\u2026, 0xffffffffffffffff) + 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff), 0xffffffffffffffff)), 0x8) + 2)), 0xff) == 3",
+     "paths": 136
+    },
+    {
+     "pc": "0x50ac",
+     "facts": "and(sload((keccak(?K, 0x8) + 2)), 0xff) \u2209 {1}; and(sload((keccak(cd[4], 0x8) + 2)), 0xff) == 1; and(sload((keccak(keccak(shl(0x60, and(sload(\u2026), 0xffffffffffffffffffffffffffffffffffffffff))[0:20], and((and(\u2026, 0xffffffffffffffff) + 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff), 0xffffffffffffffff)), 0x8) + 2)), 0xff) == 3; gt(number, (and(sload(keccak(and(sload(keccak(\u2026, 0x8)), 0xffffffffffffffffffffffffffffffffffffffff), keccak(shr(0xe0, sload(\u2026)), 0x19))), 0xffffffffffffffff) + 0x4b0)) \u2209 {0}",
+     "paths": 76
+    },
+    {
+     "pc": "0x50ac",
+     "facts": "and(sload((keccak(?K, 0x8) + 2)), 0xff) \u2209 {1}; and(sload((keccak(cd[4], 0x8) + 2)), 0xff) == 1; and(sload((keccak(keccak(shl(0x60, and(sload(\u2026), 0xffffffffffffffffffffffffffffffffffffffff))[0:20], and((and(\u2026, 0xffffffffffffffff) + 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff), 0xffffffffffffffff)), 0x8) + 2)), 0xff) \u2209 {1, 3}",
+     "paths": 136
+    },
+    {
+     "pc": "0x50ac",
+     "facts": "and(sload((keccak(cd[4], 0x8) + 2)), 0xff) == 1; and(sload((keccak(keccak(shl(0x60, and(sload(\u2026), 0xffffffffffffffffffffffffffffffffffffffff))[0:20], and((and(\u2026, 0xffffffffffffffff) + 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff), 0xffffffffffffffff)), 0x8) + 2)), 0xff) == 1",
+     "paths": 816
+    },
+    {
+     "pc": "0x50ac",
+     "facts": "and(sload((keccak(cd[4], 0x8) + 2)), 0xff) == 1; and(sload((keccak(keccak(shl(0x60, and(sload(\u2026), 0xffffffffffffffffffffffffffffffffffffffff))[0:20], and((and(\u2026, 0xffffffffffffffff) + 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff), 0xffffffffffffffff)), 0x8) + 2)), 0xff) == 3",
+     "paths": 204
+    },
+    {
+     "pc": "0x50ac",
+     "facts": "and(sload((keccak(cd[4], 0x8) + 2)), 0xff) == 1; and(sload((keccak(keccak(shl(0x60, and(sload(\u2026), 0xffffffffffffffffffffffffffffffffffffffff))[0:20], and((and(\u2026, 0xffffffffffffffff) + 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff), 0xffffffffffffffff)), 0x8) + 2)), 0xff) == 3; gt(number, (and(sload(keccak(and(sload(keccak(\u2026, 0x8)), 0xffffffffffffffffffffffffffffffffffffffff), keccak(shr(0xe0, sload(\u2026)), 0x19))), 0xffffffffffffffff) + 0x4b0)) \u2209 {0}",
+     "paths": 136
+    },
+    {
+     "pc": "0x50ac",
+     "facts": "and(sload((keccak(cd[4], 0x8) + 2)), 0xff) == 1; and(sload((keccak(keccak(shl(0x60, and(sload(\u2026), 0xffffffffffffffffffffffffffffffffffffffff))[0:20], and((and(\u2026, 0xffffffffffffffff) + 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff), 0xffffffffffffffff)), 0x8) + 2)), 0xff) \u2209 {1, 3}",
+     "paths": 204
+    },
+    {
+     "pc": "0x57b5",
+     "facts": "and(sload((keccak(?K, 0x8) + 2)), 0xff) \u2209 {1}; and(sload((keccak(cd[4], 0x8) + 2)), 0xff) == 1; and(sload((keccak(keccak(shl(0x60, and(sload(\u2026), 0xffffffffffffffffffffffffffffffffffffffff))[0:20], and((and(\u2026, 0xffffffffffffffff) + 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff), 0xffffffffffffffff)), 0x8) + 2)), 0xff) == 1",
+     "paths": 612
+    },
+    {
+     "pc": "0x57b5",
+     "facts": "and(sload((keccak(?K, 0x8) + 2)), 0xff) \u2209 {1}; and(sload((keccak(cd[4], 0x8) + 2)), 0xff) == 1; and(sload((keccak(keccak(shl(0x60, and(sload(\u2026), 0xffffffffffffffffffffffffffffffffffffffff))[0:20], and((and(\u2026, 0xffffffffffffffff) + 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff), 0xffffffffffffffff)), 0x8) + 2)), 0xff) == 3",
+     "paths": 136
+    },
+    {
+     "pc": "0x57b5",
+     "facts": "and(sload((keccak(?K, 0x8) + 2)), 0xff) \u2209 {1}; and(sload((keccak(cd[4], 0x8) + 2)), 0xff) == 1; and(sload((keccak(keccak(shl(0x60, and(sload(\u2026), 0xffffffffffffffffffffffffffffffffffffffff))[0:20], and((and(\u2026, 0xffffffffffffffff) + 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff), 0xffffffffffffffff)), 0x8) + 2)), 0xff) == 3; gt(number, (and(sload(keccak(and(sload(keccak(\u2026, 0x8)), 0xffffffffffffffffffffffffffffffffffffffff), keccak(shr(0xe0, sload(\u2026)), 0x19))), 0xffffffffffffffff) + 0x4b0)) \u2209 {0}",
+     "paths": 76
+    },
+    {
+     "pc": "0x57b5",
+     "facts": "and(sload((keccak(?K, 0x8) + 2)), 0xff) \u2209 {1}; and(sload((keccak(cd[4], 0x8) + 2)), 0xff) == 1; and(sload((keccak(keccak(shl(0x60, and(sload(\u2026), 0xffffffffffffffffffffffffffffffffffffffff))[0:20], and((and(\u2026, 0xffffffffffffffff) + 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff), 0xffffffffffffffff)), 0x8) + 2)), 0xff) \u2209 {1, 3}",
+     "paths": 136
+    },
+    {
+     "pc": "0x57b5",
+     "facts": "and(sload((keccak(cd[4], 0x8) + 2)), 0xff) == 1; and(sload((keccak(keccak(shl(0x60, and(sload(\u2026), 0xffffffffffffffffffffffffffffffffffffffff))[0:20], and((and(\u2026, 0xffffffffffffffff) + 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff), 0xffffffffffffffff)), 0x8) + 2)), 0xff) == 3",
+     "paths": 204
+    },
+    {
+     "pc": "0x57b5",
+     "facts": "and(sload((keccak(cd[4], 0x8) + 2)), 0xff) == 1; and(sload((keccak(keccak(shl(0x60, and(sload(\u2026), 0xffffffffffffffffffffffffffffffffffffffff))[0:20], and((and(\u2026, 0xffffffffffffffff) + 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff), 0xffffffffffffffff)), 0x8) + 2)), 0xff) == 3; gt(number, (and(sload(keccak(and(sload(keccak(\u2026, 0x8)), 0xffffffffffffffffffffffffffffffffffffffff), keccak(shr(0xe0, sload(\u2026)), 0x19))), 0xffffffffffffffff) + 0x4b0)) \u2209 {0}",
+     "paths": 136
+    },
+    {
+     "pc": "0x57b5",
+     "facts": "and(sload((keccak(cd[4], 0x8) + 2)), 0xff) == 1; and(sload((keccak(keccak(shl(0x60, and(sload(\u2026), 0xffffffffffffffffffffffffffffffffffffffff))[0:20], and((and(\u2026, 0xffffffffffffffff) + 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff), 0xffffffffffffffff)), 0x8) + 2)), 0xff) \u2209 {1, 3}",
+     "paths": 204
+    }
+   ]
+  },
+  "start: entry to status check": {
+   "ends": {
+    "revert": 50,
+    "stop_at": 8
+   },
+   "truncated": false,
+   "points": [
+    {
+     "pc": "0x1505",
+     "facts": "and(sload((keccak(?K, 0x8) + 2)), 0xff) == 0",
+     "paths": 2
+    },
+    {
+     "pc": "0x1505",
+     "facts": "and(sload((keccak(?K, 0x8) + 2)), 0xff) == 3; gt(number, (and(shr(0x40, sload((keccak(?K, 0x8) + 4))), 0xffffffffffffffff) + 0x4b0)) \u2209 {0}",
+     "paths": 2
+    },
+    {
+     "pc": "0x1505",
+     "facts": "and(sload((keccak(keccak(shl(0x60, cd[4])[0:20], cd[0x24]), 0x8) + 2)), 0xff) == 0",
+     "paths": 2
+    },
+    {
+     "pc": "0x1505",
+     "facts": "and(sload((keccak(keccak(shl(0x60, cd[4])[0:20], cd[0x24]), 0x8) + 2)), 0xff) == 3; gt(number, (and(shr(0x40, sload((keccak(keccak(\u2026[0:20], \u2026), 0x8) + 4))), 0xffffffffffffffff) + 0x4b0)) \u2209 {0}",
+     "paths": 2
+    }
+   ]
+  },
+  "stop: entry to status check": {
+   "ends": {
+    "revert": 5,
+    "stop_at": 1
+   },
+   "truncated": false,
+   "points": [
+    {
+     "pc": "0x29a9",
+     "facts": "and(sload((keccak(cd[4], 0x8) + 2)), 0xff) == 1",
+     "paths": 1
+    }
+   ]
+  },
+  "claim: entry to status check": {
+   "ends": {
+    "revert": 5,
+    "stop_at": 1
+   },
+   "truncated": false,
+   "points": [
+    {
+     "pc": "0x1279",
+     "facts": "and(sload((keccak(cd[4], 0x8) + 2)), 0xff) == 1",
+     "paths": 1
+    }
+   ]
+  },
+  "challenge: entry to status check": {
+   "ends": {
+    "revert": 17,
+    "stop_at": 3
+   },
+   "truncated": false,
+   "points": [
+    {
+     "pc": "0x344f",
+     "facts": "and(sload((keccak(cd[4], 0x8) + 2)), 0xff) == 1",
+     "paths": 1
+    },
+    {
+     "pc": "0x344f",
+     "facts": "and(sload((keccak(cd[4], 0x8) + 2)), 0xff) == 3",
+     "paths": 1
+    },
+    {
+     "pc": "0x344f",
+     "facts": "and(sload((keccak(cd[4], 0x8) + 2)), 0xff) \u2209 {1, 3}",
+     "paths": 1
+    }
+   ]
+  },
+  "reclaim: entry to status check": {
+   "ends": {
+    "revert": 4,
+    "stop_at": 2
+   },
+   "truncated": false,
+   "points": [
+    {
+     "pc": "0x1f40",
+     "facts": "and(sload((keccak(cd[4], 0x8) + 2)), 0xff) \u2209 {1}",
+     "paths": 1
+    },
+    {
+     "pc": "0x2269",
+     "facts": "and(sload((keccak(cd[4], 0x8) + 2)), 0xff) == 1",
+     "paths": 1
+    }
+   ]
+  }
+ },
+ "settlementCallSites": {
+  "challenge": [
+   "0x34d7 challenge"
+  ],
+  "stop": [
+   "0x2a02 stop"
+  ],
+  "claimMany": [
+   "0x25b3 claimMany"
+  ],
+  "kick": [
+   "0x57d6 demotion helper (ACTIVE branch)"
+  ],
+  "reclaim": [
+   "0x2082 reclaim",
+   "0x57d6 demotion helper (ACTIVE branch)"
+  ],
+  "start": [
+   "0x57d6 demotion helper (ACTIVE branch)"
+  ],
+  "claim": [
+   "0x127d claim"
+  ]
+ },
+ "library": {
+  "writeSites": {
+   "0x155e": [
+    "0x42e970bb"
+   ],
+   "0x15e3": [
+    "0x42e970bb"
+   ],
+   "0x162b": [
+    "0x42e970bb"
+   ],
+   "0x163d": [
+    "0x42e970bb"
+   ],
+   "0x164f": [
+    "0x42e970bb"
+   ],
+   "0x1740": [
+    "0x42e970bb"
+   ],
+   "0x1779": [
+    "0x42e970bb"
+   ],
+   "0x17d5": [
+    "0x42e970bb"
+   ],
+   "0x1816": [
+    "0x42e970bb"
+   ],
+   "0x182b": [
+    "0x42e970bb"
+   ],
+   "0x1839": [
+    "0x42e970bb"
+   ],
+   "0x1888": [
+    "0x42e970bb"
+   ],
+   "0x1896": [
+    "0x42e970bb"
+   ],
+   "0x18e3": [
+    "0x42e970bb"
+   ],
+   "0x1915": [
+    "0x42e970bb"
+   ],
+   "0x1928": [
+    "0x42e970bb"
+   ],
+   "0x193c": [
+    "0x42e970bb"
+   ]
+  },
+  "slotShapes": {
+   "0x155e": [
+    "(keccak((shl(1, sload(cd[4])) + keccak(cd[4]) + 1)) + 1)",
+    "(keccak((shl(1, sload(cd[4])) + keccak(cd[4]) + 1)) + 2)",
+    "(keccak((shl(1, sload(cd[4])) + keccak(cd[4]) + 1)) + 3)",
+    "(keccak((shl(1, sload(cd[4])) + keccak(cd[4]) + 1)) + 4)",
+    "(keccak((shl(1, sload(cd[4])) + keccak(cd[4]) + 1)) + shr(5, (cd[(cd[0x104] + 4)] + 0x1f)) + 1)",
+    "(keccak((shl(1, sload(cd[4])) + keccak(cd[4]) + 1)) + shr(5, (cd[(cd[0x104] + 4)] + 0x1f)) + 2)"
+   ],
+   "0x1888": [
+    "cd[4]"
+   ],
+   "0x1896": [
+    "(shl(1, sload(cd[4])) + keccak(cd[4]))"
+   ],
+   "0x18e3": [
+    "(shl(1, sload(cd[4])) + keccak(cd[4]) + 1)"
+   ],
+   "0x1915": [
+    "(shl(1, sload(cd[4])) + keccak(cd[4]) + 1)"
+   ],
+   "0x1928": [
+    "(keccak((shl(1, sload(cd[4])) + keccak(cd[4]) + 1)) + 1)",
+    "(keccak((shl(1, sload(cd[4])) + keccak(cd[4]) + 1)) + 2)",
+    "(keccak((shl(1, sload(cd[4])) + keccak(cd[4]) + 1)) + 3)",
+    "(keccak((shl(1, sload(cd[4])) + keccak(cd[4]) + 1)) + 4)",
+    "keccak((shl(1, sload(cd[4])) + keccak(cd[4]) + 1))"
+   ],
+   "0x193c": [
+    "(keccak((shl(1, sload(cd[4])) + keccak(cd[4]) + 1)) + 1)",
+    "(keccak((shl(1, sload(cd[4])) + keccak(cd[4]) + 1)) + 2)",
+    "(keccak((shl(1, sload(cd[4])) + keccak(cd[4]) + 1)) + 3)",
+    "(keccak((shl(1, sload(cd[4])) + keccak(cd[4]) + 1)) + 4)",
+    "keccak((shl(1, sload(cd[4])) + keccak(cd[4]) + 1))"
+   ]
+  }
+ },
+ "checks": {
+  "failed": []
+ },
+ "status": "PASS",
+ "seconds": 14
+}

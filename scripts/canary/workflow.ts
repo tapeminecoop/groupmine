@@ -1,9 +1,10 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { encodeFunctionData, formatUnits, keccak256, parseAbiItem, parseEventLogs, stringToHex, type Address, type Hex } from 'viem';
 import { allocationArtifact, allocationBatches, assignIds, loadAllocationFile, validateAllocation } from '../../sdk/allocation.ts';
-import { parseAllocationArtifact, readAllocationState, verifyAllocation } from '../../sdk/verify.ts';
+import { inventoryRecordFor, parseAllocationArtifact, readAllocationState, verifyAllocation } from '../../sdk/verify.ts';
 import { erc20Abi, miningAbi } from '../../sdk/constants.ts';
 import { artifact, IDS, nftAbi, P, preflight, redact, save } from './common.ts';
+import { verifyExpectedRevert } from './revert-verifier.ts';
 import { Runner } from './transactions.ts';
 
 export async function workflow(r: Runner, interrupted = false) {
@@ -40,11 +41,16 @@ export async function workflow(r: Runner, interrupted = false) {
       waits += seconds;
     }
   };
-  const rejected = async (name: string, from: Address, to: Address, data: Hex, expectedError: string) => {
-    let reason = '';
-    try { await r.rpc.call({ account: from, to, data }); } catch (e) { reason = redact(e); }
-    const expectedSelector = keccak256(stringToHex(expectedError)).slice(0, 10);
-    check(name, /revert/i.test(reason) && reason.toLowerCase().includes(expectedSelector), { simulationOnly: true, expectedError, expectedSelector, reason });
+  // Negative tests decide on revert bytes from the structured RPC error data, ABI-decoded as the expected
+  // error and arguments (scripts/canary/revert-verifier.ts), never on message text. PASS continues;
+  // FAIL (wrong error, wrong arguments, unexpected success) and UNVERIFIED (no/malformed data or
+  // transport failure after bounded retries at one block) both stop the normal workflow, recorded
+  // distinctly. Recovery runs independently afterwards either way.
+  const rejected = async (name: string, from: Address, to: Address, data: Hex, expected: { name: string; args: readonly unknown[] }) => {
+    const evidence = await verifyExpectedRevert({ rpc: r.rpc, from, to, data, expected: { abi: pabi, ...expected }, attempts: 3, retryDelayMs: 2_000 });
+    results.assertions[name] = { status: evidence.verdict, evidence: { simulationOnly: true, ...evidence } };
+    save(`${dir}/results.json`, results);
+    if (evidence.verdict !== 'PASS') throw Error(`ASSERTION_${evidence.verdict} ${name} (${evidence.kind})`);
   };
   const exactClaim = async (name: string, holder: Address, nand: bigint[], latch: bigint[], helper = false) => {
     const before = await bem(holder);
@@ -91,13 +97,17 @@ export async function workflow(r: Runner, interrupted = false) {
     save(allocationFile, { allocations: [{ wallet: owner, nandCount: 3, latchCount: 1 }, { wallet: helper, nandCount: 1, latchCount: 1 }] });
     const input = await loadAllocationFile(allocationFile);
     const validated = validateAllocation(input.file);
-    const assignments = assignIds(validated.entries, { NAND: [1, 2, 3, 4], LATCH: [1, 2] });
+    const inventory = { NAND: [1, 2, 3, 4], LATCH: [1, 2] };
+    const assignments = assignIds(validated.entries, inventory);
     for (const batch of allocationBatches(assignments)) await r.write('distributor', 'allocate', [batch]);
-    const target = { chainId: 56, distributor, nandReceipt: nand, latchReceipt: latch };
-    const alloc = allocationArtifact({ ...target, sourceSha256: input.sha256, blockNumber: await r.rpc.getBlockNumber() }, assignments);
+    const target = { chainId: 56, distributor, pool, nandReceipt: nand, latchReceipt: latch };
+    const importBlock = await r.rpc.getBlock({ blockTag: 'latest' });
+    const alloc = allocationArtifact({ chainId: 56, distributor, nandReceipt: nand, latchReceipt: latch, sourceSha256: input.sha256, blockNumber: importBlock.number },
+      assignments, inventoryRecordFor(inventory, importBlock.number, importBlock.hash));
     save(`${dir}/allocation-artifact.json`, alloc);
-    const verified = verifyAllocation(parseAllocationArtifact(alloc), await readAllocationState(r.rpc, distributor), target);
-    check('complete-allocation-verified', verified.status === 'READY_TO_FINALIZE', verified);
+    // Identity (pool included), full-round coverage of both supplies, and the reviewed JSON -> artifact.
+    const verified = verifyAllocation(parseAllocationArtifact(alloc), await readAllocationState(r.rpc, distributor), target, { review: { file: input.file, sha256: input.sha256 } });
+    check('complete-allocation-verified', verified.status === 'READY_TO_FINALIZE' && verified.review.status === 'VERIFIED', verified);
     await r.write('distributor', 'finalizeAllocation');
     await r.write('pool', 'activate', [4n, 2n]);
     for (const name of ['nand', 'latch', 'distributor', 'pool'] as const) await r.write(name, 'renounceOwnership', [], `renounce-${name}`);
@@ -174,8 +184,8 @@ export async function workflow(r: Runner, interrupted = false) {
     check('transfer-carries-positive-unpaid-income', unpaid > 0n, { historyRaw: history, unpaidRaw: unpaid });
     await r.write('nand', 'safeTransferFrom', [owner, helper, 1n, 1n, '0x'], 'transfer-unpaid-nand-1-to-helper');
     check('transfer-keeps-history-and-unpaid', await r.pool('claimed', [0, 1n]) === history && await due(0, 1n) === unpaid);
-    await rejected('former-holder-claim-rejected', owner, pool, encodeFunctionData({ abi: pabi, functionName: 'claim', args: [0, 1n] }), 'NotHolder(uint8,uint256)');
-    await rejected('non-whitelisted-admission-rejected', helper, pool, encodeFunctionData({ abi: pabi, functionName: 'depositMiners', args: [[3204n]] }), 'NotDepositor(address)');
+    await rejected('former-holder-claim-rejected', owner, pool, encodeFunctionData({ abi: pabi, functionName: 'claim', args: [0, 1n] }), { name: 'NotHolder', args: [0, 1n] });
+    await rejected('non-whitelisted-admission-rejected', helper, pool, encodeFunctionData({ abi: pabi, functionName: 'depositMiners', args: [[3204n]] }), { name: 'NotDepositor', args: [helper] });
     await exactClaim('helper-claims-transferred-nand-1', helper, [1n], [], true);
     check('repeat-claim-pays-zero', await exactClaim('helper-repeat-claim', helper, [1n], [], true) === 0n);
     for (const [role, recipient] of [['A', owner], ['B', helper]] as const) {
@@ -200,8 +210,8 @@ export async function workflow(r: Runner, interrupted = false) {
   try {
     if (pool) {
       check('permanently-closed', await r.pool('closed') === true);
-      await rejected('closed-pool-admission-rejected', owner, pool, encodeFunctionData({ abi: pabi, functionName: 'depositMiners', args: [[3204n]] }), 'CanaryClosed()');
-      await rejected('closed-pool-harvest-rejected', owner, pool, encodeFunctionData({ abi: pabi, functionName: 'harvest', args: [[3204n, 12485n]] }), 'CanaryClosed()');
+      await rejected('closed-pool-admission-rejected', owner, pool, encodeFunctionData({ abi: pabi, functionName: 'depositMiners', args: [[3204n]] }), { name: 'CanaryClosed', args: [] });
+      await rejected('closed-pool-harvest-rejected', owner, pool, encodeFunctionData({ abi: pabi, functionName: 'harvest', args: [[3204n, 12485n]] }), { name: 'CanaryClosed', args: [] });
       const finalBlock = await r.rpc.getBlockNumber({ cacheTime: 0 });
       for (const id of IDS) check(`final-owner-${id}`, (await r.read<Address>(P.minerCollection, nftAbi, 'ownerOf', [id], finalBlock)).toLowerCase() === owner.toLowerCase(), { confirmedBlock: finalBlock, blockHash: (await r.rpc.getBlock({ blockNumber: finalBlock })).hash });
       if (await r.pool('active') && helper && nand && latch) {
@@ -248,7 +258,7 @@ export async function workflow(r: Runner, interrupted = false) {
       results.observations.postReturn = returned;
       if (distributor && existsSync(`${dir}/allocation-artifact.json`)) {
         const allocation = JSON.parse(readFileSync(`${dir}/allocation-artifact.json`, 'utf8'));
-        results.observations.finalAllocation = verifyAllocation(allocation, await readAllocationState(r.rpc, distributor), { chainId: 56, distributor, nandReceipt: nand!, latchReceipt: latch! });
+        results.observations.finalAllocation = verifyAllocation(allocation, await readAllocationState(r.rpc, distributor), { chainId: 56, distributor, pool, nandReceipt: nand!, latchReceipt: latch! });
       }
       const rows = readFileSync(`${dir}/journal.jsonl`, 'utf8').trim().split('\n').map(x => JSON.parse(x)).filter(x => x.stage === 'CONFIRMED');
       const nftTransfers = rows.flatMap(x => x.events.filter((e: any) => e.address.toLowerCase() === P.minerCollection.toLowerCase() && e.topics[0] === keccak256(stringToHex('Transfer(address,address,uint256)')) && e.topics.length === 4).map((e: any) => ({ action: x.action, tokenId: BigInt(e.topics[3]) })));

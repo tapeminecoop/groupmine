@@ -11,4 +11,5 @@ broadcast/
 .DS_Store
 *.log
 !reports/logs/*.log
+!reports/remediation-*/run/logs/*.log
 .runtime-*

@@ -158,7 +158,10 @@ export function allocationBatchGas(batch: readonly DistributorInput[]): bigint {
   return ALLOCATE_GAS.base + batch.reduce((s, e) => s + ALLOCATE_GAS.perRange + e.count * ALLOCATE_GAS.perId, 0n);
 }
 
-export function allocationArtifact(meta: { chainId: number; distributor: Address; nandReceipt: Address; latchReceipt: Address; sourceSha256: string; blockNumber: bigint }, assignments: Assignment[]) {
+/** `inventory`: what the distributor held when the IDs were assigned (sdk/verify.ts `inventoryRecordFor`),
+ *  so verification can reproduce the assignment later. */
+export function allocationArtifact(meta: { chainId: number; distributor: Address; nandReceipt: Address; latchReceipt: Address; sourceSha256: string; blockNumber: bigint }, assignments: Assignment[],
+  inventory?: { blockNumber: string; blockHash: string; NAND: { count: number; sha256: string }; LATCH: { count: number; sha256: string } }) {
   const count = (ranges: Range[]) => ranges.reduce((s, [, n]) => s + n, 0);
   return {
     schema: 'tapeout-allocation-artifact/1',
@@ -166,6 +169,7 @@ export function allocationArtifact(meta: { chainId: number; distributor: Address
     blockNumber: meta.blockNumber.toString(),
     totals: { NAND: assignments.reduce((s, a) => s + count(a.NAND), 0), LATCH: assignments.reduce((s, a) => s + count(a.LATCH), 0), wallets: assignments.length },
     wallets: assignments.map(a => ({ wallet: a.wallet, ...(a.ref ? { ref: a.ref } : {}), nand: { count: count(a.NAND), ranges: a.NAND }, latch: { count: count(a.LATCH), ranges: a.LATCH } })),
+    ...(inventory ? { inventory } : {}),
     howToClaim: 'Call claim(maxIds) on the distributor from your wallet (or anyone may call deliver(yourWallet, maxIds)); receipts arrive with all BEM accrued so far, then claim BEM on the pool with claimBatch(nandIds, latchIds).',
   };
 }

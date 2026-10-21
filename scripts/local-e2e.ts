@@ -11,7 +11,9 @@ import { main as cli, json } from '../cli/pool.ts';
 import { startAnvil } from './lib/anvil.ts';
 import bytecode from '../sdk/bytecode.json' with { type: 'json' };
 import { mockBEMAbi, mockMiningAbi, mockNFTAbi, tapeoutEntitlementReceiptAbi, tapeoutMinerPoolAbi } from '../sdk/abi.ts';
+import { loadSystemFile } from '../sdk/config.ts';
 import { CATEGORY, erc20Abi } from '../sdk/constants.ts';
+import { deployPoolPlan } from '../sdk/pool.ts';
 
 const DIR = '.runtime/local-e2e';
 const BEM = 10n ** 8n;
@@ -102,8 +104,12 @@ async function main() {
     check('renounceRefusedBeforeActivationAndAllocation', /not activated/.test(earlyPool) && /allocation is not finalized/.test(earlyDistributor), { earlyPool, earlyDistributor });
     // Plan mode (the mainnet path): the distributor deployment is planned from the recorded pool address.
     const planned = await step('plan-distributor-deployment', ['deploy-distributor', '--system', systemFile, '--addresses', addressesFile, '--from', operator]);
-    const plan = (planned.plans as { to: Address | null; simulation?: { ok: boolean } }[])[0];
+    const plan = (planned.plans as { to: Address | null; simulation?: { ok: boolean }; cast: string }[])[0];
     check('distributorDeploymentPlannedFromPool', planned.mode === 'PLAN_ONLY_NOT_SENT' && plan.to === null && plan.simulation?.ok === true, planned);
+    // Remediation O-05: a plan made on a local development node names that context, is bound to its
+    // chain, and its printed command targets the local node instead of $RPC_URL.
+    const ctx = planned.context as { kind: string; chainId: number };
+    check('planBoundToLocalNodeAndChain', ctx.kind === 'LOCAL_DEV_NODE' && ctx.chainId === 31337 && plan.cast.includes(`--rpc-url "${node.url}" --chain 31337`) && !plan.cast.includes('$RPC_URL'), { ctx, cast: plan.cast.slice(0, 80) });
     await step('fund-nand', ['fund-distributor', '--addresses', addressesFile, '--category', 'NAND', '--from', operator, '--all-held', '--batch-size', '7', '--send-local']);
     await step('fund-latch', ['fund-distributor', '--addresses', addressesFile, '--category', 'LATCH', '--from', operator, '--all-held', '--send-local']);
 
@@ -148,11 +154,34 @@ async function main() {
     await step('revoke-carol', ['revoke-wallet', '--addresses', addressesFile, '--wallet', carol, '--from', operator, '--send-local']);
     const incomplete = await step('verify-after-revoke', ['verify-allocation', '--addresses', addressesFile, '--artifact', `${DIR}/artifact.json`]);
     check('revokedWalletBlocksFinalization', incomplete.status === 'MISMATCH', incomplete);
-    const restored = await step('reimport-carol', ['import-allocation', '--addresses', addressesFile, '--allocation', allocationFile, '--from', operator, '--send-local']);
+    // Remediation T-4: finalization re-verifies the current state with the reviewed inputs; it refuses
+    // without them, and refuses while the allocation does not match.
+    const noInputs = await fails('finalize-without-review-inputs', ['finalize-allocation', '--addresses', addressesFile, '--from', operator, '--send-local']);
+    check('finalizeRequiresReviewInputs', /needs --artifact and --allocation/.test(noInputs), noInputs);
+    const premature = await fails('finalize-while-revoked', ['finalize-allocation', '--addresses', addressesFile, '--artifact', `${DIR}/artifact.json`, '--allocation', allocationFile, '--from', operator, '--send-local']);
+    check('finalizeRefusedWhileAllocationMismatches', /Finalization preflight failed/.test(premature) && /MISMATCH/.test(premature), premature);
+    const restored = await step('reimport-carol', ['import-allocation', '--addresses', addressesFile, '--allocation', allocationFile, '--artifact-out', `${DIR}/artifact.json`, '--from', operator, '--send-local']);
     check('reimportOnlyRestoresTheRevokedWallet', (restored.transactions as unknown[]).length === 1 && restored.alreadyImported === 2, restored);
-    const verified = await step('verify-allocation', ['verify-allocation', '--addresses', addressesFile, '--artifact', `${DIR}/artifact.json`]);
-    check('allocationVerified', verified.status === 'READY_TO_FINALIZE' && (verified.verified as { wallets: number }).wallets === 3, verified);
-    await step('finalize-allocation', ['finalize-allocation', '--addresses', addressesFile, '--from', operator, '--send-local']);
+    const verified = await step('verify-allocation', ['verify-allocation', '--addresses', addressesFile, '--artifact', `${DIR}/artifact.json`, '--allocation', allocationFile]);
+    const vr = verified as { verified: { wallets: number }; review: { status: string; assignment: { status: string } }; coverage: Record<string, { excluded: { count: number } }>; identity: { pool: { expected: string; distributorPool: string } } };
+    check('allocationVerified', verified.status === 'READY_TO_FINALIZE' && vr.verified.wallets === 3, verified);
+    // Remediation T-5 and T-3: the reviewed JSON is tied to the artifact, and the whole supply is covered.
+    check('reviewedJsonVerifiedAgainstArtifact', vr.review.status === 'VERIFIED' && vr.review.assignment.status === 'VERIFIED', vr.review);
+    check('fullSupplyCovered', vr.coverage.NAND.excluded.count === 0 && vr.coverage.LATCH.excluded.count === 0, vr.coverage);
+    // Remediation T-01: a second valid pool Q sharing the same receipts. The distributor belongs to P;
+    // an addresses file naming Q must not verify, even though every wallet and ID matches.
+    const system = await loadSystemFile(systemFile);
+    const poolQ = (await send(operator, null, deployPoolPlan(system, addresses.nandReceipt, addresses.latchReceipt).data)).contractAddress as Address;
+    const addressesQ = `${DIR}/addresses-q.json`;
+    await writeFile(addressesQ, json({ ...addresses, pool: poolQ }));
+    const wrongPool = await step('verify-with-another-pool', ['verify-allocation', '--addresses', addressesQ, '--artifact', `${DIR}/artifact.json`, '--allocation', allocationFile]);
+    check('verifyRejectsAPoolTheDistributorDoesNotBelongTo', wrongPool.status === 'MISMATCH' && (wrongPool.mismatches as string[]).some(m => m.toLowerCase().includes(`configured pool ${poolQ.toLowerCase()} is not the distributor`)), wrongPool);
+    const wrongPoolWrite = await fails('write-with-another-pool', ['release', '--addresses', addressesQ, '--from', outsider, '--send-local']);
+    check('writesRefusedForInconsistentDeployment', /Deployment check failed/.test(wrongPoolWrite) && /belongs to pool/.test(wrongPoolWrite), wrongPoolWrite);
+    const deploymentOk = await step('verify-deployment', ['verify-deployment', '--addresses', addressesFile, '--system', systemFile]);
+    check('deploymentMatchesTemplatesAndBindings', deploymentOk.status === 'MATCHES', deploymentOk);
+    const finalizedPlan = await step('finalize-allocation', ['finalize-allocation', '--addresses', addressesFile, '--artifact', `${DIR}/artifact.json`, '--allocation', allocationFile, '--from', operator, '--send-local']);
+    check('finalizeRecordsItsVerification', (finalizedPlan.verification as { status: string }).status === 'READY_TO_FINALIZE', finalizedPlan.verification);
     const finalized = await step('verify-after-finalization', ['verify-allocation', '--addresses', addressesFile, '--artifact', `${DIR}/artifact.json`]);
     check('verifyAfterFinalizationMatches', finalized.status === 'FINALIZED_AND_MATCHES', finalized);
     const emptyAfter = await variant('no-wallets-finalized', a => ({ ...a, wallets: [], totals: { NAND: 0, LATCH: 0, wallets: 0 } }));
@@ -190,9 +219,18 @@ async function main() {
     check('plainTransferDidNotAdmit', (await read<bigint>(pool, tapeoutMinerPoolAbi as Abi, 'minerCount')) === 2n);
 
     // 7. Users claim receipts (late) and BEM; entitlement follows a transfer.
-    await step('alice-claims-receipts', ['claim-receipts', '--addresses', addressesFile, '--from', alice, '--send-local']);
+    const aliceReceipts = await step('alice-claims-receipts', ['claim-receipts', '--addresses', addressesFile, '--from', alice, '--send-local']);
+    check('deliveriesReplannedBeforeEachSend', aliceReceipts.replannedBeforeEachSend === true && (aliceReceipts.transactions as unknown[]).length >= 1, aliceReceipts);
+    // Remediation P-01: repeated IDs are claimed once; preview and payment agree in the same state.
+    const before = await read<bigint>(bem, erc20Abi as Abi, 'balanceOf', [alice]);
+    const dup = await step('alice-claims-with-repeated-ids', ['claim', '--addresses', addressesFile, '--from', alice, '--nand', '1,1,2', '--latch', '1', '--send-local']);
+    const dupNorm = dup.normalized as { removedDuplicates: { NAND: bigint[]; LATCH: bigint[] } } | undefined;
+    const dupPaid = (await read<bigint>(bem, erc20Abi as Abi, 'balanceOf', [alice])) - before;
+    check('repeatedClaimIdsNormalizedAndPreviewEqualsPayment', !!dupNorm && dupNorm.removedDuplicates.NAND.map(String).join(',') === '1' && dupNorm.removedDuplicates.LATCH.length === 0
+      && dupPaid === BigInt(dup.expectedPayoutRaw as string | bigint) && dupPaid > 0n, { dup, dupPaid });
+    const aliceBefore = await read<bigint>(bem, erc20Abi as Abi, 'balanceOf', [alice]);
     const aliceClaim = await step('alice-claims-bem', ['claim', '--addresses', addressesFile, '--from', alice, '--all', '--send-local']);
-    check('aliceExactPayout', (await read<bigint>(bem, erc20Abi as Abi, 'balanceOf', [alice])) === BigInt(aliceClaim.expectedPayoutRaw as string | bigint));
+    check('aliceExactPayout', (await read<bigint>(bem, erc20Abi as Abi, 'balanceOf', [alice])) - aliceBefore === BigInt(aliceClaim.expectedPayoutRaw as string | bigint));
     await write(mining, mockMiningAbi as Abi, 'accrue', [nft, 1n, 51n * BEM]);
     await step('harvest', ['harvest', '--addresses', addressesFile, '--all', '--from', keeper, '--send-local']);
     await step('bob-claims-receipts-late', ['claim-receipts', '--addresses', addressesFile, '--from', bob, '--send-local']);

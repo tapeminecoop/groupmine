@@ -260,7 +260,7 @@ async function main() {
     // Contract creation cannot go through a Safe: the CLI refuses to write such a file.
     let refusal = '';
     try {
-      await cli(['deploy-receipts', '--system', systemFile, '--safe-json', `${DIR}/deploy.json`, '--rpc-url', node.url]);
+      await cli(['deploy-receipts', '--system', systemFile, '--safe-json', `${DIR}/deploy.json`, '--safe', operator.address, '--rpc-url', node.url]);
     } catch (error) {
       refusal = error instanceof Error ? error.message : String(error);
     }
@@ -297,9 +297,9 @@ async function main() {
       { wallet: member.address, nandCount: 50, latchCount: 10 }, { wallet: actor.alice, nandCount: 250, latchCount: 25 }, { wallet: actor.bob, nandCount: 200, latchCount: 25 },
     ] }));
     await safeStep('import-allocation', ['import-allocation', '--addresses', addressesFile, '--allocation', allocationFile, '--artifact-out', `${DIR}/artifact.json`], operator);
-    const ready = await step('verify-allocation', ['verify-allocation', '--addresses', addressesFile, '--artifact', `${DIR}/artifact.json`]);
+    const ready = await step('verify-allocation', ['verify-allocation', '--addresses', addressesFile, '--artifact', `${DIR}/artifact.json`, '--allocation', allocationFile]);
     check('allocationReadyToFinalize', ready.status === 'READY_TO_FINALIZE', ready);
-    await safeStep('finalize-allocation', ['finalize-allocation', '--addresses', addressesFile], operator);
+    await safeStep('finalize-allocation', ['finalize-allocation', '--addresses', addressesFile, '--artifact', `${DIR}/artifact.json`, '--allocation', allocationFile], operator);
     await safeStep('activate', ['activate', '--addresses', addressesFile, '--nand-shares', '500', '--latch-shares', '60'], operator);
     check('poolActive', await read<boolean>(pool, poolAbi, 'active'));
     for (const target of ['nand', 'latch', 'distributor', 'pool']) await safeStep(`renounce-${target}`, ['renounce', '--addresses', addressesFile, '--target', target], operator);
@@ -358,6 +358,21 @@ async function main() {
     await step('release-2', ['release', '--addresses', addressesFile, '--from', actor.keeper, '--send-local']);
     const newA = await bemOf(actor.newRecipientA), newB = await bemOf(actor.newRecipientB);
     check('newRecipientsPaidAndSafesNoLonger', newA > 0n && newA === newB && await bemOf(operator.address) === paidA && await bemOf(recipient.address) === paidB, { newA, newB });
+
+    // Wallet capability beyond ERC-165 (review O-04): the member Safe transfers a delivered receipt
+    // (an owner-signed Safe transaction, not a CLI plan), and the new holder claims what accrued since.
+    const transfer = await safeTx(member, nand, 0n, encodeFunctionData({ abi: receiptAbi, functionName: 'safeTransferFrom', args: [member.address, actor.alice, 1n, 1n, '0x'] }), 0);
+    const transferData = transfer.exec(await transfer.sign(member.owners.slice(0, member.threshold)));
+    await send(actor.executor, member.address, transferData, 'member Safe transfers NAND #1 to alice (owner-signed Safe transaction)');
+    check('memberSafeTransferredAReceipt', await read<bigint>(nand, receiptAbi, 'balanceOf', [actor.alice, 1n]) === 1n && await read<bigint>(nand, receiptAbi, 'balanceOf', [member.address, 1n]) === 0n);
+    await advance(3600);
+    await step('harvest-3', ['harvest', '--addresses', addressesFile, '--all', '--isolate-failures', '--from', actor.keeper, '--send-local']);
+    const aliceBefore = await bemOf(actor.alice);
+    const aliceClaim = await step('alice-claims-transferred-receipt', ['claim', '--addresses', addressesFile, '--from', actor.alice, '--nand', '1', '--send-local']);
+    const alicePaid = (await bemOf(actor.alice)) - aliceBefore;
+    check('newHolderClaimsAfterSafeTransfer', alicePaid > 0n && alicePaid === BigInt(aliceClaim.expectedPayoutRaw as bigint | string), { alicePaid });
+    const formerHolder = await step('member-preview-for-transferred-receipt', ['claim', '--addresses', addressesFile, '--holder', member.address, '--nand', '1']);
+    check('formerSafeHolderCannotClaimIt', json(formerHolder.notHeld ?? {}).includes('"1"'), formerHolder);
 
     const reconcile = await step('reconcile-deep', ['reconcile', '--addresses', addressesFile, '--deep']);
     check('reconcilePass', reconcile.status === 'PASS', reconcile.checks);

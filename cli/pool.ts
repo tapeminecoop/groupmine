@@ -6,13 +6,15 @@
  * `cast send` command, and a simulation when --from is given). `--safe-json FILE` writes a Safe
  * Transaction Builder batch; `--send-local` executes on a loopback Anvil node only.
  */
+import { createHash } from 'node:crypto';
 import { readFile, writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { getAddress, keccak256, zeroAddress, type Address } from 'viem';
 import {
   ALLOCATE_GAS, BATCH_GAS_BUDGET, BSC_IDENTITY, BSC_PROTOCOL, CATEGORY, CLAIM_GAS, ERC1967_BEACON_SLOT, ERC1967_IMPLEMENTATION_SLOT, FUND_GAS,
   HARVEST_GAS, ISSUE_GAS, LATCH_CATEGORY, NAND_CATEGORY, RECIPIENT, TX_GAS_CAP, accrue, activatePlan, admissionGasEstimate, allocatePlans,
-  allocationArtifact, assertWithinBudget, checkBatchSize, groupForSafe, maxDeliverable, maxIdsPerTx, safeBatchGas,
+  allocationArtifact, assertWithinBudget, checkBatchSize, groupForSafe, maxIdsPerTx, maxSafeDeliverable, safeBatchGas,
+  canonicalClaimIds, checkDeployment, executionContext, inventoryRecordFor, printableLoopback, readInventoryAt, type VerifyMode,
   allocationBatches, approveMinersPlan, assertLocalAnvil, assignIds, beaconAbi, castCommand, checkPerIdHistories,
   checkReconciliation, claimPlans, client, deliveryPlans, depositPlans, deployDistributorPlan,
   deployPoolPlan, deployReceiptPlans, describeError, erc20Abi, erc721Abi, finalizeAllocationPlan, finalizeIssuancePlan,
@@ -25,13 +27,17 @@ import {
 } from '../sdk/index.js';
 
 type Flags = Record<string, string | boolean>;
-const BOOLEAN = new Set(['send-local', 'impersonate', 'all', 'all-held', 'miners', 'pending', 'deep', 'isolate-failures', 'help']);
+const BOOLEAN = new Set(['send-local', 'impersonate', 'all', 'all-held', 'miners', 'pending', 'deep', 'isolate-failures', 'partial', 'help']);
 const VALUE = new Set(['system', 'addresses', 'addresses-out', 'allocation', 'artifact', 'artifact-out', 'rpc-url', 'from', 'holder', 'wallet', 'out',
   'safe-json', 'safe', 'income', 'token-ids', 'nand', 'latch', 'ids', 'batch-size', 'category', 'to', 'count', 'role', 'target', 'max-ids',
   'nand-shares', 'latch-shares', 'nand-burn', 'latch-burn']);
 export const COMMANDS = ['preview', 'check-system', 'protocol-check', 'deploy-receipts', 'issue', 'retract', 'finalize-issuance', 'deploy', 'deploy-distributor',
   'fund-distributor', 'import-allocation', 'verify-allocation', 'revoke-wallet', 'finalize-allocation', 'activate', 'renounce', 'composition', 'deposit', 'register', 'harvest',
-  'claim-receipts', 'deliver', 'claim', 'release', 'set-recipient', 'inspect', 'reconcile'] as const;
+  'claim-receipts', 'deliver', 'claim', 'release', 'set-recipient', 'inspect', 'reconcile', 'verify-deployment'] as const;
+/** Commands that plan or send transactions against an addresses file: each is bound to that file's
+ *  chain and to a deployment check of its contracts first. */
+const WRITE_COMMANDS = new Set(['issue', 'retract', 'finalize-issuance', 'deploy', 'deploy-distributor', 'fund-distributor', 'import-allocation', 'revoke-wallet',
+  'finalize-allocation', 'activate', 'renounce', 'deposit', 'register', 'harvest', 'claim-receipts', 'deliver', 'claim', 'release', 'set-recipient']);
 
 export const json = (value: unknown) => JSON.stringify(value, (_, v) => (typeof v === 'bigint' ? v.toString() : v), 2);
 
@@ -81,44 +87,67 @@ const receiptAddress = (a: Addresses, c: CategoryName) => addr(c === 'NAND' ? a.
 const poolOf = (a: Addresses) => { if (!a.pool) throw new Error('addresses file has no pool yet (run deploy)'); return addr(a.pool); };
 const distributorOf = (a: Addresses) => { if (!a.distributor) throw new Error('addresses file has no distributor yet (run deploy)'); return addr(a.distributor); };
 
+/** Per-invocation binding, set by `main`: the chain the reviewed files name and the deployment check. */
+let binding: { expectedChainId?: number; deployment?: unknown } = {};
+
 /** Shared execution path for every write command. Every plan must fit the per-transaction gas budget
  *  (BSC caps a transaction's gas limit at 2^24, BEP-652); its worst-case bound is the gas limit for
  *  local sends and printed cast commands. Safe batch files are split so each Safe transaction, the
- *  Safe's own work included, fits the budget (a single oversized plan goes alone, within the cap). */
+ *  Safe's own work included, fits the budget (a single oversized plan goes alone, within the cap).
+ *  Plans are bound to the chain the addresses (or system) file names: the planning node must serve it,
+ *  printed `cast` commands carry `--chain`, and Safe files carry it with the Safe that must execute them. */
 async function execute(command: string, flags: Flags, plans: TxPlan[], extra: Record<string, unknown> = {}) {
   assertWithinBudget(plans);
-  const from = str(flags, 'from') ? addr(need(flags, 'from')) : undefined;
+  let from = str(flags, 'from') ? addr(need(flags, 'from')) : undefined;
+  const hasRpc = !!(flags['rpc-url'] || process.env.RPC_URL);
+  const rpc = hasRpc ? client(rpcUrl(flags)) : undefined;
+  const context = rpc ? await executionContext(rpc, rpcUrl(flags)) : undefined;
+  if (context && binding.expectedChainId !== undefined && context.chainId !== binding.expectedChainId) {
+    throw new Error(`The node serves chain ${context.chainId} but the reviewed files name chain ${binding.expectedChainId}; refusing to plan`);
+  }
+  const bound = { ...(context ? { context } : {}), ...(binding.deployment ? { deployment: binding.deployment } : {}) };
   if (flags['send-local']) {
     if (!from) throw new Error('--send-local needs --from (an unlocked or impersonated Anvil account)');
-    const url = rpcUrl(flags);
-    const rpc = client(url);
-    const node = await assertLocalAnvil(url, rpc);
-    if (flags.impersonate) await impersonate(rpc, from);
+    const node = await assertLocalAnvil(rpcUrl(flags), rpc!);
+    if (flags.impersonate) await impersonate(rpc!, from);
     const sent: SentTx[] = [];
-    for (const plan of plans) sent.push(await sendLocal(rpc, plan, from));
-    return { command, mode: 'SENT_LOCAL_ANVIL', node, from, transactions: sent, ...extra };
+    for (const plan of plans) sent.push(await sendLocal(rpc!, plan, from));
+    return { command, mode: 'SENT_LOCAL_ANVIL', node, from, transactions: sent, ...bound, ...extra };
   }
-  const hasRpc = !!(flags['rpc-url'] || process.env.RPC_URL);
-  const chainId = hasRpc ? await client(rpcUrl(flags)).getChainId() : undefined;
   const safePath = str(flags, 'safe-json');
-  const safeFiles: { file: string; transactions: number; plansMaxGas?: bigint; maxGas?: bigint }[] = [];
+  const safeFiles: { file: string; sha256: string; chainId: number; safe: Address; transactions: number; targets: (Address | null)[]; plansMaxGas?: bigint; maxGas?: bigint }[] = [];
   if (safePath) {
+    // A Safe file is bound to the chain it was planned on and to the Safe that executes it.
+    if (!context) throw new Error('--safe-json needs --rpc-url: the batch file records the chain it was planned on');
+    if (!str(flags, 'safe')) throw new Error('--safe-json needs --safe ADDRESS: the Safe that will execute the file');
+    const safe = addr(need(flags, 'safe'));
+    if (from && from !== safe) throw new Error(`--from ${from} is not the executing Safe ${safe}`);
+    from = safe;
     // The Transaction Builder executes a whole batch file as one transaction; maxGas adds the Safe's
     // own work to the plans' bounds and is the gas limit to execute it with.
     const groups = groupForSafe(plans);
     for (const [i, group] of groups.entries()) {
       const file = groups.length === 1 ? safePath : safePath.replace(/(\.json)?$/, `.${i + 1}$1`);
       const name = `TapeOut pool: ${command}${groups.length === 1 ? '' : ` (${i + 1} of ${groups.length})`}`;
-      await writeFile(file, json(safeBatch(group, chainId ?? 56, name, str(flags, 'safe') ? addr(need(flags, 'safe')) : undefined)) + '\n');
-      const bounded = group.every(p => p.gas !== undefined);
-      safeFiles.push({ file, transactions: group.length, ...(bounded ? { plansMaxGas: group.reduce((s, p) => s + p.gas!, 0n), maxGas: safeBatchGas(group) } : {}) });
+      const text = json(safeBatch(group, context.chainId, name, safe)) + '\n';
+      await writeFile(file, text);
+      const fits = group.every(p => p.gas !== undefined);
+      safeFiles.push({ file, sha256: createHash('sha256').update(text).digest('hex'), chainId: context.chainId, safe, transactions: group.length, targets: group.map(p => p.to),
+        ...(fits ? { plansMaxGas: group.reduce((s, p) => s + p.gas!, 0n), maxGas: safeBatchGas(group) } : {}) });
     }
   }
-  const simulations = from && hasRpc ? await simulateSequentially(client(rpcUrl(flags)), plans, from) : undefined;
+  const simulations = from && rpc ? await simulateSequentially(rpc, plans, from) : undefined;
+  // Plans made on a loopback development node (a local fork answers chain 56 too) print commands that
+  // target that node; otherwise $RPC_URL must be the planning endpoint, checkable by the block hash.
+  const castRpc = context?.kind === 'LOCAL_DEV_NODE' ? printableLoopback(rpcUrl(flags)) : undefined;
   return {
-    command, mode: 'PLAN_ONLY_NOT_SENT', chainId, ...extra,
+    command, mode: 'PLAN_ONLY_NOT_SENT', chainId: context?.chainId, ...(from ? { sender: from } : {}), ...bound, ...extra,
+    ...(context ? { castRpc: castRpc
+      ? { url: castRpc, note: 'planned on a local development node: the commands target it, never $RPC_URL' }
+      : { url: '$RPC_URL', note: `RPC_URL must be the endpoint these plans were made on: for block ${context.planningBlock.number} it returns hash ${context.planningBlock.hash}` } } : {}),
     ...(safeFiles.length ? { safeBatchFiles: safeFiles, ...(safeFiles.length > 1 ? { safeBatchNote: 'each file is one Safe transaction; execute them in order' } : {}) } : {}),
-    plans: plans.map((p, i) => ({ description: p.description, to: p.to, value: p.value, data: p.data, maxGas: p.gas, cast: castCommand(p), ...(simulations ? { simulation: simulations[i] } : {}) })),
+    plans: plans.map((p, i) => ({ description: p.description, to: p.to, value: p.value, data: p.data, maxGas: p.gas, ...(p.standalone ? { standalone: true } : {}),
+      cast: castCommand(p, context?.chainId, castRpc), ...(simulations ? { simulation: simulations[i] } : {}) })),
   };
 }
 
@@ -143,8 +172,41 @@ async function writeAddresses(file: string, a: Addresses) {
   await writeFile(file, json(a) + '\n');
 }
 
+/** Shared by verify-allocation and the finalize-allocation gate: the artifact (with --allocation, also
+ *  the reviewed JSON) against the configured system at one pinned block, and the receive hooks of the
+ *  wallets still waiting for receipts. Full-round coverage unless --partial is given. */
+async function runVerification(rpc: ReturnType<typeof client>, addresses: Addresses, flags: Flags) {
+  const distributor = distributorOf(addresses);
+  const target = { chainId: addresses.chainId, distributor, pool: poolOf(addresses), nandReceipt: addr(addresses.nandReceipt), latchReceipt: addr(addresses.latchReceipt) };
+  // Untrusted input: validated at runtime, then compared with the chain in both directions.
+  const artifact = parseAllocationArtifact(JSON.parse(await readFile(need(flags, 'artifact'), 'utf8')));
+  const review = str(flags, 'allocation') ? await loadAllocationFile(need(flags, 'allocation')) : undefined;
+  const mode: VerifyMode = flags.partial ? 'partial' : 'full-round';
+  const state = await readAllocationState(rpc, distributor);
+  let result = verifyAllocation(artifact, state, target, { mode, review });
+  // When the current state cannot reproduce the inventory the import used, read the distributor's
+  // holdings at that block instead (needs archive state); never today's remaining availability.
+  if (review && result.review.assignment.status === 'UNVERIFIED') {
+    let historicalInventory: Record<CategoryName, number[]> | 'unavailable';
+    try {
+      historicalInventory = await readInventoryAt(rpc, distributor, { NAND: target.nandReceipt, LATCH: target.latchReceipt }, BigInt(artifact.inventory?.blockNumber ?? artifact.blockNumber));
+    } catch {
+      historicalInventory = 'unavailable';
+    }
+    result = verifyAllocation(artifact, state, target, { mode, review, historicalInventory });
+  }
+  // Wallets that still have receipts to take must be able to receive them (ERC-165 and simulated hooks).
+  const waiting = state.wallets.filter(w => w.ranges.some(r => r.delivered < r.count)).map(w => w.wallet);
+  const unreachableWallets = await receiverProblems(rpc, waiting, state.blockNumber, { receipt: target.nandReceipt, operator: distributor });
+  if (unreachableWallets.length && (result.status === 'READY_TO_FINALIZE' || result.status === 'READY_TO_FINALIZE_PARTIAL')) {
+    return { ...result, status: 'NOT_READY' as const, readinessGaps: [...result.readinessGaps, 'some wallets cannot receive ERC-1155'], unreachableWallets };
+  }
+  return { ...result, unreachableWallets };
+}
+
 export async function main(argv = process.argv.slice(2)): Promise<unknown> {
   const { command, flags } = parse(argv);
+  binding = {};
   if (!command || command === 'help' || flags.help || !(COMMANDS as readonly string[]).includes(command)) {
     return { usage: 'npm run pool -- <command> [flags]', commands: COMMANDS, docs: 'docs/OPERATIONS.md' };
   }
@@ -165,6 +227,7 @@ export async function main(argv = process.argv.slice(2)): Promise<unknown> {
 
   if (command === 'deploy-receipts') {
     const f = await loadSystemFile(need(flags, 'system'));
+    binding.expectedChainId = f.chainId;
     const result = await execute(command, flags, deployReceiptPlans(f)) as Record<string, unknown>;
     const sent = result.transactions as SentTx[] | undefined;
     if (sent) {
@@ -201,6 +264,21 @@ export async function main(argv = process.argv.slice(2)): Promise<unknown> {
   }
 
   const addresses = await loadAddresses(need(flags, 'addresses'));
+  binding.expectedChainId = addresses.chainId;
+
+  if (command === 'verify-deployment') {
+    const system = str(flags, 'system') ? await loadSystemFile(need(flags, 'system')) : undefined;
+    return { command, ...await checkDeployment(rpc, addresses, system),
+      note: 'Deployed code is compared with the SDK runtime templates outside their immutable slots, and the bindings are read from the contracts. Template hashes are not deployed code hashes for the pool and distributor.' };
+  }
+  if (WRITE_COMMANDS.has(command)) {
+    // Every write is planned against the reviewed addresses file: same chain, expected code, consistent bindings.
+    const system = str(flags, 'system') ? await loadSystemFile(need(flags, 'system')) : undefined;
+    const deployment = await checkDeployment(rpc, addresses, system);
+    if (deployment.problems.length) throw new Error(`Deployment check failed (see verify-deployment):\n- ${deployment.problems.join('\n- ')}`);
+    binding.deployment = { status: deployment.status, block: deployment.block, notes: deployment.notes,
+      contracts: Object.fromEntries(Object.entries(deployment.contracts).map(([k, v]) => [k, (v as { address: Address; deployedCodeHash?: string }).address])) };
+  }
 
   if (command === 'issue') {
     const c = category(flags);
@@ -272,7 +350,7 @@ export async function main(argv = process.argv.slice(2)): Promise<unknown> {
     const { file, sha256 } = await loadAllocationFile(need(flags, 'allocation'));
     const { entries, totals } = validateAllocation(file);
     const block = await rpc.getBlock({ blockTag: 'latest' });
-    const unreachable = await receiverProblems(rpc, entries.map(e => e.wallet), block.number);
+    const unreachable = await receiverProblems(rpc, entries.map(e => e.wallet), block.number, { receipt: addr(addresses.nandReceipt), operator: distributor });
     if (unreachable.length) throw new Error(`Allocation preflight failed (wallets that cannot receive ERC-1155):\n- ${unreachable.join('\n- ')}`);
     const inventory = {
       NAND: await readHeldIds(rpc, addr(addresses.nandReceipt), distributor, block.number),
@@ -294,7 +372,10 @@ export async function main(argv = process.argv.slice(2)): Promise<unknown> {
       if (remaining.NAND.length + remaining.LATCH.length === 0) alreadyImported++;
       else pending.push({ ...a, ...remaining });
     }
-    const artifact = allocationArtifact({ chainId: addresses.chainId, distributor, nandReceipt: addr(addresses.nandReceipt), latchReceipt: addr(addresses.latchReceipt), sourceSha256: sha256, blockNumber: block.number }, assignments);
+    // The artifact records the inventory the IDs were assigned from, so verification can reproduce the
+    // assignment from the reviewed JSON later (sdk/verify.ts).
+    const artifact = allocationArtifact({ chainId: addresses.chainId, distributor, nandReceipt: addr(addresses.nandReceipt), latchReceipt: addr(addresses.latchReceipt), sourceSha256: sha256, blockNumber: block.number },
+      assignments, inventoryRecordFor(inventory, block.number!, block.hash!));
     const out = str(flags, 'artifact-out');
     if (out) await writeFile(out, json(artifact) + '\n');
     // IDs per transaction; the batcher also splits by range count so each batch fits the gas budget.
@@ -303,20 +384,7 @@ export async function main(argv = process.argv.slice(2)): Promise<unknown> {
       { totals, inventory: { NAND: inventory.NAND.length, LATCH: inventory.LATCH.length }, wallets: assignments.length, alreadyImported, ...(out ? { artifact: out } : {}) });
   }
 
-  if (command === 'verify-allocation') {
-    const distributor = distributorOf(addresses);
-    // Untrusted input: validated at runtime, then compared with the chain (pinned to one block) in both directions.
-    const artifact = parseAllocationArtifact(JSON.parse(await readFile(need(flags, 'artifact'), 'utf8')));
-    const state = await readAllocationState(rpc, distributor);
-    const result = verifyAllocation(artifact, state, { chainId: addresses.chainId, distributor, nandReceipt: addr(addresses.nandReceipt), latchReceipt: addr(addresses.latchReceipt) });
-    // Wallets that still have receipts to take must be able to receive them.
-    const waiting = state.wallets.filter(w => w.ranges.some(r => r.delivered < r.count)).map(w => w.wallet);
-    const unreachableWallets = await receiverProblems(rpc, waiting, state.blockNumber);
-    if (result.status === 'READY_TO_FINALIZE' && unreachableWallets.length) {
-      return { command, ...result, status: 'NOT_READY', readinessGaps: [...result.readinessGaps, 'some wallets cannot receive ERC-1155'], unreachableWallets };
-    }
-    return { command, ...result, unreachableWallets };
-  }
+  if (command === 'verify-allocation') return { command, ...await runVerification(rpc, addresses, flags) };
 
   if (command === 'revoke-wallet') {
     const distributor = distributorOf(addresses);
@@ -326,7 +394,25 @@ export async function main(argv = process.argv.slice(2)): Promise<unknown> {
     return execute(command, flags, [revokeWalletPlan(distributor, wallet, ranges)], { removes: ranges.map(r => ({ category: r.category === 0 ? 'NAND' : 'LATCH', firstId: r.firstId, count: r.count })) });
   }
 
-  if (command === 'finalize-allocation') return execute(command, flags, [finalizeAllocationPlan(distributorOf(addresses))]);
+  if (command === 'finalize-allocation') {
+    // Irreversible: re-run the shared verification on the current state with the reviewed inputs.
+    // An earlier PASS is not accepted; the distributor itself would also finalize an empty inventory.
+    if (!str(flags, 'artifact') || !str(flags, 'allocation')) {
+      throw new Error('finalize-allocation needs --artifact and --allocation (the reviewed JSON): both are re-verified against the current chain state first');
+    }
+    const result = await runVerification(rpc, addresses, flags);
+    const ready = flags.partial ? 'READY_TO_FINALIZE_PARTIAL' : 'READY_TO_FINALIZE';
+    const problems = [
+      ...(result.status !== ready ? [`verification status is ${result.status}, not ${ready}`] : []),
+      ...(result.review.status !== 'VERIFIED' ? [`the reviewed allocation is ${result.review.status}${result.review.assignment.reason ? `: ${result.review.assignment.reason}` : ''}`] : []),
+      ...result.mismatches.slice(0, 10), ...result.readinessGaps, ...result.unreachableWallets,
+    ];
+    if (problems.length) throw new Error(`Finalization preflight failed:\n- ${[...new Set(problems)].join('\n- ')}`);
+    return execute(command, flags, [finalizeAllocationPlan(distributorOf(addresses))], {
+      verification: { status: result.status, mode: result.mode, blockNumber: result.blockNumber, blockHash: result.blockHash, coverage: result.coverage, review: result.review },
+      note: 'Operational guard only: the distributor owner can still call finalizeAllocation directly, and state can change between this check and execution',
+    });
+  }
 
   if (command === 'activate') {
     const nandShares = uint(need(flags, 'nand-shares'));
@@ -414,30 +500,60 @@ export async function main(argv = process.argv.slice(2)): Promise<unknown> {
     const waiting = { NAND: 0n, LATCH: 0n };
     for (const r of ranges) waiting[r.category === 0 ? 'NAND' : 'LATCH'] += r.count - r.delivered;
     if (waiting.NAND + waiting.LATCH === 0n) return { command, status: 'NOTHING_TO_DELIVER', wallet };
-    // A delivery's cost grows with the IDs and ranges it transfers; plan as many deliveries as needed,
-    // each within the gas budget (--max-ids caps every delivery).
-    const fits = maxDeliverable(ranges);
+    // A delivery's cost grows with the IDs and ranges it transfers, and anyone may deliver part of the
+    // wallet before a planned call executes: every call is bounded for any reachable cursor position
+    // (--max-ids caps every delivery).
+    const fits = maxSafeDeliverable(ranges);
     const cap = str(flags, 'max-ids') ? Number(uint(need(flags, 'max-ids'))) : 300;
     if (cap < 1) throw new Error('Invalid --max-ids');
-    if (str(flags, 'max-ids') && cap > fits) throw new Error(`--max-ids ${cap} is above ${fits} for this wallet's ranges: BSC limits a transaction's gas to ${TX_GAS_CAP} (BEP-652)`);
-    const plans = deliveryPlans(distributor, wallet, ranges, cap, command === 'deliver');
-    return execute(command, flags, plans, { waiting, deliveries: plans.length });
+    if (str(flags, 'max-ids') && cap > fits) throw new Error(`--max-ids ${cap} is above ${fits} for this wallet's ranges at every reachable cursor position: BSC limits a transaction's gas to ${TX_GAS_CAP} (BEP-652)`);
+    const push = command === 'deliver';
+    const note = 'Each delivery fits its gas limit even if others deliver part of this wallet first. If they deliver all of it, a remaining delivery reverts with NothingToDeliver (nothing is lost); replan instead of retrying it.';
+    if (flags['send-local']) {
+      // Re-read and replan before every submission (in addition to the reachable-state bound).
+      const transactions: SentTx[] = [];
+      let last: Record<string, unknown> = {};
+      for (let i = 0; i < 10_000; i++) {
+        const current = await readWalletRanges(rpc, distributor, wallet);
+        if (!current.some(r => r.delivered < r.count)) break;
+        last = await execute(command, flags, [deliveryPlans(distributor, wallet, current, cap, push)[0]]) as Record<string, unknown>;
+        transactions.push(...(last.transactions as SentTx[]));
+      }
+      return { ...last, transactions, waiting, deliveries: transactions.length, replannedBeforeEachSend: true, note };
+    }
+    const plans = deliveryPlans(distributor, wallet, ranges, cap, push);
+    return execute(command, flags, plans, { waiting, deliveries: plans.length, note });
   }
 
   if (command === 'claim') {
     const holder = addr(str(flags, 'holder') ?? need(flags, 'from'));
-    const holdings = await readHoldings(rpc, pool, holder, addresses.distributor ? addr(addresses.distributor) : undefined);
+    const block = await rpc.getBlockNumber();
+    const holdings = await readHoldings(rpc, pool, holder, addresses.distributor ? addr(addresses.distributor) : undefined, block);
     let nand = idList(str(flags, 'nand'));
     let latch = idList(str(flags, 'latch'));
     if (flags.all) {
       nand = holdings.NAND.ids.filter((_, i) => holdings.NAND.claimable[i] > 0n).map(BigInt);
       latch = holdings.LATCH.ids.filter((_, i) => holdings.LATCH.claimable[i] > 0n).map(BigInt);
     }
+    // Inputs are sets per category: the pool's claimableBatch view counts a repeated ID once per
+    // occurrence but claimBatch pays it once, so the preview, simulation and transaction all use the
+    // same canonical IDs, and any normalization is reported.
+    const canonical = canonicalClaimIds(nand, latch);
+    nand = canonical.NAND;
+    latch = canonical.LATCH;
     if (nand.length + latch.length === 0) return { command, status: 'NOTHING_TO_CLAIM', holdings };
     if (str(flags, 'from') && addr(need(flags, 'from')) !== holder) throw new Error('BEM claims must be sent by the receipt holder');
+    const held = { NAND: new Set(holdings.NAND.ids.map(BigInt)), LATCH: new Set(holdings.LATCH.ids.map(BigInt)) };
+    const notHeld = { NAND: nand.filter(id => !held.NAND.has(id)), LATCH: latch.filter(id => !held.LATCH.has(id)) };
     const expected = holdings.NAND.ids.reduce((s, id, i) => (nand.includes(BigInt(id)) ? s + holdings.NAND.claimable[i] : s), 0n)
       + holdings.LATCH.ids.reduce((s, id, i) => (latch.includes(BigInt(id)) ? s + holdings.LATCH.claimable[i] : s), 0n);
-    return execute(command, flags, claimPlans(pool, nand, latch, batch(flags, 200, maxIdsPerTx(CLAIM_GAS), command)), { holder, expectedPayoutRaw: expected, expectedPayoutBem: formatBem(expected) });
+    return execute(command, flags, claimPlans(pool, nand, latch, batch(flags, 200, maxIdsPerTx(CLAIM_GAS), command)), {
+      holder, ids: { NAND: nand, LATCH: latch },
+      ...(canonical.normalized ? { normalized: { removedDuplicates: canonical.duplicates, note: 'each receipt is claimed once per category; repeated IDs were removed from the preview, simulation and transaction' } } : {}),
+      ...(notHeld.NAND.length + notHeld.LATCH.length ? { notHeld, warning: `${holder} does not hold these IDs at block ${block}: claimBatch would revert NotHolder` } : {}),
+      expectedPayoutRaw: expected, expectedPayoutBem: formatBem(expected),
+      preview: { blockNumber: block, note: 'what claimBatch would pay for these IDs at this block; not a promise for a later block, and not proof of ownership then' },
+    });
   }
 
   if (command === 'release') return execute(command, flags, releasePlans(pool));

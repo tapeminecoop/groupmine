@@ -95,9 +95,9 @@ async function main() {
       { wallet: alice, nandCount: 20, latchCount: 5 }, { wallet: bob, nandCount: 20, latchCount: 0 }, { wallet: carol, nandCount: 0, latchCount: 7 },
     ] }));
     await step('import-allocation', ['import-allocation', '--addresses', addressesFile, '--allocation', allocationFile, '--artifact-out', `${DIR}/artifact.json`, '--from', operator, '--send-local']);
-    const verified = await step('verify-allocation', ['verify-allocation', '--addresses', addressesFile, '--artifact', `${DIR}/artifact.json`]);
+    const verified = await step('verify-allocation', ['verify-allocation', '--addresses', addressesFile, '--artifact', `${DIR}/artifact.json`, '--allocation', allocationFile]);
     check('allocationVerified', verified.status === 'READY_TO_FINALIZE', verified);
-    await step('finalize-allocation', ['finalize-allocation', '--addresses', addressesFile, '--from', operator, '--send-local']);
+    await step('finalize-allocation', ['finalize-allocation', '--addresses', addressesFile, '--artifact', `${DIR}/artifact.json`, '--allocation', allocationFile, '--from', operator, '--send-local']);
     await step('activate', ['activate', '--addresses', addressesFile, '--nand-shares', '40', '--latch-shares', '12', '--from', operator, '--send-local']);
     await step('renounce-pool', ['renounce', '--addresses', addressesFile, '--target', 'pool', '--from', operator, '--send-local']);
 

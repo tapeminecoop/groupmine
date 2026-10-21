@@ -1,0 +1,66 @@
+{
+  "schema": "tapeout-allocation-artifact/1",
+  "chainId": 56,
+  "distributor": "0x4444444444444444444444444444444444444444",
+  "nandReceipt": "0x5555555555555555555555555555555555555555",
+  "latchReceipt": "0x6666666666666666666666666666666666666666",
+  "sourceSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "blockNumber": "128700000",
+  "totals": {
+    "NAND": 30,
+    "LATCH": 5,
+    "wallets": 2
+  },
+  "wallets": [
+    {
+      "wallet": "0x1111111111111111111111111111111111111111",
+      "nand": {
+        "count": 20,
+        "ranges": [
+          [
+            1,
+            20
+          ]
+        ]
+      },
+      "latch": {
+        "count": 5,
+        "ranges": [
+          [
+            1,
+            5
+          ]
+        ]
+      }
+    },
+    {
+      "wallet": "0x2222222222222222222222222222222222222222",
+      "nand": {
+        "count": 10,
+        "ranges": [
+          [
+            21,
+            10
+          ]
+        ]
+      },
+      "latch": {
+        "count": 0,
+        "ranges": []
+      }
+    }
+  ],
+  "inventory": {
+    "blockNumber": "128700000",
+    "blockHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "NAND": {
+      "count": 30,
+      "sha256": "a8da6dc1099b8b38805d26f04c1e8a49b9d3870506f9586535105a3c3be64fdb"
+    },
+    "LATCH": {
+      "count": 5,
+      "sha256": "b726eed184cea30d5a57fb645f77527e4232bec085e24e8d29a6e3b2c84c2db1"
+    }
+  },
+  "howToClaim": "Call claim(maxIds) on the distributor from your wallet (or anyone may call deliver(yourWallet, maxIds)); receipts arrive with all BEM accrued so far, then claim BEM on the pool with claimBatch(nandIds, latchIds)."
+}

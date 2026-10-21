@@ -9,7 +9,7 @@ import {
 } from '../../sdk/pool.ts';
 import { FUND_GAS, ISSUE_GAS, admissionGasEstimate, maxAdmissionBatch, maxIdsPerTx, maxRegisteredForAdmission } from '../../sdk/gas.ts';
 import { BATCH_GAS_BUDGET, TX_GAS_CAP } from '../../sdk/constants.ts';
-import { castCommand, safeBatch } from '../../sdk/tx.ts';
+import { castCommand, printableLoopback, safeBatch } from '../../sdk/tx.ts';
 import example from '../../deployments/examples/system.bsc.example.json' with { type: 'json' };
 
 const A = '0x00000000000000000000000000000000000000aa' as const;
@@ -50,6 +50,18 @@ test('issue, fund, allocate, claim and release plans encode the right calls in b
   assert.deepEqual(releasePlans(A).map(p => decodeFunctionData({ abi: tapeoutMinerPoolAbi as Abi, data: p.data }).functionName), ['releaseA', 'releaseB']);
   assert.match(castCommand(issue[0]), /^cast send --rpc-url "\$RPC_URL" <SIGNER_FLAGS> --gas-limit \d+ 0x/);
   assert.throws(() => safeBatch(deployReceiptPlans(systemFileSchema.parse(example)), 56, 'deploy'), /Contract creation/);
+});
+
+test('review O-05: printed commands are bound to the planning chain, and fork plans to the fork node', () => {
+  const [p] = issuePlans(A, 'NAND', A, 1);
+  // A signature for another chain id is not valid: $RPC_URL on another network cannot replay it.
+  assert.match(castCommand(p, 56), /^cast send --rpc-url "\$RPC_URL" --chain 56 <SIGNER_FLAGS> --gas-limit/);
+  // A local fork also answers chain 56: its plans target the loopback node, never $RPC_URL.
+  assert.match(castCommand(p, 56, 'http://127.0.0.1:8545'), /^cast send --rpc-url "http:\/\/127\.0\.0\.1:8545" --chain 56 /);
+  assert.equal(printableLoopback('http://127.0.0.1:8545/some/path?key=1'), 'http://127.0.0.1:8545');
+  // Remote URLs and URLs with credentials are never printed.
+  assert.equal(printableLoopback('https://bsc-dataseed.example.org/v1/SECRET'), undefined);
+  assert.equal(printableLoopback('http://user:pass@127.0.0.1:8545'), undefined);
 });
 
 test('admission gas model stays inside the BSC per-transaction cap', () => {

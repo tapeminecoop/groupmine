@@ -19,7 +19,10 @@ const bytecode = {};
 for (const name of contracts) {
   const a = await artifact(name, name);
   abiSource += `export const ${name[0].toLowerCase()}${name.slice(1)}Abi = ${JSON.stringify(a.abi, null, 2)} as const;\n\n`;
-  bytecode[name] = { bytecode: a.bytecode.object, sha256: createHash('sha256').update(Buffer.from(a.bytecode.object.slice(2), 'hex')).digest('hex') };
+  // The runtime template has its immutable slots unfilled; deployed code fills them (sdk/deployment.ts).
+  const immutables = Object.values(a.deployedBytecode.immutableReferences ?? {}).flat().map(r => [r.start, r.length]).sort((x, y) => x[0] - y[0]);
+  bytecode[name] = { bytecode: a.bytecode.object, sha256: createHash('sha256').update(Buffer.from(a.bytecode.object.slice(2), 'hex')).digest('hex'),
+    runtimeTemplate: a.deployedBytecode.object, immutableReferences: immutables };
 }
 for (const name of mocks) {
   const a = await artifact('Mocks', name);

@@ -7,3 +7,4 @@ export * from './math.js';
 export * from './pool.js';
 export * from './tx.js';
 export * from './verify.js';
+export * from './deployment.js';

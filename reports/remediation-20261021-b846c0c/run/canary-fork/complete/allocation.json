@@ -1,0 +1,14 @@
+{
+  "allocations": [
+    {
+      "wallet": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+      "nandCount": 3,
+      "latchCount": 1
+    },
+    {
+      "wallet": "0x8424fcb139d8ba8d02a4be7d9cd61fcfd42db9c5",
+      "nandCount": 1,
+      "latchCount": 1
+    }
+  ]
+}
