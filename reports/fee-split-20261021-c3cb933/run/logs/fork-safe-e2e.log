@@ -1,0 +1,23 @@
+$ node --import tsx scripts/fork-safe-e2e.ts
+# exit 0
+
+## stdout
+{
+  "status": "PASS",
+  "checks": 255,
+  "safeTransactions": 24,
+  "localForkTransactions": 42,
+  "gas": {
+    "safeTransactions": 24,
+    "largestEstimate": "11097220",
+    "largestPlannedBound": "12004688",
+    "largestPayloadBytes": 16690,
+    "smallestMargin": "148882",
+    "largestEstimateOverPlans": "8566"
+  },
+  "report": "reports/fork-safe-e2e.json"
+}
+
+
+## stderr
+

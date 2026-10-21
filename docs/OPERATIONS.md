@@ -321,7 +321,7 @@ leaves such miners out of the plan.
 | Allocated wallet takes its receipts (any time) | `claim-receipts --from 0xWallet` |
 | Anyone pushes a wallet's receipts to that wallet | `deliver --wallet 0xWallet --from 0xAnyone` |
 | Receipt holder claims BEM | `claim --from 0xWallet --all` (or `--nand 1-20 --latch 3`) |
-| Anyone pays A and B their accrued 1/102 each | `release --from 0xAnyone` |
+| Anyone pays A and B their unpaid 1/84 each, and C its unpaid 2/84 | `release --from 0xAnyone` |
 | A recipient moves its role | `set-recipient --role A --to 0xNew --from 0xCurrentA` |
 
 `claim-receipts` and `deliver` plan as many deliveries as the wallet needs (`--max-ids` caps each one).
@@ -362,11 +362,24 @@ Only the current recipient of a role can move it, and the owner cannot. Income a
 not yet released is paid to the new address by the next `release`, so release first if the old
 address should receive it. A recipient that loses its key cannot be replaced by anyone.
 
+**The sink (C).** `release` plans `releaseA` then `releaseB`. Each call pays its role and, in the same
+transaction, transfers C's whole unpaid `⌊2T/84⌋ − sinkPaid` to the fixed address
+`0x000000000000000000000000000000000000dEaD`; so the first call of a `release` normally carries C's
+backlog and the second finds nothing left for C. Either call alone also settles C. C has no role, no
+`set-recipient` and no command of its own, and nothing else (harvest, sync, deposit, claim) pays it.
+The payment is an ordinary BEM transfer to that address, not a burn: on the BSC fork BEM's
+`totalSupply` did not change. A release is atomic: if either transfer fails, nothing is paid and both
+paid counters stay as they were. `inspect` and `reconcile` show C's accrued, paid and outstanding
+amounts; the pool's `sinkClaimable()` view and its `SinkPaid` events give the same.
+Each release's planned bound is 300,000 gas (`sdk/gas.ts`): two transfers and three balance checks;
+the worst case measured is about 207k (test/unit/GasModel.t.sol).
+
 ## 12. Monitoring
 
 - `inspect [--holder 0x…] [--miners --pending]`: pool, receipts, distributor, composition, gas outlook.
 - `verify-deployment [--system FILE]`: deployed code against the templates and every binding.
 - `reconcile --deep --out FILE`: checks the ledger identities and every per-ID history
-  ([ACCOUNTING.md](ACCOUNTING.md#7-reconciliation-identities)).
+  ([ACCOUNTING.md](ACCOUNTING.md#8-reconciliation-identities)), unpaid C included.
 - Useful events: `MinersAdmitted`, `CompositionCheckpoint`, `RevokedMinerSkipped`,
-  `MinerHarvestFailed`, `IncomeRecognized`, `ReceiptIncomeClaimed`, `RecipientPaid`, `Delivered`.
+  `MinerHarvestFailed`, `IncomeRecognized`, `ReceiptIncomeClaimed`, `RecipientPaid`, `SinkPaid`,
+  `Delivered`.

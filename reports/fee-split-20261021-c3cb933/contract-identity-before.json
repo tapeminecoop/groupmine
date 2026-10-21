@@ -1,0 +1,155 @@
+{
+  "schema": "tapeout-contract-identity/1",
+  "head": "c3cb93375737de7ec63baa9f390edd0c15a5c7a4",
+  "toolchain": {
+    "forge": "forge Version: 1.4.3-stable",
+    "foundryTomlSha256": "f748e4561d6eb9a2fa7ff0ac9b62b659f5c568e4c6f37e2e57d244f54f337d24",
+    "packageLockSha256": "8b1ba8fee521264c928cd9c0a8f485182b2dc3d8186e741019818706391a4427"
+  },
+  "sources": {
+    "src/PoolMath.sol": "2b43436239a4d56f258b23d6ee1725f078873cd3635d1dbf22ce9e8456e22e6e",
+    "src/TapeoutEntitlementReceipt.sol": "f5657c2827ca9650983d4eac567583b8bb70f09079e73d6906ce12433b4de910",
+    "src/TapeoutMinerPool.sol": "aa3f28c32c5fd1c42819862dca20c8f91d4804ceedadd97541fe25891ca46bcb",
+    "src/TapeoutReceiptDistributor.sol": "67f0b24fa54783b16595cd8b0fa5e4e4ecea5888cd53c58af55294c2e7f18659",
+    "src/canary/CanaryParticipant.sol": "5a7bcd8273280b3ecedde9e60bce1b53e308cc7d507b5da4bacb76fb35eef7aa",
+    "src/canary/RecoverableTapeoutMinerPool.sol": "1658554ea0519c8539b217693e044fa73edfe1c04652d0480d5d8107d05e94b1",
+    "src/interfaces/IMining.sol": "c8d8c41b57f55bc38a8d5c6712b74062a588519ec5b024fa19f11043cd1dbf12"
+  },
+  "sourcesSha256": "1f0e85b54a4179fe1420024e8ef0e51606e9b8eba2201638aaa3a11d2efda770",
+  "contracts": {
+    "TapeoutEntitlementReceipt": {
+      "scope": "production",
+      "source": "src/TapeoutEntitlementReceipt.sol",
+      "abiSha256": "3159de8b6a5ca8c48b13c270358df0cf7ec9bbadfba862fc1edb588a0ae27bcb",
+      "creationKeccak256": "0xebe115e818b3a8f988fa334fcc0366d1d94df8bea716486a55a9b7b713f4790f",
+      "runtimeTemplateKeccak256": "0x7f59d20c18c4dec6ddf617a9f085a87d4622efc279fbc1438e5293333288ec8f",
+      "creationBytes": 10361,
+      "runtimeBytes": 8743,
+      "immutableReferences": 0,
+      "compiler": {
+        "solc": "0.8.24+commit.e11b9ed9",
+        "evmVersion": "paris",
+        "viaIR": true,
+        "optimizer": {
+          "enabled": true,
+          "runs": 200
+        }
+      }
+    },
+    "TapeoutReceiptDistributor": {
+      "scope": "production",
+      "source": "src/TapeoutReceiptDistributor.sol",
+      "abiSha256": "6b86b144dc0c4110e0500c989164b5cbf41278f2f155dfb07f02b69251df2c55",
+      "creationKeccak256": "0xe692733f4ea3629017d1050d386aca52b4ff384705e659000e35347935f17acc",
+      "runtimeTemplateKeccak256": "0xcf370db1582af44f0e527d510d7ef139195bb800dcc1aa9499bf793d2b720ada",
+      "creationBytes": 8289,
+      "runtimeBytes": 7680,
+      "immutableReferences": 11,
+      "compiler": {
+        "solc": "0.8.24+commit.e11b9ed9",
+        "evmVersion": "paris",
+        "viaIR": true,
+        "optimizer": {
+          "enabled": true,
+          "runs": 200
+        }
+      }
+    },
+    "TapeoutMinerPool": {
+      "scope": "production",
+      "source": "src/TapeoutMinerPool.sol",
+      "abiSha256": "ca40cf6c1c8533737f24387705354cd736adc735e12c93ce22d9d7438544eb54",
+      "creationKeccak256": "0xd23582afa0be336b48b74931002e47c0fb417822de0c08418341b67f6effc5c9",
+      "runtimeTemplateKeccak256": "0x5655ce42aae94fda411c93b73b7f7a1ec0712117504288bd122383a3a17a2c26",
+      "creationBytes": 30896,
+      "runtimeBytes": 19113,
+      "immutableReferences": 49,
+      "compiler": {
+        "solc": "0.8.24+commit.e11b9ed9",
+        "evmVersion": "paris",
+        "viaIR": true,
+        "optimizer": {
+          "enabled": true,
+          "runs": 200
+        }
+      }
+    },
+    "PoolMath": {
+      "scope": "production",
+      "source": "src/PoolMath.sol",
+      "abiSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "creationKeccak256": "0x4a8814f4e2f077e9e960010b234a6e3323cc6eba486bc464b40c22f725591e93",
+      "runtimeTemplateKeccak256": "0xc9c8e98602427aabd7bb5e20861dda2010c45f0a0d5aefd28ffa944e6440792c",
+      "creationBytes": 87,
+      "runtimeBytes": 58,
+      "immutableReferences": 0,
+      "compiler": {
+        "solc": "0.8.24+commit.e11b9ed9",
+        "evmVersion": "paris",
+        "viaIR": true,
+        "optimizer": {
+          "enabled": true,
+          "runs": 200
+        }
+      }
+    },
+    "IMining": {
+      "scope": "production",
+      "source": "src/interfaces/IMining.sol",
+      "abiSha256": "7691e83988b7b388ae143dc675db39b33b76312dd2f8dd3416f16f7efc6a4444",
+      "creationKeccak256": null,
+      "runtimeTemplateKeccak256": null,
+      "creationBytes": 0,
+      "runtimeBytes": 0,
+      "immutableReferences": 0,
+      "compiler": {
+        "solc": "0.8.24+commit.e11b9ed9",
+        "evmVersion": "paris",
+        "viaIR": true,
+        "optimizer": {
+          "enabled": true,
+          "runs": 200
+        }
+      }
+    },
+    "RecoverableTapeoutMinerPool": {
+      "scope": "canary",
+      "source": "src/canary/RecoverableTapeoutMinerPool.sol",
+      "abiSha256": "4683dcc240a2d65ba915cc3176070ba5e1f204a8a78fbf957a7e5055db0efb12",
+      "creationKeccak256": "0x028218752b6da821b69a79376c286db2edb3176b13f4ba9b22fc6c800739c74a",
+      "runtimeTemplateKeccak256": "0x9070dcbc5258b573e6bb65cfc65f494cdb53c81192acd7f05436e1f365ff82d5",
+      "creationBytes": 32279,
+      "runtimeBytes": 20404,
+      "immutableReferences": 53,
+      "compiler": {
+        "solc": "0.8.24+commit.e11b9ed9",
+        "evmVersion": "paris",
+        "viaIR": true,
+        "optimizer": {
+          "enabled": true,
+          "runs": 200
+        }
+      }
+    },
+    "CanaryParticipant": {
+      "scope": "canary",
+      "source": "src/canary/CanaryParticipant.sol",
+      "abiSha256": "c888ac0e7a6b1a651c690b79a449858992b3a58c80a57d83c6d842d9f5180cbe",
+      "creationKeccak256": "0xe5489a62540c1c3eea02593126e856961317b2c31ef11ba7f6131d391d3f52ea",
+      "runtimeTemplateKeccak256": "0xd32e89e97f0bdb8bd0c62cab3d0304f5577d1db9941b2c80b8ffacd0887cd4fb",
+      "creationBytes": 3838,
+      "runtimeBytes": 3410,
+      "immutableReferences": 18,
+      "compiler": {
+        "solc": "0.8.24+commit.e11b9ed9",
+        "evmVersion": "paris",
+        "viaIR": true,
+        "optimizer": {
+          "enabled": true,
+          "runs": 200
+        }
+      }
+    }
+  },
+  "note": "runtimeTemplateKeccak256 is the compiled runtime with immutable slots unfilled; deployed pool and distributor code differs by their constructor-filled immutables"
+}

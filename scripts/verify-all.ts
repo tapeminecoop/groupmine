@@ -142,8 +142,9 @@ async function main() {
     }
     return { ok: Object.values(unchanged).every(Boolean) && Object.values(same).every(Boolean), summary: { sdkFilesUnchangedByExport: unchanged, sdkBytecodeMatchesBuild: same } };
   });
-  // The project's own Solidity. test/audit is the internal review's suite, kept byte-for-byte as the
-  // review committed it (unformatted there), so it is not part of this gate.
+  // The project's own Solidity. test/audit is the internal review's suite, kept as the review committed
+  // it (unformatted there; only the split-dependent parts were adapted for 2.1.0), so it is not part of
+  // this gate.
   await step('format-check', 'forge', ['fmt', '--check', 'src', 'script', 'test/unit', 'test/invariant', 'test/fork', 'test/helpers', 'test/remediation'],
     async o => ({ ok: o.status === 0, summary: o.status === 0 ? 'formatted (src, script, test/{unit,invariant,fork,helpers,remediation})' : 'unformatted files' }));
 

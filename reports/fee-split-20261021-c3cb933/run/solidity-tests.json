@@ -1,0 +1,643 @@
+{
+ "command": "forge test --no-match-path 'test/fork/*' --json",
+ "suites": {
+  "PoolInvariantTest": {
+   "invariantCompositionAndCustody()": {
+    "status": "Success",
+    "invariantRuns": 256,
+    "calls": 16384,
+    "reverts": 0
+   },
+   "invariantEntitlementsNeverDecrease()": {
+    "status": "Success",
+    "invariantRuns": 256,
+    "calls": 16384,
+    "reverts": 0
+   },
+   "invariantFourAccountConservation()": {
+    "status": "Success",
+    "invariantRuns": 256,
+    "calls": 16384,
+    "reverts": 0
+   },
+   "invariantModelMatchesTheLedger()": {
+    "status": "Success",
+    "invariantRuns": 256,
+    "calls": 16384,
+    "reverts": 0
+   },
+   "invariantPerIdHistories()": {
+    "status": "Success",
+    "invariantRuns": 256,
+    "calls": 16384,
+    "reverts": 0
+   }
+  },
+  "PoolInvariantCoverageTest": {
+   "invariantCompositionAndCustody()": {
+    "status": "Success",
+    "invariantRuns": 256,
+    "calls": 16384,
+    "reverts": 0
+   },
+   "invariantEntitlementsNeverDecrease()": {
+    "status": "Success",
+    "invariantRuns": 256,
+    "calls": 16384,
+    "reverts": 0
+   },
+   "invariantFourAccountConservation()": {
+    "status": "Success",
+    "invariantRuns": 256,
+    "calls": 16384,
+    "reverts": 0
+   },
+   "invariantModelMatchesTheLedger()": {
+    "status": "Success",
+    "invariantRuns": 256,
+    "calls": 16384,
+    "reverts": 0
+   },
+   "invariantPerIdHistories()": {
+    "status": "Success",
+    "invariantRuns": 256,
+    "calls": 16384,
+    "reverts": 0
+   },
+   "invariantRecognizedTotalMatchesModel()": {
+    "status": "Success",
+    "invariantRuns": 256,
+    "calls": 16384,
+    "reverts": 0
+   }
+  },
+  "ClaimPreviewTest": {
+   "testNormalizedInputsPreviewExactlyWhatIsPaidInTheSameState()": {
+    "status": "Success",
+    "gas": 269027
+   },
+   "testRawViewCountsARepeatedIdTwiceButClaimBatchPaysItOnce()": {
+    "status": "Success",
+    "gas": 223710
+   },
+   "testRepeatedClaimLaterPaysNothingAndPreviewSaysSo()": {
+    "status": "Success",
+    "gas": 185213
+   }
+  },
+  "DeliveryRaceMixedCategoriesTest": {
+   "testMixedAfterTheFirstNandRange()": {
+    "status": "Success",
+    "gas": 14673671
+   },
+   "testMixedFromStart()": {
+    "status": "Success",
+    "gas": 15488264
+   },
+   "testMixedInsideTheLatchSingletons()": {
+    "status": "Success",
+    "gas": 14397733
+   }
+  },
+  "DeliveryRaceTest": {
+   "testOldPlanRunsOutOfGasAfterAKeeperDeliversFirstAndRollsBack()": {
+    "status": "Success",
+    "gas": 14062598
+   },
+   "testPlannedCallsFitAfterPartialProgressInsideTheRange()": {
+    "status": "Success",
+    "gas": 30125060
+   },
+   "testPlannedCallsFitAfterProgressEndingOneIdBeforeTheSingletons()": {
+    "status": "Success",
+    "gas": 27003962
+   },
+   "testPlannedCallsFitAfterProgressInsideTheSingletons()": {
+    "status": "Success",
+    "gas": 26042347
+   },
+   "testPlannedCallsFitWhenTheContiguousRangeWasDeliveredFirst()": {
+    "status": "Success",
+    "gas": 26969580
+   },
+   "testPlannedCallsFitWithoutInterference()": {
+    "status": "Success",
+    "gas": 33428938
+   },
+   "testStaleCallsAfterEverythingWasDeliveredRevertWithNothingToDeliver()": {
+    "status": "Success",
+    "gas": 19753472
+   }
+  },
+  "RoundingPolicyTest": {
+   "testSameRatioCheckpointsChangeLifetimeCategoryTotals()": {
+    "status": "Success",
+    "gas": 2631657
+   },
+   "testTheSameIncomeWithoutCheckpoints()": {
+    "status": "Success",
+    "gas": 617274
+   }
+  },
+  "AdmissionGasTest": {
+   "testAdmissionGasGrowsLinearlyWithRegisteredMiners()": {
+    "status": "Success",
+    "gas": 131526853
+   }
+  },
+  "CanaryRecoveryTest": {
+   "testBoundaryAndUnrecognizedBEMKeepHistoryAndFinalAttribution()": {
+    "status": "Success",
+    "gas": 1515580
+   },
+   "testEmergencyHasNoMiningOrBEMCallsEvenWhenTheyConsumeAllGas()": {
+    "status": "Success",
+    "gas": 1127941
+   },
+   "testHelperControlAndBindingAreNarrow()": {
+    "status": "Success",
+    "gas": 90710
+   },
+   "testMiningFailureAndBEMBalanceFailureDoNotBlockRecovery()": {
+    "status": "Success",
+    "gas": 1177873
+   },
+   "testNormalHarvestShutdownBothReturnsAfterRenunciation()": {
+    "status": "Success",
+    "gas": 1558499
+   },
+   "testPartialReturnDoesNotPreventOtherAndRetriesAreIdempotent()": {
+    "status": "Success",
+    "gas": 1139017
+   },
+   "testShutdownBeforeActivationCannotReopen()": {
+    "status": "Success",
+    "gas": 40229
+   },
+   "testShutdownIsPermanentAndScopeCannotExpand()": {
+    "status": "Success",
+    "gas": 909757
+   },
+   "testTransferFailurePreservesUnpaidLedgerAndRetryAfterReturn()": {
+    "status": "Success",
+    "gas": 1418140
+   },
+   "testUnauthorizedCallerAndDestinationSelectorRejected()": {
+    "status": "Success",
+    "gas": 897681
+   },
+   "testUnexpectedIDAndCompositionMismatchReject()": {
+    "status": "Success",
+    "gas": 574103
+   },
+   "testUnregisteredNFTBeforeActivationAndBeforeDistributionCanReturn()": {
+    "status": "Success",
+    "gas": 105340
+   }
+  },
+  "DistributorTest": {
+   "testABeneficiaryThatCannotReceiveIsNeverRedirected()": {
+    "status": "Success",
+    "gas": 4886998
+   },
+   "testAfterFinalizationAllocationsAndInventoryAreFrozen()": {
+    "status": "Success",
+    "gas": 3169523
+   },
+   "testDeliverAlwaysGoesToTheRecordedBeneficiary()": {
+    "status": "Success",
+    "gas": 3051468
+   },
+   "testDeliveryIsExactlyOnceAndKeepsTheAttachedBem()": {
+    "status": "Success",
+    "gas": 4510115
+   },
+   "testDistributedReceiptsCanNeverReturnAsInventory()": {
+    "status": "Success",
+    "gas": 3165073
+   },
+   "testFinalizationRequiresFullInventoryCoverage()": {
+    "status": "Success",
+    "gas": 3096667
+   },
+   "testFragmentedAllocationIsDeliveredAcrossSeveralTransactions()": {
+    "status": "Success",
+    "gas": 3513458
+   },
+   "testFundingAcceptsSingleAndBatchTransfersOfTheBoundReceiptsOnly()": {
+    "status": "Success",
+    "gas": 2509252
+   },
+   "testImportValidatesInventoryConflictsWalletsAndCaller()": {
+    "status": "Success",
+    "gas": 751014
+   },
+   "testIssuingDirectlyToTheDistributorCountsAsInventory()": {
+    "status": "Success",
+    "gas": 10254020
+   },
+   "testLateClaimsKeepTheBemAccumulatedWhileHeldByTheDistributor()": {
+    "status": "Success",
+    "gas": 3989431
+   },
+   "testNoAdministrativeRouteToHeldReceiptsOrTheirBem()": {
+    "status": "Success",
+    "gas": 3484787
+   },
+   "testReceiptsWithConsumedRewardHistoryAreRefused()": {
+    "status": "Success",
+    "gas": 802077
+   },
+   "testReceiverRefusalRollsBackTheWholeDelivery()": {
+    "status": "Success",
+    "gas": 3252028
+   },
+   "testUsersClaimOnlyTheirOwnReceiptsAndOnlyOnce()": {
+    "status": "Success",
+    "gas": 3241628
+   }
+  },
+  "EntitlementReceiptTest": {
+   "testFinalizationFixesSupplyForever()": {
+    "status": "Success",
+    "gas": 565546
+   },
+   "testIndependentDeploymentsShareOneVerifiableRuntime()": {
+    "status": "Success",
+    "gas": 2005169
+   },
+   "testIssuanceIsSequentialBatchedAndIssuerOnly()": {
+    "status": "Success",
+    "gas": 366580
+   },
+   "testRetractOnlyUndoesTheIssuersOwnTopIdsBeforeFinalization()": {
+    "status": "Success",
+    "gas": 316865
+   },
+   "testTransfersKeepUnitSupplyAndTheHolderIndex()": {
+    "status": "Success",
+    "gas": 241151
+   }
+  },
+  "GasModelTest": {
+   "testAllocationModelCoversManySmallRangesAndOneLargeRange()": {
+    "status": "Success",
+    "gas": 47001041
+   },
+   "testCallsRunAsSeparateTransactions()": {
+    "status": "Success",
+    "gas": 60225
+   },
+   "testClaimModelCoversTheLargestPlannedBatch()": {
+    "status": "Success",
+    "gas": 31833140
+   },
+   "testDeliveryModelCoversOneLargeAndManySmallRanges()": {
+    "status": "Success",
+    "gas": 39784363
+   },
+   "testDeploymentModelsCoverTheLargestConfigurations()": {
+    "status": "Success",
+    "gas": 18852216
+   },
+   "testFragmentedWalletDeliversInPlannedTransactions()": {
+    "status": "Success",
+    "gas": 28764179
+   },
+   "testFundBatchModelCoversMovingReceiptsIntoTheDistributor()": {
+    "status": "Success",
+    "gas": 25578222
+   },
+   "testIssueBatchModelCoversIssuingToTheOperatorAndToTheDistributor()": {
+    "status": "Success",
+    "gas": 22434500
+   },
+   "testReleasesFitTheirBoundInEitherOrder()": {
+    "status": "Success",
+    "gas": 3138824
+   },
+   "testRevokeModelCoversLargeAndFragmentedWallets()": {
+    "status": "Success",
+    "gas": 128598761
+   },
+   "testSingleCallsFitTheirBounds()": {
+    "status": "Success",
+    "gas": 3502569
+   }
+  },
+  "PoolAccountingTest": {
+   "testCheckpointFreezesCategoryTotalsAndCarriesAtMostOneUnit()": {
+    "status": "Success",
+    "gas": 921839
+   },
+   "testFuzzMathProperties(uint96,uint96,uint32,uint32,uint32,uint32,uint16,uint16)": {
+    "status": "Success",
+    "fuzzRuns": 512,
+    "meanGas": 26377
+   },
+   "testOuterFloorsAndTheirResidueAtSmallTotals()": {
+    "status": "Success",
+    "gas": 12925
+   },
+   "testOuterSplitIsEightyOneOneTwoOf84()": {
+    "status": "Success",
+    "gas": 1542047
+   },
+   "testPathIndependenceWithinACompositionPeriod()": {
+    "status": "Success",
+    "gas": 1576320
+   },
+   "testRoundingResidueStaysBoundedOverManyPeriodsAndHarvests()": {
+    "status": "Success",
+    "gas": 6174275
+   }
+  },
+  "PoolAdmissionTest": {
+   "testAMiningOutageBlocksAdmissionButNotClaimsOfHeldIncome()": {
+    "status": "Success",
+    "gas": 1034865
+   },
+   "testActiveOldMinerSettlementFailureRollsBackTheWholeAdmission()": {
+    "status": "Success",
+    "gas": 1211975
+   },
+   "testAdmissionsRequireActivation()": {
+    "status": "Success",
+    "gas": 4612148
+   },
+   "testBatchOrderDoesNotChangeTheOutcome()": {
+    "status": "Success",
+    "gas": 1515063
+   },
+   "testBatchUsesOnePostBatchCompositionForAllCarriedIncome()": {
+    "status": "Success",
+    "gas": 1126430
+   },
+   "testCarriedIncomeIsNotPaidBackToTheDepositor()": {
+    "status": "Success",
+    "gas": 563422
+   },
+   "testCompositionMustComeFromAValidActiveMinerRecord()": {
+    "status": "Success",
+    "gas": 739167
+   },
+   "testCoolingOrUnstartedOldMinerBlocksAdmission()": {
+    "status": "Success",
+    "gas": 1190928
+   },
+   "testDuplicateAndAlreadyRegisteredMinersAreRejected()": {
+    "status": "Success",
+    "gas": 542811
+   },
+   "testEntitlementsNeverDecreaseAcrossCompositionChanges()": {
+    "status": "Success",
+    "gas": 2213103
+   },
+   "testFirstAdmissionRecognizesIncomeHeldBeforeAnyComposition()": {
+    "status": "Success",
+    "gas": 606611
+   },
+   "testIncomingMinerClaimFailureRollsBack()": {
+    "status": "Success",
+    "gas": 723696
+   },
+   "testOldIncomeHiddenFromPendingIsStillSettledUnderTheOldRatio()": {
+    "status": "Success",
+    "gas": 872728
+   },
+   "testOnlyWhitelistedDepositorsAdmitAndOnlyTheirOwnMiners()": {
+    "status": "Success",
+    "gas": 432160
+   },
+   "testPlainTransferNeitherRegistersNorBypassesTheWhitelistOrSettlement()": {
+    "status": "Success",
+    "gas": 901919
+   },
+   "testRevokedOldMinerIsSkippedExplicitly()": {
+    "status": "Success",
+    "gas": 1162110
+   },
+   "testSafeTransferIntoThePoolIsRefused()": {
+    "status": "Success",
+    "gas": 127796
+   },
+   "testSpecificationAcceptanceExample()": {
+    "status": "Success",
+    "gas": 1866220
+   }
+  },
+  "PoolUnsupportedCategoryTest": {
+   "testCategoryWithoutReceiptsCannotGainCompositionOrIncome()": {
+    "status": "Success",
+    "gas": 1226298
+   }
+  },
+  "PoolClaimsTest": {
+   "testApprovedOperatorCannotClaimUntilItHoldsTheId()": {
+    "status": "Success",
+    "gas": 353402
+   },
+   "testClaimFromReceiveHookPaysTheNewHolderOnce()": {
+    "status": "Success",
+    "gas": 974048
+   },
+   "testClaimableViewsPredictPayouts()": {
+    "status": "Success",
+    "gas": 390491
+   },
+   "testClaimedHistoryStaysWithTheIdAcrossTransfers()": {
+    "status": "Success",
+    "gas": 324111
+   },
+   "testClaimsDoNotDependOnMiningOrAdmissions()": {
+    "status": "Success",
+    "gas": 485232
+   },
+   "testIndividualAndBatchClaimsPayOnlyTheCallersIds()": {
+    "status": "Success",
+    "gas": 500415
+   },
+   "testInvalidEmptyForeignAndDuplicateClaims()": {
+    "status": "Success",
+    "gas": 529363
+   },
+   "testRecipientPaymentsAreIndependentOfEachOtherAndOfClaims()": {
+    "status": "Success",
+    "gas": 756767
+   },
+   "testRepeatedClaimsPayOnlyNewIncome()": {
+    "status": "Success",
+    "gas": 274925
+   },
+   "testSameNumberedIdsInBothCollectionsAreIndependent()": {
+    "status": "Success",
+    "gas": 432199
+   },
+   "testUnclaimedIncomeFollowsTheReceiptAndTheFormerHolderLosesIt()": {
+    "status": "Success",
+    "gas": 413536
+   }
+  },
+  "PoolFeeSplitTest": {
+   "testAFailedRoleTransferRevertsTheWholeReleaseIncludingTheSink()": {
+    "status": "Success",
+    "gas": 930593
+   },
+   "testAFailedSinkTransferRevertsTheWholeReleaseAndClaimsStillWork()": {
+    "status": "Success",
+    "gas": 1691046
+   },
+   "testAdmissionBoundaryUnderTheNewSplit()": {
+    "status": "Success",
+    "gas": 895290
+   },
+   "testFeeOnTransferBemIsRefusedForTheWholeRelease()": {
+    "status": "Success",
+    "gas": 729679
+   },
+   "testFuzzReleasesPayExactlyTheCumulativeFormula(uint64[8],uint8)": {
+    "status": "Success",
+    "fuzzRuns": 512,
+    "meanGas": 1027743
+   },
+   "testHarvestSyncAdmissionAndClaimsNeverPayTheSink()": {
+    "status": "Success",
+    "gas": 1397840
+   },
+   "testInterleavedIncomeAndRepeatedReleasesFollowTheCumulativeFormula()": {
+    "status": "Success",
+    "gas": 1208318
+   },
+   "testManyTinyInflowsEqualOneCombinedInflow()": {
+    "status": "Success",
+    "gas": 3004090
+   },
+   "testReentrantCallsDuringEitherPaymentAreRefused()": {
+    "status": "Success",
+    "gas": 1042044
+   },
+   "testReleaseAThenBPaysEachOnceAndTheSinkOnce()": {
+    "status": "Success",
+    "gas": 1594064
+   },
+   "testReleaseBThenAEndsWithTheSameBalances()": {
+    "status": "Success",
+    "gas": 823131
+   },
+   "testRoleMigrationKeepsPendingAndNeverTouchesTheSink()": {
+    "status": "Success",
+    "gas": 854790
+   },
+   "testSinkIsPaidEvenWhenTheReleasedRoleIsDueNothing()": {
+    "status": "Success",
+    "gas": 861902
+   },
+   "testSinkReceivesItsWeightNotTheRoundingResidue()": {
+    "status": "Success",
+    "gas": 1556277
+   },
+   "testSmallTotalsUseIndependentFloors()": {
+    "status": "Success",
+    "gas": 162829
+   },
+   "testSyncAfterEachPaymentFindsNoDeficitAndNothingNew()": {
+    "status": "Success",
+    "gas": 931734
+   },
+   "testTheSinkIsAFixedAddressThatNoRoleCanUse()": {
+    "status": "Success",
+    "gas": 284096
+   },
+   "testWorkedExampleCompositionChangeKeepsEarlierCategoryTotals()": {
+    "status": "Success",
+    "gas": 935498
+   },
+   "testWorkedExampleSplitsOneThousandFiftyBem()": {
+    "status": "Success",
+    "gas": 38145
+   }
+  },
+  "PoolHarvestTest": {
+   "testBalanceDecreaseAndTransferFeeRevertWithoutRewritingHistory()": {
+    "status": "Success",
+    "gas": 876115
+   },
+   "testHarvestAlwaysCallsClaimEvenWhenPendingIsZero()": {
+    "status": "Success",
+    "gas": 577426
+   },
+   "testHarvestCountsOnlyActualReceiptsOfTheSelectedMiners()": {
+    "status": "Success",
+    "gas": 1148798
+   },
+   "testHarvestIncomeBelongsToTheCompositionCurrentWhenItArrives()": {
+    "status": "Success",
+    "gas": 562007
+   },
+   "testHarvestIsolatesFailingMiners()": {
+    "status": "Success",
+    "gas": 1128744
+   },
+   "testMinerRegistryViews()": {
+    "status": "Success",
+    "gas": 753349
+   },
+   "testThirdPartyMiningClaimsAndDirectTransfersAreIncome()": {
+    "status": "Success",
+    "gas": 630423
+   },
+   "testUnknownMinerAndEmptyHarvests()": {
+    "status": "Success",
+    "gas": 505592
+   }
+  },
+  "PoolSetupTest": {
+   "testActivationRejectsTwoEmptyCollections()": {
+    "status": "Success",
+    "gas": 87044
+   },
+   "testActivationRequiresFinalizedSuppliesTheReviewedCountsAndOwner()": {
+    "status": "Success",
+    "gas": 859919
+   },
+   "testDeploymentBindsProtocolReceiptsRecipientsAndWhitelist()": {
+    "status": "Success",
+    "gas": 83413
+   },
+   "testDepositorWhitelistIsValidatedAndRequired()": {
+    "status": "Success",
+    "gas": 987674
+   },
+   "testPoolKeepsWorkingAfterOwnershipIsRenounced()": {
+    "status": "Success",
+    "gas": 2463616
+   },
+   "testPreActivationEntryPointsAreClosed()": {
+    "status": "Success",
+    "gas": 47356
+   },
+   "testReceiptsMustBeThisExactImplementationWithTheRightCategories()": {
+    "status": "Success",
+    "gas": 3397732
+   },
+   "testRecipientsMoveOnlyThemselves()": {
+    "status": "Success",
+    "gas": 1912950
+   },
+   "testRecipientsProtocolAndNameAreValidated()": {
+    "status": "Success",
+    "gas": 4836954
+   }
+  }
+ },
+ "total": 142,
+ "passed": 142,
+ "invariantAdmissionPaths": {
+  "runs": 1542,
+  "successfulAdmissions": 3714,
+  "rolledBackAdmissions": 1105,
+  "runsWithAdmission": 1511,
+  "runsWithRollback": 561,
+  "maxRegisteredMiners": 11
+ }
+}

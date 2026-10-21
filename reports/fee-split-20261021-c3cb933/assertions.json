@@ -1,0 +1,1022 @@
+{
+  "schema": "tapeout-fee-split-assertions/1",
+  "candidate": "TapeoutMinerPool/2.1.0",
+  "baseRevision": "c3cb93375737de7ec63baa9f390edd0c15a5c7a4",
+  "sourceTreeSha256": "888ac46aa8053d26eb173bd8716e1b958a5141b3f6dd05f6e72d0d8c51904d29",
+  "runOverall": "PASS",
+  "method": "Each evidence item is read from the recorded run in run/ (forge JSON summary, fork-test.json, the audit step summary, the SDK TAP output, the end-to-end reports' checks, the canary rehearsal results) or from the identity and historical-file comparisons in this directory. PASS only if every item passed; NOT_RUN if any item is absent.",
+  "counts": {
+    "PASS": 28
+  },
+  "assertions": [
+    {
+      "id": "R1",
+      "requirement": "Outer split NAND+LATCH 100 : A 1.25 : B 1.25 : C 2.5, held as 80 : 1 : 1 : 2 of 84; each part its own floor of T; exact integers; not a 95%/5% fee",
+      "freshness": "FRESH (this run)",
+      "status": "PASS",
+      "evidence": [
+        {
+          "kind": "forge",
+          "ref": "PoolFeeSplitTest.testWorkedExampleSplitsOneThousandFiftyBem()",
+          "result": "Success"
+        },
+        {
+          "kind": "forge",
+          "ref": "PoolFeeSplitTest.testSmallTotalsUseIndependentFloors()",
+          "result": "Success"
+        },
+        {
+          "kind": "forge",
+          "ref": "PoolAccountingTest.testOuterSplitIsEightyOneOneTwoOf84()",
+          "result": "Success"
+        },
+        {
+          "kind": "forge",
+          "ref": "PoolAccountingTest.testOuterFloorsAndTheirResidueAtSmallTotals()",
+          "result": "Success"
+        },
+        {
+          "kind": "forge",
+          "ref": "PoolAccountingTest.testFuzzMathProperties(uint96,uint96,uint32,uint32,uint32,uint32,uint16,uint16)",
+          "result": "Success"
+        },
+        {
+          "kind": "forge",
+          "ref": "PoolSetupTest.testDeploymentBindsProtocolReceiptsRecipientsAndWhitelist()",
+          "result": "Success"
+        },
+        {
+          "kind": "sdk",
+          "ref": "outer split is 80 + 1 + 1 + 2 of 84 (100 : 1.25 : 1.25 : 2.5), not a 95% / 5% fee",
+          "result": "ok"
+        },
+        {
+          "kind": "sdk",
+          "ref": "small totals: independent floors, C is floor(2T/84) and not 2 * floor(T/84)",
+          "result": "ok"
+        }
+      ]
+    },
+    {
+      "id": "R2",
+      "requirement": "NAND/LATCH split, composition checkpoints, fixed denominators, per-ID histories and category rounding policy unchanged",
+      "freshness": "FRESH (this run)",
+      "status": "PASS",
+      "evidence": [
+        {
+          "kind": "forge",
+          "ref": "PoolAdmissionTest.testSpecificationAcceptanceExample()",
+          "result": "Success"
+        },
+        {
+          "kind": "forge",
+          "ref": "PoolAccountingTest.testCheckpointFreezesCategoryTotalsAndCarriesAtMostOneUnit()",
+          "result": "Success"
+        },
+        {
+          "kind": "forge",
+          "ref": "PoolAccountingTest.testPathIndependenceWithinACompositionPeriod()",
+          "result": "Success"
+        },
+        {
+          "kind": "forge",
+          "ref": "RoundingPolicyTest.testSameRatioCheckpointsChangeLifetimeCategoryTotals()",
+          "result": "Success"
+        },
+        {
+          "kind": "forge",
+          "ref": "PoolInvariantTest.invariantPerIdHistories()",
+          "result": "Success"
+        },
+        {
+          "kind": "check",
+          "ref": "local-e2e.json checks.acceptanceExampleNand140Latch60",
+          "result": true
+        },
+        {
+          "kind": "check",
+          "ref": "fork-e2e.json checks.realBoundaryMatchesOldNewCompositionModel",
+          "result": true
+        }
+      ]
+    },
+    {
+      "id": "R3",
+      "requirement": "C is the fixed constant 0x...dEaD: not configurable, not a role or receipt holder, refused as A or B at deployment and in setRecipient; A/B migration unchanged",
+      "freshness": "FRESH (this run)",
+      "status": "PASS",
+      "evidence": [
+        {
+          "kind": "forge",
+          "ref": "PoolFeeSplitTest.testTheSinkIsAFixedAddressThatNoRoleCanUse()",
+          "result": "Success"
+        },
+        {
+          "kind": "forge",
+          "ref": "PoolFeeSplitTest.testRoleMigrationKeepsPendingAndNeverTouchesTheSink()",
+          "result": "Success"
+        },
+        {
+          "kind": "forge",
+          "ref": "PoolSetupTest.testRecipientsMoveOnlyThemselves()",
+          "result": "Success"
+        },
+        {
+          "kind": "sdk",
+          "ref": "system file validation mirrors the pool constructor",
+          "result": "ok"
+        },
+        {
+          "kind": "check",
+          "ref": "fork-e2e.json checks.sinkIsTheFixedDeadAddress",
+          "result": true
+        }
+      ]
+    },
+    {
+      "id": "R4",
+      "requirement": "C is paid by an ordinary ERC-20 transfer to the sink (no burn call, no zero-address transfer); BEM totalSupply observed on a real-BEM fork",
+      "freshness": "FRESH (this run)",
+      "status": "PASS",
+      "evidence": [
+        {
+          "kind": "fork",
+          "ref": "testForkReleaseTransfersCToTheSinkOnRealBem()",
+          "result": "Success"
+        },
+        {
+          "kind": "check",
+          "ref": "fork-e2e.json checks.sinkPaidByOneBemTransferFromThePool",
+          "result": true
+        },
+        {
+          "kind": "check",
+          "ref": "fork-e2e.json checks.bemTotalSupplyUnchangedByTheSinkTransfer",
+          "result": true
+        },
+        {
+          "kind": "observation",
+          "ref": "fork-sink.json bemTotalSupplyBefore == bemTotalSupplyAfterFirstRelease",
+          "result": [
+            39451273037263,
+            39451273037263
+          ]
+        },
+        {
+          "kind": "observation",
+          "ref": "fork-sink.json bemTotalSupplyAfterSecondHarvest == bemTotalSupplyAfterSecondReleases",
+          "result": [
+            39451301773926,
+            39451301773926
+          ]
+        },
+        {
+          "kind": "observation",
+          "ref": "fork-sink.json sinkBalanceAfter - sinkBalanceBefore == sinkPaid",
+          "result": [
+            244427231190,
+            244931900284,
+            504669094
+          ]
+        },
+        {
+          "kind": "observation",
+          "ref": "fork-e2e.json observations.sinkTransfer.totalSupplyUnchanged",
+          "result": true
+        }
+      ]
+    },
+    {
+      "id": "R5",
+      "requirement": "releaseA/releaseB stay permissionless; each runs _sync, one snapshot, pays the role its due and C all of floor(2T/84) - sinkPaid; never 2 x role; return value is the role amount; SinkPaid is separate; the other role is not marked paid",
+      "freshness": "FRESH (this run)",
+      "status": "PASS",
+      "evidence": [
+        {
+          "kind": "forge",
+          "ref": "PoolFeeSplitTest.testReleaseAThenBPaysEachOnceAndTheSinkOnce()",
+          "result": "Success"
+        },
+        {
+          "kind": "forge",
+          "ref": "PoolFeeSplitTest.testReleaseBThenAEndsWithTheSameBalances()",
+          "result": "Success"
+        },
+        {
+          "kind": "forge",
+          "ref": "PoolFeeSplitTest.testInterleavedIncomeAndRepeatedReleasesFollowTheCumulativeFormula()",
+          "result": "Success"
+        },
+        {
+          "kind": "forge",
+          "ref": "PoolFeeSplitTest.testFuzzReleasesPayExactlyTheCumulativeFormula(uint64[8],uint8)",
+          "result": "Success"
+        },
+        {
+          "kind": "forge",
+          "ref": "PoolInvariantTest.invariantModelMatchesTheLedger()",
+          "result": "Success"
+        },
+        {
+          "kind": "check",
+          "ref": "local-e2e.json checks.releasePaidRolesAndSinkTheirCumulativeWeights",
+          "result": true
+        },
+        {
+          "kind": "check",
+          "ref": "local-e2e.json checks.repeatedReleasePaysNothingMore",
+          "result": true
+        },
+        {
+          "kind": "check",
+          "ref": "fork-e2e.json checks.sinkReceivedExactlyCsCumulativeWeight",
+          "result": true
+        },
+        {
+          "kind": "canary",
+          "ref": "canary-fork/complete/results.json assertions.role-A-release-pays-the-sink-backlog-once",
+          "result": "PASS"
+        },
+        {
+          "kind": "canary",
+          "ref": "canary-fork/complete/results.json assertions.role-B-release-pays-the-sink-backlog-once",
+          "result": "PASS"
+        }
+      ]
+    },
+    {
+      "id": "R6",
+      "requirement": "C is paid even when the released role is due zero (T = 42: A = B = 0, C = 1) and is not paid twice",
+      "freshness": "FRESH (this run)",
+      "status": "PASS",
+      "evidence": [
+        {
+          "kind": "forge",
+          "ref": "PoolFeeSplitTest.testSinkIsPaidEvenWhenTheReleasedRoleIsDueNothing()",
+          "result": "Success"
+        },
+        {
+          "kind": "check",
+          "ref": "fork-safe-e2e.json checks.sinkPaidOnceForTheWholeBacklog",
+          "result": true
+        }
+      ]
+    },
+    {
+      "id": "R7",
+      "requirement": "Atomic: if either payment fails the whole release reverts; CEI and nonReentrant kept; C counted in totalPaid",
+      "freshness": "FRESH (this run)",
+      "status": "PASS",
+      "evidence": [
+        {
+          "kind": "forge",
+          "ref": "PoolFeeSplitTest.testAFailedSinkTransferRevertsTheWholeReleaseAndClaimsStillWork()",
+          "result": "Success"
+        },
+        {
+          "kind": "forge",
+          "ref": "PoolFeeSplitTest.testAFailedRoleTransferRevertsTheWholeReleaseIncludingTheSink()",
+          "result": "Success"
+        },
+        {
+          "kind": "forge",
+          "ref": "PoolFeeSplitTest.testFeeOnTransferBemIsRefusedForTheWholeRelease()",
+          "result": "Success"
+        },
+        {
+          "kind": "forge",
+          "ref": "PoolFeeSplitTest.testReentrantCallsDuringEitherPaymentAreRefused()",
+          "result": "Success"
+        },
+        {
+          "kind": "forge",
+          "ref": "PoolFeeSplitTest.testSyncAfterEachPaymentFindsNoDeficitAndNothingNew()",
+          "result": "Success"
+        },
+        {
+          "kind": "forge",
+          "ref": "PoolInvariantTest.invariantFourAccountConservation()",
+          "result": "Success"
+        }
+      ]
+    },
+    {
+      "id": "R8",
+      "requirement": "Reconciliation includes unpaid C, computes the outer parts from T independently, and the residue bound is 4 + (S_N - 1) + (S_L - 1); C does not take the residue",
+      "freshness": "FRESH (this run)",
+      "status": "PASS",
+      "evidence": [
+        {
+          "kind": "forge",
+          "ref": "PoolFeeSplitTest.testSinkReceivesItsWeightNotTheRoundingResidue()",
+          "result": "Success"
+        },
+        {
+          "kind": "forge",
+          "ref": "PoolAccountingTest.testRoundingResidueStaysBoundedOverManyPeriodsAndHarvests()",
+          "result": "Success"
+        },
+        {
+          "kind": "sdk",
+          "ref": "reconciliation includes unpaid C and checks each outer part from T on its own",
+          "result": "ok"
+        },
+        {
+          "kind": "sdk",
+          "ref": "residue bound: 3 outer units, 1 category unit, S - 1 per collection",
+          "result": "ok"
+        },
+        {
+          "kind": "sdk",
+          "ref": "conservation, bounds and monotonicity over random periods",
+          "result": "ok"
+        },
+        {
+          "kind": "audit",
+          "ref": "AuditDifferentialTest.testFuzzLedgerMatchesIndependentReferenceModel(uint256)",
+          "result": "Success"
+        },
+        {
+          "kind": "check",
+          "ref": "local-e2e.json checks.reconcilePass",
+          "result": true
+        },
+        {
+          "kind": "check",
+          "ref": "fork-e2e.json checks.reconcilePass",
+          "result": true
+        },
+        {
+          "kind": "check",
+          "ref": "fork-safe-e2e.json checks.reconcilePass",
+          "result": true
+        },
+        {
+          "kind": "canary",
+          "ref": "canary-fork/complete/results.json assertions.independent-final-payout-reconciliation",
+          "result": "PASS"
+        },
+        {
+          "kind": "canary",
+          "ref": "canary-fork/complete/results.json assertions.actual-BEM-transfers-match-total-income-and-payouts",
+          "result": "PASS"
+        }
+      ]
+    },
+    {
+      "id": "R9",
+      "requirement": "Claims and claimBatch never transfer C or depend on releases; harvest, sync and admission accrue C but never pay it; a sink-only failure does not block claims",
+      "freshness": "FRESH (this run)",
+      "status": "PASS",
+      "evidence": [
+        {
+          "kind": "forge",
+          "ref": "PoolFeeSplitTest.testHarvestSyncAdmissionAndClaimsNeverPayTheSink()",
+          "result": "Success"
+        },
+        {
+          "kind": "forge",
+          "ref": "PoolFeeSplitTest.testAFailedSinkTransferRevertsTheWholeReleaseAndClaimsStillWork()",
+          "result": "Success"
+        },
+        {
+          "kind": "forge",
+          "ref": "PoolFeeSplitTest.testAdmissionBoundaryUnderTheNewSplit()",
+          "result": "Success"
+        },
+        {
+          "kind": "forge",
+          "ref": "PoolClaimsTest.testRecipientPaymentsAreIndependentOfEachOtherAndOfClaims()",
+          "result": "Success"
+        },
+        {
+          "kind": "forge",
+          "ref": "PoolClaimsTest.testClaimsDoNotDependOnMiningOrAdmissions()",
+          "result": "Success"
+        }
+      ]
+    },
+    {
+      "id": "WA",
+      "requirement": "Worked example A: 1,050 BEM -> 1,000 / 12.5 / 12.5 / 25; A then B and B then A; repeated calls pay nothing more",
+      "freshness": "FRESH (this run)",
+      "status": "PASS",
+      "evidence": [
+        {
+          "kind": "forge",
+          "ref": "PoolFeeSplitTest.testWorkedExampleSplitsOneThousandFiftyBem()",
+          "result": "Success"
+        },
+        {
+          "kind": "forge",
+          "ref": "PoolFeeSplitTest.testReleaseAThenBPaysEachOnceAndTheSinkOnce()",
+          "result": "Success"
+        },
+        {
+          "kind": "forge",
+          "ref": "PoolFeeSplitTest.testReleaseBThenAEndsWithTheSameBalances()",
+          "result": "Success"
+        }
+      ]
+    },
+    {
+      "id": "WB",
+      "requirement": "Worked example B: composition 2:0 then 3:1 -> cumulative NAND 1,750, LATCH 250, A 25, B 25, C 50",
+      "freshness": "FRESH (this run)",
+      "status": "PASS",
+      "evidence": [
+        {
+          "kind": "forge",
+          "ref": "PoolFeeSplitTest.testWorkedExampleCompositionChangeKeepsEarlierCategoryTotals()",
+          "result": "Success"
+        }
+      ]
+    },
+    {
+      "id": "WC",
+      "requirement": "Worked example C: T = 0, 1, 41, 42, 43, 83, 84, 85 and larger; many tiny inflows equal one combined inflow",
+      "freshness": "FRESH (this run)",
+      "status": "PASS",
+      "evidence": [
+        {
+          "kind": "forge",
+          "ref": "PoolFeeSplitTest.testSmallTotalsUseIndependentFloors()",
+          "result": "Success"
+        },
+        {
+          "kind": "forge",
+          "ref": "PoolFeeSplitTest.testManyTinyInflowsEqualOneCombinedInflow()",
+          "result": "Success"
+        },
+        {
+          "kind": "sdk",
+          "ref": "small totals: independent floors, C is floor(2T/84) and not 2 * floor(T/84)",
+          "result": "ok"
+        }
+      ]
+    },
+    {
+      "id": "V1",
+      "requirement": "Validation 1: math, monotonicity, solvency, residue bound",
+      "freshness": "FRESH (this run)",
+      "status": "PASS",
+      "evidence": [
+        {
+          "kind": "forge",
+          "ref": "PoolAccountingTest.testFuzzMathProperties(uint96,uint96,uint32,uint32,uint32,uint32,uint16,uint16)",
+          "result": "Success"
+        },
+        {
+          "kind": "forge",
+          "ref": "PoolInvariantTest.invariantEntitlementsNeverDecrease()",
+          "result": "Success"
+        },
+        {
+          "kind": "forge",
+          "ref": "PoolInvariantTest.invariantFourAccountConservation()",
+          "result": "Success"
+        },
+        {
+          "kind": "forge",
+          "ref": "PoolInvariantTest.invariantModelMatchesTheLedger()",
+          "result": "Success"
+        },
+        {
+          "kind": "sdk",
+          "ref": "conservation, bounds and monotonicity over random periods",
+          "result": "ok"
+        },
+        {
+          "kind": "sdk",
+          "ref": "residue bound: 3 outer units, 1 category unit, S - 1 per collection",
+          "result": "ok"
+        },
+        {
+          "kind": "audit",
+          "ref": "AuditDifferentialTest.testFuzzLedgerMatchesIndependentReferenceModel(uint256)",
+          "result": "Success"
+        }
+      ]
+    },
+    {
+      "id": "V2",
+      "requirement": "Validation 2: release orderings",
+      "freshness": "FRESH (this run)",
+      "status": "PASS",
+      "evidence": [
+        {
+          "kind": "forge",
+          "ref": "PoolFeeSplitTest.testReleaseAThenBPaysEachOnceAndTheSinkOnce()",
+          "result": "Success"
+        },
+        {
+          "kind": "forge",
+          "ref": "PoolFeeSplitTest.testReleaseBThenAEndsWithTheSameBalances()",
+          "result": "Success"
+        },
+        {
+          "kind": "forge",
+          "ref": "PoolFeeSplitTest.testInterleavedIncomeAndRepeatedReleasesFollowTheCumulativeFormula()",
+          "result": "Success"
+        },
+        {
+          "kind": "forge",
+          "ref": "PoolFeeSplitTest.testFuzzReleasesPayExactlyTheCumulativeFormula(uint64[8],uint8)",
+          "result": "Success"
+        },
+        {
+          "kind": "fork",
+          "ref": "testForkReleaseTransfersCToTheSinkOnRealBem()",
+          "result": "Success"
+        }
+      ]
+    },
+    {
+      "id": "V3",
+      "requirement": "Validation 3: C backlog paid once",
+      "freshness": "FRESH (this run)",
+      "status": "PASS",
+      "evidence": [
+        {
+          "kind": "forge",
+          "ref": "PoolFeeSplitTest.testSinkIsPaidEvenWhenTheReleasedRoleIsDueNothing()",
+          "result": "Success"
+        },
+        {
+          "kind": "forge",
+          "ref": "PoolFeeSplitTest.testInterleavedIncomeAndRepeatedReleasesFollowTheCumulativeFormula()",
+          "result": "Success"
+        },
+        {
+          "kind": "check",
+          "ref": "fork-safe-e2e.json checks.sinkPaidOnceForTheWholeBacklog",
+          "result": true
+        },
+        {
+          "kind": "check",
+          "ref": "local-e2e.json checks.repeatedReleasePaysNothingMore",
+          "result": true
+        }
+      ]
+    },
+    {
+      "id": "V4",
+      "requirement": "Validation 4: migration; C immutable",
+      "freshness": "FRESH (this run)",
+      "status": "PASS",
+      "evidence": [
+        {
+          "kind": "forge",
+          "ref": "PoolFeeSplitTest.testRoleMigrationKeepsPendingAndNeverTouchesTheSink()",
+          "result": "Success"
+        },
+        {
+          "kind": "forge",
+          "ref": "PoolFeeSplitTest.testTheSinkIsAFixedAddressThatNoRoleCanUse()",
+          "result": "Success"
+        },
+        {
+          "kind": "audit",
+          "ref": "AuditClaimOrderTest.testRoleMigrationPaysUnreleasedIncomeToTheNewAddressAndNothingToTheOld()",
+          "result": "Success"
+        },
+        {
+          "kind": "check",
+          "ref": "fork-safe-e2e.json checks.rolesMovedBySafes",
+          "result": true
+        },
+        {
+          "kind": "check",
+          "ref": "fork-safe-e2e.json checks.newRecipientsPaidAndSafesNoLonger",
+          "result": true
+        }
+      ]
+    },
+    {
+      "id": "V5",
+      "requirement": "Validation 5: failure and reentrancy at either payment",
+      "freshness": "FRESH (this run)",
+      "status": "PASS",
+      "evidence": [
+        {
+          "kind": "forge",
+          "ref": "PoolFeeSplitTest.testAFailedSinkTransferRevertsTheWholeReleaseAndClaimsStillWork()",
+          "result": "Success"
+        },
+        {
+          "kind": "forge",
+          "ref": "PoolFeeSplitTest.testAFailedRoleTransferRevertsTheWholeReleaseIncludingTheSink()",
+          "result": "Success"
+        },
+        {
+          "kind": "forge",
+          "ref": "PoolFeeSplitTest.testFeeOnTransferBemIsRefusedForTheWholeRelease()",
+          "result": "Success"
+        },
+        {
+          "kind": "forge",
+          "ref": "PoolFeeSplitTest.testReentrantCallsDuringEitherPaymentAreRefused()",
+          "result": "Success"
+        }
+      ]
+    },
+    {
+      "id": "V6",
+      "requirement": "Validation 6: claims usable while the token rejects only transfers to C",
+      "freshness": "FRESH (this run)",
+      "status": "PASS",
+      "evidence": [
+        {
+          "kind": "forge",
+          "ref": "PoolFeeSplitTest.testAFailedSinkTransferRevertsTheWholeReleaseAndClaimsStillWork()",
+          "result": "Success"
+        }
+      ]
+    },
+    {
+      "id": "V7",
+      "requirement": "Validation 7: _sync after each payment finds no deficit and nothing new",
+      "freshness": "FRESH (this run)",
+      "status": "PASS",
+      "evidence": [
+        {
+          "kind": "forge",
+          "ref": "PoolFeeSplitTest.testSyncAfterEachPaymentFindsNoDeficitAndNothingNew()",
+          "result": "Success"
+        }
+      ]
+    },
+    {
+      "id": "V8",
+      "requirement": "Validation 8: delayed delivery, receipt transfer, duplicate-ID SDK mitigation, unchanged receipt supply",
+      "freshness": "FRESH (this run)",
+      "status": "PASS",
+      "evidence": [
+        {
+          "kind": "forge",
+          "ref": "DistributorTest.testLateClaimsKeepTheBemAccumulatedWhileHeldByTheDistributor()",
+          "result": "Success"
+        },
+        {
+          "kind": "forge",
+          "ref": "DistributorTest.testDeliveryIsExactlyOnceAndKeepsTheAttachedBem()",
+          "result": "Success"
+        },
+        {
+          "kind": "forge",
+          "ref": "PoolClaimsTest.testUnclaimedIncomeFollowsTheReceiptAndTheFormerHolderLosesIt()",
+          "result": "Success"
+        },
+        {
+          "kind": "forge",
+          "ref": "ClaimPreviewTest.testNormalizedInputsPreviewExactlyWhatIsPaidInTheSameState()",
+          "result": "Success"
+        },
+        {
+          "kind": "forge",
+          "ref": "ClaimPreviewTest.testRawViewCountsARepeatedIdTwiceButClaimBatchPaysItOnce()",
+          "result": "Success"
+        },
+        {
+          "kind": "check",
+          "ref": "local-e2e.json checks.repeatedClaimIdsNormalizedAndPreviewEqualsPayment",
+          "result": true
+        },
+        {
+          "kind": "check",
+          "ref": "local-e2e.json checks.lateReceiptKeptAccumulatedBem",
+          "result": true
+        },
+        {
+          "kind": "check",
+          "ref": "local-e2e.json checks.newHolderGotTransferredEntitlement",
+          "result": true
+        },
+        {
+          "kind": "check",
+          "ref": "fork-safe-e2e.json checks.newHolderClaimsAfterSafeTransfer",
+          "result": true
+        },
+        {
+          "kind": "canary",
+          "ref": "canary-fork/complete/results.json assertions.supplies-stay-4-and-2",
+          "result": "PASS"
+        },
+        {
+          "kind": "canary",
+          "ref": "canary-fork/complete/results.json assertions.late-delivery-preserves-earlier-entitlement",
+          "result": "PASS"
+        }
+      ]
+    },
+    {
+      "id": "V9",
+      "requirement": "Validation 9: new-miner admission boundary",
+      "freshness": "FRESH (this run)",
+      "status": "PASS",
+      "evidence": [
+        {
+          "kind": "forge",
+          "ref": "PoolFeeSplitTest.testAdmissionBoundaryUnderTheNewSplit()",
+          "result": "Success"
+        },
+        {
+          "kind": "forge",
+          "ref": "PoolAdmissionTest.testSpecificationAcceptanceExample()",
+          "result": "Success"
+        },
+        {
+          "kind": "fork",
+          "ref": "testForkStrictAdmissionBoundaryWithRealMiners()",
+          "result": "Success"
+        },
+        {
+          "kind": "fork",
+          "ref": "testForkBoundaryWithThreeOldMinersAndAnIncomingBatch()",
+          "result": "Success"
+        },
+        {
+          "kind": "check",
+          "ref": "fork-e2e.json checks.realBoundaryMatchesOldNewCompositionModel",
+          "result": true
+        },
+        {
+          "kind": "canary",
+          "ref": "canary-fork/complete/results.json assertions.carried-income-new-composition-and-fixed-old-entitlements",
+          "result": "PASS"
+        }
+      ]
+    },
+    {
+      "id": "V10",
+      "requirement": "Validation 10: real BEM fork - transfer to the sink, reconciliation, observed totalSupply",
+      "freshness": "FRESH (this run)",
+      "status": "PASS",
+      "evidence": [
+        {
+          "kind": "fork",
+          "ref": "testForkReleaseTransfersCToTheSinkOnRealBem()",
+          "result": "Success"
+        },
+        {
+          "kind": "check",
+          "ref": "fork-e2e.json checks.sinkReceivedExactlyCsCumulativeWeight",
+          "result": true
+        },
+        {
+          "kind": "check",
+          "ref": "fork-e2e.json checks.poolOutflowEqualsRoleAndSinkInflows",
+          "result": true
+        },
+        {
+          "kind": "check",
+          "ref": "fork-e2e.json checks.sinkPaidByOneBemTransferFromThePool",
+          "result": true
+        },
+        {
+          "kind": "check",
+          "ref": "fork-e2e.json checks.bemTotalSupplyUnchangedByTheSinkTransfer",
+          "result": true
+        },
+        {
+          "kind": "check",
+          "ref": "fork-e2e.json checks.reconcilePass",
+          "result": true
+        }
+      ]
+    },
+    {
+      "id": "V11",
+      "requirement": "Validation 11: release gas within the planned bound, including through a Safe",
+      "freshness": "FRESH (this run)",
+      "status": "PASS",
+      "evidence": [
+        {
+          "kind": "forge",
+          "ref": "GasModelTest.testReleasesFitTheirBoundInEitherOrder()",
+          "result": "Success"
+        },
+        {
+          "kind": "forge",
+          "ref": "GasModelTest.testSingleCallsFitTheirBounds()",
+          "result": "Success"
+        },
+        {
+          "kind": "forge",
+          "ref": "GasModelTest.testDeploymentModelsCoverTheLargestConfigurations()",
+          "result": "Success"
+        },
+        {
+          "kind": "check",
+          "ref": "fork-safe-e2e.json checks.release-2-by-safe_estimateWithinPlannedBound",
+          "result": true
+        },
+        {
+          "kind": "check",
+          "ref": "fork-safe-e2e.json checks.release-2-by-safe_executedBySafe",
+          "result": true
+        },
+        {
+          "kind": "check",
+          "ref": "fork-safe-e2e.json checks.everySafeTransactionWithinItsBoundAndTheCap",
+          "result": true
+        }
+      ]
+    },
+    {
+      "id": "S1",
+      "requirement": "Static analysis (Slither) ran on the changed sources",
+      "freshness": "FRESH (this run)",
+      "status": "PASS",
+      "evidence": [
+        {
+          "kind": "step",
+          "ref": "run-manifest.json steps.slither",
+          "result": "PASS"
+        },
+        {
+          "kind": "step",
+          "ref": "run-manifest.json steps.artifacts-stable-after-rebuild",
+          "result": "PASS"
+        }
+      ]
+    },
+    {
+      "id": "P1",
+      "requirement": "Preserved behaviour: every pre-existing Solidity, audit, SDK, end-to-end and fork suite passes on 2.1.0",
+      "freshness": "FRESH (this run)",
+      "status": "PASS",
+      "evidence": [
+        {
+          "kind": "step",
+          "ref": "run-manifest.json steps.solidity-tests",
+          "result": "PASS"
+        },
+        {
+          "kind": "step",
+          "ref": "run-manifest.json steps.audit-tests",
+          "result": "PASS"
+        },
+        {
+          "kind": "step",
+          "ref": "run-manifest.json steps.audit-sdk-tests",
+          "result": "PASS"
+        },
+        {
+          "kind": "step",
+          "ref": "run-manifest.json steps.sdk-tests",
+          "result": "PASS"
+        },
+        {
+          "kind": "step",
+          "ref": "run-manifest.json steps.typecheck",
+          "result": "PASS"
+        },
+        {
+          "kind": "step",
+          "ref": "run-manifest.json steps.local-e2e",
+          "result": "PASS"
+        },
+        {
+          "kind": "step",
+          "ref": "run-manifest.json steps.largest-wallet",
+          "result": "PASS"
+        },
+        {
+          "kind": "step",
+          "ref": "run-manifest.json steps.fork-tests",
+          "result": "PASS"
+        },
+        {
+          "kind": "step",
+          "ref": "run-manifest.json steps.fork-e2e",
+          "result": "PASS"
+        },
+        {
+          "kind": "step",
+          "ref": "run-manifest.json steps.fork-safe-e2e",
+          "result": "PASS"
+        },
+        {
+          "kind": "step",
+          "ref": "run-manifest.json steps.format-check",
+          "result": "PASS"
+        }
+      ]
+    },
+    {
+      "id": "P2",
+      "requirement": "Only the pool, PoolMath and the generated canary changed in src/; the receipt is identical and the distributor and canary helper differ only in compiler metadata",
+      "freshness": "FRESH (this run)",
+      "status": "PASS",
+      "evidence": [
+        {
+          "kind": "observation",
+          "ref": "contract-identity-compare.json expectedDifferencesOnly",
+          "result": true
+        }
+      ]
+    },
+    {
+      "id": "P3",
+      "requirement": "Canary handled as a new local-only candidate (canary-2-local); the approved-candidate guard and reports/canary/ untouched; recovery authority canary-only",
+      "freshness": "FRESH (this run)",
+      "status": "PASS",
+      "evidence": [
+        {
+          "kind": "step",
+          "ref": "run-manifest.json steps.canary-fork-rehearsal",
+          "result": "PASS"
+        },
+        {
+          "kind": "forge",
+          "ref": "CanaryRecoveryTest.testNormalHarvestShutdownBothReturnsAfterRenunciation()",
+          "result": "Success"
+        },
+        {
+          "kind": "forge",
+          "ref": "CanaryRecoveryTest.testShutdownIsPermanentAndScopeCannotExpand()",
+          "result": "Success"
+        },
+        {
+          "kind": "observation",
+          "ref": "canary-fork/summary.json candidate.kind",
+          "result": "LOCAL_CANDIDATE_NOT_APPROVED"
+        },
+        {
+          "kind": "observation",
+          "ref": "historical-unchanged.json reports/canary",
+          "result": "UNCHANGED"
+        }
+      ]
+    },
+    {
+      "id": "H1",
+      "requirement": "Historical 102-part reports, mainnet journals, approved manifests and source snapshots unchanged",
+      "freshness": "FRESH (this run)",
+      "status": "PASS",
+      "evidence": [
+        {
+          "kind": "observation",
+          "ref": "historical-unchanged.json docs/INTERNAL_SECURITY_REVIEW_f2c8e50.md",
+          "result": "UNCHANGED"
+        },
+        {
+          "kind": "observation",
+          "ref": "historical-unchanged.json docs/AUDIT_REMEDIATION_REPORT.md",
+          "result": "UNCHANGED"
+        },
+        {
+          "kind": "observation",
+          "ref": "historical-unchanged.json docs/VERIFICATION_REPORT.md",
+          "result": "UNCHANGED"
+        },
+        {
+          "kind": "observation",
+          "ref": "historical-unchanged.json docs/BASELINE.md",
+          "result": "UNCHANGED"
+        },
+        {
+          "kind": "observation",
+          "ref": "historical-unchanged.json docs/LIVE_TEST_PLAN.md",
+          "result": "UNCHANGED"
+        },
+        {
+          "kind": "observation",
+          "ref": "historical-unchanged.json MAINNET_TEST_REPORT.md",
+          "result": "UNCHANGED"
+        },
+        {
+          "kind": "observation",
+          "ref": "historical-unchanged.json reports/canary",
+          "result": "UNCHANGED"
+        },
+        {
+          "kind": "observation",
+          "ref": "historical-unchanged.json reports/internal-review-f2c8e50",
+          "result": "UNCHANGED"
+        },
+        {
+          "kind": "observation",
+          "ref": "historical-unchanged.json reports/remediation-20261021-b846c0c",
+          "result": "UNCHANGED"
+        },
+        {
+          "kind": "observation",
+          "ref": "historical-unchanged.json proposed-patches",
+          "result": "UNCHANGED"
+        },
+        {
+          "kind": "observation",
+          "ref": "historical-unchanged.json reports/ (top-level outputs, logs, probes)",
+          "result": "UNCHANGED"
+        }
+      ]
+    }
+  ],
+  "notExecuted": [
+    "Deployment to a public network, live transactions, real-asset tests (not authorized in this stage).",
+    "A mainnet canary of 2.1.0 (canary-2-local is a local-fork candidate only; nothing is approved).",
+    "An independent professional audit."
+  ]
+}

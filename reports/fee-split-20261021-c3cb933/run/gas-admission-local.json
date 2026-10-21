@@ -1,0 +1,15 @@
+{
+  "admitOneWith0Registered": 444918,
+  "admitOneWith100Registered": 2427364,
+  "admitOneWith10Registered": 448981,
+  "admitOneWith1Registered": 310843,
+  "admitOneWith200Registered": 4625568,
+  "admitOneWith400Registered": 9021974,
+  "admitOneWith50Registered": 1328263,
+  "admitTenWith401Registered": 10427736,
+  "marginalPerOldMinerUpTo10": 17267,
+  "marginalPerOldMinerUpTo100": 22430,
+  "marginalPerOldMinerUpTo200": 22204,
+  "marginalPerOldMinerUpTo400": 22092,
+  "marginalPerOldMinerUpTo50": 22545
+}

@@ -201,11 +201,12 @@ async function main() {
     const comp = await step('composition', ['composition', '--addresses', addressesFile, '--token-ids', '1-2']);
     check('compositionReadable', (comp.miners as { admissible: boolean }[]).every(m => m.admissible));
     await step('deposit-first-miner', ['deposit', '--addresses', addressesFile, '--token-ids', '1', '--from', depositor, '--send-local']);
-    await write(mining, mockMiningAbi as Abi, 'accrue', [nft, 1n, 102n * BEM]);
-    await write(mining, mockMiningAbi as Abi, 'accrue', [nft, 2n, 102n * BEM]);
+    // 105 BEM per miner: 100 for the participants under 80 : 1 : 1 : 2 of 84.
+    await write(mining, mockMiningAbi as Abi, 'accrue', [nft, 1n, 105n * BEM]);
+    await write(mining, mockMiningAbi as Abi, 'accrue', [nft, 2n, 105n * BEM]);
     await step('deposit-second-miner', ['deposit', '--addresses', addressesFile, '--token-ids', '2', '--from', depositor, '--send-local']);
-    const accrual = await read<{ nandIncome: bigint; latchIncome: bigint; recipientA: bigint; recipientB: bigint }>(pool, tapeoutMinerPoolAbi as Abi, 'accrual');
-    check('acceptanceExampleNand140Latch60', accrual.nandIncome === 140n * BEM && accrual.latchIncome === 60n * BEM && accrual.recipientA === 2n * BEM && accrual.recipientB === 2n * BEM, accrual);
+    const accrual = await read<{ nandIncome: bigint; latchIncome: bigint; recipientA: bigint; recipientB: bigint; sink: bigint }>(pool, tapeoutMinerPoolAbi as Abi, 'accrual');
+    check('acceptanceExampleNand140Latch60', accrual.nandIncome === 140n * BEM && accrual.latchIncome === 60n * BEM && accrual.recipientA === 250_000_000n && accrual.recipientB === 250_000_000n && accrual.sink === 5n * BEM, accrual);
     check('depositorKeptNothing', (await read<bigint>(bem, erc20Abi as Abi, 'balanceOf', [depositor])) === 0n);
 
     // 6. Unauthorized admission paths.
@@ -251,6 +252,18 @@ async function main() {
     check('verifyAfterDeliveryMatches', afterDelivery.status === 'FINALIZED_AND_MATCHES' && deliveredIds.NAND === 30n && deliveredIds.LATCH === 10n, afterDelivery);
     await step('release', ['release', '--addresses', addressesFile, '--from', outsider, '--send-local']);
     check('outsiderReceivedNothing', (await read<bigint>(bem, erc20Abi as Abi, 'balanceOf', [outsider])) === 0n);
+    // Each release pays its role and all of C's unpaid weight; after A then B everything accrued is paid.
+    const released = await read<bigint>(pool, tapeoutMinerPoolAbi as Abi, 'totalAccounted');
+    const sinkAddress = await read<Address>(pool, tapeoutMinerPoolAbi as Abi, 'SINK');
+    const [paidA, paidB, paidC, sinkBalance] = await Promise.all([
+      read<bigint>(pool, tapeoutMinerPoolAbi as Abi, 'recipientAPaid'), read<bigint>(pool, tapeoutMinerPoolAbi as Abi, 'recipientBPaid'),
+      read<bigint>(pool, tapeoutMinerPoolAbi as Abi, 'sinkPaid'), read<bigint>(bem, erc20Abi as Abi, 'balanceOf', [sinkAddress]),
+    ]);
+    check('releasePaidRolesAndSinkTheirCumulativeWeights', sinkAddress === '0x000000000000000000000000000000000000dEaD' && paidA === released / 84n && paidB === released / 84n
+      && paidC === (released * 2n) / 84n && sinkBalance === paidC && (await read<bigint>(bem, erc20Abi as Abi, 'balanceOf', [recipientA])) === paidA, { released, paidA, paidB, paidC, sinkBalance });
+    const releaseAgain = await step('release-again', ['release', '--addresses', addressesFile, '--from', outsider, '--send-local']);
+    check('repeatedReleasePaysNothingMore', (await read<bigint>(bem, erc20Abi as Abi, 'balanceOf', [sinkAddress])) === sinkBalance
+      && (await read<bigint>(pool, tapeoutMinerPoolAbi as Abi, 'sinkPaid')) === paidC, releaseAgain);
 
     // 8. Settlement exceptions (mock fault injection): a REVOKED old miner is skipped explicitly; any
     //    other failure of an old miner (a COOLING status, a failing claim) rolls the admission back.

@@ -156,6 +156,32 @@ export const tapeoutMinerPoolAbi = [
   },
   {
     "type": "function",
+    "name": "SINK",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "SINK_PARTS",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "TOTAL_PARTS",
     "inputs": [],
     "outputs": [
@@ -209,6 +235,11 @@ export const tapeoutMinerPoolAbi = [
           },
           {
             "name": "recipientB",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "sink",
             "type": "uint256",
             "internalType": "uint256"
           },
@@ -855,6 +886,11 @@ export const tapeoutMinerPoolAbi = [
             "internalType": "uint256"
           },
           {
+            "name": "sink",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
             "name": "participants",
             "type": "uint256",
             "internalType": "uint256"
@@ -1064,6 +1100,16 @@ export const tapeoutMinerPoolAbi = [
             "internalType": "uint256"
           },
           {
+            "name": "sinkAccrued",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "sinkPaid",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
             "name": "nandIncome",
             "type": "uint256",
             "internalType": "uint256"
@@ -1188,6 +1234,32 @@ export const tapeoutMinerPoolAbi = [
         "internalType": "enum TapeoutMinerPool.Category"
       }
     ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "sinkClaimable",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "sinkPaid",
+    "inputs": [],
     "outputs": [
       {
         "name": "",
@@ -1744,6 +1816,31 @@ export const tapeoutMinerPoolAbi = [
         "name": "tokenId",
         "type": "uint256",
         "indexed": true,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "SinkPaid",
+    "inputs": [
+      {
+        "name": "releasedRole",
+        "type": "uint8",
+        "indexed": true,
+        "internalType": "enum TapeoutMinerPool.Recipient"
+      },
+      {
+        "name": "sink",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
         "internalType": "uint256"
       }
     ],
@@ -3835,7 +3932,7 @@ export const tapeoutReceiptDistributorAbi = [
   }
 ] as const;
 
-export const mockBEMAbi = [{"type":"constructor","inputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"allowance","inputs":[{"name":"owner","type":"address","internalType":"address"},{"name":"spender","type":"address","internalType":"address"}],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"approve","inputs":[{"name":"spender","type":"address","internalType":"address"},{"name":"value","type":"uint256","internalType":"uint256"}],"outputs":[{"name":"","type":"bool","internalType":"bool"}],"stateMutability":"nonpayable"},{"type":"function","name":"balanceOf","inputs":[{"name":"a","type":"address","internalType":"address"}],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"brokenBalance","inputs":[],"outputs":[{"name":"","type":"bool","internalType":"bool"}],"stateMutability":"view"},{"type":"function","name":"brokenTransfer","inputs":[],"outputs":[{"name":"","type":"bool","internalType":"bool"}],"stateMutability":"view"},{"type":"function","name":"burn","inputs":[{"name":"from","type":"address","internalType":"address"},{"name":"n","type":"uint256","internalType":"uint256"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"decimals","inputs":[],"outputs":[{"name":"","type":"uint8","internalType":"uint8"}],"stateMutability":"pure"},{"type":"function","name":"mint","inputs":[{"name":"to","type":"address","internalType":"address"},{"name":"n","type":"uint256","internalType":"uint256"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"name","inputs":[],"outputs":[{"name":"","type":"string","internalType":"string"}],"stateMutability":"view"},{"type":"function","name":"setFaults","inputs":[{"name":"balanceFault","type":"bool","internalType":"bool"},{"name":"transferFault","type":"bool","internalType":"bool"},{"name":"tax","type":"bool","internalType":"bool"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"symbol","inputs":[],"outputs":[{"name":"","type":"string","internalType":"string"}],"stateMutability":"view"},{"type":"function","name":"taxed","inputs":[],"outputs":[{"name":"","type":"bool","internalType":"bool"}],"stateMutability":"view"},{"type":"function","name":"totalSupply","inputs":[],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"transfer","inputs":[{"name":"to","type":"address","internalType":"address"},{"name":"value","type":"uint256","internalType":"uint256"}],"outputs":[{"name":"","type":"bool","internalType":"bool"}],"stateMutability":"nonpayable"},{"type":"function","name":"transferFrom","inputs":[{"name":"from","type":"address","internalType":"address"},{"name":"to","type":"address","internalType":"address"},{"name":"value","type":"uint256","internalType":"uint256"}],"outputs":[{"name":"","type":"bool","internalType":"bool"}],"stateMutability":"nonpayable"},{"type":"event","name":"Approval","inputs":[{"name":"owner","type":"address","indexed":true,"internalType":"address"},{"name":"spender","type":"address","indexed":true,"internalType":"address"},{"name":"value","type":"uint256","indexed":false,"internalType":"uint256"}],"anonymous":false},{"type":"event","name":"Transfer","inputs":[{"name":"from","type":"address","indexed":true,"internalType":"address"},{"name":"to","type":"address","indexed":true,"internalType":"address"},{"name":"value","type":"uint256","indexed":false,"internalType":"uint256"}],"anonymous":false},{"type":"error","name":"ERC20InsufficientAllowance","inputs":[{"name":"spender","type":"address","internalType":"address"},{"name":"allowance","type":"uint256","internalType":"uint256"},{"name":"needed","type":"uint256","internalType":"uint256"}]},{"type":"error","name":"ERC20InsufficientBalance","inputs":[{"name":"sender","type":"address","internalType":"address"},{"name":"balance","type":"uint256","internalType":"uint256"},{"name":"needed","type":"uint256","internalType":"uint256"}]},{"type":"error","name":"ERC20InvalidApprover","inputs":[{"name":"approver","type":"address","internalType":"address"}]},{"type":"error","name":"ERC20InvalidReceiver","inputs":[{"name":"receiver","type":"address","internalType":"address"}]},{"type":"error","name":"ERC20InvalidSender","inputs":[{"name":"sender","type":"address","internalType":"address"}]},{"type":"error","name":"ERC20InvalidSpender","inputs":[{"name":"spender","type":"address","internalType":"address"}]}] as const;
+export const mockBEMAbi = [{"type":"constructor","inputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"allowance","inputs":[{"name":"owner","type":"address","internalType":"address"},{"name":"spender","type":"address","internalType":"address"}],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"approve","inputs":[{"name":"spender","type":"address","internalType":"address"},{"name":"value","type":"uint256","internalType":"uint256"}],"outputs":[{"name":"","type":"bool","internalType":"bool"}],"stateMutability":"nonpayable"},{"type":"function","name":"balanceOf","inputs":[{"name":"a","type":"address","internalType":"address"}],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"blockedTo","inputs":[{"name":"","type":"address","internalType":"address"}],"outputs":[{"name":"","type":"bool","internalType":"bool"}],"stateMutability":"view"},{"type":"function","name":"brokenBalance","inputs":[],"outputs":[{"name":"","type":"bool","internalType":"bool"}],"stateMutability":"view"},{"type":"function","name":"brokenTransfer","inputs":[],"outputs":[{"name":"","type":"bool","internalType":"bool"}],"stateMutability":"view"},{"type":"function","name":"burn","inputs":[{"name":"from","type":"address","internalType":"address"},{"name":"n","type":"uint256","internalType":"uint256"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"decimals","inputs":[],"outputs":[{"name":"","type":"uint8","internalType":"uint8"}],"stateMutability":"pure"},{"type":"function","name":"hookBubble","inputs":[],"outputs":[{"name":"","type":"bool","internalType":"bool"}],"stateMutability":"view"},{"type":"function","name":"hookCalled","inputs":[],"outputs":[{"name":"","type":"bool","internalType":"bool"}],"stateMutability":"view"},{"type":"function","name":"hookData","inputs":[],"outputs":[{"name":"","type":"bytes","internalType":"bytes"}],"stateMutability":"view"},{"type":"function","name":"hookResult","inputs":[],"outputs":[{"name":"","type":"bytes","internalType":"bytes"}],"stateMutability":"view"},{"type":"function","name":"hookSucceeded","inputs":[],"outputs":[{"name":"","type":"bool","internalType":"bool"}],"stateMutability":"view"},{"type":"function","name":"hookTarget","inputs":[],"outputs":[{"name":"","type":"address","internalType":"address"}],"stateMutability":"view"},{"type":"function","name":"hookTrigger","inputs":[],"outputs":[{"name":"","type":"address","internalType":"address"}],"stateMutability":"view"},{"type":"function","name":"mint","inputs":[{"name":"to","type":"address","internalType":"address"},{"name":"n","type":"uint256","internalType":"uint256"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"name","inputs":[],"outputs":[{"name":"","type":"string","internalType":"string"}],"stateMutability":"view"},{"type":"function","name":"setBlockedTo","inputs":[{"name":"to","type":"address","internalType":"address"},{"name":"flag","type":"bool","internalType":"bool"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"setFaults","inputs":[{"name":"balanceFault","type":"bool","internalType":"bool"},{"name":"transferFault","type":"bool","internalType":"bool"},{"name":"tax","type":"bool","internalType":"bool"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"setTransferHook","inputs":[{"name":"trigger","type":"address","internalType":"address"},{"name":"target","type":"address","internalType":"address"},{"name":"data","type":"bytes","internalType":"bytes"},{"name":"bubble","type":"bool","internalType":"bool"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"symbol","inputs":[],"outputs":[{"name":"","type":"string","internalType":"string"}],"stateMutability":"view"},{"type":"function","name":"taxed","inputs":[],"outputs":[{"name":"","type":"bool","internalType":"bool"}],"stateMutability":"view"},{"type":"function","name":"totalSupply","inputs":[],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"transfer","inputs":[{"name":"to","type":"address","internalType":"address"},{"name":"value","type":"uint256","internalType":"uint256"}],"outputs":[{"name":"","type":"bool","internalType":"bool"}],"stateMutability":"nonpayable"},{"type":"function","name":"transferFrom","inputs":[{"name":"from","type":"address","internalType":"address"},{"name":"to","type":"address","internalType":"address"},{"name":"value","type":"uint256","internalType":"uint256"}],"outputs":[{"name":"","type":"bool","internalType":"bool"}],"stateMutability":"nonpayable"},{"type":"event","name":"Approval","inputs":[{"name":"owner","type":"address","indexed":true,"internalType":"address"},{"name":"spender","type":"address","indexed":true,"internalType":"address"},{"name":"value","type":"uint256","indexed":false,"internalType":"uint256"}],"anonymous":false},{"type":"event","name":"Transfer","inputs":[{"name":"from","type":"address","indexed":true,"internalType":"address"},{"name":"to","type":"address","indexed":true,"internalType":"address"},{"name":"value","type":"uint256","indexed":false,"internalType":"uint256"}],"anonymous":false},{"type":"error","name":"ERC20InsufficientAllowance","inputs":[{"name":"spender","type":"address","internalType":"address"},{"name":"allowance","type":"uint256","internalType":"uint256"},{"name":"needed","type":"uint256","internalType":"uint256"}]},{"type":"error","name":"ERC20InsufficientBalance","inputs":[{"name":"sender","type":"address","internalType":"address"},{"name":"balance","type":"uint256","internalType":"uint256"},{"name":"needed","type":"uint256","internalType":"uint256"}]},{"type":"error","name":"ERC20InvalidApprover","inputs":[{"name":"approver","type":"address","internalType":"address"}]},{"type":"error","name":"ERC20InvalidReceiver","inputs":[{"name":"receiver","type":"address","internalType":"address"}]},{"type":"error","name":"ERC20InvalidSender","inputs":[{"name":"sender","type":"address","internalType":"address"}]},{"type":"error","name":"ERC20InvalidSpender","inputs":[{"name":"spender","type":"address","internalType":"address"}]}] as const;
 
 export const mockMiningAbi = [{"type":"constructor","inputs":[{"name":"token","type":"address","internalType":"contract MockBEM"}],"stateMutability":"nonpayable"},{"type":"function","name":"accrue","inputs":[{"name":"collection","type":"address","internalType":"address"},{"name":"tokenId","type":"uint256","internalType":"uint256"},{"name":"amount","type":"uint256","internalType":"uint256"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"accrueUnsettled","inputs":[{"name":"collection","type":"address","internalType":"address"},{"name":"tokenId","type":"uint256","internalType":"uint256"},{"name":"amount","type":"uint256","internalType":"uint256"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"bem","inputs":[],"outputs":[{"name":"","type":"address","internalType":"contract MockBEM"}],"stateMutability":"view"},{"type":"function","name":"broken","inputs":[],"outputs":[{"name":"","type":"bool","internalType":"bool"}],"stateMutability":"view"},{"type":"function","name":"cachedBurn","inputs":[{"name":"collection","type":"address","internalType":"address"},{"name":"tokenId","type":"uint256","internalType":"uint256"}],"outputs":[{"name":"","type":"bool","internalType":"bool"},{"name":"","type":"uint32","internalType":"uint32"},{"name":"","type":"uint32","internalType":"uint32"}],"stateMutability":"view"},{"type":"function","name":"claim","inputs":[{"name":"k","type":"bytes32","internalType":"bytes32"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"claimCount","inputs":[{"name":"","type":"bytes32","internalType":"bytes32"}],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"claimMany","inputs":[{"name":"keys","type":"bytes32[]","internalType":"bytes32[]"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"claims","inputs":[],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"getMiner","inputs":[{"name":"k","type":"bytes32","internalType":"bytes32"}],"outputs":[{"name":"m","type":"tuple","internalType":"struct IMining.MinerRecord","components":[{"name":"circuits","type":"address","internalType":"address"},{"name":"circuitId","type":"uint64","internalType":"uint64"},{"name":"taskId","type":"uint32","internalType":"uint32"},{"name":"gateCount","type":"uint32","internalType":"uint32"},{"name":"stateCount","type":"uint32","internalType":"uint32"},{"name":"depth","type":"uint32","internalType":"uint32"},{"name":"area","type":"uint64","internalType":"uint64"},{"name":"mult","type":"uint32","internalType":"uint32"},{"name":"since","type":"uint64","internalType":"uint64"},{"name":"status","type":"uint8","internalType":"uint8"},{"name":"registrant","type":"address","internalType":"address"},{"name":"nandBurn","type":"uint32","internalType":"uint32"},{"name":"latchBurn","type":"uint32","internalType":"uint32"},{"name":"bstar","type":"uint64","internalType":"uint64"},{"name":"bonus","type":"uint64","internalType":"uint64"},{"name":"optimal","type":"bool","internalType":"bool"},{"name":"commitBlock","type":"uint64","internalType":"uint64"},{"name":"firstUnusedId","type":"uint64","internalType":"uint64"},{"name":"stopBlock","type":"uint64","internalType":"uint64"},{"name":"verifWeight","type":"uint128","internalType":"uint128"},{"name":"unverWeight","type":"uint128","internalType":"uint128"},{"name":"debt","type":"uint256","internalType":"uint256"}]}],"stateMutability":"view"},{"type":"function","name":"keyBroken","inputs":[{"name":"","type":"bytes32","internalType":"bytes32"}],"outputs":[{"name":"","type":"bool","internalType":"bool"}],"stateMutability":"view"},{"type":"function","name":"lastCaller","inputs":[],"outputs":[{"name":"","type":"address","internalType":"address"}],"stateMutability":"view"},{"type":"function","name":"minerKey","inputs":[{"name":"collection","type":"address","internalType":"address"},{"name":"tokenId","type":"uint256","internalType":"uint256"}],"outputs":[{"name":"","type":"bytes32","internalType":"bytes32"}],"stateMutability":"pure"},{"type":"function","name":"pending","inputs":[{"name":"k","type":"bytes32","internalType":"bytes32"}],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"records","inputs":[{"name":"","type":"bytes32","internalType":"bytes32"}],"outputs":[{"name":"circuits","type":"address","internalType":"address"},{"name":"circuitId","type":"uint64","internalType":"uint64"},{"name":"status","type":"uint8","internalType":"uint8"},{"name":"nandBurn","type":"uint32","internalType":"uint32"},{"name":"latchBurn","type":"uint32","internalType":"uint32"},{"name":"cached","type":"bool","internalType":"bool"},{"name":"cachedNand","type":"uint32","internalType":"uint32"},{"name":"cachedLatch","type":"uint32","internalType":"uint32"},{"name":"circuitIdOverride","type":"uint64","internalType":"uint64"}],"stateMutability":"view"},{"type":"function","name":"rewards","inputs":[{"name":"","type":"bytes32","internalType":"bytes32"}],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"setBroken","inputs":[{"name":"flag","type":"bool","internalType":"bool"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"setCachedBurn","inputs":[{"name":"collection","type":"address","internalType":"address"},{"name":"tokenId","type":"uint256","internalType":"uint256"},{"name":"cached","type":"bool","internalType":"bool"},{"name":"nand","type":"uint32","internalType":"uint32"},{"name":"latch","type":"uint32","internalType":"uint32"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"setKeyBroken","inputs":[{"name":"collection","type":"address","internalType":"address"},{"name":"tokenId","type":"uint256","internalType":"uint256"},{"name":"flag","type":"bool","internalType":"bool"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"setRecordCircuitId","inputs":[{"name":"collection","type":"address","internalType":"address"},{"name":"tokenId","type":"uint256","internalType":"uint256"},{"name":"circuitId","type":"uint64","internalType":"uint64"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"setStatus","inputs":[{"name":"collection","type":"address","internalType":"address"},{"name":"tokenId","type":"uint256","internalType":"uint256"},{"name":"status","type":"uint8","internalType":"uint8"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"start","inputs":[{"name":"collection","type":"address","internalType":"address"},{"name":"tokenId","type":"uint256","internalType":"uint256"},{"name":"nand","type":"uint32","internalType":"uint32"},{"name":"latch","type":"uint32","internalType":"uint32"}],"outputs":[{"name":"k","type":"bytes32","internalType":"bytes32"}],"stateMutability":"nonpayable"},{"type":"function","name":"unsettled","inputs":[{"name":"","type":"bytes32","internalType":"bytes32"}],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"error","name":"NotActiveMiner","inputs":[{"name":"key","type":"bytes32","internalType":"bytes32"}]}] as const;
 

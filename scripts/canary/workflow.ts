@@ -60,7 +60,7 @@ export async function workflow(r: Runner, interrupted = false) {
     const logs = await tokenTransfers(receipt.blockNumber);
     const total = logs.filter(log => log.args.to?.toLowerCase() === r.manifest.contracts.pool!.toLowerCase() && (log.blockNumber < receipt.blockNumber || log.transactionIndex! <= receipt.transactionIndex)).reduce((s, log) => s + log.args.value!, 0n);
     const oldBase = results.observations.boundary?.nandBase ?? 0n;
-    const participant = total * 100n / 102n;
+    const participant = total * 80n / 84n; // 2.1.0: participants 80, A 1, B 1, C 2 of 84
     const perNand = results.observations.boundary ? (oldBase + (participant - oldBase) * 3n / 4n) / 4n : participant / 4n;
     const perLatch = results.observations.boundary ? (participant - oldBase) / 4n / 2n : 0n;
     let expected = 0n;
@@ -161,10 +161,10 @@ export async function workflow(r: Runner, interrupted = false) {
     const carriedActual = incomeLogs.filter(log => paidIntoPool(log) && log.transactionHash === second.transactionHash && log.logIndex! > cpLog.logIndex!).reduce((s, log) => s + log.args.value!, 0n);
     check('boundary-income-matches-independent-BEM-transfer-evidence', oldInflow === boundaryTotal && carriedActual === a2.carriedIncome, { oldInflow, carriedActual, logs: incomeLogs });
     // Independent specification arithmetic: deliberately does not import sdk/math or PoolMath.
-    const nandBase = oldInflow * 100n / 102n;
+    const nandBase = oldInflow * 80n / 84n;
     check('old-period-and-held-balance-all-nand', checkpoints[0].nandBase === nandBase && checkpoints[0].latchBase === 0n && boundaryTotal === oldTotal + unrecognized + a2.settledOldIncome, { oldTotal, unrecognized, boundaryTotal, checkpoint: checkpoints[0] });
     const actual = await r.pool('accrual');
-    const post = actual.total * 100n / 102n - nandBase;
+    const post = actual.total * 80n / 84n - nandBase;
     check('carried-income-new-composition-and-fixed-old-entitlements', actual.nandIncome === nandBase + post * 3n / 4n && actual.latchIncome === post / 4n && actual.total === boundaryTotal + a2.carriedIncome, { actual, carriedRaw: a2.carriedIncome, carriedFormatted: formatUnits(a2.carriedIncome, 8), zeroCarriedIsAllowed: true });
     results.observations.boundary = { firstAdmission: a1, secondAdmission: a2, checkpoint: checkpoints[0], nandBase, pendingBeforeSecondAdmissionRaw: pendingBeforeSecondAdmission, pendingAfterSecondAdmissionRaw: await r.read(P.mining, miningAbi, 'pending', [key2]) };
     check('both-nfts-in-canary', (await r.read<Address>(P.minerCollection, nftAbi, 'ownerOf', [3204n])).toLowerCase() === pool.toLowerCase() && (await r.read<Address>(P.minerCollection, nftAbi, 'ownerOf', [12485n])).toLowerCase() === pool.toLowerCase());
@@ -188,11 +188,16 @@ export async function workflow(r: Runner, interrupted = false) {
     await rejected('non-whitelisted-admission-rejected', helper, pool, encodeFunctionData({ abi: pabi, functionName: 'depositMiners', args: [[3204n]] }), { name: 'NotDepositor', args: [helper] });
     await exactClaim('helper-claims-transferred-nand-1', helper, [1n], [], true);
     check('repeat-claim-pays-zero', await exactClaim('helper-repeat-claim', helper, [1n], [], true) === 0n);
+    // Each release pays its role floor(T/84) - paid and C's whole floor(2T/84) - paid to the fixed sink.
+    const sink = await r.pool<Address>('SINK');
     for (const [role, recipient] of [['A', owner], ['B', helper]] as const) {
-      const before = await bem(recipient);
+      const before = await bem(recipient), sinkBefore = await bem(sink), sinkPaidBefore = await r.pool<bigint>('sinkPaid');
       const receipt = await r.write('pool', `release${role}`, [], `release-${role}-separately`);
       const paid = events(receipt, 'RecipientPaid')[0];
-      check(`role-${role}-separate-cumulative-allocation`, paid.amount === await r.pool<bigint>('totalAccounted') / 102n && await bem(recipient) - before === paid.amount, paid);
+      const toSink = events(receipt, 'SinkPaid')[0];
+      const total = await r.pool<bigint>('totalAccounted');
+      check(`role-${role}-separate-cumulative-allocation`, paid.amount === total / 84n && await bem(recipient) - before === paid.amount, paid);
+      check(`role-${role}-release-pays-the-sink-backlog-once`, toSink.amount === total * 2n / 84n - sinkPaidBefore && await bem(sink) - sinkBefore === toSink.amount && await r.pool<bigint>('sinkPaid') === total * 2n / 84n, { toSink, sinkBefore, sinkPaidBefore });
     }
     const finalHarvest = await r.write('pool', 'harvest', [[3204n, 12485n]], 'phase-D-orderly-final-harvest');
     check('orderly-final-harvest-no-failure', events(finalHarvest, 'Harvested')[0].failed === 0n);
@@ -232,16 +237,17 @@ export async function workflow(r: Runner, interrupted = false) {
         const transfers = await tokenTransfers(await r.rpc.getBlockNumber({ cacheTime: 0 }));
         const inbound = transfers.filter(log => log.args.to?.toLowerCase() === pool.toLowerCase()).reduce((s, log) => s + log.args.value!, 0n);
         const outbound = transfers.filter(log => log.args.from?.toLowerCase() === pool.toLowerCase()).reduce((s, log) => s + log.args.value!, 0n);
-        check('actual-BEM-transfers-match-total-income-and-payouts', inbound === ledger.totalAccounted && outbound === ledger.totalPaid, { inbound, outbound, transfers });
+        const toSink = transfers.filter(log => log.args.from?.toLowerCase() === pool.toLowerCase() && log.args.to?.toLowerCase() === '0x000000000000000000000000000000000000dead').reduce((s, log) => s + log.args.value!, 0n);
+        check('actual-BEM-transfers-match-total-income-and-payouts', inbound === ledger.totalAccounted && outbound === ledger.totalPaid && toSink === ledger.sinkPaid, { inbound, outbound, toSink, transfers });
         let nandClaimed = 0n, latchClaimed = 0n;
         for (const id of [1n, 2n, 3n, 4n]) nandClaimed += await r.pool<bigint>('claimed', [0, id]);
         for (const id of [1n, 2n]) latchClaimed += await r.pool<bigint>('claimed', [1, id]);
         const base = results.observations.boundary?.nandBase ?? 0n;
         const n = await r.pool<bigint>('totalNandBurn'), l = await r.pool<bigint>('totalLatchBurn');
-        const delta = inbound * 100n / 102n - base;
+        const delta = inbound * 80n / 84n - base;
         const expectedNand = (base + delta * n / (n + l)) / 4n * 4n;
         const expectedLatch = delta * l / (n + l) / 2n * 2n;
-        check('independent-final-payout-reconciliation', ledger.nandReceiptsAccrued === expectedNand && ledger.latchReceiptsAccrued === expectedLatch && nandClaimed === ledger.nandReceiptsPaid && latchClaimed === ledger.latchReceiptsPaid && ledger.recipientAPaid === ledger.totalAccounted / 102n && ledger.recipientBPaid === ledger.recipientAPaid && ledger.nandReceiptsPaid === ledger.nandReceiptsAccrued && ledger.latchReceiptsPaid === ledger.latchReceiptsAccrued && ledger.unrecognized === 0n && ledger.deficit === 0n && ledger.bemBalance === ledger.residue && ledger.residue <= 7n && ledger.totalAccounted === ledger.totalPaid + ledger.bemBalance, { ledger, expectedNand, expectedLatch, nandClaimed, latchClaimed });
+        check('independent-final-payout-reconciliation', ledger.nandReceiptsAccrued === expectedNand && ledger.latchReceiptsAccrued === expectedLatch && nandClaimed === ledger.nandReceiptsPaid && latchClaimed === ledger.latchReceiptsPaid && ledger.recipientAPaid === ledger.totalAccounted / 84n && ledger.recipientBPaid === ledger.recipientAPaid && ledger.sinkPaid === ledger.totalAccounted * 2n / 84n && ledger.nandReceiptsPaid === ledger.nandReceiptsAccrued && ledger.latchReceiptsPaid === ledger.latchReceiptsAccrued && ledger.unrecognized === 0n && ledger.deficit === 0n && ledger.bemBalance === ledger.residue && ledger.residue <= 8n && ledger.totalAccounted === ledger.totalPaid + ledger.bemBalance, { ledger, expectedNand, expectedLatch, nandClaimed, latchClaimed });
         results.observations.finalLedger = ledger;
       }
       await accrue();

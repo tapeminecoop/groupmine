@@ -102,6 +102,7 @@ contract AuditClaimOrderTest is SystemTestBase {
         bytes32 others = _othersFingerprint();
         uint256 aliceTotal = _aliceClaimable();
         uint256 aTotal = pool.recipientClaimable(TapeoutMinerPool.Recipient.A);
+        uint256 cTotal = bem.balanceOf(pool.SINK()) + pool.sinkClaimable();
         uint256 total = pool.totalAccounted() + pool.unrecognizedBalance();
         uint256 latch2Lifetime = pool.claimed(LATCH, 2) + pool.claimable(LATCH, 2);
         PoolMath.Accrual memory baseline = pool.accrual();
@@ -125,6 +126,9 @@ contract AuditClaimOrderTest is SystemTestBase {
             aTotal,
             "A's lifetime income changed"
         );
+        // C is paid with A's releases in the interleaved script and never in the baseline.
+        assertEq(bem.balanceOf(pool.SINK()) + pool.sinkClaimable(), cTotal, "C's lifetime income changed");
+        assertGt(bem.balanceOf(pool.SINK()), 0);
         assertEq(pool.totalAccounted() + pool.unrecognizedBalance(), total, "recognized total changed");
         assertReconciled();
     }

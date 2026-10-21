@@ -1,0 +1,67 @@
+$ node --import tsx scripts/local-e2e.ts
+# exit 0
+
+## stdout
+{
+  "status": "PASS",
+  "checks": {
+    "receiptsDeployedIndependently": true,
+    "issuanceBatched": true,
+    "overIssuanceRetracted": true,
+    "renounceRefusedBeforeIssuanceFinalized": true,
+    "supplyFixedAfterFinalization": true,
+    "renounceRefusedBeforeActivationAndAllocation": true,
+    "distributorDeploymentPlannedFromPool": true,
+    "planBoundToLocalNodeAndChain": true,
+    "importRejectsDuplicates": true,
+    "importRequiresCoverage": true,
+    "importRejectsWalletThatCannotReceive": true,
+    "importBatched": true,
+    "importResumeHasNothingLeft": true,
+    "verifyRejectsArtifactOmittingAWallet": true,
+    "verifyRejectsEmptyWalletList": true,
+    "verifyRejectsUnvalidatedArtifact": true,
+    "verifyRejectsWrongChainIdentity": true,
+    "revokedWalletBlocksFinalization": true,
+    "finalizeRequiresReviewInputs": true,
+    "finalizeRefusedWhileAllocationMismatches": true,
+    "reimportOnlyRestoresTheRevokedWallet": true,
+    "allocationVerified": true,
+    "reviewedJsonVerifiedAgainstArtifact": true,
+    "fullSupplyCovered": true,
+    "verifyRejectsAPoolTheDistributorDoesNotBelongTo": true,
+    "writesRefusedForInconsistentDeployment": true,
+    "deploymentMatchesTemplatesAndBindings": true,
+    "finalizeRecordsItsVerification": true,
+    "verifyAfterFinalizationMatches": true,
+    "verifyNeverMatchesEmptyArtifactAfterFinalization": true,
+    "allOwnershipsRenounced": true,
+    "compositionReadable": true,
+    "acceptanceExampleNand140Latch60": true,
+    "depositorKeptNothing": true,
+    "nonDepositorRejected": true,
+    "registrationBypassRejected": true,
+    "plainTransferDidNotAdmit": true,
+    "deliveriesReplannedBeforeEachSend": true,
+    "repeatedClaimIdsNormalizedAndPreviewEqualsPayment": true,
+    "aliceExactPayout": true,
+    "lateReceiptKeptAccumulatedBem": true,
+    "formerHolderRejected": true,
+    "newHolderGotTransferredEntitlement": true,
+    "verifyAfterDeliveryMatches": true,
+    "outsiderReceivedNothing": true,
+    "releasePaidRolesAndSinkTheirCumulativeWeights": true,
+    "repeatedReleasePaysNothingMore": true,
+    "revokedMinerSkippedExplicitly": true,
+    "coolingOldMinerBlocksAdmission": true,
+    "failedSettlementRolledBack": true,
+    "reconcilePass": true,
+    "cliEntrypointInspect": true
+  },
+  "steps": 64,
+  "report": "reports/local-e2e.json"
+}
+
+
+## stderr
+

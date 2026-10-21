@@ -158,12 +158,32 @@ async function main() {
     check('allocationMatchesAfterDelivery', afterDelivery.status === 'FINALIZED_AND_MATCHES', afterDelivery);
     await step('carol-claims-bem', ['claim', '--addresses', addressesFile, '--from', carol, '--all', '--send-local']);
     await step('bob-claims-bem', ['claim', '--addresses', addressesFile, '--from', bob, '--all', '--send-local']);
-    await step('release', ['release', '--addresses', addressesFile, '--from', outsider, '--send-local']);
+    // Release on real BEM: A and B each get floor(T/84) and C's floor(2T/84) goes to the fixed sink as an
+    // ordinary BEM transfer. The sink already holds BEM on BSC, so only balance deltas are compared.
+    const sink = await read<Address>(pool, tapeoutMinerPoolAbi as Abi, 'SINK');
+    const totalSupply = () => read<bigint>(BSC_PROTOCOL.bem, erc20Abi as Abi, 'totalSupply');
+    const [sinkBefore, poolBefore, supplyBefore, sinkPaidBefore] = [await bemOf(sink), await bemOf(pool), await totalSupply(), await read<bigint>(pool, tapeoutMinerPoolAbi as Abi, 'sinkPaid')];
+    const [aBefore, bBefore] = [await bemOf(recipientA), await bemOf(recipientB)];
+    const release = await step('release', ['release', '--addresses', addressesFile, '--from', outsider, '--send-local']);
     check('outsiderReceivedNothing', await bemOf(outsider) === 0n);
     check('recipientsPaidEqually', await bemOf(recipientA) === await bemOf(recipientB) && await bemOf(recipientA) > 0n);
+    const releasedTotal = await read<bigint>(pool, tapeoutMinerPoolAbi as Abi, 'totalAccounted');
+    const sinkPaid = await read<bigint>(pool, tapeoutMinerPoolAbi as Abi, 'sinkPaid');
+    const [sinkAfter, poolAfter, supplyAfter] = [await bemOf(sink), await bemOf(pool), await totalSupply()];
+    check('sinkIsTheFixedDeadAddress', sink === '0x000000000000000000000000000000000000dEaD', sink);
+    check('sinkReceivedExactlyCsCumulativeWeight', sinkPaid === (releasedTotal * 2n) / 84n && sinkAfter - sinkBefore === sinkPaid - sinkPaidBefore && sinkPaid > 0n, { sinkPaid, sinkBefore, sinkAfter });
+    check('poolOutflowEqualsRoleAndSinkInflows', poolBefore - poolAfter === (await bemOf(recipientA)) - aBefore + (await bemOf(recipientB)) - bBefore + (sinkAfter - sinkBefore), { poolBefore, poolAfter });
+    const releaseReceipt = await rpc.getTransactionReceipt({ hash: (release.transactions as { hash: Hex }[])[0].hash });
+    const sinkTransfers = parseEventLogs({ abi: erc20Abi as Abi, eventName: 'Transfer', logs: releaseReceipt.logs })
+      .filter(l => getAddress(l.address) === getAddress(BSC_PROTOCOL.bem) && (l.args as { to: Address }).to === sink);
+    check('sinkPaidByOneBemTransferFromThePool', sinkTransfers.length === 1 && (sinkTransfers[0].args as { from: Address; value: bigint }).from === pool
+      && (sinkTransfers[0].args as { value: bigint }).value === sinkPaid - sinkPaidBefore, sinkTransfers.map(l => l.args));
+    // Observed, not assumed: whether BEM's totalSupply moves when the sink is paid.
+    report.observations = { ...report.observations, sinkTransfer: { sink, sinkBalanceBefore: sinkBefore, sinkBalanceAfter: sinkAfter, sinkPaid, bemTotalSupplyBefore: supplyBefore, bemTotalSupplyAfter: supplyAfter, totalSupplyUnchanged: supplyBefore === supplyAfter, transaction: releaseReceipt.transactionHash } };
+    check('bemTotalSupplyUnchangedByTheSinkTransfer', supplyAfter === supplyBefore, { supplyBefore, supplyAfter });
     const reconcile = await step('reconcile-deep', ['reconcile', '--addresses', addressesFile, '--deep', '--out', 'reports/fork-e2e-reconcile.json']);
     check('reconcilePass', reconcile.status === 'PASS', reconcile.checks);
-    report.observations = { pool, moves, firstAdmission: a1, secondAdmission: a2, expectedAfterBoundary: expected, composition: comp.miners };
+    report.observations = { ...report.observations, pool, moves, firstAdmission: a1, secondAdmission: a2, expectedAfterBoundary: expected, composition: comp.miners };
     report.status = 'PASS';
   } finally {
     await node.stop();

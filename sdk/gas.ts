@@ -45,11 +45,15 @@ export const REVOKE_GAS = { base: 100_000n, perId: 8_000n, perRange: 30_000n } a
 export const DELIVER_GAS = { base: 100_000n, perId: 37_000n, perRange: 100_000n } as const;
 export const CLAIM_GAS = { base: 200_000n, perId: 32_000n } as const;
 export const HARVEST_GAS = { base: 150_000n, perId: 100_000n } as const;
-export const DEPLOY_GAS = { receipt: 3_000_000n, pool: 6_000_000n, distributor: 2_500_000n } as const;
-/** Single calls; every measured value is far below. */
+export const DEPLOY_GAS = { receipt: 3_000_000n, pool: 7_000_000n, distributor: 2_500_000n } as const;
+/**
+ * Single calls; every measured value is far below. A 2.1.0 release pays its role and C (two transfers,
+ * three balance checks): ~207k at most in test/unit/GasModel.t.sol (cold, with an inflow to recognize
+ * and first payments into empty balances), hence 300k.
+ */
 export const CALL_GAS = {
   finalizeIssuance: 100_000n, finalizeAllocation: 150_000n, activate: 250_000n, renounceOwnership: 100_000n,
-  releaseA: 250_000n, releaseB: 250_000n, setRecipient: 150_000n, setApprovalForAll: 150_000n,
+  releaseA: 300_000n, releaseB: 300_000n, setRecipient: 150_000n, setApprovalForAll: 150_000n,
 } as const;
 
 export const idsGas = (model: { base: bigint; perId: bigint }, ids: number | bigint) => model.base + model.perId * BigInt(ids);

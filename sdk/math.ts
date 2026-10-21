@@ -1,7 +1,12 @@
-/** Exact bigint mirror of src/PoolMath.sol. Off-chain previews must agree with the contract to the raw unit. */
-export const TOTAL_PARTS = 102n;
-export const PARTICIPANT_PARTS = 100n;
+/** Exact bigint mirror of src/PoolMath.sol. Off-chain previews must agree with the contract to the raw unit.
+ *  Relative weights NAND + LATCH 100 : A 1.25 : B 1.25 : C 2.5 (105 displayed parts), held exactly as
+ *  80 : 1 : 1 : 2 of 84 parts. */
+export const TOTAL_PARTS = 84n;
+export const PARTICIPANT_PARTS = 80n;
 export const RECIPIENT_PARTS = 1n;
+export const SINK_PARTS = 2n;
+/** C's fixed destination (TapeoutMinerPool.SINK): BEM is transferred there, not burned by the token. */
+export const SINK = '0x000000000000000000000000000000000000dEaD' as const;
 export const BEM_DECIMALS = 8;
 
 /** Pool accounting state that the allocation depends on (see TapeoutMinerPool.state()). */
@@ -19,6 +24,7 @@ export interface Accrual {
   total: bigint;
   recipientA: bigint;
   recipientB: bigint;
+  sink: bigint;
   participants: bigint;
   nandIncome: bigint;
   latchIncome: bigint;
@@ -33,6 +39,7 @@ export function accrue(total: bigint, s: State): Accrual {
   if (total < 0n) throw new Error('total must be non-negative');
   const recipientA = (total * RECIPIENT_PARTS) / TOTAL_PARTS;
   const recipientB = recipientA;
+  const sink = (total * SINK_PARTS) / TOTAL_PARTS;
   const participants = (total * PARTICIPANT_PARTS) / TOTAL_PARTS;
   let nandIncome = s.nandBase;
   let latchIncome = s.latchBase;
@@ -47,8 +54,8 @@ export function accrue(total: bigint, s: State): Accrual {
   const perLatchShare = s.latchShares === 0n ? 0n : latchIncome / s.latchShares;
   const nandReceipts = s.nandShares * perNandShare;
   const latchReceipts = s.latchShares * perLatchShare;
-  const residue = total - recipientA - recipientB - nandReceipts - latchReceipts;
-  return { total, recipientA, recipientB, participants, nandIncome, latchIncome, perNandShare, perLatchShare, nandReceipts, latchReceipts, residue };
+  const residue = total - recipientA - recipientB - sink - nandReceipts - latchReceipts;
+  return { total, recipientA, recipientB, sink, participants, nandIncome, latchIncome, perNandShare, perLatchShare, nandReceipts, latchReceipts, residue };
 }
 
 /** State after an admission boundary: the old period is frozen and the composition grows. */
@@ -58,9 +65,11 @@ export function checkpoint(total: bigint, s: State, addNand: bigint, addLatch: b
     totalNandBurn: s.totalNandBurn + addNand, totalLatchBurn: s.totalLatchBurn + addLatch };
 }
 
-/** Maximum rounding residue the pool can retain (raw BEM units). */
+/** Maximum rounding residue the pool can retain (raw BEM units): up to 3 from the four outer floors
+ *  (r - floor(2r/84) - floor(80r/84) with r = T mod 84, 3 for r = 64..83), 1 from the NAND/LATCH split
+ *  of the current period, and S - 1 per collection from the per-share floors. */
 export function residueBound(nandShares: bigint, latchShares: bigint): bigint {
-  return 3n + (nandShares === 0n ? 0n : nandShares - 1n) + (latchShares === 0n ? 0n : latchShares - 1n);
+  return 4n + (nandShares === 0n ? 0n : nandShares - 1n) + (latchShares === 0n ? 0n : latchShares - 1n);
 }
 
 /** Parse a BEM amount ("1020", "0.00000323") into raw 8-decimal units. */

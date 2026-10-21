@@ -14,23 +14,25 @@ contract PoolAdmissionTest is SystemTestBase {
         setupStandard();
     }
 
-    /// @notice The specification's acceptance example: old composition 9:1 with 102 BEM collectible,
-    ///         a 1:9 miner carrying 102 BEM is admitted -> NAND 140, LATCH 60, A 2, B 2.
+    /// @notice The specification's acceptance example under the 105-part weights: old composition 9:1
+    ///         with 105 BEM collectible, a 1:9 miner carrying 105 BEM is admitted -> NAND 140, LATCH 60,
+    ///         A 2.5, B 2.5, C 5.
     function testSpecificationAcceptanceExample() public {
         admitNew(1, 9, 1);
-        accrue(1, 102 * BEM_UNIT); // earned by the old composition, still inside Mining
+        accrue(1, 105 * BEM_UNIT); // earned by the old composition, still inside Mining
         newMiner(2, 1, 9);
-        accrue(2, 102 * BEM_UNIT); // carried by the incoming miner (earned before deposit)
+        accrue(2, 105 * BEM_UNIT); // carried by the incoming miner (earned before deposit)
         (uint256 settled, uint256 carried) = admit(one(2));
-        assertEq(settled, 102 * BEM_UNIT);
-        assertEq(carried, 102 * BEM_UNIT);
+        assertEq(settled, 105 * BEM_UNIT);
+        assertEq(carried, 105 * BEM_UNIT);
         assertEq(pool.totalNandBurn(), 10);
         assertEq(pool.totalLatchBurn(), 10);
 
         PoolMath.Accrual memory a = pool.accrual();
-        assertEq(a.total, 204 * BEM_UNIT);
-        assertEq(a.recipientA, 2 * BEM_UNIT);
-        assertEq(a.recipientB, 2 * BEM_UNIT);
+        assertEq(a.total, 210 * BEM_UNIT);
+        assertEq(a.recipientA, 2 * BEM_UNIT + BEM_UNIT / 2);
+        assertEq(a.recipientB, 2 * BEM_UNIT + BEM_UNIT / 2);
+        assertEq(a.sink, 5 * BEM_UNIT);
         assertEq(a.nandIncome, 140 * BEM_UNIT);
         assertEq(a.latchIncome, 60 * BEM_UNIT);
         assertEq(a.residue, 0);
@@ -40,34 +42,35 @@ contract PoolAdmissionTest is SystemTestBase {
         assertEq(claimAs(alice, range(1, 5), range(1, 5)), 5 * 14 * BEM_UNIT + 5 * 6 * BEM_UNIT);
         assertEq(claimAs(bob, range(6, 10), none()), 5 * 14 * BEM_UNIT);
         assertEq(claimAs(carol, none(), range(6, 10)), 5 * 6 * BEM_UNIT);
-        assertEq(pool.releaseA(), 2 * BEM_UNIT);
-        assertEq(pool.releaseB(), 2 * BEM_UNIT);
+        assertEq(pool.releaseA(), 2 * BEM_UNIT + BEM_UNIT / 2);
+        assertEq(pool.releaseB(), 2 * BEM_UNIT + BEM_UNIT / 2);
         assertEq(bem.balanceOf(address(pool)), 0);
-        assertEq(bem.balanceOf(recipientA), 2 * BEM_UNIT);
-        assertEq(bem.balanceOf(recipientB), 2 * BEM_UNIT);
+        assertEq(bem.balanceOf(recipientA), 2 * BEM_UNIT + BEM_UNIT / 2);
+        assertEq(bem.balanceOf(recipientB), 2 * BEM_UNIT + BEM_UNIT / 2);
+        assertEq(bem.balanceOf(pool.SINK()), 5 * BEM_UNIT);
         assertReconciled();
     }
 
     function testOldIncomeHiddenFromPendingIsStillSettledUnderTheOldRatio() public {
         admitNew(1, 9, 1);
-        mining.accrueUnsettled(address(nft), 1, 102 * BEM_UNIT);
+        mining.accrueUnsettled(address(nft), 1, 105 * BEM_UNIT);
         assertEq(mining.pending(mining.minerKey(address(nft), 1)), 0);
         (uint256 settled,) = admitNew(2, 1, 9);
-        assertEq(settled, 102 * BEM_UNIT);
+        assertEq(settled, 105 * BEM_UNIT);
         assertEq(pool.accrual().nandIncome, 90 * BEM_UNIT);
         assertEq(pool.accrual().latchIncome, 10 * BEM_UNIT);
     }
 
     function testBatchUsesOnePostBatchCompositionForAllCarriedIncome() public {
         admitNew(1, 9, 1);
-        accrue(1, 102 * BEM_UNIT);
+        accrue(1, 105 * BEM_UNIT);
         newMiner(2, 1, 9);
         newMiner(3, 0, 10);
-        accrue(2, 51 * BEM_UNIT);
-        accrue(3, 51 * BEM_UNIT);
+        accrue(2, 105 * BEM_UNIT / 2);
+        accrue(3, 105 * BEM_UNIT / 2);
         (uint256 settled, uint256 carried) = admit(two(2, 3));
-        assertEq(settled, 102 * BEM_UNIT);
-        assertEq(carried, 102 * BEM_UNIT);
+        assertEq(settled, 105 * BEM_UNIT);
+        assertEq(carried, 105 * BEM_UNIT);
         // Post-batch composition N=10, L=20 for both carried amounts.
         PoolMath.Accrual memory a = pool.accrual();
         assertEq(a.nandIncome, 90 * BEM_UNIT + (100 * BEM_UNIT * 10) / 30);
@@ -95,15 +98,15 @@ contract PoolAdmissionTest is SystemTestBase {
     }
 
     function testFirstAdmissionRecognizesIncomeHeldBeforeAnyComposition() public {
-        bem.mint(address(pool), 51 * BEM_UNIT); // arrives while there is no composition to split it
+        bem.mint(address(pool), 105 * BEM_UNIT / 2); // arrives while there is no composition to split it
         assertEq(pool.sync(), 0);
         assertEq(pool.totalAccounted(), 0);
         assertEq(pool.unrecognizedBalance(), 0);
         newMiner(1, 3, 1);
-        accrue(1, 51 * BEM_UNIT);
+        accrue(1, 105 * BEM_UNIT / 2);
         (uint256 settled, uint256 carried) = admit(one(1));
         assertEq(settled, 0);
-        assertEq(carried, 102 * BEM_UNIT);
+        assertEq(carried, 105 * BEM_UNIT);
         PoolMath.Accrual memory a = pool.accrual();
         assertEq(a.nandIncome, 75 * BEM_UNIT); // 3:1 of the first composition, no invented weights
         assertEq(a.latchIncome, 25 * BEM_UNIT);
@@ -155,7 +158,7 @@ contract PoolAdmissionTest is SystemTestBase {
 
     function testAMiningOutageBlocksAdmissionButNotClaimsOfHeldIncome() public {
         admitNew(1, 5, 5);
-        accrue(1, 102_000);
+        accrue(1, 105_000);
         pool.harvestRange(0, 1);
         mining.setBroken(true);
         newMiner(2, 1, 1);
@@ -164,7 +167,7 @@ contract PoolAdmissionTest is SystemTestBase {
         pool.depositMiners(one(2));
         vm.stopPrank();
         assertEq(claimAs(alice, one(1), one(1)), 5_000 + 5_000);
-        assertEq(pool.releaseA(), 1_000);
+        assertEq(pool.releaseA(), 1_250);
         assertReconciled();
     }
 
@@ -287,7 +290,7 @@ contract PoolAdmissionTest is SystemTestBase {
 
     function testPlainTransferNeitherRegistersNorBypassesTheWhitelistOrSettlement() public {
         admitNew(1, 9, 1);
-        accrue(1, 102 * BEM_UNIT);
+        accrue(1, 105 * BEM_UNIT);
         newMiner(2, 1, 9);
         vm.prank(depositor);
         nft.transferFrom(depositor, address(pool), 2);
@@ -298,11 +301,11 @@ contract PoolAdmissionTest is SystemTestBase {
         vm.prank(alice);
         vm.expectRevert(abi.encodeWithSelector(TapeoutMinerPool.NotDepositor.selector, alice));
         pool.registerMiners(one(2));
-        accrue(2, 102 * BEM_UNIT);
+        accrue(2, 105 * BEM_UNIT);
         vm.prank(depositor);
         (uint256 settled, uint256 carried) = pool.registerMiners(one(2));
-        assertEq(settled, 102 * BEM_UNIT);
-        assertEq(carried, 102 * BEM_UNIT);
+        assertEq(settled, 105 * BEM_UNIT);
+        assertEq(carried, 105 * BEM_UNIT);
         assertEq(pool.accrual().nandIncome, 140 * BEM_UNIT);
         assertEq(pool.accrual().latchIncome, 60 * BEM_UNIT);
     }
@@ -394,7 +397,7 @@ contract PoolUnsupportedCategoryTest is SystemTestBase {
         pool.depositMiners(one(1));
         vm.stopPrank();
         newMiner(2, 5, 0);
-        accrue(2, 102_000);
+        accrue(2, 105_000);
         admit(one(2));
         PoolMath.Accrual memory a = pool.accrual();
         assertEq(a.nandIncome, 100_000);

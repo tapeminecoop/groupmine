@@ -10,20 +10,23 @@ contract PoolAccountingTest is SystemTestBase {
         setupStandard(); // S_N = 10, S_L = 10
     }
 
-    /// @notice A and B each get 1/102 of gross; NAND + LATCH get 100/102. Not 98% / 1% / 1%.
-    function testOuterSplitIsOneOneAndOneHundredOf102() public {
+    /// @notice Relative weights NAND + LATCH 100 : A 1.25 : B 1.25 : C 2.5 (105 parts), i.e. 80 : 1 : 1 : 2
+    ///         of 84. Not a 95% participant share, and not a 5% fee: 100 / 105 = 95.238...%.
+    function testOuterSplitIsEightyOneOneTwoOf84() public {
         admitNew(1, 1, 1);
-        bem.mint(address(pool), 1_020_000);
+        bem.mint(address(pool), 1_050_000);
         pool.sync();
         PoolMath.Accrual memory a = pool.accrual();
-        assertEq(a.recipientA, 10_000); // 1% would be 10_200
-        assertEq(a.recipientB, 10_000);
-        assertEq(a.participants, 1_000_000); // 98% would be 999_600
+        assertEq(a.recipientA, 12_500); // 1.25 of 105
+        assertEq(a.recipientB, 12_500);
+        assertEq(a.sink, 25_000); // 2.5 of 105
+        assertEq(a.participants, 1_000_000); // 95% would be 997_500
         assertEq(a.nandIncome, 500_000);
         assertEq(a.latchIncome, 500_000);
-        assertEq(a.recipientA + a.recipientB + a.participants, a.total); // no other fee
-        assertEq(pool.releaseA(), 10_000);
-        assertEq(pool.releaseB(), 10_000);
+        assertEq(a.recipientA + a.recipientB + a.sink + a.participants, a.total); // no other fee
+        assertEq(pool.releaseA(), 12_500);
+        assertEq(bem.balanceOf(pool.SINK()), 25_000);
+        assertEq(pool.releaseB(), 12_500);
         claimAs(alice, range(1, 5), range(1, 5));
         claimAs(bob, range(6, 10), none());
         claimAs(carol, none(), range(6, 10));
@@ -33,16 +36,18 @@ contract PoolAccountingTest is SystemTestBase {
 
     function testOuterFloorsAndTheirResidueAtSmallTotals() public pure {
         PoolMath.State memory s = PoolMath.State(0, 0, 0, 1, 1, 10, 10);
-        PoolMath.Accrual memory a = PoolMath.accrue(101, s);
+        PoolMath.Accrual memory a = PoolMath.accrue(83, s);
         assertEq(a.recipientA, 0);
-        assertEq(a.participants, 99);
-        assertEq(a.residue, 101 - 4 * 10 - 4 * 10); // per-share floors: 49 / 10 = 4 each
-        a = PoolMath.accrue(102, s);
+        assertEq(a.sink, 1);
+        assertEq(a.participants, 79);
+        assertEq(a.residue, 83 - 1 - 3 * 10 - 3 * 10); // per-share floors: 39 / 10 = 3 each
+        a = PoolMath.accrue(84, s);
         assertEq(a.recipientA, 1);
         assertEq(a.recipientB, 1);
-        assertEq(a.participants, 100);
-        a = PoolMath.accrue(103, s);
-        assertEq(a.recipientA + a.recipientB + a.participants, 102); // one raw unit retained
+        assertEq(a.sink, 2);
+        assertEq(a.participants, 80);
+        a = PoolMath.accrue(85, s);
+        assertEq(a.recipientA + a.recipientB + a.sink + a.participants, 84); // one raw unit retained
     }
 
     /// @notice Inside one composition period, many harvests equal one harvest.
@@ -64,9 +69,9 @@ contract PoolAccountingTest is SystemTestBase {
     ///         category totals are frozen exactly.
     function testCheckpointFreezesCategoryTotalsAndCarriesAtMostOneUnit() public {
         admitNew(1, 2, 1);
-        accrue(1, 10_200); // participants 10_000: NAND floor(6666.67) = 6_666, LATCH floor(3333.33) = 3_333
+        accrue(1, 10_500); // participants 10_000: NAND floor(6666.67) = 6_666, LATCH floor(3333.33) = 3_333
         (uint256 settled,) = admitNew(2, 1, 1);
-        assertEq(settled, 10_200);
+        assertEq(settled, 10_500);
         assertEq(pool.nandBase(), 6_666);
         assertEq(pool.latchBase(), 3_333);
         assertEq(pool.participantBase(), 9_999);
@@ -74,7 +79,7 @@ contract PoolAccountingTest is SystemTestBase {
         assertEq(a.participants - pool.participantBase(), 1); // the one unit carried into period 2
         assertEq(a.nandIncome, 6_666); // floor(1 * 3 / 5) = 0: frozen totals unchanged
         assertEq(a.latchIncome, 3_333);
-        bem.mint(address(pool), 510); // participants +500 -> d = 501 at 3:2
+        bem.mint(address(pool), 525); // participants +500 -> d = 501 at 3:2
         pool.sync();
         a = pool.accrual();
         assertEq(a.nandIncome, 6_666 + uint256(501) * 3 / 5);
@@ -131,11 +136,17 @@ contract PoolAccountingTest is SystemTestBase {
         uint256 total = uint256(firstTotal) + laterTotal;
         PoolMath.Accrual memory a1 = PoolMath.accrue(total, s1);
         // Conservation and bounds.
-        assertEq(a1.recipientA + a1.recipientB + a1.nandReceipts + a1.latchReceipts + a1.residue, total);
-        assertLe(a1.residue, 3 + (uint256(sN) - 1) + (uint256(sL) - 1));
-        assertLe(a1.recipientA * 102, total);
-        assertGt((a1.recipientA + 1) * 102, total);
-        assertLe(a1.participants * 102, total * 100);
+        assertEq(
+            a1.recipientA + a1.recipientB + a1.sink + a1.nandReceipts + a1.latchReceipts + a1.residue, total
+        );
+        assertLe(a1.residue, 4 + (uint256(sN) - 1) + (uint256(sL) - 1));
+        assertLe(a1.recipientA * 84, total);
+        assertGt((a1.recipientA + 1) * 84, total);
+        assertLe(a1.sink * 84, total * 2);
+        assertGt((a1.sink + 1) * 84, total * 2);
+        assertLe(a1.participants * 84, total * 80);
+        assertGt((a1.participants + 1) * 84, total * 80);
+        assertLe(total - a1.recipientA - a1.recipientB - a1.sink - a1.participants, 3); // outer floors
         // The old period's split is never recomputed with the new ratio.
         assertGe(a1.nandIncome, a0.nandIncome);
         assertGe(a1.latchIncome, a0.latchIncome);
@@ -149,5 +160,7 @@ contract PoolAccountingTest is SystemTestBase {
         assertGe(a2.perNandShare, a1.perNandShare);
         assertGe(a2.perLatchShare, a1.perLatchShare);
         assertGe(a2.recipientA, a1.recipientA);
+        assertGe(a2.sink, a1.sink);
+        assertGe(a2.participants, a1.participants);
     }
 }

@@ -1,0 +1,17 @@
+{
+  "block": 128713128,
+  "blockHash": "0x760f050b7ec66ced2a2745918d7492650150f9d71d3159259412996ebe65081f",
+  "codeBytes": 2205,
+  "codeKeccak256": "0x982ba79538b51e54ee1382f57522098af0635b0f67f2574d393b29ed0958b344",
+  "erc1967Implementation": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "erc1967Beacon": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "name": "BEM",
+  "symbol": "BEM",
+  "decimals": 8,
+  "totalSupply": 39430105671950,
+  "balanceOfDead": 244427231190,
+  "balanceOfZero": 0,
+  "hasBurnSelector42966c68": false,
+  "hasBurnFromSelector79cc6790": false,
+  "deadAddressLiteralInCode": false
+}

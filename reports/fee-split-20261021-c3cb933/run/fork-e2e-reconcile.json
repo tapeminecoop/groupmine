@@ -1,0 +1,66 @@
+{
+  "command": "reconcile",
+  "status": "PASS",
+  "ledgerStatus": "PASS",
+  "blockNumber": "128713161",
+  "blockHash": "0xb15f4a2b0841700146cc503d06e22dde53cdf757109ba381417b51fc437d6814",
+  "pool": "0xEfCCe657d16d300410690bA919e187E0b7Ad0cB2",
+  "composition": {
+    "totalNandBurn": "95",
+    "totalLatchBurn": "78",
+    "compositionPeriod": "3"
+  },
+  "reconciliation": {
+    "bemBalance": "14",
+    "unrecognized": "0",
+    "deficit": "0",
+    "totalAccounted": "21205970007",
+    "totalPaid": "21205969993",
+    "recipientAAccrued": "252452023",
+    "recipientAPaid": "252452023",
+    "recipientBAccrued": "252452023",
+    "recipientBPaid": "252452023",
+    "sinkAccrued": "504904047",
+    "sinkPaid": "504904047",
+    "nandIncome": "19752848001",
+    "nandReceiptsAccrued": "19752848000",
+    "nandReceiptsPaid": "19752848000",
+    "latchIncome": "443313909",
+    "latchReceiptsAccrued": "443313900",
+    "latchReceiptsPaid": "443313900",
+    "residue": "14"
+  },
+  "checks": {
+    "offChainMathMatches": true,
+    "recipientsAccrueEqually": true,
+    "outerPartsFromTotal": true,
+    "balanceIdentity": true,
+    "paidIdentity": true,
+    "accruedIdentity": true,
+    "noDeficit": true,
+    "residueWithinBound": true,
+    "noBucketOverpaid": true,
+    "categoryWithoutReceiptsHasNoIncome": true
+  },
+  "outstanding": {
+    "recipientA": "0",
+    "recipientB": "0",
+    "sink": "0",
+    "nandReceipts": "0",
+    "latchReceipts": "0"
+  },
+  "perIdHistories": {
+    "NAND": {
+      "ids": 40,
+      "claimedSum": "19752848000",
+      "receiptsPaid": "19752848000",
+      "match": true
+    },
+    "LATCH": {
+      "ids": 12,
+      "claimedSum": "443313900",
+      "receiptsPaid": "443313900",
+      "match": true
+    }
+  }
+}

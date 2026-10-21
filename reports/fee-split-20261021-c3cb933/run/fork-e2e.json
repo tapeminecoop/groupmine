@@ -1,0 +1,1180 @@
+{
+  "scope": "REAL_BSC_STATE_LOCAL_ANVIL_FORK_ONLY",
+  "status": "PASS",
+  "startedAt": "2026-10-21T10:17:42.006Z",
+  "source": {
+    "chainId": 56,
+    "forkBlock": "128713128",
+    "archiveRpcHost": "bsc-mainnet.public.blastapi.io",
+    "blockHash": "0x760f050b7ec66ced2a2745918d7492650150f9d71d3159259412996ebe65081f"
+  },
+  "miners": {
+    "nandMiner": "12733",
+    "latchMiner": "13948",
+    "extraMiners": [
+      "4183",
+      "1574"
+    ]
+  },
+  "steps": [
+    {
+      "label": "protocol-check",
+      "argv": [
+        "protocol-check"
+      ],
+      "transactions": [],
+      "result": {
+        "command": "protocol-check",
+        "status": "IDENTITY_MATCHES_RECORDED",
+        "blockNumber": "128713128",
+        "blockHash": "0x760f050b7ec66ced2a2745918d7492650150f9d71d3159259412996ebe65081f",
+        "checks": {
+          "bemDecimals8": true,
+          "miningImplementationUnchanged": true,
+          "miningImplementationCodeHash": true,
+          "collectionBeaconUnchanged": true,
+          "collectionImplementationUnchanged": true
+        }
+      }
+    },
+    {
+      "label": "deploy-receipts",
+      "argv": [
+        "deploy-receipts",
+        "--system",
+        ".runtime/fork-e2e/system.json",
+        "--addresses-out",
+        ".runtime/fork-e2e/addresses.json",
+        "--from",
+        "0xaC074ef348E9ab2bEaaC87746A09B6c320cB2D20",
+        "--send-local"
+      ],
+      "mode": "SENT_LOCAL_ANVIL",
+      "transactions": [
+        {
+          "hash": "0x026baf95ae81fe653a4e5b8c7603cb314dc63a0f9802490ffc4e42c6ed1045df",
+          "gasUsed": "2066008",
+          "blockNumber": "128713129",
+          "description": "deploy NAND entitlement receipt (issuer 0xaC074ef348E9ab2bEaaC87746A09B6c320cB2D20)"
+        },
+        {
+          "hash": "0x5f71ca1ffce44c2c7740f98f2a2926fcd065e4d93b6434222a7c8958bf5f6696",
+          "gasUsed": "2066058",
+          "blockNumber": "128713130",
+          "description": "deploy LATCH entitlement receipt (issuer 0xaC074ef348E9ab2bEaaC87746A09B6c320cB2D20)"
+        }
+      ]
+    },
+    {
+      "label": "issue-nand",
+      "argv": [
+        "issue",
+        "--addresses",
+        ".runtime/fork-e2e/addresses.json",
+        "--category",
+        "NAND",
+        "--to",
+        "0xaC074ef348E9ab2bEaaC87746A09B6c320cB2D20",
+        "--count",
+        "40",
+        "--from",
+        "0xaC074ef348E9ab2bEaaC87746A09B6c320cB2D20",
+        "--send-local"
+      ],
+      "mode": "SENT_LOCAL_ANVIL",
+      "transactions": [
+        {
+          "hash": "0xa546e573600a637449639565c68a0842729e59a83426387df1fbb748aeb04ce9",
+          "gasUsed": "1909495",
+          "blockNumber": "128713131",
+          "description": "issue the next 40 NAND receipt IDs to 0xaC074ef348E9ab2bEaaC87746A09B6c320cB2D20"
+        }
+      ]
+    },
+    {
+      "label": "issue-latch",
+      "argv": [
+        "issue",
+        "--addresses",
+        ".runtime/fork-e2e/addresses.json",
+        "--category",
+        "LATCH",
+        "--to",
+        "0xaC074ef348E9ab2bEaaC87746A09B6c320cB2D20",
+        "--count",
+        "12",
+        "--from",
+        "0xaC074ef348E9ab2bEaaC87746A09B6c320cB2D20",
+        "--send-local"
+      ],
+      "mode": "SENT_LOCAL_ANVIL",
+      "transactions": [
+        {
+          "hash": "0xd8240ae9a4377417bb6614396ad548bdf8d58dcb6693a1be86c5195a1a9c5d54",
+          "gasUsed": "611560",
+          "blockNumber": "128713132",
+          "description": "issue the next 12 LATCH receipt IDs to 0xaC074ef348E9ab2bEaaC87746A09B6c320cB2D20"
+        }
+      ]
+    },
+    {
+      "label": "finalize-nand",
+      "argv": [
+        "finalize-issuance",
+        "--addresses",
+        ".runtime/fork-e2e/addresses.json",
+        "--category",
+        "NAND",
+        "--from",
+        "0xaC074ef348E9ab2bEaaC87746A09B6c320cB2D20",
+        "--send-local"
+      ],
+      "mode": "SENT_LOCAL_ANVIL",
+      "transactions": [
+        {
+          "hash": "0x09aa9ff54d6788d75f46ed2af7bd4228c6a2741c4a3a93ecc0fbbfb5bbb153c4",
+          "gasUsed": "48908",
+          "blockNumber": "128713133",
+          "description": "finalize NAND issuance (supply fixed forever)"
+        }
+      ]
+    },
+    {
+      "label": "finalize-latch",
+      "argv": [
+        "finalize-issuance",
+        "--addresses",
+        ".runtime/fork-e2e/addresses.json",
+        "--category",
+        "LATCH",
+        "--from",
+        "0xaC074ef348E9ab2bEaaC87746A09B6c320cB2D20",
+        "--send-local"
+      ],
+      "mode": "SENT_LOCAL_ANVIL",
+      "transactions": [
+        {
+          "hash": "0x6a7b4d989422c6e7627dfcc07fbd6e8121f26a9e0935773d51e1bb857aa7dd81",
+          "gasUsed": "48908",
+          "blockNumber": "128713134",
+          "description": "finalize LATCH issuance (supply fixed forever)"
+        }
+      ]
+    },
+    {
+      "label": "deploy-pool-and-distributor",
+      "argv": [
+        "deploy",
+        "--system",
+        ".runtime/fork-e2e/system.json",
+        "--addresses",
+        ".runtime/fork-e2e/addresses.json",
+        "--from",
+        "0xaC074ef348E9ab2bEaaC87746A09B6c320cB2D20",
+        "--send-local"
+      ],
+      "mode": "SENT_LOCAL_ANVIL",
+      "transactions": [
+        {
+          "hash": "0xe48cc7ea3f7c87e5571d405033885f9eb4e699ac048b155374576281c2b804f6",
+          "gasUsed": "4926340",
+          "blockNumber": "128713135",
+          "description": "deploy TapeoutMinerPool \"Fork E2E Pool\" (owner 0xaC074ef348E9ab2bEaaC87746A09B6c320cB2D20, 1 whitelisted depositors)"
+        },
+        {
+          "hash": "0xdffc58d08986c5446d8584c5af3bc51f72bd2ac15866b9e2500e084d846e074e",
+          "gasUsed": "1771244",
+          "blockNumber": "128713136",
+          "description": "deploy TapeoutReceiptDistributor (owner 0xaC074ef348E9ab2bEaaC87746A09B6c320cB2D20) for pool 0xEfCCe657d16d300410690bA919e187E0b7Ad0cB2"
+        }
+      ]
+    },
+    {
+      "label": "fund-nand",
+      "argv": [
+        "fund-distributor",
+        "--addresses",
+        ".runtime/fork-e2e/addresses.json",
+        "--category",
+        "NAND",
+        "--from",
+        "0xaC074ef348E9ab2bEaaC87746A09B6c320cB2D20",
+        "--all-held",
+        "--send-local"
+      ],
+      "mode": "SENT_LOCAL_ANVIL",
+      "transactions": [
+        {
+          "hash": "0x5ef39cddcc8bdba72c4f56ca850b09927e342497cc5590c14352b46fdbef6588",
+          "gasUsed": "1394686",
+          "blockNumber": "128713137",
+          "description": "move 40 NAND receipts (#1..#40) into the distributor"
+        }
+      ]
+    },
+    {
+      "label": "fund-latch",
+      "argv": [
+        "fund-distributor",
+        "--addresses",
+        ".runtime/fork-e2e/addresses.json",
+        "--category",
+        "LATCH",
+        "--from",
+        "0xaC074ef348E9ab2bEaaC87746A09B6c320cB2D20",
+        "--all-held",
+        "--send-local"
+      ],
+      "mode": "SENT_LOCAL_ANVIL",
+      "transactions": [
+        {
+          "hash": "0x0ad4931f939a98acc64906f2acf973719af660d8ce4d89ae28e729197d8a7210",
+          "gasUsed": "461804",
+          "blockNumber": "128713138",
+          "description": "move 12 LATCH receipts (#1..#12) into the distributor"
+        }
+      ]
+    },
+    {
+      "label": "import-allocation",
+      "argv": [
+        "import-allocation",
+        "--addresses",
+        ".runtime/fork-e2e/addresses.json",
+        "--allocation",
+        ".runtime/fork-e2e/allocation.json",
+        "--artifact-out",
+        ".runtime/fork-e2e/artifact.json",
+        "--from",
+        "0xaC074ef348E9ab2bEaaC87746A09B6c320cB2D20",
+        "--send-local"
+      ],
+      "mode": "SENT_LOCAL_ANVIL",
+      "transactions": [
+        {
+          "hash": "0xd95900c3229541eb625c47114c8578206acd7be0803f6510e54d9837052452fb",
+          "gasUsed": "1753729",
+          "blockNumber": "128713139",
+          "description": "allocate 52 receipt IDs in 4 ranges"
+        }
+      ]
+    },
+    {
+      "label": "verify-allocation",
+      "argv": [
+        "verify-allocation",
+        "--addresses",
+        ".runtime/fork-e2e/addresses.json",
+        "--artifact",
+        ".runtime/fork-e2e/artifact.json",
+        "--allocation",
+        ".runtime/fork-e2e/allocation.json"
+      ],
+      "mode": "full-round",
+      "transactions": [],
+      "result": {
+        "command": "verify-allocation",
+        "status": "READY_TO_FINALIZE",
+        "mode": "full-round",
+        "blockNumber": "128713139",
+        "blockHash": "0x3eb49662f50cb9b6607360effe1a72c5e6c9300ac8595da65fc928088caa044c",
+        "identity": {
+          "chainId": {
+            "expected": 56,
+            "artifact": 56,
+            "chain": 56
+          },
+          "distributor": {
+            "expected": "0x6dF7ff11473892691aFBfc5b5c5767aE7A710f8f",
+            "artifact": "0x6dF7ff11473892691aFBfc5b5c5767aE7A710f8f",
+            "chain": "0x6dF7ff11473892691aFBfc5b5c5767aE7A710f8f"
+          },
+          "pool": {
+            "expected": "0xEfCCe657d16d300410690bA919e187E0b7Ad0cB2",
+            "distributorPool": "0xEfCCe657d16d300410690bA919e187E0b7Ad0cB2"
+          },
+          "receipts": {
+            "NAND": {
+              "expected": "0x3496eAc777BF6913A5B664b58b733Be018Ce3152",
+              "artifact": "0x3496eAc777BF6913A5B664b58b733Be018Ce3152",
+              "distributor": "0x3496eAc777BF6913A5B664b58b733Be018Ce3152",
+              "pool": "0x3496eAc777BF6913A5B664b58b733Be018Ce3152",
+              "category": "0x3a21099afcdd2a9c70a396879f9a993ecef026f2655bde3020c6f057720eebfb",
+              "categoryMatches": true
+            },
+            "LATCH": {
+              "expected": "0x1f7FBa43142E01fEfe1406bD1FDf3C0b2b95Da15",
+              "artifact": "0x1f7FBa43142E01fEfe1406bD1FDf3C0b2b95Da15",
+              "distributor": "0x1f7FBa43142E01fEfe1406bD1FDf3C0b2b95Da15",
+              "pool": "0x1f7FBa43142E01fEfe1406bD1FDf3C0b2b95Da15",
+              "category": "0xe6a67351fcf7d33ca0f77690db36dd300301b060e10693ad35e1c42c828dd427",
+              "categoryMatches": true
+            }
+          }
+        },
+        "coverage": {
+          "NAND": {
+            "supply": "40",
+            "issuanceFinalized": true,
+            "acceptedInventory": "40",
+            "assigned": "40",
+            "delivered": "0",
+            "undelivered": "40",
+            "unassignedInventory": "0",
+            "excluded": {
+              "count": 0,
+              "ids": "",
+              "holders": []
+            }
+          },
+          "LATCH": {
+            "supply": "12",
+            "issuanceFinalized": true,
+            "acceptedInventory": "12",
+            "assigned": "12",
+            "delivered": "0",
+            "undelivered": "12",
+            "unassignedInventory": "0",
+            "excluded": {
+              "count": 0,
+              "ids": "",
+              "holders": []
+            }
+          }
+        },
+        "review": {
+          "status": "VERIFIED",
+          "sha256": {
+            "file": "5148ad28e444b58f5ee0763f148bd9fedd4e1c5d6b05d67e295c5930809f9a66",
+            "artifact": "5148ad28e444b58f5ee0763f148bd9fedd4e1c5d6b05d67e295c5930809f9a66",
+            "matches": true
+          },
+          "assignment": {
+            "status": "VERIFIED",
+            "inventorySource": "recorded inventory (block 128713138) reproduced by the accepted inventory at block 128713139"
+          },
+          "wallets": 3,
+          "totals": {
+            "NAND": 40,
+            "LATCH": 12
+          }
+        },
+        "mismatches": [],
+        "mismatchCount": 0,
+        "readinessGaps": [],
+        "verified": {
+          "wallets": 3,
+          "listedWallets": 3,
+          "ids": {
+            "NAND": "40",
+            "LATCH": "12"
+          },
+          "delivered": {
+            "NAND": "0",
+            "LATCH": "0"
+          },
+          "holdingsChecked": 52,
+          "allocationFinalized": false
+        },
+        "unreachableWallets": []
+      }
+    },
+    {
+      "label": "finalize-allocation",
+      "argv": [
+        "finalize-allocation",
+        "--addresses",
+        ".runtime/fork-e2e/addresses.json",
+        "--artifact",
+        ".runtime/fork-e2e/artifact.json",
+        "--allocation",
+        ".runtime/fork-e2e/allocation.json",
+        "--from",
+        "0xaC074ef348E9ab2bEaaC87746A09B6c320cB2D20",
+        "--send-local"
+      ],
+      "mode": "SENT_LOCAL_ANVIL",
+      "transactions": [
+        {
+          "hash": "0xff567f2fd1d2565159049411c6a943c90edc0ebba8c86766da5def2f3b7038d7",
+          "gasUsed": "69523",
+          "blockNumber": "128713140",
+          "description": "finalize the allocation (beneficiaries become immutable; claims open)"
+        }
+      ]
+    },
+    {
+      "label": "activate",
+      "argv": [
+        "activate",
+        "--addresses",
+        ".runtime/fork-e2e/addresses.json",
+        "--nand-shares",
+        "40",
+        "--latch-shares",
+        "12",
+        "--from",
+        "0xaC074ef348E9ab2bEaaC87746A09B6c320cB2D20",
+        "--send-local"
+      ],
+      "mode": "SENT_LOCAL_ANVIL",
+      "transactions": [
+        {
+          "hash": "0x03519ae162e8b8e149ef92ddf1ad9e9c8bc32a6711bffbd188d76b81995fedd3",
+          "gasUsed": "109426",
+          "blockNumber": "128713141",
+          "description": "activate with S_N=40, S_L=12"
+        }
+      ]
+    },
+    {
+      "label": "renounce-pool",
+      "argv": [
+        "renounce",
+        "--addresses",
+        ".runtime/fork-e2e/addresses.json",
+        "--target",
+        "pool",
+        "--from",
+        "0xaC074ef348E9ab2bEaaC87746A09B6c320cB2D20",
+        "--send-local"
+      ],
+      "mode": "SENT_LOCAL_ANVIL",
+      "transactions": [
+        {
+          "hash": "0x3187c5a7f47ab75283daa3cbdfaccf16ae51b0a60a63223c5b195f4d5bc93081",
+          "gasUsed": "26049",
+          "blockNumber": "128713142",
+          "description": "renounce ownership of the pool"
+        }
+      ]
+    },
+    {
+      "label": "impersonated holder moves miner 12733 to the depositor",
+      "transactions": [
+        {
+          "hash": "0x935ae595f38c9a7506324a96f46a625eaeb92fe522601d4f0720b8fcd919afd6",
+          "gasUsed": "67506",
+          "blockNumber": "128713143"
+        }
+      ]
+    },
+    {
+      "label": "impersonated holder moves miner 13948 to the depositor",
+      "transactions": [
+        {
+          "hash": "0x22ee1f0799c63be997c38b7edeea4202d9611299c86598570244de9ae39095b9",
+          "gasUsed": "50394",
+          "blockNumber": "128713144"
+        }
+      ]
+    },
+    {
+      "label": "impersonated holder moves miner 4183 to the depositor",
+      "transactions": [
+        {
+          "hash": "0x03865a1cf23db4bab7daf535a6e20de6d81b23bd2ccabb4dd13d1be7338cc4f1",
+          "gasUsed": "50406",
+          "blockNumber": "128713145"
+        }
+      ]
+    },
+    {
+      "label": "impersonated holder moves miner 1574 to the depositor",
+      "transactions": [
+        {
+          "hash": "0xdb3fcb83339643f256bcd6d7b750406b06724562f6b3350fda9c52d8b3468aa8",
+          "gasUsed": "50406",
+          "blockNumber": "128713146"
+        }
+      ]
+    },
+    {
+      "label": "composition",
+      "argv": [
+        "composition",
+        "--addresses",
+        ".runtime/fork-e2e/addresses.json",
+        "--token-ids",
+        "12733,13948,4183,1574"
+      ],
+      "transactions": [],
+      "result": {
+        "command": "composition",
+        "miners": [
+          {
+            "tokenId": "12733",
+            "key": "0x2362d2654e5128490e47134c4a5905991e778f6ffddc45b388b75fc8c4d4bb1d",
+            "owner": "0x93BA996cd87896f83FB1fCCcF9DB585e2B09697b",
+            "status": 1,
+            "nandBurn": 88,
+            "latchBurn": 0,
+            "gateCount": 88,
+            "bstar": "88",
+            "cachedBurn": {
+              "cached": true,
+              "nand": 88,
+              "latch": 0
+            },
+            "admissible": true,
+            "problems": []
+          },
+          {
+            "tokenId": "13948",
+            "key": "0xc8e49cae99a232467f359e442dc0223c5d6c7773bd932b383270ccb60546b136",
+            "owner": "0x93BA996cd87896f83FB1fCCcF9DB585e2B09697b",
+            "status": 1,
+            "nandBurn": 2,
+            "latchBurn": 64,
+            "gateCount": 66,
+            "bstar": "66",
+            "cachedBurn": {
+              "cached": true,
+              "nand": 2,
+              "latch": 64
+            },
+            "admissible": true,
+            "problems": []
+          },
+          {
+            "tokenId": "4183",
+            "key": "0x24586a48df0dd772d8c6cac79fca2cb893f86c68179d26ed24d079f8022df9ce",
+            "owner": "0x93BA996cd87896f83FB1fCCcF9DB585e2B09697b",
+            "status": 1,
+            "nandBurn": 1,
+            "latchBurn": 9,
+            "gateCount": 10,
+            "bstar": "10",
+            "cachedBurn": {
+              "cached": true,
+              "nand": 1,
+              "latch": 9
+            },
+            "admissible": true,
+            "problems": []
+          },
+          {
+            "tokenId": "1574",
+            "key": "0xa06a3cd7af110909fe5aa994d48573f20447a607546fa1f411fb332a14ca5a32",
+            "owner": "0x93BA996cd87896f83FB1fCCcF9DB585e2B09697b",
+            "status": 1,
+            "nandBurn": 4,
+            "latchBurn": 5,
+            "gateCount": 9,
+            "bstar": "9",
+            "cachedBurn": {
+              "cached": true,
+              "nand": 4,
+              "latch": 5
+            },
+            "admissible": true,
+            "problems": []
+          }
+        ]
+      }
+    },
+    {
+      "label": "deposit-nand-miner",
+      "argv": [
+        "deposit",
+        "--addresses",
+        ".runtime/fork-e2e/addresses.json",
+        "--token-ids",
+        "12733",
+        "--from",
+        "0x93BA996cd87896f83FB1fCCcF9DB585e2B09697b",
+        "--send-local"
+      ],
+      "mode": "SENT_LOCAL_ANVIL",
+      "transactions": [
+        {
+          "hash": "0x35bfd6a19a6834b235fb23fd77036dff9570eb9edebc893258a4f16c672eaa78",
+          "gasUsed": "54375",
+          "blockNumber": "128713147",
+          "description": "approve pool 0xEfCCe657d16d300410690bA919e187E0b7Ad0cB2 to pull the caller's miners"
+        },
+        {
+          "hash": "0x9bb9242dffde627a69ffb88ee854b7b591253e290b7abf33ecda3a7b9cb29a55",
+          "gasUsed": "425366",
+          "blockNumber": "128713148",
+          "description": "admit miners 12733 (settles every registered miner first)"
+        }
+      ]
+    },
+    {
+      "label": "deposit-latch-miner",
+      "argv": [
+        "deposit",
+        "--addresses",
+        ".runtime/fork-e2e/addresses.json",
+        "--token-ids",
+        "13948",
+        "--from",
+        "0x93BA996cd87896f83FB1fCCcF9DB585e2B09697b",
+        "--send-local"
+      ],
+      "mode": "SENT_LOCAL_ANVIL",
+      "transactions": [
+        {
+          "hash": "0xeb5c6f249df1d9c7dacfb87777201ac27af0de6f133e0bda8a25474fc202da43",
+          "gasUsed": "401222",
+          "blockNumber": "128713150",
+          "description": "admit miners 13948 (settles every registered miner first)"
+        }
+      ]
+    },
+    {
+      "label": "deposit-batch-after-renounce",
+      "argv": [
+        "deposit",
+        "--addresses",
+        ".runtime/fork-e2e/addresses.json",
+        "--token-ids",
+        "4183,1574",
+        "--from",
+        "0x93BA996cd87896f83FB1fCCcF9DB585e2B09697b",
+        "--send-local"
+      ],
+      "mode": "SENT_LOCAL_ANVIL",
+      "transactions": [
+        {
+          "hash": "0x486cafc807d7a2f69cfd1dd0f55b7db41bde69160ad6332f34ef67c770be9550",
+          "gasUsed": "500957",
+          "blockNumber": "128713151",
+          "description": "admit miners 4183,1574 (settles every registered miner first)"
+        }
+      ]
+    },
+    {
+      "label": "harvest-all",
+      "argv": [
+        "harvest",
+        "--addresses",
+        ".runtime/fork-e2e/addresses.json",
+        "--all",
+        "--isolate-failures",
+        "--from",
+        "0x8D7F50ED56A2A0A70476cA5F8265ff812BbF4347",
+        "--send-local"
+      ],
+      "mode": "SENT_LOCAL_ANVIL",
+      "transactions": [
+        {
+          "hash": "0x20044264a2f2cfcc7a8948a3b0e76018eb3048d56dafa92061bffeaadf3582e5",
+          "gasUsed": "247820",
+          "blockNumber": "128713153",
+          "description": "harvest miners 12733,13948,4183,1574"
+        }
+      ]
+    },
+    {
+      "label": "alice-claims-receipts",
+      "argv": [
+        "claim-receipts",
+        "--addresses",
+        ".runtime/fork-e2e/addresses.json",
+        "--from",
+        "0x2D53da3D7921D0FA2d08F9a9dAA8FcD0CCA0e8dC",
+        "--send-local"
+      ],
+      "mode": "SENT_LOCAL_ANVIL",
+      "transactions": [
+        {
+          "hash": "0xb91b7d07ccf2263315570d4164afbcf8a6034875e5b457aca5c419357dbe1c9d",
+          "gasUsed": "879411",
+          "blockNumber": "128713154",
+          "description": "claim up to 25 allocated receipts"
+        }
+      ]
+    },
+    {
+      "label": "alice-claims-bem",
+      "argv": [
+        "claim",
+        "--addresses",
+        ".runtime/fork-e2e/addresses.json",
+        "--from",
+        "0x2D53da3D7921D0FA2d08F9a9dAA8FcD0CCA0e8dC",
+        "--all",
+        "--send-local"
+      ],
+      "mode": "SENT_LOCAL_ANVIL",
+      "transactions": [
+        {
+          "hash": "0x9fe19032b9797dcd2b14e67ad090537b34731fae238d59997c8a24915ebe4fa9",
+          "gasUsed": "856745",
+          "blockNumber": "128713155",
+          "description": "claim BEM for 20 NAND + 5 LATCH receipts"
+        }
+      ]
+    },
+    {
+      "label": "deliver-to-bob",
+      "argv": [
+        "deliver",
+        "--addresses",
+        ".runtime/fork-e2e/addresses.json",
+        "--wallet",
+        "0x636f42464aA1CefB1f0CF7acDF8DF2674488C715",
+        "--from",
+        "0xc2f6DAc82FF4Aaa5230a5289ef2086737A383066",
+        "--send-local"
+      ],
+      "mode": "SENT_LOCAL_ANVIL",
+      "transactions": [
+        {
+          "hash": "0x758b0a5c9e4a1fc09a1fab831fb553a6340bde07cc54081e2a92758d6ded14e7",
+          "gasUsed": "675160",
+          "blockNumber": "128713156",
+          "description": "deliver up to 20 receipts to their beneficiary 0x636f42464aA1CefB1f0CF7acDF8DF2674488C715"
+        }
+      ]
+    },
+    {
+      "label": "carol-claims-receipts",
+      "argv": [
+        "claim-receipts",
+        "--addresses",
+        ".runtime/fork-e2e/addresses.json",
+        "--from",
+        "0x81b03582309Bd45219582e10C151Fdd2a2064976",
+        "--send-local"
+      ],
+      "mode": "SENT_LOCAL_ANVIL",
+      "transactions": [
+        {
+          "hash": "0xe7951f53f9220fe03d9d58d2288d0c4adeb8335d4c639a279d622de9a6abd3fa",
+          "gasUsed": "283326",
+          "blockNumber": "128713157",
+          "description": "claim up to 7 allocated receipts"
+        }
+      ]
+    },
+    {
+      "label": "verify-after-delivery",
+      "argv": [
+        "verify-allocation",
+        "--addresses",
+        ".runtime/fork-e2e/addresses.json",
+        "--artifact",
+        ".runtime/fork-e2e/artifact.json"
+      ],
+      "mode": "full-round",
+      "transactions": [],
+      "result": {
+        "command": "verify-allocation",
+        "status": "FINALIZED_AND_MATCHES",
+        "mode": "full-round",
+        "blockNumber": "128713157",
+        "blockHash": "0x150dd6578391bb2f0e0870fad8600da5de149b57c5622727e3b68d4f1d7ea6e5",
+        "identity": {
+          "chainId": {
+            "expected": 56,
+            "artifact": 56,
+            "chain": 56
+          },
+          "distributor": {
+            "expected": "0x6dF7ff11473892691aFBfc5b5c5767aE7A710f8f",
+            "artifact": "0x6dF7ff11473892691aFBfc5b5c5767aE7A710f8f",
+            "chain": "0x6dF7ff11473892691aFBfc5b5c5767aE7A710f8f"
+          },
+          "pool": {
+            "expected": "0xEfCCe657d16d300410690bA919e187E0b7Ad0cB2",
+            "distributorPool": "0xEfCCe657d16d300410690bA919e187E0b7Ad0cB2"
+          },
+          "receipts": {
+            "NAND": {
+              "expected": "0x3496eAc777BF6913A5B664b58b733Be018Ce3152",
+              "artifact": "0x3496eAc777BF6913A5B664b58b733Be018Ce3152",
+              "distributor": "0x3496eAc777BF6913A5B664b58b733Be018Ce3152",
+              "pool": "0x3496eAc777BF6913A5B664b58b733Be018Ce3152",
+              "category": "0x3a21099afcdd2a9c70a396879f9a993ecef026f2655bde3020c6f057720eebfb",
+              "categoryMatches": true
+            },
+            "LATCH": {
+              "expected": "0x1f7FBa43142E01fEfe1406bD1FDf3C0b2b95Da15",
+              "artifact": "0x1f7FBa43142E01fEfe1406bD1FDf3C0b2b95Da15",
+              "distributor": "0x1f7FBa43142E01fEfe1406bD1FDf3C0b2b95Da15",
+              "pool": "0x1f7FBa43142E01fEfe1406bD1FDf3C0b2b95Da15",
+              "category": "0xe6a67351fcf7d33ca0f77690db36dd300301b060e10693ad35e1c42c828dd427",
+              "categoryMatches": true
+            }
+          }
+        },
+        "coverage": {
+          "NAND": {
+            "supply": "40",
+            "issuanceFinalized": true,
+            "acceptedInventory": "40",
+            "assigned": "40",
+            "delivered": "40",
+            "undelivered": "0",
+            "unassignedInventory": "0",
+            "excluded": {
+              "count": 0,
+              "ids": "",
+              "holders": []
+            }
+          },
+          "LATCH": {
+            "supply": "12",
+            "issuanceFinalized": true,
+            "acceptedInventory": "12",
+            "assigned": "12",
+            "delivered": "12",
+            "undelivered": "0",
+            "unassignedInventory": "0",
+            "excluded": {
+              "count": 0,
+              "ids": "",
+              "holders": []
+            }
+          }
+        },
+        "review": {
+          "status": "NOT_PROVIDED",
+          "assignment": {
+            "status": "NOT_CHECKED"
+          }
+        },
+        "mismatches": [],
+        "mismatchCount": 0,
+        "readinessGaps": [],
+        "verified": {
+          "wallets": 3,
+          "listedWallets": 3,
+          "ids": {
+            "NAND": "40",
+            "LATCH": "12"
+          },
+          "delivered": {
+            "NAND": "40",
+            "LATCH": "12"
+          },
+          "holdingsChecked": 52,
+          "allocationFinalized": true
+        },
+        "unreachableWallets": []
+      }
+    },
+    {
+      "label": "carol-claims-bem",
+      "argv": [
+        "claim",
+        "--addresses",
+        ".runtime/fork-e2e/addresses.json",
+        "--from",
+        "0x81b03582309Bd45219582e10C151Fdd2a2064976",
+        "--all",
+        "--send-local"
+      ],
+      "mode": "SENT_LOCAL_ANVIL",
+      "transactions": [
+        {
+          "hash": "0x49901d689b91340f1812a61ad892174e55509c545e17fa907730efaabbc19e40",
+          "gasUsed": "295230",
+          "blockNumber": "128713158",
+          "description": "claim BEM for 0 NAND + 7 LATCH receipts"
+        }
+      ]
+    },
+    {
+      "label": "bob-claims-bem",
+      "argv": [
+        "claim",
+        "--addresses",
+        ".runtime/fork-e2e/addresses.json",
+        "--from",
+        "0x636f42464aA1CefB1f0CF7acDF8DF2674488C715",
+        "--all",
+        "--send-local"
+      ],
+      "mode": "SENT_LOCAL_ANVIL",
+      "transactions": [
+        {
+          "hash": "0x4ff3b5a684e3c0d3e6733525af7fc51c131874bbf4b0063958dd0aa59627fc3c",
+          "gasUsed": "658119",
+          "blockNumber": "128713159",
+          "description": "claim BEM for 20 NAND + 0 LATCH receipts"
+        }
+      ]
+    },
+    {
+      "label": "release",
+      "argv": [
+        "release",
+        "--addresses",
+        ".runtime/fork-e2e/addresses.json",
+        "--from",
+        "0xc2f6DAc82FF4Aaa5230a5289ef2086737A383066",
+        "--send-local"
+      ],
+      "mode": "SENT_LOCAL_ANVIL",
+      "transactions": [
+        {
+          "hash": "0x0ec5abd148eafea0e39989249bb120a60eb62665126857e8407a82f72918301c",
+          "gasUsed": "151276",
+          "blockNumber": "128713160",
+          "description": "pay recipient A its unpaid 1/84, and transfer C's whole unpaid 2/84 to the sink 0x000000000000000000000000000000000000dEaD"
+        },
+        {
+          "hash": "0x2752c8cbd98b9f3549d6e839f7692d3a1f7300fa24ea38e83807232bf3c673fb",
+          "gasUsed": "123919",
+          "blockNumber": "128713161",
+          "description": "pay recipient B its unpaid 1/84, and transfer C's whole unpaid 2/84 to the sink 0x000000000000000000000000000000000000dEaD"
+        }
+      ]
+    },
+    {
+      "label": "reconcile-deep",
+      "argv": [
+        "reconcile",
+        "--addresses",
+        ".runtime/fork-e2e/addresses.json",
+        "--deep",
+        "--out",
+        "reports/fork-e2e-reconcile.json"
+      ],
+      "transactions": [],
+      "result": {
+        "command": "reconcile",
+        "status": "PASS",
+        "ledgerStatus": "PASS",
+        "blockNumber": "128713161",
+        "blockHash": "0xb15f4a2b0841700146cc503d06e22dde53cdf757109ba381417b51fc437d6814",
+        "pool": "0xEfCCe657d16d300410690bA919e187E0b7Ad0cB2",
+        "composition": {
+          "totalNandBurn": "95",
+          "totalLatchBurn": "78",
+          "compositionPeriod": "3"
+        },
+        "reconciliation": {
+          "bemBalance": "14",
+          "unrecognized": "0",
+          "deficit": "0",
+          "totalAccounted": "21205970007",
+          "totalPaid": "21205969993",
+          "recipientAAccrued": "252452023",
+          "recipientAPaid": "252452023",
+          "recipientBAccrued": "252452023",
+          "recipientBPaid": "252452023",
+          "sinkAccrued": "504904047",
+          "sinkPaid": "504904047",
+          "nandIncome": "19752848001",
+          "nandReceiptsAccrued": "19752848000",
+          "nandReceiptsPaid": "19752848000",
+          "latchIncome": "443313909",
+          "latchReceiptsAccrued": "443313900",
+          "latchReceiptsPaid": "443313900",
+          "residue": "14"
+        },
+        "checks": {
+          "offChainMathMatches": true,
+          "recipientsAccrueEqually": true,
+          "outerPartsFromTotal": true,
+          "balanceIdentity": true,
+          "paidIdentity": true,
+          "accruedIdentity": true,
+          "noDeficit": true,
+          "residueWithinBound": true,
+          "noBucketOverpaid": true,
+          "categoryWithoutReceiptsHasNoIncome": true
+        },
+        "outstanding": {
+          "recipientA": "0",
+          "recipientB": "0",
+          "sink": "0",
+          "nandReceipts": "0",
+          "latchReceipts": "0"
+        },
+        "perIdHistories": {
+          "NAND": {
+            "ids": 40,
+            "claimedSum": "19752848000",
+            "receiptsPaid": "19752848000",
+            "match": true
+          },
+          "LATCH": {
+            "ids": 12,
+            "claimedSum": "443313900",
+            "receiptsPaid": "443313900",
+            "match": true
+          }
+        }
+      }
+    }
+  ],
+  "checks": {
+    "protocolIdentityMatchesRecorded": true,
+    "allocationVerified": true,
+    "noSettlementToHolderOnTransfer_12733": true,
+    "noSettlementToHolderOnTransfer_13948": true,
+    "noSettlementToHolderOnTransfer_4183": true,
+    "noSettlementToHolderOnTransfer_1574": true,
+    "realCompositionsAdmissible": true,
+    "nandMinerBurnsNoLatch": true,
+    "outsiderDepositRevertsOnChain": true,
+    "carriedIncomeCollectedAtFirstAdmission": true,
+    "oldIncomeSettledInsideAdmission": true,
+    "realBoundaryMatchesOldNewCompositionModel": true,
+    "aliceExactPayout": true,
+    "deliveryWentToBob": true,
+    "allocationMatchesAfterDelivery": true,
+    "outsiderReceivedNothing": true,
+    "recipientsPaidEqually": true,
+    "sinkIsTheFixedDeadAddress": true,
+    "sinkReceivedExactlyCsCumulativeWeight": true,
+    "poolOutflowEqualsRoleAndSinkInflows": true,
+    "sinkPaidByOneBemTransferFromThePool": true,
+    "bemTotalSupplyUnchangedByTheSinkTransfer": true,
+    "reconcilePass": true
+  },
+  "observations": {
+    "sinkTransfer": {
+      "sink": "0x000000000000000000000000000000000000dEaD",
+      "sinkBalanceBefore": "244427231190",
+      "sinkBalanceAfter": "244932135237",
+      "sinkPaid": "504904047",
+      "bemTotalSupplyBefore": "39451311641957",
+      "bemTotalSupplyAfter": "39451311641957",
+      "totalSupplyUnchanged": true,
+      "transaction": "0x0ec5abd148eafea0e39989249bb120a60eb62665126857e8407a82f72918301c"
+    },
+    "pool": "0xEfCCe657d16d300410690bA919e187E0b7Ad0cB2",
+    "moves": [
+      {
+        "id": "12733",
+        "holder": "0xb73C928D82926D58c4eC8d30b957e88FB973dBF5"
+      },
+      {
+        "id": "13948",
+        "holder": "0x637505a590c30073D6fFaA601784FcB31B9b6A98"
+      },
+      {
+        "id": "4183",
+        "holder": "0xFB9ed85bFC68a5f4d8bE0f5150CF0a63bCCe9471"
+      },
+      {
+        "id": "1574",
+        "holder": "0x5a434B78C6e41dD82Ab37E15859E7a73B695eF47"
+      }
+    ],
+    "firstAdmission": {
+      "depositor": "0x93BA996cd87896f83FB1fCCcF9DB585e2B09697b",
+      "period": "1",
+      "count": "1",
+      "settledOldIncome": "0",
+      "carriedIncome": "20061670503",
+      "totalNandBurn": "88",
+      "totalLatchBurn": "0"
+    },
+    "secondAdmission": {
+      "depositor": "0x93BA996cd87896f83FB1fCCcF9DB585e2B09697b",
+      "period": "2",
+      "count": "1",
+      "settledOldIncome": "27497043",
+      "carriedIncome": "1078429257",
+      "totalNandBurn": "90",
+      "totalLatchBurn": "64"
+    },
+    "expectedAfterBoundary": {
+      "total": "21167596803",
+      "recipientA": "251995200",
+      "recipientB": "251995200",
+      "sink": "503990400",
+      "participants": "20159616002",
+      "nandIncome": "19732779438",
+      "latchIncome": "426836563",
+      "perNandShare": "493319485",
+      "perLatchShare": "35569713",
+      "nandReceipts": "19732779400",
+      "latchReceipts": "426836556",
+      "residue": "47"
+    },
+    "composition": [
+      {
+        "tokenId": "12733",
+        "key": "0x2362d2654e5128490e47134c4a5905991e778f6ffddc45b388b75fc8c4d4bb1d",
+        "owner": "0x93BA996cd87896f83FB1fCCcF9DB585e2B09697b",
+        "status": 1,
+        "nandBurn": 88,
+        "latchBurn": 0,
+        "gateCount": 88,
+        "bstar": "88",
+        "cachedBurn": {
+          "cached": true,
+          "nand": 88,
+          "latch": 0
+        },
+        "admissible": true,
+        "problems": []
+      },
+      {
+        "tokenId": "13948",
+        "key": "0xc8e49cae99a232467f359e442dc0223c5d6c7773bd932b383270ccb60546b136",
+        "owner": "0x93BA996cd87896f83FB1fCCcF9DB585e2B09697b",
+        "status": 1,
+        "nandBurn": 2,
+        "latchBurn": 64,
+        "gateCount": 66,
+        "bstar": "66",
+        "cachedBurn": {
+          "cached": true,
+          "nand": 2,
+          "latch": 64
+        },
+        "admissible": true,
+        "problems": []
+      },
+      {
+        "tokenId": "4183",
+        "key": "0x24586a48df0dd772d8c6cac79fca2cb893f86c68179d26ed24d079f8022df9ce",
+        "owner": "0x93BA996cd87896f83FB1fCCcF9DB585e2B09697b",
+        "status": 1,
+        "nandBurn": 1,
+        "latchBurn": 9,
+        "gateCount": 10,
+        "bstar": "10",
+        "cachedBurn": {
+          "cached": true,
+          "nand": 1,
+          "latch": 9
+        },
+        "admissible": true,
+        "problems": []
+      },
+      {
+        "tokenId": "1574",
+        "key": "0xa06a3cd7af110909fe5aa994d48573f20447a607546fa1f411fb332a14ca5a32",
+        "owner": "0x93BA996cd87896f83FB1fCCcF9DB585e2B09697b",
+        "status": 1,
+        "nandBurn": 4,
+        "latchBurn": 5,
+        "gateCount": 9,
+        "bstar": "9",
+        "cachedBurn": {
+          "cached": true,
+          "nand": 4,
+          "latch": 5
+        },
+        "admissible": true,
+        "problems": []
+      }
+    ]
+  },
+  "mainnetTransactionsSent": 0,
+  "signaturesCreated": 0,
+  "actors": {
+    "operator": "0xaC074ef348E9ab2bEaaC87746A09B6c320cB2D20",
+    "depositor": "0x93BA996cd87896f83FB1fCCcF9DB585e2B09697b",
+    "alice": "0x2D53da3D7921D0FA2d08F9a9dAA8FcD0CCA0e8dC",
+    "bob": "0x636f42464aA1CefB1f0CF7acDF8DF2674488C715",
+    "carol": "0x81b03582309Bd45219582e10C151Fdd2a2064976",
+    "keeper": "0x8D7F50ED56A2A0A70476cA5F8265ff812BbF4347",
+    "outsider": "0xc2f6DAc82FF4Aaa5230a5289ef2086737A383066",
+    "recipientA": "0xD456ea7eab3720608a427142243892B25Cad058F",
+    "recipientB": "0x9B8084E32D187f36EB086Fe64dB5e730Cc3BC39F"
+  },
+  "completedAt": "2026-10-21T10:18:17.296Z",
+  "localForkTransactions": 31
+}

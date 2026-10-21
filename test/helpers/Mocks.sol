@@ -33,6 +33,17 @@ contract MockBEM is ERC20 {
     bool public brokenBalance;
     bool public brokenTransfer;
     bool public taxed;
+    /// @dev Destinations whose incoming transfers revert (e.g. only the pool's sink).
+    mapping(address => bool) public blockedTo;
+    /// @dev Optional callback after a transfer to `hookTrigger`: calls `hookTarget` with `hookData`;
+    ///      if `hookBubble`, a failed callback reverts the transfer with the callback's revert data.
+    address public hookTrigger;
+    address public hookTarget;
+    bytes public hookData;
+    bool public hookBubble;
+    bool public hookCalled;
+    bool public hookSucceeded;
+    bytes public hookResult;
 
     constructor() ERC20("Local BEM", "BEM") {}
 
@@ -54,6 +65,15 @@ contract MockBEM is ERC20 {
         taxed = tax;
     }
 
+    function setBlockedTo(address to, bool flag) external {
+        blockedTo[to] = flag;
+    }
+
+    function setTransferHook(address trigger, address target, bytes calldata data, bool bubble) external {
+        (hookTrigger, hookTarget, hookData, hookBubble) = (trigger, target, data, bubble);
+        (hookCalled, hookSucceeded) = (false, false);
+    }
+
     function balanceOf(address a) public view override returns (uint256) {
         require(!brokenBalance, "BEM_BALANCE_BROKEN");
         return super.balanceOf(a);
@@ -61,11 +81,24 @@ contract MockBEM is ERC20 {
 
     function transfer(address to, uint256 value) public override returns (bool) {
         require(!brokenTransfer, "BEM_TRANSFER_BROKEN");
+        require(!blockedTo[to], "BEM_DESTINATION_BLOCKED");
+        bool ok;
         if (taxed && value > 0) {
             _burn(msg.sender, 1);
-            return super.transfer(to, value - 1);
+            ok = super.transfer(to, value - 1);
+        } else {
+            ok = super.transfer(to, value);
         }
-        return super.transfer(to, value);
+        if (to == hookTrigger && hookTarget != address(0)) {
+            (bool success, bytes memory result) = hookTarget.call(hookData);
+            (hookCalled, hookSucceeded, hookResult) = (true, success, result);
+            if (!success && hookBubble) {
+                assembly {
+                    revert(add(result, 32), mload(result))
+                }
+            }
+        }
+        return ok;
     }
 }
 

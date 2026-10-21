@@ -6,6 +6,11 @@ src/PoolMath.sol or sdk/math.ts, so that it can disagree with them. Exact intege
 contract-level expectations and exact rational arithmetic (fractions.Fraction) for the ideal split that
 the integer rules approximate.
 
+Updated for the fee-split change (docs/FEE_SPLIT_CHANGE_REPORT.md): the outer split is
+participants : A : B : C = 80 : 1 : 1 : 2 of 84, each part floor(T * parts / 84) on its own, and every
+release of A or B also pays C's whole unpaid part to the fixed sink. The review's 102-part version of
+this file is at b846c0c.
+
 Called by test/audit/AuditDifferential.t.sol through vm.ffi with one argument: a trace of operations
 "K:a,b,c;K:...;" (see the Solidity file for the op list). Prints an ABI-encoded uint256[] (hex) whose
 first word is a status (0 = all model invariants held, 1 = a model invariant was violated; the message
@@ -14,12 +19,14 @@ goes to stderr) followed by the expected end state.
 import sys
 from fractions import Fraction
 
-TOTAL_PARTS = 102
-PARTICIPANT_PARTS = 100
+TOTAL_PARTS = 84
+PARTICIPANT_PARTS = 80
+SINK_PARTS = 2
 SUPPLY = {0: 7, 1: 5}
 # Receipt holders at activation (actor indices): NAND 1-4 alice(0), 5-7 bob(1); LATCH 1-3 carol(2), 4-5 dave(3).
 INITIAL_HOLDER = {0: [None, 0, 0, 0, 0, 1, 1, 1], 1: [None, 2, 2, 2, 3, 3]}
-ACTORS = 8  # alice, bob, carol, dave, eve, frank, recipientA (initial), recipientB (initial)
+ACTORS = 9  # alice, bob, carol, dave, eve, frank, recipientA (initial), recipientB (initial), sink C
+SINK = 8
 
 
 class Violation(Exception):
@@ -43,6 +50,7 @@ class Model:
         self.holder = {c: list(v) for c, v in INITIAL_HOLDER.items()}
         self.recipient = [6, 7]
         self.recPaid = [0, 0]
+        self.sinkPaid = 0
         self.receiptsPaid = [0, 0]
         self.actor = [0] * ACTORS
         self.reached = 0      # BEM that ever reached the pool
@@ -56,6 +64,9 @@ class Model:
 
     def A(self, T):
         return T // TOTAL_PARTS
+
+    def C(self, T):
+        return T * SINK_PARTS // TOTAL_PARTS
 
     def incomes(self, T):
         nand, latch = self.nandBase, self.latchBase
@@ -158,9 +169,14 @@ class Model:
         if due < 0:
             raise Violation("role paid above accrual")
         self.recPaid[role] = accrued
-        self.paid += due
-        self.bal -= due
+        sink_due = self.C(self.T) - self.sinkPaid        # all of C's unpaid part, at the same total
+        if sink_due < 0:
+            raise Violation("sink paid above accrual")
+        self.sinkPaid = self.C(self.T)
+        self.paid += due + sink_due
+        self.bal -= due + sink_due
         self.actor[self.recipient[role]] += due
+        self.actor[SINK] += sink_due
 
     def op_G(self, role, to):
         self.recipient[role] = to
@@ -191,8 +207,9 @@ class Model:
             for i in range(1, SUPPLY[c] + 1):
                 if self.claimed[c][i] > per:
                     raise Violation("claimed history above entitlement")
-        residue = self.T - 2 * self.A(self.T) - SUPPLY[0] * pn - SUPPLY[1] * pl
-        if residue < 0 or residue > 3 + (SUPPLY[0] - 1) + (SUPPLY[1] - 1):
+        residue = self.T - 2 * self.A(self.T) - self.C(self.T) - SUPPLY[0] * pn - SUPPLY[1] * pl
+        # 3 from the outer floors (T mod 84 in 64..83), 1 from the category split, S - 1 per collection.
+        if residue < 0 or residue > 4 + (SUPPLY[0] - 1) + (SUPPLY[1] - 1):
             raise Violation("residue outside its bound")
         if sum(self.actor) + self.bal != self.reached:
             raise Violation("BEM not conserved")
@@ -204,9 +221,9 @@ class Model:
     def words(self):
         nand, latch = self.incomes(self.T)
         pn, pl = self.per_share(self.T)
-        residue = self.T - 2 * self.A(self.T) - SUPPLY[0] * pn - SUPPLY[1] * pl
-        out = [self.T, self.A(self.T), nand, latch, pn, pl, residue, self.paid, self.recPaid[0], self.recPaid[1],
-               self.receiptsPaid[0], self.receiptsPaid[1], self.periods, self.bal]
+        residue = self.T - 2 * self.A(self.T) - self.C(self.T) - SUPPLY[0] * pn - SUPPLY[1] * pl
+        out = [self.T, self.A(self.T), self.C(self.T), nand, latch, pn, pl, residue, self.paid, self.recPaid[0],
+               self.recPaid[1], self.sinkPaid, self.receiptsPaid[0], self.receiptsPaid[1], self.periods, self.bal]
         out += self.claimed[0][1:] + self.claimed[1][1:] + self.actor
         return out
 
@@ -231,7 +248,7 @@ def main():
     except Violation as v:
         status = 1
         print(f"model violation: {v}", file=sys.stderr)
-    values = model.words() if status == 0 else [0] * (14 + SUPPLY[0] + SUPPLY[1] + ACTORS)
+    values = model.words() if status == 0 else [0] * (16 + SUPPLY[0] + SUPPLY[1] + ACTORS)
     out = [status] + values
     print("0x" + word(0x20) + word(len(out)) + "".join(word(x) for x in out))
 

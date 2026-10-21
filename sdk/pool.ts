@@ -13,7 +13,7 @@ import { tapeoutEntitlementReceiptAbi, tapeoutMinerPoolAbi, tapeoutReceiptDistri
 import bytecode from './bytecode.json' with { type: 'json' };
 import { CATEGORY, MINER_STATUS_ACTIVE, erc20Abi, erc721Abi, miningAbi, type CategoryName } from './constants.js';
 import { poolDeployment, receiptConstructorArgs, type SystemFile } from './config.js';
-import { accrue, residueBound, type Accrual, type State } from './math.js';
+import { accrue, PARTICIPANT_PARTS, RECIPIENT_PARTS, residueBound, SINK, SINK_PARTS, TOTAL_PARTS, type Accrual, type State } from './math.js';
 import { allocationBatchGas, type DistributorInput } from './allocation.js';
 import {
   CALL_GAS, CLAIM_GAS, DEPLOY_GAS, FUND_GAS, HARVEST_GAS, ISSUE_GAS, admissionGasEstimate, deliveryBatches, idsGas, maxIdsPerTx,
@@ -187,8 +187,8 @@ export function claimPlans(pool: Address, nandIds: bigint[], latchIds: bigint[],
 }
 
 export const releasePlans = (pool: Address) => [
-  poolCall(pool, 'releaseA', [], 'pay recipient A its accrued 1/102', CALL_GAS.releaseA),
-  poolCall(pool, 'releaseB', [], 'pay recipient B its accrued 1/102', CALL_GAS.releaseB),
+  poolCall(pool, 'releaseA', [], `pay recipient A its unpaid 1/84, and transfer C's whole unpaid 2/84 to the sink ${SINK}`, CALL_GAS.releaseA),
+  poolCall(pool, 'releaseB', [], `pay recipient B its unpaid 1/84, and transfer C's whole unpaid 2/84 to the sink ${SINK}`, CALL_GAS.releaseB),
 ];
 
 export const setRecipientPlan = (pool: Address, role: 0 | 1, to: Address) =>
@@ -292,42 +292,47 @@ export async function receiverProblems(rpc: PublicClient, wallets: readonly Addr
 export interface Reconciliation {
   bemBalance: bigint; unrecognized: bigint; deficit: bigint; totalAccounted: bigint; totalPaid: bigint;
   recipientAAccrued: bigint; recipientAPaid: bigint; recipientBAccrued: bigint; recipientBPaid: bigint;
+  sinkAccrued: bigint; sinkPaid: bigint;
   nandIncome: bigint; nandReceiptsAccrued: bigint; nandReceiptsPaid: bigint;
   latchIncome: bigint; latchReceiptsAccrued: bigint; latchReceiptsPaid: bigint; residue: bigint;
 }
 
 export async function readPoolSummary(rpc: PublicClient, pool: Address, blockNumber?: bigint) {
   const r = <T>(fn: string, args: readonly unknown[] = []) => readPool<T>(rpc, pool, fn, args, blockNumber);
-  const [name, version, owner, active, activatedAt, nandShares, latchShares, totalNandBurn, totalLatchBurn, compositionPeriod, state, accrual, reconciliation, minerCount, recipientA, recipientB, depositors, nandReceipt, latchReceipt, bem, mining, collection] = await Promise.all([
+  const [name, version, owner, active, activatedAt, nandShares, latchShares, totalNandBurn, totalLatchBurn, compositionPeriod, state, accrual, reconciliation, minerCount, recipientA, recipientB, sink, depositors, nandReceipt, latchReceipt, bem, mining, collection] = await Promise.all([
     r<string>('poolName'), r<string>('VERSION'), r<Address>('owner'), r<boolean>('active'), r<bigint>('activatedAt'), r<bigint>('nandShares'), r<bigint>('latchShares'),
     r<bigint>('totalNandBurn'), r<bigint>('totalLatchBurn'), r<bigint>('compositionPeriod'), r<State>('state'), r<Accrual>('accrual'), r<Reconciliation>('reconciliation'),
-    r<bigint>('minerCount'), r<Address>('recipientA'), r<Address>('recipientB'), r<readonly Address[]>('depositors'), r<Address>('nandReceipt'), r<Address>('latchReceipt'),
+    r<bigint>('minerCount'), r<Address>('recipientA'), r<Address>('recipientB'), r<Address>('SINK'), r<readonly Address[]>('depositors'), r<Address>('nandReceipt'), r<Address>('latchReceipt'),
     r<Address>('bem'), r<Address>('mining'), r<Address>('minerCollection'),
   ]);
   return { pool, name, version, owner, active, activatedAt, nandShares, latchShares, composition: { totalNandBurn, totalLatchBurn, compositionPeriod },
-    state, accrual, reconciliation, minerCount, recipientA, recipientB, depositors, nandReceipt, latchReceipt, bem, mining, collection };
+    state, accrual, reconciliation, minerCount, recipientA, recipientB, sink, depositors, nandReceipt, latchReceipt, bem, mining, collection };
 }
 
 /** Recompute the allocation off-chain and check every ledger identity. */
 export function checkReconciliation(state: State, r: Reconciliation) {
   const expected = accrue(r.totalAccounted, state);
-  const outstanding = (r.recipientAAccrued - r.recipientAPaid) + (r.recipientBAccrued - r.recipientBPaid)
+  const outstanding = (r.recipientAAccrued - r.recipientAPaid) + (r.recipientBAccrued - r.recipientBPaid) + (r.sinkAccrued - r.sinkPaid)
     + (r.nandReceiptsAccrued - r.nandReceiptsPaid) + (r.latchReceiptsAccrued - r.latchReceiptsPaid);
   const checks = {
-    offChainMathMatches: expected.recipientA === r.recipientAAccrued && expected.nandIncome === r.nandIncome && expected.latchIncome === r.latchIncome
-      && expected.nandReceipts === r.nandReceiptsAccrued && expected.latchReceipts === r.latchReceiptsAccrued && expected.residue === r.residue,
+    offChainMathMatches: expected.recipientA === r.recipientAAccrued && expected.sink === r.sinkAccrued && expected.nandIncome === r.nandIncome
+      && expected.latchIncome === r.latchIncome && expected.nandReceipts === r.nandReceiptsAccrued && expected.latchReceipts === r.latchReceiptsAccrued
+      && expected.residue === r.residue,
     recipientsAccrueEqually: r.recipientAAccrued === r.recipientBAccrued,
+    // Each outer part is its own floor of T: C is floor(2T/84), never 2 * floor(T/84).
+    outerPartsFromTotal: r.recipientAAccrued === (r.totalAccounted * RECIPIENT_PARTS) / TOTAL_PARTS && r.sinkAccrued === (r.totalAccounted * SINK_PARTS) / TOTAL_PARTS
+      && r.nandIncome + r.latchIncome <= (r.totalAccounted * PARTICIPANT_PARTS) / TOTAL_PARTS,
     balanceIdentity: r.bemBalance + r.deficit === outstanding + r.residue + r.unrecognized,
-    paidIdentity: r.totalPaid === r.recipientAPaid + r.recipientBPaid + r.nandReceiptsPaid + r.latchReceiptsPaid,
-    accruedIdentity: r.totalAccounted === r.recipientAAccrued + r.recipientBAccrued + r.nandReceiptsAccrued + r.latchReceiptsAccrued + r.residue,
+    paidIdentity: r.totalPaid === r.recipientAPaid + r.recipientBPaid + r.sinkPaid + r.nandReceiptsPaid + r.latchReceiptsPaid,
+    accruedIdentity: r.totalAccounted === r.recipientAAccrued + r.recipientBAccrued + r.sinkAccrued + r.nandReceiptsAccrued + r.latchReceiptsAccrued + r.residue,
     noDeficit: r.deficit === 0n,
     residueWithinBound: r.residue <= residueBound(state.nandShares, state.latchShares),
-    noBucketOverpaid: r.recipientAPaid <= r.recipientAAccrued && r.recipientBPaid <= r.recipientBAccrued
+    noBucketOverpaid: r.recipientAPaid <= r.recipientAAccrued && r.recipientBPaid <= r.recipientBAccrued && r.sinkPaid <= r.sinkAccrued
       && r.nandReceiptsPaid <= r.nandReceiptsAccrued && r.latchReceiptsPaid <= r.latchReceiptsAccrued,
     categoryWithoutReceiptsHasNoIncome: (state.nandShares !== 0n || r.nandIncome === 0n) && (state.latchShares !== 0n || r.latchIncome === 0n),
   };
   return { status: Object.values(checks).every(Boolean) ? 'PASS' as const : 'FAIL' as const, checks, outstanding: {
-    recipientA: r.recipientAAccrued - r.recipientAPaid, recipientB: r.recipientBAccrued - r.recipientBPaid,
+    recipientA: r.recipientAAccrued - r.recipientAPaid, recipientB: r.recipientBAccrued - r.recipientBPaid, sink: r.sinkAccrued - r.sinkPaid,
     nandReceipts: r.nandReceiptsAccrued - r.nandReceiptsPaid, latchReceipts: r.latchReceiptsAccrued - r.latchReceiptsPaid,
   } };
 }

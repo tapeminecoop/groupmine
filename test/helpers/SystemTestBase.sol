@@ -175,32 +175,36 @@ abstract contract SystemTestBase is Test {
         r = new uint256[](0);
     }
 
-    /// @dev The ledger identities from docs/ACCOUNTING.md.
+    /// @dev The ledger identities from docs/ACCOUNTING.md, with A, B and C (the sink) as separate accounts.
     function assertReconciled() internal view {
         TapeoutMinerPool.Reconciliation memory r = pool.reconciliation();
         assertEq(r.deficit, 0, "deficit");
         uint256 outstanding = (r.recipientAAccrued - r.recipientAPaid)
-            + (r.recipientBAccrued - r.recipientBPaid) + (r.nandReceiptsAccrued - r.nandReceiptsPaid)
-            + (r.latchReceiptsAccrued - r.latchReceiptsPaid);
+            + (r.recipientBAccrued - r.recipientBPaid) + (r.sinkAccrued - r.sinkPaid)
+            + (r.nandReceiptsAccrued - r.nandReceiptsPaid) + (r.latchReceiptsAccrued - r.latchReceiptsPaid);
         assertEq(r.bemBalance, outstanding + r.residue + r.unrecognized, "balance identity");
         assertEq(
             r.totalPaid,
-            r.recipientAPaid + r.recipientBPaid + r.nandReceiptsPaid + r.latchReceiptsPaid,
+            r.recipientAPaid + r.recipientBPaid + r.sinkPaid + r.nandReceiptsPaid + r.latchReceiptsPaid,
             "paid identity"
         );
         assertEq(
             r.totalAccounted,
-            r.recipientAAccrued + r.recipientBAccrued + r.nandReceiptsAccrued + r.latchReceiptsAccrued
-                + r.residue,
+            r.recipientAAccrued + r.recipientBAccrued + r.sinkAccrued + r.nandReceiptsAccrued
+                + r.latchReceiptsAccrued + r.residue,
             "accrued identity"
         );
         assertEq(r.recipientAAccrued, r.recipientBAccrued, "A and B accrue identically");
+        assertEq(r.recipientAAccrued, r.totalAccounted / 84, "A accrues floor(T / 84)");
+        assertEq(r.sinkAccrued, r.totalAccounted * 2 / 84, "C accrues floor(2T / 84)");
+        assertLe(r.sinkPaid, r.sinkAccrued, "C never overpaid");
         assertLe(r.residue, residueBound(), "residue bound");
     }
 
-    /// @dev 2 (outer floors) + 1 (category floors) + (S_N - 1) + (S_L - 1).
+    /// @dev 3 (outer floors: r - floor(2r/84) - floor(80r/84) <= 3 for r = T mod 84) + 1 (category
+    ///      floors) + (S_N - 1) + (S_L - 1).
     function residueBound() internal view returns (uint256 bound) {
-        bound = 3;
+        bound = 4;
         uint256 sN = pool.nandShares();
         uint256 sL = pool.latchShares();
         if (sN != 0) bound += sN - 1;

@@ -2,10 +2,16 @@
 pragma solidity 0.8.24;
 
 /// @notice Allocation math for the pool's cumulative income (mirrored exactly by sdk/math.ts).
-/// @dev Outer split of the cumulative recognized total T (100 + 1 + 1 = 102 parts):
-///          recipientA   = floor(T * 1 / 102)
-///          recipientB   = floor(T * 1 / 102)
-///          participants = floor(T * 100 / 102)
+/// @dev Outer split of the cumulative recognized total T. The relative weights NAND + LATCH 100 :
+///      A 1.25 : B 1.25 : C 2.5 (105 displayed parts) are held as the equal integer ratio
+///      80 : 1 : 1 : 2 (84 parts):
+///          recipientA   = floor(T *  1 / 84)
+///          recipientB   = floor(T *  1 / 84)
+///          sink         = floor(T *  2 / 84)    (C, paid to the pool's fixed sink address)
+///          participants = floor(T * 80 / 84)
+///      Each is computed from T on its own, never as T minus other rounded parts, so each is
+///      non-decreasing in T. With r = T mod 84 the four floors leave r - floor(2r/84) - floor(80r/84)
+///      raw units unallocated: at most 3 (for r = 64 ... 83).
 ///      Participant income is split between NAND and LATCH by the aggregate burn composition (N, L) of
 ///      the admitted miners. The composition changes only at admissions, so time is divided into
 ///      composition periods. At each admission the category totals are checkpointed (`nandBase`,
@@ -18,9 +24,10 @@ pragma solidity 0.8.24;
 ///      Per-share values are floor(categoryIncome / S) with S fixed at activation. Every quantity is
 ///      non-decreasing in T, and within one period it depends only on T (path independent).
 library PoolMath {
-    uint256 internal constant TOTAL_PARTS = 102;
-    uint256 internal constant PARTICIPANT_PARTS = 100;
+    uint256 internal constant TOTAL_PARTS = 84;
+    uint256 internal constant PARTICIPANT_PARTS = 80;
     uint256 internal constant RECIPIENT_PARTS = 1;
+    uint256 internal constant SINK_PARTS = 2;
 
     struct State {
         uint256 nandBase;
@@ -36,6 +43,7 @@ library PoolMath {
         uint256 total;
         uint256 recipientA;
         uint256 recipientB;
+        uint256 sink;
         uint256 participants;
         uint256 nandIncome;
         uint256 latchIncome;
@@ -50,6 +58,7 @@ library PoolMath {
         a.total = total;
         a.recipientA = total * RECIPIENT_PARTS / TOTAL_PARTS;
         a.recipientB = a.recipientA;
+        a.sink = total * SINK_PARTS / TOTAL_PARTS;
         a.participants = total * PARTICIPANT_PARTS / TOTAL_PARTS;
         a.nandIncome = s.nandBase;
         a.latchIncome = s.latchBase;
@@ -63,6 +72,6 @@ library PoolMath {
         if (s.latchShares != 0) a.perLatchShare = a.latchIncome / s.latchShares;
         a.nandReceipts = s.nandShares * a.perNandShare;
         a.latchReceipts = s.latchShares * a.perLatchShare;
-        a.residue = total - a.recipientA - a.recipientB - a.nandReceipts - a.latchReceipts;
+        a.residue = total - a.recipientA - a.recipientB - a.sink - a.nandReceipts - a.latchReceipts;
     }
 }

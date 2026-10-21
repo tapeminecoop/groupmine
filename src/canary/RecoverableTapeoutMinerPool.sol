@@ -11,10 +11,13 @@ import {PoolMath} from "../PoolMath.sol";
 import {TapeoutEntitlementReceipt} from "../TapeoutEntitlementReceipt.sol";
 
 /// @title TapeOut miner custody and BEM revenue distribution pool
-/// @notice Holds TapeOut miner NFTs and distributes the BEM it actually receives:
-///         1/102 to recipient A, 1/102 to recipient B, and 100/102 to the NAND and LATCH receipt
-///         collections, split by the aggregate NAND/LATCH burn of the admitted miners as read from
-///         the Mining contract. Receipt holders claim per receipt ID; unclaimed income follows the ID.
+/// @notice Holds TapeOut miner NFTs and distributes the BEM it actually receives in the relative
+///         weights NAND + LATCH 100 : A 1.25 : B 1.25 : C 2.5, held exactly as 80 : 1 : 1 : 2 of 84
+///         parts. The participants' part goes to the NAND and LATCH receipt collections, split by the
+///         aggregate NAND/LATCH burn of the admitted miners as read from the Mining contract; receipt
+///         holders claim per receipt ID and unclaimed income follows the ID. A and B are role
+///         recipients. C is the fixed sink address `SINK`: every release of A or B also transfers
+///         C's whole unpaid part there, as a plain BEM transfer (not a token burn).
 /// @dev Lifecycle: deploy (binds receipts, recipients and a fixed depositor whitelist) -> owner
 ///      `activate` (receipt supplies finalized and fixed as denominators) -> whitelisted admissions,
 ///      harvests, claims and releases. After activation the owner has no remaining power, so
@@ -76,6 +79,8 @@ contract RecoverableTapeoutMinerPool is Ownable2Step, ReentrancyGuard {
         uint256 recipientAPaid;
         uint256 recipientBAccrued;
         uint256 recipientBPaid;
+        uint256 sinkAccrued;
+        uint256 sinkPaid;
         uint256 nandIncome;
         uint256 nandReceiptsAccrued;
         uint256 nandReceiptsPaid;
@@ -85,10 +90,15 @@ contract RecoverableTapeoutMinerPool is Ownable2Step, ReentrancyGuard {
         uint256 residue;
     }
 
-    string public constant VERSION = "RecoverableTapeoutMinerPool/canary-1";
+    string public constant VERSION = "RecoverableTapeoutMinerPool/canary-2-local";
     uint256 public constant TOTAL_PARTS = PoolMath.TOTAL_PARTS;
     uint256 public constant PARTICIPANT_PARTS = PoolMath.PARTICIPANT_PARTS;
     uint256 public constant RECIPIENT_PARTS = PoolMath.RECIPIENT_PARTS;
+    uint256 public constant SINK_PARTS = PoolMath.SINK_PARTS;
+    /// @notice C: the fixed destination of the sink part. Payments are ordinary BEM transfers to this
+    ///         address (they need no signature from it); nobody can change or redirect it, and it is
+    ///         not an A/B role. Whether BEM's totalSupply changes on such a transfer is BEM's behaviour.
+    address public constant SINK = 0x000000000000000000000000000000000000dEaD;
     uint8 public constant MINER_ACTIVE = 1;
     /// @dev Mining status 2. Permanent: a revoked circuit can never mine again, and Mining refuses
     ///      every claim for it (docs/VERIFICATION_REPORT.md, Mining lifecycle).
@@ -138,6 +148,7 @@ contract RecoverableTapeoutMinerPool is Ownable2Step, ReentrancyGuard {
     uint256 public totalPaid;
     uint256 public recipientAPaid;
     uint256 public recipientBPaid;
+    uint256 public sinkPaid;
     uint256[2] private _receiptsPaid;
     mapping(Category => mapping(uint256 id => uint256 amount)) private _claimed;
 
@@ -212,6 +223,8 @@ contract RecoverableTapeoutMinerPool is Ownable2Step, ReentrancyGuard {
         Category indexed category, uint256 indexed id, address indexed holder, uint256 amount
     );
     event RecipientPaid(Recipient indexed role, address indexed recipient, uint256 amount);
+    /// @notice C's part transferred to the sink by a release of `releasedRole` (A or B).
+    event SinkPaid(Recipient indexed releasedRole, address indexed sink, uint256 amount);
     event RecipientChanged(Recipient indexed role, address indexed previous, address indexed current);
 
     constructor(Deployment memory d) Ownable(d.owner) {
@@ -231,7 +244,7 @@ contract RecoverableTapeoutMinerPool is Ownable2Step, ReentrancyGuard {
         ) revert IncompatibleReceipt();
         if (
             d.recipientA == address(0) || d.recipientB == address(0) || d.recipientA == address(this)
-                || d.recipientB == address(this)
+                || d.recipientB == address(this) || d.recipientA == SINK || d.recipientB == SINK
         ) revert InvalidAddress();
         uint256 count = d.depositors.length;
         if (count == 0 || count > MAX_DEPOSITORS) revert InvalidDepositors();
@@ -386,22 +399,29 @@ contract RecoverableTapeoutMinerPool is Ownable2Step, ReentrancyGuard {
         _pay(msg.sender, amount);
     }
 
-    /// @notice Pay recipient A its accrued 1/102. Callable by anyone; independent of all other payments.
+    /// @notice Pay recipient A its unpaid 1/84 and, in the same transaction, C its whole unpaid 2/84
+    ///         to `SINK`, both at one income snapshot. Callable by anyone; B is not affected.
+    /// @return amount Paid to A (C's payment is reported by `SinkPaid`).
     function releaseA() external nonReentrant returns (uint256 amount) {
         return _release(Recipient.A);
     }
 
-    /// @notice Pay recipient B its accrued 1/102. Callable by anyone; independent of all other payments.
+    /// @notice Pay recipient B its unpaid 1/84 and, in the same transaction, C its whole unpaid 2/84
+    ///         to `SINK`, both at one income snapshot. Callable by anyone; A is not affected.
+    /// @return amount Paid to B (C's payment is reported by `SinkPaid`).
     function releaseB() external nonReentrant returns (uint256 amount) {
         return _release(Recipient.B);
     }
 
     /// @notice A recipient may move its own role (e.g. to a new multisig). Unpaid income stays with
-    ///         the role. Nobody else, including the owner, can change a recipient.
+    ///         the role. Nobody else, including the owner, can change a recipient. C is not a role and
+    ///         cannot be moved, and no role may be moved to C's sink address.
     function setRecipient(Recipient role, address newRecipient) external {
         address current = role == Recipient.A ? recipientA : recipientB;
         if (msg.sender != current) revert Unauthorized();
-        if (newRecipient == address(0) || newRecipient == address(this)) revert InvalidAddress();
+        if (newRecipient == address(0) || newRecipient == address(this) || newRecipient == SINK) {
+            revert InvalidAddress();
+        }
         if (role == Recipient.A) recipientA = newRecipient;
         else recipientB = newRecipient;
         emit RecipientChanged(role, current, newRecipient);
@@ -494,6 +514,11 @@ contract RecoverableTapeoutMinerPool is Ownable2Step, ReentrancyGuard {
         return accrued - (role == Recipient.A ? recipientAPaid : recipientBPaid);
     }
 
+    /// @notice C's part the next release of A or B transfers to `SINK` (including unrecognized balance).
+    function sinkClaimable() external view returns (uint256) {
+        return previewAccrual().sink - sinkPaid;
+    }
+
     /// @notice Full ledger snapshot; see docs/ACCOUNTING.md for the identities.
     function reconciliation() external view returns (Reconciliation memory r) {
         r.bemBalance = bem.balanceOf(address(this));
@@ -507,6 +532,8 @@ contract RecoverableTapeoutMinerPool is Ownable2Step, ReentrancyGuard {
         r.recipientAPaid = recipientAPaid;
         r.recipientBAccrued = a.recipientB;
         r.recipientBPaid = recipientBPaid;
+        r.sinkAccrued = a.sink;
+        r.sinkPaid = sinkPaid;
         r.nandIncome = a.nandIncome;
         r.nandReceiptsAccrued = a.nandReceipts;
         r.nandReceiptsPaid = _receiptsPaid[0];
@@ -735,22 +762,28 @@ contract RecoverableTapeoutMinerPool is Ownable2Step, ReentrancyGuard {
         emit ReceiptIncomeClaimed(category, id, msg.sender, due);
     }
 
+    /// @dev One snapshot of the recognized total for both payments. The selected role receives its own
+    ///      unpaid part; C receives all of its unpaid part (`sink - sinkPaid`), never a multiple of this
+    ///      call's role payment, since A and B release at different times and round independently.
     function _release(Recipient role) private returns (uint256 amount) {
         _requireActive();
         _sync();
-        uint256 accrued = _accrual(totalAccounted).recipientA; // A and B accrue identically
+        PoolMath.Accrual memory a = _accrual(totalAccounted);
         address to;
         if (role == Recipient.A) {
-            amount = accrued - recipientAPaid;
-            recipientAPaid = accrued;
+            amount = a.recipientA - recipientAPaid;
+            recipientAPaid = a.recipientA;
             to = recipientA;
         } else {
-            amount = accrued - recipientBPaid;
-            recipientBPaid = accrued;
+            amount = a.recipientB - recipientBPaid;
+            recipientBPaid = a.recipientB;
             to = recipientB;
         }
-        _pay(to, amount);
+        uint256 sinkAmount = a.sink - sinkPaid;
+        sinkPaid = a.sink;
+        _payWithSink(to, amount, sinkAmount);
         emit RecipientPaid(role, to, amount);
+        emit SinkPaid(role, SINK, sinkAmount);
     }
 
     function _accrual(uint256 total) private view returns (PoolMath.Accrual memory) {
@@ -769,6 +802,25 @@ contract RecoverableTapeoutMinerPool is Ownable2Step, ReentrancyGuard {
             totalAccounted += received;
             emit IncomeRecognized(received, totalAccounted, compositionPeriod);
         }
+    }
+
+    /// @dev A release's two payments as one unit: every counter (the role's and C's paid amounts, set by
+    ///      the caller, and `totalPaid` here) changes before either transfer, and both transfers and all
+    ///      three balance deltas must be exact, or the whole release reverts. `to` is never `SINK` or this
+    ///      pool (both refused for A and B).
+    function _payWithSink(address to, uint256 amount, uint256 sinkAmount) private {
+        uint256 outflow = amount + sinkAmount;
+        if (outflow == 0) return;
+        uint256 selfBefore = bem.balanceOf(address(this));
+        uint256 toBefore = bem.balanceOf(to);
+        uint256 sinkBefore = bem.balanceOf(SINK);
+        totalPaid += outflow;
+        if (amount != 0) bem.safeTransfer(to, amount);
+        if (sinkAmount != 0) bem.safeTransfer(SINK, sinkAmount);
+        if (
+            bem.balanceOf(address(this)) != selfBefore - outflow || bem.balanceOf(to) != toBefore + amount
+                || bem.balanceOf(SINK) != sinkBefore + sinkAmount
+        ) revert UnexpectedTokenBehavior();
     }
 
     /// @dev Plain, non-rebasing, fee-free BEM only: both balance deltas must be exact.

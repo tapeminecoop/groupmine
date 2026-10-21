@@ -37,9 +37,9 @@ contract PoolBoundaryForkTest is PoolForkBase {
 
     // ---------------------------------------------------------------------------------- specification
 
-    /// @dev 100/102 of a cumulative total, as the specification defines the participants' share.
+    /// @dev 80/84 of a cumulative total (100 of 105 displayed parts), the participants' share.
     function _participants(uint256 total) internal pure returns (uint256) {
-        return total * 100 / 102;
+        return total * 80 / 84;
     }
 
     function _burns(uint256[] memory ids) internal view returns (uint256 n, uint256 l) {
@@ -173,8 +173,9 @@ contract PoolBoundaryForkTest is PoolForkBase {
         assertEq(a.total, t3);
         assertEq(a.nandIncome, expectNand);
         assertEq(a.latchIncome, expectLatch);
-        assertEq(a.recipientA, t3 / 102);
-        assertEq(a.recipientB, t3 / 102);
+        assertEq(a.recipientA, t3 / 84);
+        assertEq(a.recipientB, t3 / 84);
+        assertEq(a.sink, t3 * 2 / 84);
         // Splitting everything by the latest ratio would have given LATCH more: the boundary mattered.
         assertGt(_participants(t3) * l2 / (n2 + l2), expectLatch);
 
@@ -194,6 +195,7 @@ contract PoolBoundaryForkTest is PoolForkBase {
         vm.serializeUint(key, "nandIncome", a.nandIncome);
         vm.serializeUint(key, "latchIncome", a.latchIncome);
         vm.serializeUint(key, "recipientAEach", a.recipientA);
+        vm.serializeUint(key, "sinkAccrued", a.sink);
         string memory out = vm.serializeUint(key, "admissionGas", gasUsed);
         vm.writeJson(out, "reports/fork-boundary-multi.json");
     }

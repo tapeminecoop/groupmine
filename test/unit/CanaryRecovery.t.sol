@@ -87,7 +87,7 @@ contract CanaryRecoveryTest is Test {
         activate();
         deposit(3204);
         deposit(12485);
-        mining.accrue(address(nft), 3204, 10200);
+        mining.accrue(address(nft), 3204, 10500);
         pool.harvest(one(3204));
         closeAndReturn();
         assertEq(pool.owner(), address(0));
@@ -96,7 +96,8 @@ contract CanaryRecoveryTest is Test {
         pool.releaseA();
         pool.releaseB();
         vm.stopPrank();
-        assertEq(bem.balanceOf(address(helper)), 100);
+        assertEq(bem.balanceOf(address(helper)), 125); // B: 1.25 of 105
+        assertEq(bem.balanceOf(pool.SINK()), 250); // C: 2.5 of 105, with A's release
     }
 
     function testEmergencyHasNoMiningOrBEMCallsEvenWhenTheyConsumeAllGas() public {
@@ -130,7 +131,7 @@ contract CanaryRecoveryTest is Test {
         activate();
         deposit(3204);
         deposit(12485);
-        mining.accrue(address(nft), 3204, 10200);
+        mining.accrue(address(nft), 3204, 10500);
         pool.harvest(one(3204));
         bem.setFaults(false, true, false);
         vm.prank(wallet);
@@ -235,14 +236,14 @@ contract CanaryRecoveryTest is Test {
 
     function testBoundaryAndUnrecognizedBEMKeepHistoryAndFinalAttribution() public {
         activate();
-        mining.accrueUnsettled(address(nft), 3204, 10200);
+        mining.accrueUnsettled(address(nft), 3204, 10500);
         deposit(3204);
         vm.prank(wallet);
         assertEq(pool.claim(Canary.Category.NAND, 1), 2500);
         // Already-held income plus pending-invisible income settled INSIDE second admission.
-        bem.mint(address(pool), 10200);
-        mining.accrueUnsettled(address(nft), 3204, 10200);
-        mining.accrueUnsettled(address(nft), 12485, 10200);
+        bem.mint(address(pool), 10500);
+        mining.accrueUnsettled(address(nft), 3204, 10500);
+        mining.accrueUnsettled(address(nft), 12485, 10500);
         deposit(12485);
         assertEq(pool.nandBase(), 30000);
         assertEq(pool.latchBase(), 0);
@@ -250,7 +251,7 @@ contract CanaryRecoveryTest is Test {
         assertEq(pool.claimable(Canary.Category.NAND, 1), 6875);
         assertEq(pool.claimable(Canary.Category.LATCH, 1), 1250);
         // Already received, not yet synchronized; shutdown/recovery do not erase it.
-        bem.mint(address(pool), 10200);
+        bem.mint(address(pool), 10500);
         closeAndReturn();
         assertEq(pool.claimable(Canary.Category.NAND, 1), 8750);
         vm.startPrank(wallet);

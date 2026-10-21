@@ -25,7 +25,7 @@ contract AuditDifferentialTest is SystemTestBase {
 
     address internal eve = makeAddr("eve");
     address internal frank = makeAddr("frank");
-    address[8] internal actors;
+    address[9] internal actors;
     uint256[] internal registered;
     uint256 internal nextMiner = 1;
     string internal trace;
@@ -38,7 +38,7 @@ contract AuditDifferentialTest is SystemTestBase {
         issue(latchReceipt, dave, 2);
         finalizeIssuance();
         activate();
-        actors = [alice, bob, carol, dave, eve, frank, recipientA, recipientB];
+        actors = [alice, bob, carol, dave, eve, frank, recipientA, recipientB, pool.SINK()];
     }
 
     /// forge-config: default.fuzz.runs = 400
@@ -58,26 +58,28 @@ contract AuditDifferentialTest is SystemTestBase {
         PoolMath.Accrual memory a = pool.accrual();
         assertEq(pool.totalAccounted(), e[1], "totalAccounted");
         assertEq(a.recipientA, e[2], "A accrued");
-        assertEq(a.nandIncome, e[3], "nandIncome");
-        assertEq(a.latchIncome, e[4], "latchIncome");
-        assertEq(a.perNandShare, e[5], "perNandShare");
-        assertEq(a.perLatchShare, e[6], "perLatchShare");
-        assertEq(a.residue, e[7], "residue");
-        assertEq(pool.totalPaid(), e[8], "totalPaid");
-        assertEq(pool.recipientAPaid(), e[9], "A paid");
-        assertEq(pool.recipientBPaid(), e[10], "B paid");
-        assertEq(pool.receiptsPaid(NAND), e[11], "NAND receipts paid");
-        assertEq(pool.receiptsPaid(LATCH), e[12], "LATCH receipts paid");
-        assertEq(pool.compositionPeriod(), e[13], "periods");
-        assertEq(bem.balanceOf(address(pool)), e[14], "pool balance");
-        uint256 k = 15;
+        assertEq(a.sink, e[3], "C accrued");
+        assertEq(a.nandIncome, e[4], "nandIncome");
+        assertEq(a.latchIncome, e[5], "latchIncome");
+        assertEq(a.perNandShare, e[6], "perNandShare");
+        assertEq(a.perLatchShare, e[7], "perLatchShare");
+        assertEq(a.residue, e[8], "residue");
+        assertEq(pool.totalPaid(), e[9], "totalPaid");
+        assertEq(pool.recipientAPaid(), e[10], "A paid");
+        assertEq(pool.recipientBPaid(), e[11], "B paid");
+        assertEq(pool.sinkPaid(), e[12], "C paid");
+        assertEq(pool.receiptsPaid(NAND), e[13], "NAND receipts paid");
+        assertEq(pool.receiptsPaid(LATCH), e[14], "LATCH receipts paid");
+        assertEq(pool.compositionPeriod(), e[15], "periods");
+        assertEq(bem.balanceOf(address(pool)), e[16], "pool balance");
+        uint256 k = 17;
         for (uint256 id = 1; id <= S_N; ++id) {
             assertEq(pool.claimed(NAND, id), e[k++], "claimed NAND");
         }
         for (uint256 id = 1; id <= S_L; ++id) {
             assertEq(pool.claimed(LATCH, id), e[k++], "claimed LATCH");
         }
-        for (uint256 i; i < 8; ++i) {
+        for (uint256 i; i < 9; ++i) {
             assertEq(bem.balanceOf(actors[i]), e[k++], "actor balance");
         }
         assertReconciled();
@@ -219,7 +221,7 @@ contract AuditDifferentialTest is SystemTestBase {
     }
 
     function _idx(address a) internal view returns (uint256) {
-        for (uint256 i; i < 8; ++i) {
+        for (uint256 i; i < 9; ++i) {
             if (actors[i] == a) return i;
         }
         revert("unknown actor");

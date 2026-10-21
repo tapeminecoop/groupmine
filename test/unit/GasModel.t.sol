@@ -45,12 +45,12 @@ contract GasModelTest is SystemTestBase {
     uint256 internal constant CLAIM_BASE = 200_000;
     uint256 internal constant CLAIM_PER_ID = 32_000;
     uint256 internal constant DEPLOY_RECEIPT = 3_000_000;
-    uint256 internal constant DEPLOY_POOL = 6_000_000;
+    uint256 internal constant DEPLOY_POOL = 7_000_000;
     uint256 internal constant DEPLOY_DISTRIBUTOR = 2_500_000;
     uint256 internal constant CALL_FINALIZE_ISSUANCE = 100_000;
     uint256 internal constant CALL_FINALIZE_ALLOCATION = 150_000;
     uint256 internal constant CALL_ACTIVATE = 250_000;
-    uint256 internal constant CALL_RELEASE = 250_000;
+    uint256 internal constant CALL_RELEASE = 300_000;
     uint256 internal constant CALL_SET_RECIPIENT = 150_000;
     uint256 internal constant CALL_RENOUNCE = 100_000;
     uint256 internal constant CALL_APPROVE = 150_000;
@@ -393,5 +393,35 @@ contract GasModelTest is SystemTestBase {
         console2.log("renounceOwnership", renounceGas);
         assertGt(bem.balanceOf(recipientA), 0);
         assertEq(pool.owner(), address(0));
+    }
+
+    /// @notice A release pays its role and all of C's unpaid weight: two transfers and three balance
+    ///         checks. Worst cases, in either order: an inflow for the release's own sync to recognize,
+    ///         and first payments into empty balances (role, sink, paid counters).
+    function testReleasesFitTheirBoundInEitherOrder() public {
+        setupStandard();
+        admitNew(1, 5, 5);
+        accrue(1, 1_000 * BEM_UNIT);
+        pool.harvest(one(1));
+        bem.mint(address(pool), 7 * BEM_UNIT);
+        uint256 snapshot = vm.snapshotState();
+        uint256 aFirst = _release(TapeoutMinerPool.Recipient.A);
+        bem.mint(address(pool), 7 * BEM_UNIT);
+        uint256 bSecond = _release(TapeoutMinerPool.Recipient.B);
+        vm.revertToState(snapshot);
+        uint256 bFirst = _release(TapeoutMinerPool.Recipient.B);
+        bem.mint(address(pool), 7 * BEM_UNIT);
+        uint256 aSecond = _release(TapeoutMinerPool.Recipient.A);
+        console2.log("release first A / then B", aFirst, bSecond, CALL_RELEASE);
+        console2.log("release first B / then A", bFirst, aSecond, CALL_RELEASE);
+    }
+
+    function _release(TapeoutMinerPool.Recipient role) internal returns (uint256 used) {
+        uint256 sinkBefore = bem.balanceOf(pool.SINK());
+        bytes memory data = role == TapeoutMinerPool.Recipient.A
+            ? abi.encodeCall(pool.releaseA, ())
+            : abi.encodeCall(pool.releaseB, ());
+        used = _within(carol, address(pool), data, CALL_RELEASE);
+        assertGt(bem.balanceOf(pool.SINK()), sinkBefore); // every measured release also paid C
     }
 }

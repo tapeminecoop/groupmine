@@ -1,0 +1,104 @@
+$ node --import tsx scripts/canary/fork-local-candidate.ts --owner 0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129 --fork-rpc https://bsc-mainnet.public.blastapi.io --out reports/canary-local-rehearsal --block 128812145
+# exit 0
+
+## stdout
+Local canary-2 source matches the exhaustive adaptation of production source sha256 6a2d0c34b42ff97c755843860eb6c9b4353860fa15a08ea582efbe17cc8f5e6d
+fork: deploy-nand confirmed 0xa8bd4af3c583db68a10c2dad420b0e0998128473ffee124506e514e7d15dee47
+fork: deploy-latch confirmed 0xb01ddf70e30d32cce9365d51e82c8853d29a2a0091c2dd0fd63bde5d4a4567a5
+fork: deploy-helper confirmed 0x59e9240ea678cc06dd84c8179132ac19172e8007776e8b9f05e5e6d1f5b3e76c
+fork: deploy-pool confirmed 0xc1ef78aff315eed9e36b397e947ae7683d296f58a1fe960890048c599c4d9941
+fork: deploy-distributor confirmed 0xcc034862d6204aa6dbe74f8e40d81611b878eb7c10aa91f21e127b2f889b4622
+fork: bindPool confirmed 0xf79515ba122159a2219442dfaaf247df92874adf139a0a8c67bc5b80893a6b5a
+fork: issue confirmed 0xa3179520fc150b517c8c347a6c0d5b4976ae47c5a02d873c8976eeed06432db4
+fork: issue confirmed 0xa83b93f03be2da69bdd65049a15d06dbfd3ba5f8ff1de2e568cea7c7d38b79ef
+fork: finalizeIssuance confirmed 0x99a7ebadc0df2363e0b0c4c0849e3d7b9c4cdfbe11560724642f873776253b5e
+fork: finalizeIssuance confirmed 0xe70c95ed71b47e1ef816425dbe7f89ca7c3ccb12d575a524602a9b8505292fac
+fork: safeBatchTransferFrom confirmed 0x869b94c20e7248d349ea66ed2301e38dae6158c908113b79a270c4a8c47eba6d
+fork: safeBatchTransferFrom confirmed 0x6e9890edeab7b153d71a549c377a327544fa18c4a342508bc26673af62a80e8f
+fork: allocate confirmed 0xc8b6c3ded824f694726757ba65c2c58e3a0618a37a76d68d9371aa69931790d0
+fork: finalizeAllocation confirmed 0xdd8e1b38157fc7b32fa37c9969fc0383ad2b78ecc1e6b19faf0c31c2a386c466
+fork: activate confirmed 0x6ca3614fedcf3bf8f16ae6a2aa51542f3a58133fdc8f73a28d99d8a278a59e5a
+fork: renounce-nand confirmed 0xc0ac7cbfdfbb595f4ade47404c0aa6a54596b83428b5237e808c4bbf53eff428
+fork: renounce-latch confirmed 0x990674180a14ef3c5e8b24b10feb8a9386de6a9b7364c7b9dbdfd24c52cd672c
+fork: renounce-distributor confirmed 0x9a8da016a919c7bd938b7fdb3a34567e1ee6a21b55c497ca052bd4209648e0d4
+fork: renounce-pool confirmed 0x1e8609341e81701773d1de4516d52e01493fbd9f4618894ccb842f446fee103b
+fork: approve-3204-only confirmed 0x67ada74b1322431263b4b62957687b69f136caae6b51b845031dcf40dedc60dd
+fork: phase-A-deposit-3204 confirmed 0x3743ba942a0787cd2fdcd7135c4e8128ec51b524501288e313bfc9db6650dcc6
+fork: phase-A-bounded-harvest confirmed 0x902a70da5ed1454277e4d7aa581bdd38833e3d191ad8a600f87b4fce843adfff
+fork: deliver-original-wallet-receipts confirmed 0x51fa6f9ecd46c1d406670adf91de03f2c8ef8bfd29e6e9830e7b7e890b3ba09a
+fork: phase-A-subset-claim confirmed 0x16b24d24bc98414bede9649e119edbc71ea173022037bbaf820410caae8d5236
+fork: old-miner-income-held-before-admission confirmed 0xfe0be31077278f1d61c5fbd94356655dc023397a69386c620bc91b8fffb79c9d
+fork: approve-12485-only confirmed 0xf9eb9f2e6da027ecd29a49c4aad2bbe97908dd705b16ed0526ab7f984acf49d3
+fork: phase-B-deposit-12485 confirmed 0x7af6c393ccd46e901f32770a6757d053362b2b6a7c9bb5032d50563a66a2d552
+fork: phase-C-harvest-3-1 confirmed 0x45ee991326428c4c74c4fdbaee8bc100dd6663c57eddb3eb8c630a529ad87c09
+fork: late-deliver-helper-receipts confirmed 0xcb5e58d45937ef98bcce826adc01e3b3c2dc3e9977b7dd1de8a4615b9ed7271d
+fork: helper-initial-receipt-claim confirmed 0x1dda3f1d0e52096461ceee2071af37afa033416573a25a754d4c546ef1e7eb01
+fork: original-selected-claim confirmed 0xe364a1d3536873e1c35724d03956d325b824dc7431c7ad92e8775164d563391a
+fork: transfer-unpaid-nand-1-to-helper confirmed 0x0152fbecb9a71f231353eaef19750e288447b91fe25e4b4b1bd85a03f4d848cd
+fork: helper-claims-transferred-nand-1 confirmed 0x6033fdf7f51cbe3185e3bf0de38e1759836ee647f0e2a8a0fa2ed221d443f36d
+fork: helper-repeat-claim confirmed 0x27c1def50227257c3ce8098eca42b37fa2cf33b9f2888997f8f815b943b3b246
+fork: release-A-separately confirmed 0xaa307c685ac62169dfa65b092a310f8d723bf7fddb097c11761499846fa5feb8
+fork: release-B-separately confirmed 0x1288a8f27fde83e74ddd157275974c9dc8b211869f90f075362edd2cd8c1c175
+fork: phase-D-orderly-final-harvest confirmed 0x3d7c4cbffe2bf0dde0b7e5b4574b37b51b33ea746468ac38ef0fc9810c8bdfc8
+fork: permanent-shutdown confirmed 0xffb392dbf0bcb755f9666b6aac215ba29c67a0762c68c14ead234816f752ae4a
+fork: return-3204 confirmed 0x14024d84d7fab41af795bd861ce3d3b2d52e0ef77134804b547ca0975ceb5fdf
+fork: return-12485 confirmed 0x715d1c368cd3118de37f58d9715052e9e2ea279359e2ed2c487d4a1b7915734e
+fork: final-wallet-receipt-claims confirmed 0x9131b01c30056dd37fe241d3cc40b9baad3810e99461168bf8129ba391d5108a
+fork: final-helper-receipt-claims confirmed 0x261bd8c2c65c62241db92b54a130bf1813c1f39d736b40bfa0b99a0c71648d6d
+fork: final-release-A confirmed 0x05bce81d26aa46dbbab5f89461d90fd01142a550042ad722cffc068bcce6603b
+fork: final-release-B confirmed 0x28ac018a707aeff5dfea8878c773a8e93c7463b9c1c9322d336def634adae45e
+fork: helper-forwards-BEM-to-original confirmed 0x11da21e1dc6a78b2aa87f54f646f9c0cb433866b6239a20058cae3ca96b3399a
+fork: post-return-owner-income-3204 confirmed 0xb831ae4071d17ba9b3f988675d31cdaabeb328cd681b6ae5e10d774ab9af37a9
+fork: post-return-owner-income-12485 confirmed 0x9f8be4295ed66be22c1eb9cf3a9300259146318024b7ea344aabab027b5b71c2
+fork: deploy-nand confirmed 0xa8bd4af3c583db68a10c2dad420b0e0998128473ffee124506e514e7d15dee47
+fork: deploy-latch confirmed 0xb01ddf70e30d32cce9365d51e82c8853d29a2a0091c2dd0fd63bde5d4a4567a5
+fork: deploy-helper confirmed 0x59e9240ea678cc06dd84c8179132ac19172e8007776e8b9f05e5e6d1f5b3e76c
+fork: deploy-pool confirmed 0xc1ef78aff315eed9e36b397e947ae7683d296f58a1fe960890048c599c4d9941
+fork: deploy-distributor confirmed 0xcc034862d6204aa6dbe74f8e40d81611b878eb7c10aa91f21e127b2f889b4622
+fork: bindPool confirmed 0xf79515ba122159a2219442dfaaf247df92874adf139a0a8c67bc5b80893a6b5a
+fork: issue confirmed 0xa3179520fc150b517c8c347a6c0d5b4976ae47c5a02d873c8976eeed06432db4
+fork: issue confirmed 0xa83b93f03be2da69bdd65049a15d06dbfd3ba5f8ff1de2e568cea7c7d38b79ef
+fork: finalizeIssuance confirmed 0x99a7ebadc0df2363e0b0c4c0849e3d7b9c4cdfbe11560724642f873776253b5e
+fork: finalizeIssuance confirmed 0xe70c95ed71b47e1ef816425dbe7f89ca7c3ccb12d575a524602a9b8505292fac
+fork: safeBatchTransferFrom confirmed 0x869b94c20e7248d349ea66ed2301e38dae6158c908113b79a270c4a8c47eba6d
+fork: safeBatchTransferFrom confirmed 0x6e9890edeab7b153d71a549c377a327544fa18c4a342508bc26673af62a80e8f
+fork: allocate confirmed 0xc8b6c3ded824f694726757ba65c2c58e3a0618a37a76d68d9371aa69931790d0
+fork: finalizeAllocation confirmed 0xdd8e1b38157fc7b32fa37c9969fc0383ad2b78ecc1e6b19faf0c31c2a386c466
+fork: activate confirmed 0x6ca3614fedcf3bf8f16ae6a2aa51542f3a58133fdc8f73a28d99d8a278a59e5a
+fork: renounce-nand confirmed 0xc0ac7cbfdfbb595f4ade47404c0aa6a54596b83428b5237e808c4bbf53eff428
+fork: renounce-latch confirmed 0x990674180a14ef3c5e8b24b10feb8a9386de6a9b7364c7b9dbdfd24c52cd672c
+fork: renounce-distributor confirmed 0x9a8da016a919c7bd938b7fdb3a34567e1ee6a21b55c497ca052bd4209648e0d4
+fork: renounce-pool confirmed 0x1e8609341e81701773d1de4516d52e01493fbd9f4618894ccb842f446fee103b
+fork: approve-3204-only confirmed 0x67ada74b1322431263b4b62957687b69f136caae6b51b845031dcf40dedc60dd
+fork: phase-A-deposit-3204 confirmed 0x3743ba942a0787cd2fdcd7135c4e8128ec51b524501288e313bfc9db6650dcc6
+fork: phase-A-bounded-harvest confirmed 0x902a70da5ed1454277e4d7aa581bdd38833e3d191ad8a600f87b4fce843adfff
+fork: deliver-original-wallet-receipts confirmed 0x51fa6f9ecd46c1d406670adf91de03f2c8ef8bfd29e6e9830e7b7e890b3ba09a
+fork: phase-A-subset-claim confirmed 0x16b24d24bc98414bede9649e119edbc71ea173022037bbaf820410caae8d5236
+fork: permanent-shutdown confirmed 0x46fe41fbaea4a9f74c5de149f479567d9a771869c7ec11ad0f71500a85032764
+fork: return-3204 confirmed 0x8e64fe570d823e2f7e9b50d95488c790dc5cbe6bf6e2cacf383aaba00028665d
+Verified both designated NFT owners and irreversible shutdown. Business results are unchanged.
+{
+  "status": "PASS",
+  "runIdentity": "local-candidate-a6a81069-db97-4001-bdf3-12c16d058b34",
+  "candidate": "ca8b27578fe38f89cf4180d647474fdd3acfef1a22fbaac946a4be6ce26c3b14",
+  "forkBlock": "128812145",
+  "runs": [
+    {
+      "status": "PASS",
+      "assertions": {
+        "PASS": 43
+      }
+    },
+    {
+      "status": "INTERRUPTED_FOR_STANDALONE_RECOVERY",
+      "assertions": {
+        "PASS": 7
+      }
+    }
+  ]
+}
+
+
+
+## stderr
+

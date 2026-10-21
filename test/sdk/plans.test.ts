@@ -5,9 +5,11 @@ import { systemFileSchema, systemProblems, NAND_CATEGORY } from '../../sdk/confi
 import { tapeoutEntitlementReceiptAbi, tapeoutMinerPoolAbi, tapeoutReceiptDistributorAbi } from '../../sdk/abi.ts';
 import bytecode from '../../sdk/bytecode.json' with { type: 'json' };
 import {
-  ERC1155_RECEIVER_INTERFACE, allocatePlans, claimPlans, deployPoolPlan, deployReceiptPlans, fundPlans, issuePlans, receiverProblems, releasePlans,
+  ERC1155_RECEIVER_INTERFACE, allocatePlans, checkReconciliation, claimPlans, deployPoolPlan, deployReceiptPlans, fundPlans, issuePlans, receiverProblems, releasePlans,
+  type Reconciliation,
 } from '../../sdk/pool.ts';
-import { FUND_GAS, ISSUE_GAS, admissionGasEstimate, maxAdmissionBatch, maxIdsPerTx, maxRegisteredForAdmission } from '../../sdk/gas.ts';
+import { CALL_GAS, FUND_GAS, ISSUE_GAS, admissionGasEstimate, maxAdmissionBatch, maxIdsPerTx, maxRegisteredForAdmission } from '../../sdk/gas.ts';
+import { accrue, SINK, type State } from '../../sdk/math.ts';
 import { BATCH_GAS_BUDGET, TX_GAS_CAP } from '../../sdk/constants.ts';
 import { castCommand, printableLoopback, safeBatch } from '../../sdk/tx.ts';
 import example from '../../deployments/examples/system.bsc.example.json' with { type: 'json' };
@@ -20,6 +22,37 @@ test('system file validation mirrors the pool constructor', () => {
   assert.match(systemProblems({ ...f, pool: { ...f.pool, depositors: [f.pool.depositors[0], f.pool.depositors[0]] } }).join(), /twice/);
   assert.match(systemProblems({ ...f, pool: { ...f.pool, depositors: [f.protocol.mining] } }).join(), /protocol contract/);
   assert.throws(() => systemFileSchema.parse({ ...example, pool: { ...example.pool, depositors: [] } }));
+  // C's sink is a constant, never a recipient (the constructor refuses it too).
+  assert.match(systemProblems({ ...f, pool: { ...f.pool, recipientA: SINK } }).join(), /fixed sink/);
+  assert.match(systemProblems({ ...f, pool: { ...f.pool, recipientB: SINK.toLowerCase() as typeof SINK } }).join(), /fixed sink/);
+});
+
+test('release plans: each call pays its role and C, with the 300k bound', () => {
+  const plans = releasePlans(A);
+  assert.ok(plans.every(p => p.gas === CALL_GAS.releaseA && p.description.includes(SINK) && /2\/84/.test(p.description)));
+  assert.equal(CALL_GAS.releaseA, 300_000n);
+});
+
+test('reconciliation includes unpaid C and checks each outer part from T on its own', () => {
+  const state: State = { nandBase: 0n, latchBase: 0n, participantBase: 0n, totalNandBurn: 3n, totalLatchBurn: 1n, nandShares: 4n, latchShares: 2n };
+  const ledger = (t: bigint, paid: { a: bigint; b: bigint; c: bigint }): Reconciliation => {
+    const x = accrue(t, state);
+    const totalPaid = paid.a + paid.b + paid.c;
+    return { bemBalance: t - totalPaid, unrecognized: 0n, deficit: 0n, totalAccounted: t, totalPaid, recipientAAccrued: x.recipientA, recipientAPaid: paid.a,
+      recipientBAccrued: x.recipientB, recipientBPaid: paid.b, sinkAccrued: x.sink, sinkPaid: paid.c, nandIncome: x.nandIncome, nandReceiptsAccrued: x.nandReceipts,
+      nandReceiptsPaid: 0n, latchIncome: x.latchIncome, latchReceiptsAccrued: x.latchReceipts, latchReceiptsPaid: 0n, residue: x.residue };
+  };
+  // T = 42: A = B = 0, C = 1 (not 2 * 0). Released by A: C paid, A and B nothing.
+  const r = ledger(42n, { a: 0n, b: 0n, c: 1n });
+  const ok = checkReconciliation(state, r);
+  assert.equal(ok.status, 'PASS', JSON.stringify(ok.checks));
+  assert.equal(ok.outstanding.sink, 0n);
+  assert.equal(checkReconciliation(state, ledger(1_050n, { a: 0n, b: 0n, c: 0n })).outstanding.sink, 25n);
+  // C reported as 2 * floor(T/84) fails the independent check; so does an overpaid sink.
+  const doubled = checkReconciliation(state, { ...r, sinkAccrued: 2n * r.recipientAAccrued, residue: r.residue + 1n });
+  assert.equal(doubled.checks.outerPartsFromTotal, false);
+  assert.equal(doubled.status, 'FAIL');
+  assert.equal(checkReconciliation(state, { ...r, sinkPaid: 2n, totalPaid: 2n, bemBalance: 40n }).checks.noBucketOverpaid, false);
 });
 
 test('deployment plans carry the intended constructor arguments', () => {

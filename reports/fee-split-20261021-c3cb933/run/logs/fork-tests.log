@@ -1,0 +1,109 @@
+$ node --import tsx scripts/fork-test.ts
+# exit 0
+
+## stdout
+{
+  "status": "PASS",
+  "forkBlock": "128713128",
+  "results": [
+    {
+      "name": "testOnlyTheCurrentHolderCanStop()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testStopByHolderSettlesAccruedIncomeThenCools()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testCoolingMinerRestartsWithDebtRebased()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testRealRevocationPaysHolderOnceThenNothing()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testRestartNeedsMoreThanTheCooldown()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testRevokedMinerStaysRevokedAndEarnsNothing()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testStopCooldownDecidesBetweenRevocationAndRestart()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testForkBoundaryIsIndependentOfProcessingOrder()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testForkBoundaryWithThreeOldMinersAndAnIncomingBatch()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testForkFirstAdmissionAndZeroSupplyCategory()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testForkPlainTransferThenRegisterWindow()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testForkAdmissionGasScaling()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testForkCompositionMatchesCircuitBurnAndIgnoresReferences()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testForkProtocolIdentityAndCompositionAbi()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testForkReleaseTransfersCToTheSinkOnRealBem()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testForkStrictAdmissionBoundaryWithRealMiners()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testForkWhitelistAfterRenounceAndBypassRejection()",
+      "status": "Success",
+      "reason": null
+    }
+  ],
+  "report": "reports/fork-test.json"
+}
+
+
+## stderr
+{
+  "phase": "DISCOVERED",
+  "forkBlock": "128713128",
+  "blockHash": "0x760f050b7ec66ced2a2745918d7492650150f9d71d3159259412996ebe65081f",
+  "FORK_NAND_MINER": "12733",
+  "FORK_LATCH_MINER": "13948",
+  "FORK_INACTIVE_TOKEN": "648",
+  "FORK_SCALE_MINERS": "4183,1574,6940,4307,4655,3207,13617,7924,11127,4951,3932,10031,14559,16112,8714,2161,6767,11214,6453,14011,16944,15731,7541,5930"
+}
+

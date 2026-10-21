@@ -8,17 +8,18 @@ import {SystemTestBase} from "../helpers/SystemTestBase.sol";
 ///         unchanged in this remediation; the SDK/CLI claim inputs are sets per category
 ///         (sdk/pool.ts canonicalClaimIds). These tests pin the raw behaviour and show that the normalized
 ///         inputs give a preview equal to the payment in the same state.
-///         Fixture from the review: ten receipts per category, composition 3:1, 102,000 raw units
-///         recognized; NAND income 75,000, so NAND #1 has 7,500 due and LATCH #1 2,500.
+///         Fixture from the review, with the income scaled to the 2.1.0 split (105,000 raw units under
+///         80:1:1:2 of 84 give the participants the review's 100,000): ten receipts per category,
+///         composition 3:1; NAND income 75,000, so NAND #1 has 7,500 due and LATCH #1 2,500.
 contract ClaimPreviewTest is SystemTestBase {
     function setUp() public override {
         super.setUp();
         setupStandard(); // NAND 1..5 alice, 6..10 bob; LATCH 1..5 alice, 6..10 carol
         newMiner(1, 3, 1);
         admit(one(1));
-        accrue(1, 102_000);
+        accrue(1, 105_000);
         pool.harvest(one(1));
-        assertEq(pool.totalAccounted(), 102_000);
+        assertEq(pool.totalAccounted(), 105_000);
         assertEq(pool.claimable(NAND, 1), 7_500);
         assertEq(pool.claimable(LATCH, 1), 2_500);
     }

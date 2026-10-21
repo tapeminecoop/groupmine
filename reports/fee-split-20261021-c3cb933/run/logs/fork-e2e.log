@@ -1,0 +1,38 @@
+$ node --import tsx scripts/fork-e2e.ts
+# exit 0
+
+## stdout
+{
+  "status": "PASS",
+  "checks": {
+    "protocolIdentityMatchesRecorded": true,
+    "allocationVerified": true,
+    "noSettlementToHolderOnTransfer_12733": true,
+    "noSettlementToHolderOnTransfer_13948": true,
+    "noSettlementToHolderOnTransfer_4183": true,
+    "noSettlementToHolderOnTransfer_1574": true,
+    "realCompositionsAdmissible": true,
+    "nandMinerBurnsNoLatch": true,
+    "outsiderDepositRevertsOnChain": true,
+    "carriedIncomeCollectedAtFirstAdmission": true,
+    "oldIncomeSettledInsideAdmission": true,
+    "realBoundaryMatchesOldNewCompositionModel": true,
+    "aliceExactPayout": true,
+    "deliveryWentToBob": true,
+    "allocationMatchesAfterDelivery": true,
+    "outsiderReceivedNothing": true,
+    "recipientsPaidEqually": true,
+    "sinkIsTheFixedDeadAddress": true,
+    "sinkReceivedExactlyCsCumulativeWeight": true,
+    "poolOutflowEqualsRoleAndSinkInflows": true,
+    "sinkPaidByOneBemTransferFromThePool": true,
+    "bemTotalSupplyUnchangedByTheSinkTransfer": true,
+    "reconcilePass": true
+  },
+  "localForkTransactions": 31,
+  "report": "reports/fork-e2e.json"
+}
+
+
+## stderr
+

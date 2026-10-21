@@ -210,9 +210,9 @@ contract DistributorTest is SystemTestBase {
         vm.prank(operator);
         distributor.finalizeAllocation();
         admitNew(1, 3, 1);
-        accrue(1, 1_020_000);
+        accrue(1, 1_050_000);
         pool.harvestRange(0, 1);
-        // 1_000_000 for participants: NAND 750_000 / 30 = 25_000 per ID, LATCH 250_000 / 12 = 20_833 per ID.
+        // 1_000_000 for participants (80 of 84): NAND 750_000 / 30 = 25_000 per ID, LATCH 250_000 / 12 = 20_833 per ID.
         assertEq(pool.claimable(NAND, 21), 25_000);
         vm.warp(block.timestamp + 365 days); // no claim deadline
         vm.prank(bob);
@@ -228,7 +228,7 @@ contract DistributorTest is SystemTestBase {
         _fundAll();
         _allocateExample();
         admitNew(1, 1, 1);
-        accrue(1, 1_020_000);
+        accrue(1, 1_050_000);
         pool.harvestRange(0, 1);
         vm.prank(operator);
         vm.expectRevert(abi.encodeWithSelector(TapeoutMinerPool.NotHolder.selector, NAND, 1));
@@ -239,7 +239,7 @@ contract DistributorTest is SystemTestBase {
 
     function testReceiptsWithConsumedRewardHistoryAreRefused() public {
         admitNew(1, 1, 1);
-        accrue(1, 1_020_000);
+        accrue(1, 1_050_000);
         pool.harvestRange(0, 1);
         vm.startPrank(operator);
         pool.claim(NAND, 30);
@@ -383,7 +383,7 @@ contract DistributorTest is SystemTestBase {
         _allocateExample();
         _finalize();
         admitNew(1, 3, 1);
-        accrue(1, 1_020_000);
+        accrue(1, 1_050_000);
         pool.harvestRange(0, 1);
         uint256 perNand = pool.claimable(NAND, 1); // 750_000 / 30
         uint256 perLatch = pool.claimable(LATCH, 1); // 250_000 / 12

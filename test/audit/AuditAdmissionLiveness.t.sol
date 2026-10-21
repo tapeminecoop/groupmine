@@ -21,7 +21,7 @@ contract AuditAdmissionLivenessTest is SystemTestBase {
     function testPermanentlyNonClaimableOldMinerBlocksEveryLaterAdmissionButNotPayouts() public {
         admitNew(1, 9, 1);
         admitNew(2, 2, 2);
-        accrue(1, 1_020_000);
+        accrue(1, 1_050_000);
         pool.harvestRange(0, 2);
         bytes32 key2 = mining.minerKey(address(nft), 2);
         mining.setStatus(address(nft), 2, 3); // mock-only fault injection: COOLING without a payout
@@ -77,7 +77,7 @@ contract AuditAdmissionLivenessTest is SystemTestBase {
         assertEq(pool.totalNandBurn(), 52, "revocation does not change the composition");
         assertEq(pool.totalLatchBurn(), 52);
         // Only miners 11 and 12 produce from now on; their income is still split by the full weight.
-        accrue(11, 1_020_000);
+        accrue(11, 1_050_000);
         pool.harvestRange(0, 12);
         assertEq(pool.accrual().nandIncome, 500_000);
         assertEq(pool.accrual().latchIncome, 500_000);

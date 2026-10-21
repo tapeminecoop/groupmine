@@ -62,7 +62,7 @@ contract PoolHarvestTest is SystemTestBase {
 
     function testHarvestIncomeBelongsToTheCompositionCurrentWhenItArrives() public {
         admitNew(1, 1, 0); // NAND only
-        accrue(1, 102_000);
+        accrue(1, 105_000);
         pool.harvest(one(1));
         assertEq(pool.accrual().nandIncome, 100_000);
         assertEq(pool.accrual().latchIncome, 0);
@@ -97,10 +97,10 @@ contract PoolHarvestTest is SystemTestBase {
 
     function testBalanceDecreaseAndTransferFeeRevertWithoutRewritingHistory() public {
         admitNew(1, 3, 1);
-        bem.mint(address(pool), 102_000);
+        bem.mint(address(pool), 105_000);
         claimAs(alice, one(1), none()); // 7_500
         bem.burn(address(pool), 1);
-        vm.expectRevert(abi.encodeWithSelector(TapeoutMinerPool.BalanceDecreased.selector, 94_499, 94_500));
+        vm.expectRevert(abi.encodeWithSelector(TapeoutMinerPool.BalanceDecreased.selector, 97_499, 97_500));
         pool.sync();
         assertEq(pool.reconciliation().deficit, 1);
         bem.mint(address(pool), 1);

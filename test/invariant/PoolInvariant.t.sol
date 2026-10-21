@@ -65,7 +65,7 @@ contract SystemHandler is Test {
     // ------------------------------------------------------------------ model helpers
 
     function modelCategories() public view returns (uint256 nand, uint256 latch) {
-        uint256 participants = gTotal * 100 / 102;
+        uint256 participants = gTotal * 80 / 84;
         nand = gNandBase;
         latch = gLatchBase;
         uint256 weight = gNandBurn + gLatchBurn;
@@ -276,8 +276,20 @@ contract SystemHandler is Test {
     function release(bool b) external {
         if (gNandBurn + gLatchBurn == 0) return;
         gTotal += _unrecognized();
-        if (b) pool.releaseB();
-        else pool.releaseA();
+        address sink = pool.SINK();
+        uint256 sinkBefore = bem.balanceOf(sink);
+        uint256 sinkPaidBefore = pool.sinkPaid();
+        uint256 otherPaid = b ? pool.recipientAPaid() : pool.recipientBPaid();
+        uint256 rolePaid = b ? pool.recipientBPaid() : pool.recipientAPaid();
+        uint256 got = b ? pool.releaseB() : pool.releaseA();
+        // Model: at one total T the role receives floor(T/84) minus what it had, C receives floor(2T/84)
+        // minus everything it had, and the other role is untouched.
+        uint256 cDue = gTotal * 2 / 84 - sinkPaidBefore;
+        if (got != gTotal / 84 - rolePaid) amountsMatch = false;
+        if (pool.sinkPaid() != gTotal * 2 / 84 || bem.balanceOf(sink) != sinkBefore + cDue) {
+            amountsMatch = false;
+        }
+        if ((b ? pool.recipientAPaid() : pool.recipientBPaid()) != otherPaid) amountsMatch = false;
         _observe();
         calls["release"]++;
     }
@@ -327,6 +339,7 @@ contract PoolInvariantTest is SystemTestBase {
         payeeList.push(dave);
         payeeList.push(recipientA);
         payeeList.push(recipientB);
+        payeeList.push(pool.SINK());
         handler = new SystemHandler(pool, bem, mining, nft, depositor, actorList, payeeList);
         targetContract(address(handler));
     }

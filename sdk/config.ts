@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { getAddress, keccak256, stringToHex, zeroAddress, type Address } from 'viem';
 import { z } from 'zod';
+import { SINK } from './math.js';
 
 const address = z.string().regex(/^0x[0-9a-fA-F]{40}$/, 'expected a 0x-prefixed 20-byte address');
 const receiptMeta = z.object({ name: z.string().min(1).max(64), symbol: z.string().min(1).max(16), uri: z.string().max(512).default('') }).strict();
@@ -54,6 +55,7 @@ export function systemProblems(f: SystemFile): string[] {
   const problems: string[] = [];
   const lower = (a: string) => a.toLowerCase();
   if (lower(f.pool.recipientA) === lower(zeroAddress) || lower(f.pool.recipientB) === lower(zeroAddress)) problems.push('recipients A and B are required');
+  if (lower(f.pool.recipientA) === lower(SINK) || lower(f.pool.recipientB) === lower(SINK)) problems.push(`recipients A and B cannot be C's fixed sink address ${SINK}`);
   const seen = new Set<string>();
   const forbidden = new Set([f.protocol.bem, f.protocol.mining, f.protocol.minerCollection, zeroAddress].map(lower));
   for (const d of f.pool.depositors) {

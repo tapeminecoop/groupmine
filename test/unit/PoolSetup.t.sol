@@ -22,9 +22,12 @@ contract PoolSetupTest is SystemTestBase {
         assertEq(pool.depositors().length, 2);
         assertEq(pool.owner(), operator);
         assertFalse(pool.active());
-        assertEq(pool.TOTAL_PARTS(), 102);
-        assertEq(pool.PARTICIPANT_PARTS(), 100);
+        assertEq(pool.TOTAL_PARTS(), 84);
+        assertEq(pool.PARTICIPANT_PARTS(), 80);
         assertEq(pool.RECIPIENT_PARTS(), 1);
+        assertEq(pool.SINK_PARTS(), 2);
+        assertEq(pool.SINK(), 0x000000000000000000000000000000000000dEaD);
+        assertEq(pool.VERSION(), "TapeoutMinerPool/2.1.0");
     }
 
     function testReceiptsMustBeThisExactImplementationWithTheRightCategories() public {
@@ -144,11 +147,11 @@ contract PoolSetupTest is SystemTestBase {
         pool.renounceOwnership();
         assertEq(pool.owner(), address(0));
         admitNew(1, 5, 5);
-        accrue(1, 102_000);
+        accrue(1, 105_000);
         (uint256 received,) = pool.harvestRange(0, 1);
-        assertEq(received, 102_000);
+        assertEq(received, 105_000);
         newMinerFor(depositor2, 2, 1, 3);
-        accrue(2, 10_200);
+        accrue(2, 10_500);
         admitAs(depositor2, one(2));
         assertEq(pool.minerCount(), 2);
         assertGt(claimAs(alice, one(1), one(1)), 0);
@@ -160,7 +163,7 @@ contract PoolSetupTest is SystemTestBase {
     function testRecipientsMoveOnlyThemselves() public {
         setupStandard();
         admitNew(1, 1, 1);
-        accrue(1, 102_000);
+        accrue(1, 105_000);
         pool.harvestRange(0, 1);
         vm.prank(operator);
         vm.expectRevert(TapeoutMinerPool.Unauthorized.selector);
@@ -169,9 +172,10 @@ contract PoolSetupTest is SystemTestBase {
         vm.prank(recipientA);
         pool.setRecipient(TapeoutMinerPool.Recipient.A, newA);
         pool.releaseA();
-        assertEq(bem.balanceOf(newA), 1_000); // unpaid income followed the role
+        assertEq(bem.balanceOf(newA), 1_250); // unpaid income followed the role
         assertEq(bem.balanceOf(recipientA), 0);
-        assertEq(pool.recipientClaimable(TapeoutMinerPool.Recipient.B), 1_000);
+        assertEq(pool.recipientClaimable(TapeoutMinerPool.Recipient.B), 1_250);
+        assertEq(bem.balanceOf(pool.SINK()), 2_500); // C is paid with A's release, not moved with the role
     }
 
     function testPreActivationEntryPointsAreClosed() public {

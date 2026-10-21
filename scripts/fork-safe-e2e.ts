@@ -346,18 +346,29 @@ async function main() {
     const expected = BigInt(claim.result.expectedPayoutRaw as bigint | string);
     check('memberSafeReceivedExactPayout', expected > 0n && (await bemOf(member.address)) - before === expected, { expected });
 
-    // Recipients: A is the operator Safe, B the 10-of-10 Safe; each moves its own role.
+    // Recipients: A is the operator Safe, B the 10-of-10 Safe; each moves its own role. Each release also
+    // transfers C's whole unpaid floor(2T/84) to the fixed sink (which already holds BEM on BSC).
+    const sink = await read<Address>(pool, poolAbi, 'SINK');
+    const sinkBefore = await bemOf(sink);
     await step('release', ['release', '--addresses', addressesFile, '--from', actor.keeper, '--send-local']);
     const paidA = await bemOf(operator.address), paidB = await bemOf(recipient.address);
     check('safeRecipientsPaidEqually', paidA > 0n && paidA === paidB, { paidA, paidB });
+    const sinkPaid1 = await read<bigint>(pool, poolAbi, 'sinkPaid');
+    const total1 = await read<bigint>(pool, poolAbi, 'totalAccounted');
+    check('sinkPaidCsWeightWithTheRelease', sinkPaid1 === (total1 * 2n) / 84n && (await bemOf(sink)) - sinkBefore === sinkPaid1 && paidA === total1 / 84n, { sinkPaid1, total1 });
     await safeStep('set-recipient-a', ['set-recipient', '--addresses', addressesFile, '--role', 'A', '--to', actor.newRecipientA], operator);
     await safeStep('set-recipient-b', ['set-recipient', '--addresses', addressesFile, '--role', 'B', '--to', actor.newRecipientB], recipient);
     check('rolesMovedBySafes', await read<Address>(pool, poolAbi, 'recipientA') === actor.newRecipientA && await read<Address>(pool, poolAbi, 'recipientB') === actor.newRecipientB);
     await advance(3600);
     await step('harvest-2', ['harvest', '--addresses', addressesFile, '--all', '--isolate-failures', '--from', actor.keeper, '--send-local']);
-    await step('release-2', ['release', '--addresses', addressesFile, '--from', actor.keeper, '--send-local']);
+    // Releases are permissionless: the operator Safe, no longer a recipient, runs this one (a MultiSend of
+    // releaseA and releaseB with the planned bound as gas limit).
+    await safeStep('release-2-by-safe', ['release', '--addresses', addressesFile], operator);
     const newA = await bemOf(actor.newRecipientA), newB = await bemOf(actor.newRecipientB);
     check('newRecipientsPaidAndSafesNoLonger', newA > 0n && newA === newB && await bemOf(operator.address) === paidA && await bemOf(recipient.address) === paidB, { newA, newB });
+    const sinkPaid2 = await read<bigint>(pool, poolAbi, 'sinkPaid');
+    const total2 = await read<bigint>(pool, poolAbi, 'totalAccounted');
+    check('sinkPaidOnceForTheWholeBacklog', sinkPaid2 === (total2 * 2n) / 84n && (await bemOf(sink)) - sinkBefore === sinkPaid2 && sinkPaid2 > sinkPaid1, { sinkPaid2, total2 });
 
     // Wallet capability beyond ERC-165 (review O-04): the member Safe transfers a delivered receipt
     // (an owner-signed Safe transaction, not a CLI plan), and the new holder claims what accrued since.
@@ -386,6 +397,7 @@ async function main() {
     const min = (xs: bigint[]) => xs.reduce((a, b) => (b < a ? b : a));
     report.observations = {
       pool, distributor, nandReceipt: nand, latchReceipt: latch, moves, firstAdmission, laterAdmission, memberPayout: expected, recipientPayments: { paidA, paidB, newA, newB },
+      sinkPayments: { sink, sinkBalanceBefore: sinkBefore, sinkPaidAfterFirstRelease: sinkPaid1, sinkPaidAfterSafeRelease: sinkPaid2, sinkBalanceAfter: await bemOf(sink) },
       reconciliation: reconcile.reconciliation,
       gas: {
         safeTransactions: st.length, largestEstimate: max(st.map(t => t.estimate)), largestPlannedBound: max(st.map(t => t.maxGas)), largestPayloadBytes: Math.max(...st.map(t => t.payloadBytes)),

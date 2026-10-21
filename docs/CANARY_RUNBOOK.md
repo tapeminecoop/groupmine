@@ -101,6 +101,16 @@ address on the fork only, and writes nothing under `reports/canary/`. The identi
 the normal rehearsal: `build-source --check`, the runner's deployed-code checks and the protocol
 preflight at the fork block. It is evidence for the corrected tooling, not an approval for a live run.
 
+**2.1.0 (fee split and sink).** The canary is generated from the production pool, so the
+`TapeoutMinerPool/2.1.0` source (80 : 1 : 1 : 2 of 84, C paid to `0x…dEaD` with every release) yields a
+new, local-only candidate, `RecoverableTapeoutMinerPool/canary-2-local`. `build-source.mjs` pins the
+2.1.0 production source and writes its adaptation diff to `reports/canary-local/production-canary.diff`;
+`reports/canary/` (the approved canary-1 from `c4bc022`: 100 : 1 : 1 of 102, no sink) is untouched.
+The shared workflow's independent arithmetic now uses 84 parts and checks each release's sink payment;
+it can only run through this local-candidate rehearsal, because every approved-candidate entry point
+(`prepare`, `fork`, `live`, `verify-local`) stops at the `c4bc022` pin. The recovery authority is
+unchanged and remains canary-only. Nothing about canary-2 is approved for mainnet.
+
 ## Emergency recovery after interruption
 
 Do not restart the live runner, redeploy or repeat a deposit. The journal records intent, nonce and

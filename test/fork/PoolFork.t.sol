@@ -209,13 +209,128 @@ contract PoolForkTest is PoolForkBase {
         assertEq(pool.claim(LATCH, 5), a.perLatchShare);
         assertEq(pool.releaseA(), a.recipientA);
         assertEq(pool.releaseB(), a.recipientB);
+        assertEq(pool.sinkPaid(), a.sink, "C was paid with the first release");
         TapeoutMinerPool.Reconciliation memory r = pool.reconciliation();
         assertEq(r.deficit, 0);
         uint256 outstanding = (r.recipientAAccrued - r.recipientAPaid)
-            + (r.recipientBAccrued - r.recipientBPaid) + (r.nandReceiptsAccrued - r.nandReceiptsPaid)
-            + (r.latchReceiptsAccrued - r.latchReceiptsPaid);
+            + (r.recipientBAccrued - r.recipientBPaid) + (r.sinkAccrued - r.sinkPaid)
+            + (r.nandReceiptsAccrued - r.nandReceiptsPaid) + (r.latchReceiptsAccrued - r.latchReceiptsPaid);
         assertEq(r.bemBalance, outstanding + r.residue + r.unrecognized);
-        assertLe(r.residue, 3 + 19 + 9);
+        assertLe(r.residue, 4 + 19 + 9);
+    }
+
+    /// @notice C leaves the pool as an ordinary transfer of real BEM to the fixed address 0x...dEaD,
+    ///         which already holds BEM on BSC: its balance grows by exactly the pool's recorded payment,
+    ///         the pool's balance falls by the role's and C's amounts together, the only transfers are
+    ///         pool -> role and pool -> sink (none to the zero address), and BEM's totalSupply is
+    ///         observed unchanged. Releases in either order pay C's backlog once.
+    function testForkReleaseTransfersCToTheSinkOnRealBem() public {
+        _deploySystem();
+        _moveToDepositor(nandMiner);
+        _moveToDepositor(latchMiner);
+        uint256[] memory both = new uint256[](2);
+        both[0] = nandMiner;
+        both[1] = latchMiner;
+        _admit(both);
+        vm.warp(block.timestamp + 3600);
+        vm.roll(block.number + 8000);
+        vm.prank(keeper);
+        pool.harvest(both);
+
+        address sink = pool.SINK();
+        assertEq(sink, 0x000000000000000000000000000000000000dEaD);
+        PoolMath.Accrual memory a = pool.previewAccrual();
+        assertGt(a.sink, 0);
+        assertEq(a.sink, a.total * 2 / 84);
+        uint256 supplyBefore = bem.totalSupply();
+        uint256 sinkBefore = bem.balanceOf(sink);
+        uint256 poolBefore = bem.balanceOf(address(pool));
+
+        vm.recordLogs();
+        vm.prank(keeper);
+        assertEq(pool.releaseA(), a.recipientA);
+        (uint256 toRole, uint256 toSink) = _bemTransfersFromPool(vm.getRecordedLogs(), recipientA, sink);
+        assertEq(toRole, a.recipientA);
+        assertEq(toSink, a.sink, "C's amount in one transfer to the sink");
+        assertEq(bem.balanceOf(sink) - sinkBefore, a.sink);
+        assertEq(poolBefore - bem.balanceOf(address(pool)), a.recipientA + a.sink);
+        assertEq(pool.sinkPaid(), a.sink);
+        uint256 supplyAfterFirst = bem.totalSupply();
+        assertEq(supplyAfterFirst, supplyBefore, "the transfer to 0x...dEaD left BEM's totalSupply unchanged");
+
+        // B at the same total: B only, C has nothing left.
+        vm.recordLogs();
+        vm.prank(keeper);
+        assertEq(pool.releaseB(), a.recipientB);
+        (toRole, toSink) = _bemTransfersFromPool(vm.getRecordedLogs(), recipientB, sink);
+        assertEq(toRole, a.recipientB);
+        assertEq(toSink, 0, "C is paid once");
+        assertEq(pool.sinkClaimable(), 0);
+
+        // More income; this time B releases first and carries C's whole new backlog. Mining pays
+        // income by minting BEM, so the supply is compared around the releases only.
+        vm.warp(block.timestamp + 3600);
+        vm.roll(block.number + 8000);
+        vm.prank(keeper);
+        (uint256 received,) = pool.harvest(both);
+        uint256 supplyAfterHarvest = bem.totalSupply();
+        PoolMath.Accrual memory a2 = pool.previewAccrual();
+        vm.prank(keeper);
+        assertEq(pool.releaseB(), a2.recipientB - a.recipientB);
+        assertEq(bem.balanceOf(sink) - sinkBefore, a2.sink);
+        vm.prank(keeper);
+        assertEq(pool.releaseA(), a2.recipientA - a.recipientA);
+        assertEq(bem.balanceOf(sink) - sinkBefore, a2.sink);
+        assertEq(bem.totalSupply(), supplyAfterHarvest, "the releases left BEM's totalSupply unchanged");
+
+        TapeoutMinerPool.Reconciliation memory r = pool.reconciliation();
+        assertEq(r.deficit, 0);
+        assertEq(r.recipientAAccrued, r.totalAccounted / 84);
+        assertEq(r.sinkAccrued, r.totalAccounted * 2 / 84);
+        assertEq(r.sinkPaid, r.sinkAccrued);
+        assertEq(r.totalPaid, r.recipientAPaid + r.recipientBPaid + r.sinkPaid);
+        uint256 outstanding =
+            (r.nandReceiptsAccrued - r.nandReceiptsPaid) + (r.latchReceiptsAccrued - r.latchReceiptsPaid);
+        assertEq(r.bemBalance, outstanding + r.residue + r.unrecognized);
+        assertLe(r.residue, 4 + 19 + 9);
+
+        string memory key = "sink";
+        vm.serializeUint(key, "forkBlock", forkBlock);
+        vm.serializeAddress(key, "bem", BEM);
+        vm.serializeBytes32(key, "bemRuntimeCodeHash", BEM.codehash);
+        vm.serializeUint(key, "bemRuntimeBytes", BEM.code.length);
+        vm.serializeAddress(key, "sink", sink);
+        vm.serializeUint(key, "sinkBalanceBefore", sinkBefore);
+        vm.serializeUint(key, "firstReleaseRoleA", a.recipientA);
+        vm.serializeUint(key, "firstReleaseSink", a.sink);
+        vm.serializeUint(key, "totalAccounted", r.totalAccounted);
+        vm.serializeUint(key, "sinkPaid", r.sinkPaid);
+        vm.serializeUint(key, "sinkBalanceAfter", bem.balanceOf(sink));
+        vm.serializeUint(key, "bemTotalSupplyBefore", supplyBefore);
+        vm.serializeUint(key, "bemTotalSupplyAfterFirstRelease", supplyAfterFirst);
+        vm.serializeUint(key, "secondHarvestReceived", received);
+        vm.serializeUint(key, "bemTotalSupplyAfterSecondHarvest", supplyAfterHarvest);
+        string memory out = vm.serializeUint(key, "bemTotalSupplyAfterSecondReleases", bem.totalSupply());
+        vm.writeJson(out, "reports/fork-sink.json");
+    }
+
+    /// @dev Sums the BEM Transfer events in `logs` to `role` and to `sink`; every BEM transfer must come
+    ///      from the pool and go to one of them.
+    function _bemTransfersFromPool(Vm.Log[] memory logs, address role, address sink)
+        internal
+        view
+        returns (uint256 toRole, uint256 toSink)
+    {
+        bytes32 transfer = keccak256("Transfer(address,address,uint256)");
+        for (uint256 i; i < logs.length; ++i) {
+            if (logs[i].emitter != BEM || logs[i].topics[0] != transfer) continue;
+            assertEq(address(uint160(uint256(logs[i].topics[1]))), address(pool));
+            address to = address(uint160(uint256(logs[i].topics[2])));
+            uint256 value = abi.decode(logs[i].data, (uint256));
+            if (to == role) toRole += value;
+            else if (to == sink) toSink += value;
+            else revert("unexpected BEM transfer");
+        }
     }
 
     /// @notice The composition the pool records equals Mining's computed local burn (circuitBurn), an

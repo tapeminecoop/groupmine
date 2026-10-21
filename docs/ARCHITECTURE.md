@@ -7,7 +7,7 @@ Four contracts, each deployed and finalized on its own:
 | `TapeoutEntitlementReceipt` (NAND) | — | issuer: `issue`, `retract` (own top IDs only), `finalizeIssuance`, `setURI` | supply fixed forever; until it renounces, the issuer can still change the metadata URI (never balances or supply) |
 | `TapeoutEntitlementReceipt` (LATCH) | — | same code, LATCH category | same |
 | `TapeoutReceiptDistributor` | receipts until delivered | owner: `allocate`, `revokeWallet`, `finalizeAllocation` (all before finalization only) | nothing: beneficiaries and ranges are immutable |
-| `TapeoutMinerPool` | miner NFTs, BEM | owner: `activate` once | nothing: whitelist and protocol addresses are fixed; recipient A or B can only move its own role (`setRecipient`) |
+| `TapeoutMinerPool` | miner NFTs, BEM | owner: `activate` once | nothing: whitelist, protocol addresses, weights and the sink address are fixed; recipient A or B can only move its own role (`setRecipient`) |
 
 `PoolMath` is the pure accounting library shared by the pool, the tests and (mirrored in TypeScript) the SDK.
 `IMining` is the subset of the deployed Mining ABI the pool uses.
@@ -16,7 +16,7 @@ Four contracts, each deployed and finalized on its own:
 receipts:     deploy NAND, deploy LATCH ─► issue in batches ─► move into distributor ─► finalizeIssuance (each)
 pool:         deploy (receipt addresses, A, B, depositor whitelist, protocol) ─► activate(S_N, S_L) ─► renounce
 distributor:  deploy(pool) ─► import JSON allocation ─► verify ─► finalizeAllocation ─► users claim (no deadline)
-operation:    whitelisted deposits · anyone harvests · holders claim BEM · anyone releases A and B
+operation:    whitelisted deposits · anyone harvests · holders claim BEM · anyone releases A or B (each also pays C)
 ```
 
 Activation needs finalized issuance only; the allocation can be finalized before or after it. Receipts
@@ -84,9 +84,11 @@ finalized issuance and their supplies to equal the counts the operator reviewed,
 ### 4.1 Configuration fixed at deployment
 
 Protocol addresses (BEM, Mining, miner collection) must be contracts. Recipients A and B must be
-non-zero and not the pool; they may be EOAs or multisigs. The depositor whitelist is mandatory: 1 to 16
-unique, non-zero addresses that are not the pool, a protocol contract or a receipt. It has no setter and
-is independent of ownership; the owner or deployer is a depositor only if listed.
+non-zero and neither the pool nor the sink address; they may be EOAs or multisigs. The sink C
+(`SINK = 0x000000000000000000000000000000000000dEaD`) and the weights 80 : 1 : 1 : 2 are code
+constants. The depositor whitelist is mandatory: 1 to 16 unique, non-zero addresses that are not the
+pool, a protocol contract or a receipt. It has no setter and is independent of ownership; the owner or
+deployer is a depositor only if listed.
 
 | Entry point | Who | Notes |
 | --- | --- | --- |
@@ -94,7 +96,7 @@ is independent of ownership; the owner or deployer is a depositor only if listed
 | `registerMiners(ids)` | whitelisted depositors | for NFTs that already reached the pool by plain `transferFrom`; same boundary |
 | `sync`, `harvest`, `harvestRange` | anyone | |
 | `claim`, `claimBatch` | current holder of each receipt ID | ERC-1155 operators must take the ID first |
-| `releaseA`, `releaseB` | anyone | pays the configured recipient; independent of each other and of claims |
+| `releaseA`, `releaseB` | anyone | pays the configured recipient its unpaid part and transfers C's whole unpaid part to the sink, atomically (both or neither); independent of each other and of claims |
 | `setRecipient(role, to)` | the current recipient of that role | moves the role to a new address; income accrued but not yet released is paid to the new address by the next release |
 | `activate` | owner, once | the owner's only power |
 
@@ -192,9 +194,11 @@ failing admission. `_pay` checks the exact sender and recipient balance deltas.
 
 ## 5. Accounting summary
 
-See [ACCOUNTING.md](ACCOUNTING.md). In short: `A = B = ⌊T/102⌋`, receipts share `⌊100T/102⌋`; each
-admission closes a composition period by freezing category totals, and income recognized afterwards
-is split by the new `N/(N+L)`; per-ID claimed history makes unclaimed income follow the receipt.
+See [ACCOUNTING.md](ACCOUNTING.md). In short (displayed weights 100 : 1.25 : 1.25 : 2.5):
+`A = B = ⌊T/84⌋`, `C = ⌊2T/84⌋` paid to the fixed sink with every release, receipts share `⌊80T/84⌋`;
+each admission closes a composition period by freezing category totals, and income recognized
+afterwards is split by the new `N/(N+L)`; per-ID claimed history makes unclaimed income follow the
+receipt.
 
 ## 6. Scale
 
@@ -227,8 +231,12 @@ under this boundary. Measurements are in [VERIFICATION_REPORT.md](VERIFICATION_R
   does not enforce it. A semantic change behind an unchanged interface (for example in the collection)
   would not be caught by the pool's field-consistency checks.
 - **BEM** must stay a plain ERC-20 (no fee, rebase or forced debit). Payments with unexpected deltas
-  revert, and a balance below the ledger makes recognition revert (`BalanceDecreased`) instead of
-  rewriting history; claims are then blocked until the balance is restored.
-- **Recipients** control their own role; a lost recipient key leaves that 1/102 unclaimable but affects
+  revert (a release checks the pool's, the role's and the sink's balances), and a balance below the
+  ledger makes recognition revert (`BalanceDecreased`) instead of rewriting history; claims are then
+  blocked until the balance is restored.
+- **Recipients** control their own role; a lost recipient key leaves that 1/84 unclaimable but affects
   nothing else.
+- **Sink.** C's 2/84 is transferred to `0x…dEaD`, which nobody is known to control; BEM keeps counting
+  it in `totalSupply` (observed on the fork). If BEM ever refused transfers to that address, releases
+  of A and B would revert with it (one atomic payment), while receipt claims would continue.
 - **No audit.** The contracts have not been audited and were not deployed to BSC mainnet.
