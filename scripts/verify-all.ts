@@ -142,15 +142,16 @@ async function main() {
     }
     return { ok: Object.values(unchanged).every(Boolean) && Object.values(same).every(Boolean), summary: { sdkFilesUnchangedByExport: unchanged, sdkBytecodeMatchesBuild: same } };
   });
-  // The project's own Solidity. test/audit is the internal review's suite, kept as the review committed
-  // it (unformatted there; only the split-dependent parts were adapted for 2.1.0), so it is not part of
-  // this gate.
-  await step('format-check', 'forge', ['fmt', '--check', 'src', 'script', 'test/unit', 'test/invariant', 'test/fork', 'test/helpers', 'test/remediation'],
-    async o => ({ ok: o.status === 0, summary: o.status === 0 ? 'formatted (src, script, test/{unit,invariant,fork,helpers,remediation})' : 'unformatted files' }));
+  // The project's own Solidity. test/audit and test/audit2 are the internal reviews' suites, kept as the
+  // reviews committed them (only the parts that depend on the split or, for 2.2.0, on the carried-income
+  // rule and the initialization were adapted), so they are not part of this gate.
+  await step('format-check', 'forge', ['fmt', '--check', 'src', 'script', 'test/unit', 'test/invariant', 'test/fork', 'test/helpers', 'test/remediation', 'test/salus', 'test/salus-ffi'],
+    async o => ({ ok: o.status === 0, summary: o.status === 0 ? 'formatted (src, script, test/{unit,invariant,fork,helpers,remediation,salus,salus-ffi})' : 'unformatted files' }));
 
   await rm('reports/invariant-coverage.csv', { force: true });
-  // test/audit holds the internal review's suites; its differential test needs FFI (its own step below).
-  await step('solidity-tests', 'forge', ['test', '--no-match-path', 'test/{fork,audit}/*', '--json'], async o => {
+  // test/audit holds the internal review's suites and test/salus-ffi the SALUS differential test; both
+  // need FFI for their Python reference models (their own steps below).
+  await step('solidity-tests', 'forge', ['test', '--no-match-path', 'test/{fork,audit,salus-ffi}/*', '--json'], async o => {
     await writeFile('.runtime/forge-tests.json', o.stdout);
     const s = run('node', ['scripts/summarize-forge.mjs', '.runtime/forge-tests.json', 'reports/invariant-coverage.csv']);
     await rm('reports/invariant-coverage.csv', { force: true });
@@ -170,6 +171,13 @@ async function main() {
   await step('audit-tests', 'forge', ['test', '--match-path', 'test/audit/*', '--ffi', '--json'], async o => {
     const suites = JSON.parse(o.stdout) as Record<string, { test_results: Record<string, { status: string }> }>;
     const results = Object.entries(suites).flatMap(([suite, s]) => Object.entries(s.test_results).map(([name, r]) => ({ suite: suite.split(':').pop(), name, status: r.status })));
+    return { ok: results.length > 0 && results.every(r => r.status === 'Success'), summary: { total: results.length, passed: results.filter(r => r.status === 'Success').length, results } };
+  });
+  // The SALUS remediation's differential test (2.2.0). FFI runs only `python3 -I test/salus-ffi/model.py
+  // <trace>`, an independent reference model (standard library only, no file, process or network access).
+  await step('salus-differential', 'forge', ['test', '--match-path', 'test/salus-ffi/*', '--ffi', '--json'], async o => {
+    const suites = JSON.parse(o.stdout) as Record<string, { test_results: Record<string, { status: string; kind?: unknown }> }>;
+    const results = Object.entries(suites).flatMap(([suite, s]) => Object.entries(s.test_results).map(([name, r]) => ({ suite: suite.split(':').pop(), name, status: r.status, kind: r.kind })));
     return { ok: results.length > 0 && results.every(r => r.status === 'Success'), summary: { total: results.length, passed: results.filter(r => r.status === 'Success').length, results } };
   });
   // The internal reviews' TypeScript tests: test/audit (f2c8e50) and test/audit2 (the 2.1.0 follow-up).

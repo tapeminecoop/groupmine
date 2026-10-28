@@ -3,11 +3,17 @@
  * mirror against an independent bigint implementation of the specification, the stale-ABI misread,
  * and the reconciliation checks with unpaid or overpaid C.
  * Run: node --import tsx --test test/audit2/fee-split-consumers.test.ts
+ * Adapted for TapeoutMinerPool/2.2.0 (SALUS remediation): the independent `incomes` follows 2.2.0's
+ * category ledger (bases in units of 1 / (84 * 10^18) raw BEM with their fractions, NAND the floor of each
+ * split, LATCH the rest), the State literals have 2.2.0's fields, and a checkpoint's identity is the
+ * ledger's (bases add up to the participants' exact share). As committed: a74f6d4.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { decodeAbiParameters, encodeAbiParameters } from 'viem';
 import { accrue, checkpoint, residueBound, SINK, type State } from '../../sdk/math.ts';
+const U = 80n * 10n ** 18n; // 2.2.0: ledger units of one raw unit's participant share
+const LU = 84n * 10n ** 18n; // 2.2.0: ledger units per raw unit
 import { checkReconciliation, releasePlans, type Reconciliation } from '../../sdk/pool.ts';
 import { tapeoutMinerPoolAbi } from '../../sdk/abi.ts';
 import { CALL_GAS } from '../../sdk/gas.ts';
@@ -19,14 +25,14 @@ const P = (t: bigint) => (t * 80n) / 84n;
 function incomes(t: bigint, s: State) {
   let nand = s.nandBase, latch = s.latchBase;
   const w = s.totalNandBurn + s.totalLatchBurn;
-  if (w !== 0n) { const d = P(t) - s.participantBase; nand += (d * s.totalNandBurn) / w; latch += (d * s.totalLatchBurn) / w; }
-  return { nand, latch };
+  if (w !== 0n) { const d = (t - s.accountedBase) * U, toNand = (d * s.totalNandBurn) / w; nand += toNand; latch += d - toNand; }
+  return { nand: nand / LU, latch: latch / LU, nandUnits: nand, latchUnits: latch };
 }
 let seed = 20261021n;
 const rand = (max: bigint) => { seed = (seed * 6364136223846793005n + 1442695040888963407n) % (1n << 64n); return seed % max; };
 
 test('sdk/math.accrue equals the specification for every remainder and for random periods', () => {
-  let s: State = { nandBase: 0n, latchBase: 0n, participantBase: 0n, totalNandBurn: 3n, totalLatchBurn: 1n, nandShares: 10n, latchShares: 4n };
+  let s: State = { accountedBase: 0n, nandBase: 0n, latchBase: 0n, totalNandBurn: 3n, totalLatchBurn: 1n, nandShares: 10n, latchShares: 4n };
   for (const base of [0n, 84n, 84n * 10n ** 12n]) for (let r = 0n; r < 84n; r++) {
     const t = base + r, a = accrue(t, s), i = incomes(t, s);
     assert.deepEqual([a.recipientA, a.recipientB, a.sink, a.participants, a.nandIncome, a.latchIncome], [A(t), A(t), C(t), P(t), i.nand, i.latch], `T=${t}`);
@@ -42,7 +48,11 @@ test('sdk/math.accrue equals the specification for every remainder and for rando
     assert.ok(a.residue <= residueBound(10n, 4n));
     assert.ok(P(t) - a.nandIncome - a.latchIncome <= 1n);
     [lastC, lastN, lastL] = [a.sink, a.nandIncome, a.latchIncome];
-    if (k % 50 === 49) { const c = checkpoint(t, s, rand(50n), rand(50n) + 1n); assert.equal(c.participantBase, i.nand + i.latch); s = c; }
+    if (k % 50 === 49) {
+      const c = { ...checkpoint(t, s), totalNandBurn: s.totalNandBurn + rand(50n), totalLatchBurn: s.totalLatchBurn + rand(50n) + 1n };
+      assert.deepEqual([c.nandBase, c.latchBase, c.nandBase + c.latchBase], [i.nandUnits, i.latchUnits, t * U]);
+      s = c;
+    }
   }
 });
 
@@ -63,7 +73,7 @@ test('a 2.0.0 decoder reads the 2.1.0 accrual tuple shifted, without an error', 
 });
 
 test('reconciliation checks: unpaid C is an obligation; C paid as 2*floor(T/84) or above its accrual fails', () => {
-  const state: State = { nandBase: 0n, latchBase: 0n, participantBase: 0n, totalNandBurn: 1n, totalLatchBurn: 1n, nandShares: 2n, latchShares: 2n };
+  const state: State = { accountedBase: 0n, nandBase: 0n, latchBase: 0n, totalNandBurn: 1n, totalLatchBurn: 1n, nandShares: 2n, latchShares: 2n };
   const ledger = (t: bigint, a: bigint, b: bigint, c: bigint, extra: Partial<Reconciliation> = {}): Reconciliation => {
     const x = accrue(t, state); const totalPaid = a + b + c;
     return { bemBalance: t - totalPaid, unrecognized: 0n, deficit: 0n, totalAccounted: t, totalPaid, recipientAAccrued: x.recipientA, recipientAPaid: a, recipientBAccrued: x.recipientB, recipientBPaid: b,

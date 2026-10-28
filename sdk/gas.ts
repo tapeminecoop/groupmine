@@ -12,8 +12,18 @@ export const ADMISSION_GAS_MODEL = {
   perIncomingMiner: 250_000n,
 } as const;
 
-export function admissionGasEstimate(registered: bigint, incoming: bigint): bigint {
-  return ADMISSION_GAS_MODEL.base + ADMISSION_GAS_MODEL.perRegisteredMiner * registered + ADMISSION_GAS_MODEL.perIncomingMiner * incoming;
+/**
+ * The first admission also opens custody (2.2.0): it reads the receipts' and the distributor's owners and
+ * writes the custody latch and the first values of the category ledger and carried totals. On the BSC fork
+ * (block 128,713,128) a first admission of one real miner used 514,781 gas (2.1.0: 398,165), and the same
+ * sent by the CLI 538,382 gas, against the 550,000 of the general model; later admissions cost about 9.7k
+ * more than under 2.1.0, within the model.
+ */
+export const FIRST_ADMISSION_GAS = 150_000n;
+
+export function admissionGasEstimate(registered: bigint, incoming: bigint, first = false): bigint {
+  return ADMISSION_GAS_MODEL.base + ADMISSION_GAS_MODEL.perRegisteredMiner * registered + ADMISSION_GAS_MODEL.perIncomingMiner * incoming
+    + (first ? FIRST_ADMISSION_GAS : 0n);
 }
 
 /** Largest registry size at which an admission of `incoming` miners still fits `limit` gas. */
@@ -22,9 +32,10 @@ export function maxRegisteredForAdmission(incoming: bigint, limit: bigint = BATC
   return room <= 0n ? 0n : room / ADMISSION_GAS_MODEL.perRegisteredMiner;
 }
 
-/** Largest batch of incoming miners that fits next to `registered` already-registered miners. */
-export function maxAdmissionBatch(registered: bigint, limit: bigint = BATCH_GAS_BUDGET): bigint {
-  const room = limit - ADMISSION_GAS_MODEL.base - ADMISSION_GAS_MODEL.perRegisteredMiner * registered;
+/** Largest batch of incoming miners that fits next to `registered` already-registered miners (`first`: the
+ *  admission that opens custody). */
+export function maxAdmissionBatch(registered: bigint, limit: bigint = BATCH_GAS_BUDGET, first = false): bigint {
+  const room = limit - ADMISSION_GAS_MODEL.base - ADMISSION_GAS_MODEL.perRegisteredMiner * registered - (first ? FIRST_ADMISSION_GAS : 0n);
   if (room <= 0n) return 0n;
   const n = room / ADMISSION_GAS_MODEL.perIncomingMiner;
   return n > 50n ? 50n : n; // TapeoutMinerPool.MAX_ADMISSION_BATCH
@@ -53,7 +64,7 @@ export const DEPLOY_GAS = { receipt: 3_000_000n, pool: 7_000_000n, distributor: 
  */
 export const CALL_GAS = {
   finalizeIssuance: 100_000n, finalizeAllocation: 150_000n, activate: 250_000n, renounceOwnership: 100_000n,
-  releaseA: 300_000n, releaseB: 300_000n, setRecipient: 150_000n, setApprovalForAll: 150_000n,
+  releaseA: 300_000n, releaseB: 300_000n, setRecipient: 150_000n, setApprovalForAll: 150_000n, bindDistributor: 150_000n,
 } as const;
 
 export const idsGas = (model: { base: bigint; perId: bigint }, ids: number | bigint) => model.base + model.perId * BigInt(ids);

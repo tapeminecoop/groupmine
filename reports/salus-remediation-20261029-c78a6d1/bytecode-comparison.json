@@ -1,0 +1,106 @@
+{
+ "schema": "tapeout-bytecode-comparison/1",
+ "method": "Writes bytecode-comparison.json: per contract, ABI and code before (BEFORE_OUT, a forge `out/` of the",
+ "contracts": [
+  {
+   "contract": "TapeoutEntitlementReceipt",
+   "abi": "same",
+   "code": "identical",
+   "before": {
+    "runtimeBytes": 8743,
+    "initcodeBytes": 10361
+   },
+   "after": {
+    "runtimeBytes": 8743,
+    "initcodeBytes": 10361
+   }
+  },
+  {
+   "contract": "TapeoutReceiptDistributor",
+   "abi": "same",
+   "code": "identical except trailing compiler metadata",
+   "before": {
+    "runtimeBytes": 7680,
+    "initcodeBytes": 8289
+   },
+   "after": {
+    "runtimeBytes": 7680,
+    "initcodeBytes": 8289
+   }
+  },
+  {
+   "contract": "TapeoutMinerPool",
+   "abi": "changed",
+   "code": "changed",
+   "before": {
+    "runtimeBytes": 20777,
+    "initcodeBytes": 32685
+   },
+   "after": {
+    "runtimeBytes": 23168,
+    "initcodeBytes": 35118
+   }
+  },
+  {
+   "contract": "PoolMath",
+   "abi": "same",
+   "code": "identical except trailing compiler metadata",
+   "before": {
+    "runtimeBytes": 58,
+    "initcodeBytes": 87
+   },
+   "after": {
+    "runtimeBytes": 58,
+    "initcodeBytes": 87
+   }
+  },
+  {
+   "contract": "IMining",
+   "abi": "same",
+   "code": "identical",
+   "before": {
+    "runtimeBytes": 0,
+    "initcodeBytes": 0
+   },
+   "after": {
+    "runtimeBytes": 0,
+    "initcodeBytes": 0
+   }
+  },
+  {
+   "contract": "IReceiptDistributor",
+   "abi": "new",
+   "code": "new",
+   "after": {
+    "runtimeBytes": 0,
+    "initcodeBytes": 0
+   }
+  },
+  {
+   "contract": "RecoverableTapeoutMinerPool",
+   "abi": "changed",
+   "code": "changed",
+   "before": {
+    "runtimeBytes": 22074,
+    "initcodeBytes": 34074
+   },
+   "after": {
+    "runtimeBytes": 24439,
+    "initcodeBytes": 36481
+   }
+  },
+  {
+   "contract": "CanaryParticipant",
+   "abi": "same",
+   "code": "identical except trailing compiler metadata",
+   "before": {
+    "runtimeBytes": 3410,
+    "initcodeBytes": 3838
+   },
+   "after": {
+    "runtimeBytes": 3410,
+    "initcodeBytes": 3838
+   }
+  }
+ ]
+}

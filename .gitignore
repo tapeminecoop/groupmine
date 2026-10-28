@@ -13,4 +13,5 @@ broadcast/
 !reports/logs/*.log
 !reports/remediation-*/run/logs/*.log
 !reports/fee-split-*/run/logs/*.log
+!reports/salus-*/run/logs/*.log
 .runtime-*

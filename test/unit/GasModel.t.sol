@@ -50,6 +50,7 @@ contract GasModelTest is SystemTestBase {
     uint256 internal constant CALL_FINALIZE_ISSUANCE = 100_000;
     uint256 internal constant CALL_FINALIZE_ALLOCATION = 150_000;
     uint256 internal constant CALL_ACTIVATE = 250_000;
+    uint256 internal constant CALL_BIND_DISTRIBUTOR = 150_000;
     uint256 internal constant CALL_RELEASE = 300_000;
     uint256 internal constant CALL_SET_RECIPIENT = 150_000;
     uint256 internal constant CALL_RENOUNCE = 100_000;
@@ -362,8 +363,22 @@ contract GasModelTest is SystemTestBase {
             abi.encodeCall(distributor.finalizeAllocation, ()),
             CALL_FINALIZE_ALLOCATION
         );
+        uint256 bindGas = _within(
+            operator,
+            address(pool),
+            abi.encodeCall(pool.bindDistributor, (address(distributor))),
+            CALL_BIND_DISTRIBUTOR
+        );
         uint256 activateGas =
             _within(operator, address(pool), abi.encodeCall(pool.activate, (10, 10)), CALL_ACTIVATE);
+        // 2.2.0: custody (the first admission) needs every owner renounced first.
+        vm.startPrank(operator);
+        nandReceipt.renounceOwnership();
+        latchReceipt.renounceOwnership();
+        distributor.renounceOwnership();
+        vm.stopPrank();
+        uint256 renounceGas =
+            _within(operator, address(pool), abi.encodeWithSignature("renounceOwnership()"), CALL_RENOUNCE);
         uint256 approveGas = _within(
             depositor,
             address(nft),
@@ -381,11 +396,10 @@ contract GasModelTest is SystemTestBase {
             abi.encodeCall(pool.setRecipient, (TapeoutMinerPool.Recipient.A, dave)),
             CALL_SET_RECIPIENT
         );
-        uint256 renounceGas =
-            _within(operator, address(pool), abi.encodeWithSignature("renounceOwnership()"), CALL_RENOUNCE);
 
         console2.log("finalizeIssuance", finalizeIssuanceGas);
         console2.log("finalizeAllocation", finalizeAllocationGas);
+        console2.log("bindDistributor", bindGas);
         console2.log("activate", activateGas);
         console2.log("setApprovalForAll", approveGas);
         console2.log("releaseA / releaseB", releaseAGas, releaseBGas);

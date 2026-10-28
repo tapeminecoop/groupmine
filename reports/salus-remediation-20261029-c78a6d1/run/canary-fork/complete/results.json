@@ -1,0 +1,1698 @@
+{
+  "scope": "LOCAL_BSC_FORK_ONLY",
+  "status": "PASS",
+  "assertions": {
+    "recovery-fixed-before-any-approval": {
+      "status": "PASS",
+      "evidence": null
+    },
+    "complete-allocation-verified": {
+      "status": "PASS",
+      "evidence": {
+        "status": "READY_TO_FINALIZE",
+        "mode": "full-round",
+        "blockNumber": "128812158",
+        "blockHash": "0x54e63c57bfdb3095f469833765d15f43f7775f27e5cf34014285c8ece32bb942",
+        "identity": {
+          "chainId": {
+            "expected": 56,
+            "artifact": 56,
+            "chain": 56
+          },
+          "distributor": {
+            "expected": "0xb00e455ba5d98542e1dc76b20f1d3fde8f036e3f",
+            "artifact": "0xb00e455ba5d98542e1dc76b20f1d3fde8f036e3f",
+            "chain": "0xb00E455Ba5d98542E1Dc76b20f1d3fde8F036E3f"
+          },
+          "pool": {
+            "expected": "0x40aea668137089a51e6ad4a6ab26045ccb20efc0",
+            "distributorPool": "0x40aea668137089a51e6Ad4A6aB26045CcB20efc0"
+          },
+          "receipts": {
+            "NAND": {
+              "expected": "0x9461750ece26bfc1b5173c436b1a7224dc90ea1c",
+              "artifact": "0x9461750ece26bfc1b5173c436b1a7224dc90ea1c",
+              "distributor": "0x9461750ECE26bfc1b5173C436B1A7224dc90EA1c",
+              "pool": "0x9461750ECE26bfc1b5173C436B1A7224dc90EA1c",
+              "category": "0x3a21099afcdd2a9c70a396879f9a993ecef026f2655bde3020c6f057720eebfb",
+              "categoryMatches": true
+            },
+            "LATCH": {
+              "expected": "0x0ddbbf77f8d07fed18d38086e105ff3d8855142c",
+              "artifact": "0x0ddbbf77f8d07fed18d38086e105ff3d8855142c",
+              "distributor": "0x0ddBBF77f8d07FEd18d38086E105FF3d8855142C",
+              "pool": "0x0ddBBF77f8d07FEd18d38086E105FF3d8855142C",
+              "category": "0xe6a67351fcf7d33ca0f77690db36dd300301b060e10693ad35e1c42c828dd427",
+              "categoryMatches": true
+            }
+          }
+        },
+        "coverage": {
+          "NAND": {
+            "supply": "4",
+            "issuanceFinalized": true,
+            "acceptedInventory": "4",
+            "assigned": "4",
+            "delivered": "0",
+            "undelivered": "4",
+            "unassignedInventory": "0",
+            "excluded": {
+              "count": 0,
+              "ids": "",
+              "holders": []
+            }
+          },
+          "LATCH": {
+            "supply": "2",
+            "issuanceFinalized": true,
+            "acceptedInventory": "2",
+            "assigned": "2",
+            "delivered": "0",
+            "undelivered": "2",
+            "unassignedInventory": "0",
+            "excluded": {
+              "count": 0,
+              "ids": "",
+              "holders": []
+            }
+          }
+        },
+        "review": {
+          "status": "VERIFIED",
+          "sha256": {
+            "file": "15e9d82d7c8e5584b97e3c1fbcbaa50648d32d7fcde79fce839c21063425a8cb",
+            "artifact": "15e9d82d7c8e5584b97e3c1fbcbaa50648d32d7fcde79fce839c21063425a8cb",
+            "matches": true
+          },
+          "assignment": {
+            "status": "VERIFIED",
+            "inventorySource": "recorded inventory (block 128812158) reproduced by the accepted inventory at block 128812158"
+          },
+          "wallets": 2,
+          "totals": {
+            "NAND": 4,
+            "LATCH": 2
+          }
+        },
+        "mismatches": [],
+        "mismatchCount": 0,
+        "readinessGaps": [],
+        "verified": {
+          "wallets": 2,
+          "listedWallets": 2,
+          "ids": {
+            "NAND": "4",
+            "LATCH": "2"
+          },
+          "delivered": {
+            "NAND": "0",
+            "LATCH": "0"
+          },
+          "holdingsChecked": 6,
+          "allocationFinalized": false
+        }
+      }
+    },
+    "owner-renounced-recovery-retained": {
+      "status": "PASS",
+      "evidence": null
+    },
+    "distributor-bound-and-custody-ready": {
+      "status": "PASS",
+      "evidence": null
+    },
+    "phase-A-composition-2-0": {
+      "status": "PASS",
+      "evidence": {
+        "depositor": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+        "period": "1",
+        "count": "1",
+        "settledOldIncome": "0",
+        "carriedIncome": "186399",
+        "newPeriodIncome": "0",
+        "totalNandBurn": "2",
+        "totalLatchBurn": "0"
+      }
+    },
+    "phase-A-custody-opened": {
+      "status": "PASS",
+      "evidence": null
+    },
+    "phase-A-positive-actual-revenue": {
+      "status": "PASS",
+      "evidence": {
+        "pendingBeforeHarvestRaw": "0",
+        "actualReceivedRaw": "626",
+        "observation": "Pending is never used to decide whether to claim or as an exact payout promise"
+      }
+    },
+    "phase-A-subset-claim-exact": {
+      "status": "PASS",
+      "evidence": {
+        "expectedRaw": "89058",
+        "paidRaw": "89058",
+        "formatted": "0.00089058",
+        "grossIncomeFromTransfers": "187025",
+        "expectedById": [
+          {
+            "category": 0,
+            "id": "1",
+            "previous": "0",
+            "perShare": "44529",
+            "amount": "44529"
+          },
+          {
+            "category": 0,
+            "id": "2",
+            "previous": "0",
+            "perShare": "44529",
+            "amount": "44529"
+          }
+        ]
+      }
+    },
+    "retain-positive-unpaid-receipt": {
+      "status": "PASS",
+      "evidence": {
+        "receipt": "NAND #3",
+        "unpaidRaw": "44529"
+      }
+    },
+    "positive-already-held-unrecognized-income": {
+      "status": "PASS",
+      "evidence": {
+        "transaction": "0xe3111e3e08b8fdebdf1252f910100c8134987b1325faf947b44e442577a74d5c",
+        "unrecognizedRaw": "636"
+      }
+    },
+    "second-miner-still-original-and-compatible": {
+      "status": "PASS",
+      "evidence": null
+    },
+    "nonzero-old-period-settlement": {
+      "status": "PASS",
+      "evidence": {
+        "depositor": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+        "period": "2",
+        "count": "1",
+        "settledOldIncome": "626",
+        "carriedIncome": "188120",
+        "newPeriodIncome": "0",
+        "totalNandBurn": "3",
+        "totalLatchBurn": "1"
+      }
+    },
+    "phase-B-composition-3-1": {
+      "status": "PASS",
+      "evidence": {
+        "depositor": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+        "period": "2",
+        "count": "1",
+        "settledOldIncome": "626",
+        "carriedIncome": "188120",
+        "newPeriodIncome": "0",
+        "totalNandBurn": "3",
+        "totalLatchBurn": "1"
+      }
+    },
+    "boundary-income-matches-independent-BEM-transfer-evidence": {
+      "status": "PASS",
+      "evidence": {
+        "oldInflow": "188287",
+        "carriedActual": "188120",
+        "logs": [
+          {
+            "eventName": "Transfer",
+            "args": {
+              "from": "0x0000000000000000000000000000000000000000",
+              "to": "0x40aea668137089a51e6Ad4A6aB26045CcB20efc0",
+              "value": "186399"
+            },
+            "address": "0x5ce033b2bfca3af30b3e8c8457deaf776a8b695a",
+            "topics": [
+              "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+              "0x0000000000000000000000000000000000000000000000000000000000000000",
+              "0x00000000000000000000000040aea668137089a51e6ad4a6ab26045ccb20efc0"
+            ],
+            "data": "0x000000000000000000000000000000000000000000000000000000000002d81f",
+            "blockHash": "0x26cee308d9a021eccc45da7d2bee794b969898421fad719226d836bff78b06e9",
+            "blockNumber": "128812167",
+            "blockTimestamp": "1792529028",
+            "transactionHash": "0x6f86121c8ea71bdbeabd7cc7908eba470eab5fbf648afe4b625a3b90bbea1a4b",
+            "transactionIndex": 0,
+            "logIndex": 4,
+            "removed": false
+          },
+          {
+            "eventName": "Transfer",
+            "args": {
+              "from": "0x0000000000000000000000000000000000000000",
+              "to": "0x40aea668137089a51e6Ad4A6aB26045CcB20efc0",
+              "value": "626"
+            },
+            "address": "0x5ce033b2bfca3af30b3e8c8457deaf776a8b695a",
+            "topics": [
+              "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+              "0x0000000000000000000000000000000000000000000000000000000000000000",
+              "0x00000000000000000000000040aea668137089a51e6ad4a6ab26045ccb20efc0"
+            ],
+            "data": "0x0000000000000000000000000000000000000000000000000000000000000272",
+            "blockHash": "0xf4d954a667fbb6e4330a9cf3758b2ee5924d888d45be66a0d8ae8f52338f3665",
+            "blockNumber": "128812169",
+            "blockTimestamp": "1792529088",
+            "transactionHash": "0x97d5af474bf75cc4e1025948b13d7d7ff5a5732645e3c8eb7fc1f985bcaa6e8f",
+            "transactionIndex": 0,
+            "logIndex": 0,
+            "removed": false
+          },
+          {
+            "eventName": "Transfer",
+            "args": {
+              "from": "0x40aea668137089a51e6Ad4A6aB26045CcB20efc0",
+              "to": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+              "value": "89058"
+            },
+            "address": "0x5ce033b2bfca3af30b3e8c8457deaf776a8b695a",
+            "topics": [
+              "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+              "0x00000000000000000000000040aea668137089a51e6ad4a6ab26045ccb20efc0",
+              "0x0000000000000000000000007eedccb674e9549b61b01eb65ac68da071adf129"
+            ],
+            "data": "0x0000000000000000000000000000000000000000000000000000000000015be2",
+            "blockHash": "0x9291fc678daded69f72529e762f3b8d9056d04df71714fc7edaf4f3924b38fa8",
+            "blockNumber": "128812171",
+            "blockTimestamp": "1792529089",
+            "transactionHash": "0xd451b8cfe3c4b110af0ca378f6eabe5a9bb40707420b052fcaa22778f69d4d3b",
+            "transactionIndex": 0,
+            "logIndex": 2,
+            "removed": false
+          },
+          {
+            "eventName": "Transfer",
+            "args": {
+              "from": "0x0000000000000000000000000000000000000000",
+              "to": "0x40aea668137089a51e6Ad4A6aB26045CcB20efc0",
+              "value": "636"
+            },
+            "address": "0x5ce033b2bfca3af30b3e8c8457deaf776a8b695a",
+            "topics": [
+              "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+              "0x0000000000000000000000000000000000000000000000000000000000000000",
+              "0x00000000000000000000000040aea668137089a51e6ad4a6ab26045ccb20efc0"
+            ],
+            "data": "0x000000000000000000000000000000000000000000000000000000000000027c",
+            "blockHash": "0x4951049fdca711dbee3d4d178be7c36ce1fbdc977ed8b8fa998ab2f6a103f642",
+            "blockNumber": "128812173",
+            "blockTimestamp": "1792529149",
+            "transactionHash": "0xe3111e3e08b8fdebdf1252f910100c8134987b1325faf947b44e442577a74d5c",
+            "transactionIndex": 0,
+            "logIndex": 0,
+            "removed": false
+          },
+          {
+            "eventName": "Transfer",
+            "args": {
+              "from": "0x0000000000000000000000000000000000000000",
+              "to": "0x40aea668137089a51e6Ad4A6aB26045CcB20efc0",
+              "value": "626"
+            },
+            "address": "0x5ce033b2bfca3af30b3e8c8457deaf776a8b695a",
+            "topics": [
+              "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+              "0x0000000000000000000000000000000000000000000000000000000000000000",
+              "0x00000000000000000000000040aea668137089a51e6ad4a6ab26045ccb20efc0"
+            ],
+            "data": "0x0000000000000000000000000000000000000000000000000000000000000272",
+            "blockHash": "0x23375bbfccdf69afe92d8169eac570f75d2c0005b4f2fa6bd2e40cd7a1b133d2",
+            "blockNumber": "128812176",
+            "blockTimestamp": "1792529209",
+            "transactionHash": "0x1e8a80c3e76b9b83a00aeeb4034654b93892d680da3a3f2e836caad3170e10c3",
+            "transactionIndex": 0,
+            "logIndex": 1,
+            "removed": false
+          },
+          {
+            "eventName": "Transfer",
+            "args": {
+              "from": "0x0000000000000000000000000000000000000000",
+              "to": "0x40aea668137089a51e6Ad4A6aB26045CcB20efc0",
+              "value": "188120"
+            },
+            "address": "0x5ce033b2bfca3af30b3e8c8457deaf776a8b695a",
+            "topics": [
+              "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+              "0x0000000000000000000000000000000000000000000000000000000000000000",
+              "0x00000000000000000000000040aea668137089a51e6ad4a6ab26045ccb20efc0"
+            ],
+            "data": "0x000000000000000000000000000000000000000000000000000000000002ded8",
+            "blockHash": "0x23375bbfccdf69afe92d8169eac570f75d2c0005b4f2fa6bd2e40cd7a1b133d2",
+            "blockNumber": "128812176",
+            "blockTimestamp": "1792529209",
+            "transactionHash": "0x1e8a80c3e76b9b83a00aeeb4034654b93892d680da3a3f2e836caad3170e10c3",
+            "transactionIndex": 0,
+            "logIndex": 7,
+            "removed": false
+          }
+        ]
+      }
+    },
+    "old-period-and-held-balance-all-nand": {
+      "status": "PASS",
+      "evidence": {
+        "oldTotal": "187025",
+        "unrecognized": "636",
+        "boundaryTotal": "188287",
+        "checkpoint": {
+          "period": "2",
+          "totalAccounted": "188287",
+          "nandBaseUnits": "15062960000000000000000000",
+          "latchBaseUnits": "0"
+        }
+      }
+    },
+    "carried-income-attributed-to-12485-by-its-own-burn": {
+      "status": "PASS",
+      "evidence": [
+        {
+          "tokenId": "12485",
+          "received": "188120",
+          "nandUnits": "7524800000000000000000000",
+          "latchUnits": "7524800000000000000000000"
+        }
+      ]
+    },
+    "carried-income-own-burn-and-fixed-old-entitlements": {
+      "status": "PASS",
+      "evidence": {
+        "actual": {
+          "total": "376407",
+          "recipientA": "4481",
+          "recipientB": "4481",
+          "sink": "8962",
+          "participants": "358482",
+          "nandIncome": "268901",
+          "latchIncome": "89580",
+          "perNandShare": "67225",
+          "perLatchShare": "44790",
+          "nandReceipts": "268900",
+          "latchReceipts": "89580",
+          "residue": "3"
+        },
+        "expected": {
+          "nand": "268901",
+          "latch": "89580"
+        },
+        "carriedRaw": "188120",
+        "carriedFormatted": "0.0018812",
+        "zeroCarriedIsAllowed": true
+      }
+    },
+    "both-nfts-in-canary": {
+      "status": "PASS",
+      "evidence": null
+    },
+    "supplies-stay-4-and-2": {
+      "status": "PASS",
+      "evidence": null
+    },
+    "positive-new-period-harvest": {
+      "status": "PASS",
+      "evidence": {
+        "caller": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+        "attempted": "2",
+        "failed": "0",
+        "received": "1252"
+      }
+    },
+    "undelivered-helper-receipts-have-entitlements": {
+      "status": "PASS",
+      "evidence": {
+        "helperNandDue": "67449",
+        "helperLatchDue": "44939"
+      }
+    },
+    "late-delivery-preserves-earlier-entitlement": {
+      "status": "PASS",
+      "evidence": null
+    },
+    "helper-initial-receipt-claim-exact": {
+      "status": "PASS",
+      "evidence": {
+        "expectedRaw": "112388",
+        "paidRaw": "112388",
+        "formatted": "0.00112388",
+        "grossIncomeFromTransfers": "377659",
+        "expectedById": [
+          {
+            "category": 0,
+            "id": "4",
+            "previous": "0",
+            "perShare": "67449",
+            "amount": "67449"
+          },
+          {
+            "category": 1,
+            "id": "2",
+            "previous": "0",
+            "perShare": "44939",
+            "amount": "44939"
+          }
+        ]
+      }
+    },
+    "original-selected-claim-exact": {
+      "status": "PASS",
+      "evidence": {
+        "expectedRaw": "67859",
+        "paidRaw": "67859",
+        "formatted": "0.00067859",
+        "grossIncomeFromTransfers": "377659",
+        "expectedById": [
+          {
+            "category": 0,
+            "id": "2",
+            "previous": "44529",
+            "perShare": "67449",
+            "amount": "22920"
+          },
+          {
+            "category": 1,
+            "id": "1",
+            "previous": "0",
+            "perShare": "44939",
+            "amount": "44939"
+          }
+        ]
+      }
+    },
+    "transfer-carries-positive-unpaid-income": {
+      "status": "PASS",
+      "evidence": {
+        "historyRaw": "44529",
+        "unpaidRaw": "22920"
+      }
+    },
+    "transfer-keeps-history-and-unpaid": {
+      "status": "PASS",
+      "evidence": null
+    },
+    "former-holder-claim-rejected": {
+      "status": "PASS",
+      "evidence": {
+        "simulationOnly": true,
+        "kind": "EXPECTED_REVERT",
+        "verdict": "PASS",
+        "revertData": "0x794e61c900000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001",
+        "decoded": {
+          "name": "NotHolder",
+          "args": [
+            0,
+            "1"
+          ]
+        },
+        "chainId": 56,
+        "block": {
+          "number": "128812182",
+          "hash": "0x0ff3496035f78a0c44c03295b880916a1951eac1095285b64344b0ef43cd7cb1"
+        },
+        "caller": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+        "target": "0x40aea668137089a51e6ad4a6ab26045ccb20efc0",
+        "calldata": "0xdbc7d8fd00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001",
+        "expected": {
+          "name": "NotHolder",
+          "args": [
+            0,
+            "1"
+          ]
+        },
+        "attempts": [
+          {
+            "attempt": 1,
+            "kind": "EXPECTED_REVERT",
+            "diagnostic": "RPC Request failed.\n\nURL: [REDACTED_RPC]\nRequest body: {\"method\":\"eth_call\",\"params\":[{\"from\":\"0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129\",\"to\":\"0x40aea668137089a51e6ad4a6ab26045ccb20efc0\",\"data\":\"0xdbc7d8fd00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001\"},\"0x7ad8496\"]}\n\nDetails: execution reverted: custom error 0x794e61c9: \u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0001\nVersion: viem@2.57.2"
+          }
+        ],
+        "metadataAttempts": [
+          {
+            "stage": "chain-metadata",
+            "attempt": 1,
+            "ok": true
+          },
+          {
+            "stage": "block-metadata",
+            "attempt": 1,
+            "ok": true
+          }
+        ]
+      }
+    },
+    "non-whitelisted-admission-rejected": {
+      "status": "PASS",
+      "evidence": {
+        "simulationOnly": true,
+        "kind": "EXPECTED_REVERT",
+        "verdict": "PASS",
+        "revertData": "0xc6cd8a0b0000000000000000000000008424fcb139d8ba8d02a4be7d9cd61fcfd42db9c5",
+        "decoded": {
+          "name": "NotDepositor",
+          "args": [
+            "0x8424FCb139D8BA8D02a4be7D9cd61fCFD42Db9C5"
+          ]
+        },
+        "chainId": 56,
+        "block": {
+          "number": "128812182",
+          "hash": "0x0ff3496035f78a0c44c03295b880916a1951eac1095285b64344b0ef43cd7cb1"
+        },
+        "caller": "0x8424fcb139d8ba8d02a4be7d9cd61fcfd42db9c5",
+        "target": "0x40aea668137089a51e6ad4a6ab26045ccb20efc0",
+        "calldata": "0x58d48e4a000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000c84",
+        "expected": {
+          "name": "NotDepositor",
+          "args": [
+            "0x8424fcb139d8ba8d02a4be7d9cd61fcfd42db9c5"
+          ]
+        },
+        "attempts": [
+          {
+            "attempt": 1,
+            "kind": "EXPECTED_REVERT",
+            "diagnostic": "RPC Request failed.\n\nURL: [REDACTED_RPC]\nRequest body: {\"method\":\"eth_call\",\"params\":[{\"from\":\"0x8424fcb139d8ba8d02a4be7d9cd61fcfd42db9c5\",\"to\":\"0x40aea668137089a51e6ad4a6ab26045ccb20efc0\",\"data\":\"0x58d48e4a000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000c84\"},\"0x7ad8496\"]}\n\nDetails: execution reverted: custom error 0xc6cd8a0b: 0000000000000000000000008424fcb139d8ba8d02a4be7d9cd61fcfd42db9c5\nVersion: viem@2.57.2"
+          }
+        ],
+        "metadataAttempts": [
+          {
+            "stage": "chain-metadata",
+            "attempt": 1,
+            "ok": true
+          },
+          {
+            "stage": "block-metadata",
+            "attempt": 1,
+            "ok": true
+          }
+        ]
+      }
+    },
+    "helper-claims-transferred-nand-1-exact": {
+      "status": "PASS",
+      "evidence": {
+        "expectedRaw": "22920",
+        "paidRaw": "22920",
+        "formatted": "0.0002292",
+        "grossIncomeFromTransfers": "377659",
+        "expectedById": [
+          {
+            "category": 0,
+            "id": "1",
+            "previous": "44529",
+            "perShare": "67449",
+            "amount": "22920"
+          }
+        ]
+      }
+    },
+    "helper-repeat-claim-exact": {
+      "status": "PASS",
+      "evidence": {
+        "expectedRaw": "0",
+        "paidRaw": "0",
+        "formatted": "0",
+        "grossIncomeFromTransfers": "377659",
+        "expectedById": [
+          {
+            "category": 0,
+            "id": "1",
+            "previous": "67449",
+            "perShare": "67449",
+            "amount": "0"
+          }
+        ]
+      }
+    },
+    "repeat-claim-pays-zero": {
+      "status": "PASS",
+      "evidence": null
+    },
+    "role-A-separate-cumulative-allocation": {
+      "status": "PASS",
+      "evidence": {
+        "role": 0,
+        "recipient": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+        "amount": "4495"
+      }
+    },
+    "role-A-release-pays-the-sink-backlog-once": {
+      "status": "PASS",
+      "evidence": {
+        "toSink": {
+          "releasedRole": 0,
+          "sink": "0x000000000000000000000000000000000000dEaD",
+          "amount": "8991"
+        },
+        "sinkBefore": "244790741707",
+        "sinkPaidBefore": "0"
+      }
+    },
+    "role-B-separate-cumulative-allocation": {
+      "status": "PASS",
+      "evidence": {
+        "role": 1,
+        "recipient": "0x8424FCb139D8BA8D02a4be7D9cd61fCFD42Db9C5",
+        "amount": "4495"
+      }
+    },
+    "role-B-release-pays-the-sink-backlog-once": {
+      "status": "PASS",
+      "evidence": {
+        "toSink": {
+          "releasedRole": 1,
+          "sink": "0x000000000000000000000000000000000000dEaD",
+          "amount": "0"
+        },
+        "sinkBefore": "244790750698",
+        "sinkPaidBefore": "8991"
+      }
+    },
+    "orderly-final-harvest-no-failure": {
+      "status": "PASS",
+      "evidence": null
+    },
+    "permanently-closed": {
+      "status": "PASS",
+      "evidence": null
+    },
+    "closed-pool-admission-rejected": {
+      "status": "PASS",
+      "evidence": {
+        "simulationOnly": true,
+        "kind": "EXPECTED_REVERT",
+        "verdict": "PASS",
+        "revertData": "0x9b6c0ccc",
+        "decoded": {
+          "name": "CanaryClosed",
+          "args": []
+        },
+        "chainId": 56,
+        "block": {
+          "number": "128812190",
+          "hash": "0xc1d20cd6e7f8a38e6fc3d607e9e77d4162e2e183940dea0186695ebe6d6004d8"
+        },
+        "caller": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+        "target": "0x40aea668137089a51e6ad4a6ab26045ccb20efc0",
+        "calldata": "0x58d48e4a000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000c84",
+        "expected": {
+          "name": "CanaryClosed",
+          "args": []
+        },
+        "attempts": [
+          {
+            "attempt": 1,
+            "kind": "EXPECTED_REVERT",
+            "diagnostic": "RPC Request failed.\n\nURL: [REDACTED_RPC]\nRequest body: {\"method\":\"eth_call\",\"params\":[{\"from\":\"0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129\",\"to\":\"0x40aea668137089a51e6ad4a6ab26045ccb20efc0\",\"data\":\"0x58d48e4a000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000c84\"},\"0x7ad849e\"]}\n\nDetails: execution reverted: custom error 0x9b6c0ccc\nVersion: viem@2.57.2"
+          }
+        ],
+        "metadataAttempts": [
+          {
+            "stage": "chain-metadata",
+            "attempt": 1,
+            "ok": true
+          },
+          {
+            "stage": "block-metadata",
+            "attempt": 1,
+            "ok": true
+          }
+        ]
+      }
+    },
+    "closed-pool-harvest-rejected": {
+      "status": "PASS",
+      "evidence": {
+        "simulationOnly": true,
+        "kind": "EXPECTED_REVERT",
+        "verdict": "PASS",
+        "revertData": "0x9b6c0ccc",
+        "decoded": {
+          "name": "CanaryClosed",
+          "args": []
+        },
+        "chainId": 56,
+        "block": {
+          "number": "128812190",
+          "hash": "0xc1d20cd6e7f8a38e6fc3d607e9e77d4162e2e183940dea0186695ebe6d6004d8"
+        },
+        "caller": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+        "target": "0x40aea668137089a51e6ad4a6ab26045ccb20efc0",
+        "calldata": "0x5d14b06f000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000c8400000000000000000000000000000000000000000000000000000000000030c5",
+        "expected": {
+          "name": "CanaryClosed",
+          "args": []
+        },
+        "attempts": [
+          {
+            "attempt": 1,
+            "kind": "EXPECTED_REVERT",
+            "diagnostic": "RPC Request failed.\n\nURL: [REDACTED_RPC]\nRequest body: {\"method\":\"eth_call\",\"params\":[{\"from\":\"0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129\",\"to\":\"0x40aea668137089a51e6ad4a6ab26045ccb20efc0\",\"data\":\"0x5d14b06f000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000c8400000000000000000000000000000000000000000000000000000000000030c5\"},\"0x7ad849e\"]}\n\nDetails: execution reverted: custom error 0x9b6c0ccc\nVersion: viem@2.57.2"
+          }
+        ],
+        "metadataAttempts": [
+          {
+            "stage": "chain-metadata",
+            "attempt": 1,
+            "ok": true
+          },
+          {
+            "stage": "block-metadata",
+            "attempt": 1,
+            "ok": true
+          }
+        ]
+      }
+    },
+    "final-owner-3204": {
+      "status": "PASS",
+      "evidence": {
+        "confirmedBlock": "128812190",
+        "blockHash": "0xc1d20cd6e7f8a38e6fc3d607e9e77d4162e2e183940dea0186695ebe6d6004d8"
+      }
+    },
+    "final-owner-12485": {
+      "status": "PASS",
+      "evidence": {
+        "confirmedBlock": "128812190",
+        "blockHash": "0xc1d20cd6e7f8a38e6fc3d607e9e77d4162e2e183940dea0186695ebe6d6004d8"
+      }
+    },
+    "final-wallet-receipt-claims-exact": {
+      "status": "PASS",
+      "evidence": {
+        "expectedRaw": "67457",
+        "paidRaw": "67457",
+        "formatted": "0.00067457",
+        "grossIncomeFromTransfers": "377679",
+        "expectedById": [
+          {
+            "category": 0,
+            "id": "2",
+            "previous": "67449",
+            "perShare": "67452",
+            "amount": "3"
+          },
+          {
+            "category": 0,
+            "id": "3",
+            "previous": "0",
+            "perShare": "67452",
+            "amount": "67452"
+          },
+          {
+            "category": 1,
+            "id": "1",
+            "previous": "44939",
+            "perShare": "44941",
+            "amount": "2"
+          }
+        ]
+      }
+    },
+    "final-helper-receipt-claims-exact": {
+      "status": "PASS",
+      "evidence": {
+        "expectedRaw": "8",
+        "paidRaw": "8",
+        "formatted": "0.00000008",
+        "grossIncomeFromTransfers": "377679",
+        "expectedById": [
+          {
+            "category": 0,
+            "id": "1",
+            "previous": "67449",
+            "perShare": "67452",
+            "amount": "3"
+          },
+          {
+            "category": 0,
+            "id": "4",
+            "previous": "67449",
+            "perShare": "67452",
+            "amount": "3"
+          },
+          {
+            "category": 1,
+            "id": "2",
+            "previous": "44939",
+            "perShare": "44941",
+            "amount": "2"
+          }
+        ]
+      }
+    },
+    "actual-BEM-transfers-match-total-income-and-payouts": {
+      "status": "PASS",
+      "evidence": {
+        "inbound": "377679",
+        "outbound": "377674",
+        "toSink": "8992",
+        "transfers": [
+          {
+            "eventName": "Transfer",
+            "args": {
+              "from": "0x0000000000000000000000000000000000000000",
+              "to": "0x40aea668137089a51e6Ad4A6aB26045CcB20efc0",
+              "value": "186399"
+            },
+            "address": "0x5ce033b2bfca3af30b3e8c8457deaf776a8b695a",
+            "topics": [
+              "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+              "0x0000000000000000000000000000000000000000000000000000000000000000",
+              "0x00000000000000000000000040aea668137089a51e6ad4a6ab26045ccb20efc0"
+            ],
+            "data": "0x000000000000000000000000000000000000000000000000000000000002d81f",
+            "blockHash": "0x26cee308d9a021eccc45da7d2bee794b969898421fad719226d836bff78b06e9",
+            "blockNumber": "128812167",
+            "blockTimestamp": "1792529028",
+            "transactionHash": "0x6f86121c8ea71bdbeabd7cc7908eba470eab5fbf648afe4b625a3b90bbea1a4b",
+            "transactionIndex": 0,
+            "logIndex": 4,
+            "removed": false
+          },
+          {
+            "eventName": "Transfer",
+            "args": {
+              "from": "0x0000000000000000000000000000000000000000",
+              "to": "0x40aea668137089a51e6Ad4A6aB26045CcB20efc0",
+              "value": "626"
+            },
+            "address": "0x5ce033b2bfca3af30b3e8c8457deaf776a8b695a",
+            "topics": [
+              "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+              "0x0000000000000000000000000000000000000000000000000000000000000000",
+              "0x00000000000000000000000040aea668137089a51e6ad4a6ab26045ccb20efc0"
+            ],
+            "data": "0x0000000000000000000000000000000000000000000000000000000000000272",
+            "blockHash": "0xf4d954a667fbb6e4330a9cf3758b2ee5924d888d45be66a0d8ae8f52338f3665",
+            "blockNumber": "128812169",
+            "blockTimestamp": "1792529088",
+            "transactionHash": "0x97d5af474bf75cc4e1025948b13d7d7ff5a5732645e3c8eb7fc1f985bcaa6e8f",
+            "transactionIndex": 0,
+            "logIndex": 0,
+            "removed": false
+          },
+          {
+            "eventName": "Transfer",
+            "args": {
+              "from": "0x40aea668137089a51e6Ad4A6aB26045CcB20efc0",
+              "to": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+              "value": "89058"
+            },
+            "address": "0x5ce033b2bfca3af30b3e8c8457deaf776a8b695a",
+            "topics": [
+              "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+              "0x00000000000000000000000040aea668137089a51e6ad4a6ab26045ccb20efc0",
+              "0x0000000000000000000000007eedccb674e9549b61b01eb65ac68da071adf129"
+            ],
+            "data": "0x0000000000000000000000000000000000000000000000000000000000015be2",
+            "blockHash": "0x9291fc678daded69f72529e762f3b8d9056d04df71714fc7edaf4f3924b38fa8",
+            "blockNumber": "128812171",
+            "blockTimestamp": "1792529089",
+            "transactionHash": "0xd451b8cfe3c4b110af0ca378f6eabe5a9bb40707420b052fcaa22778f69d4d3b",
+            "transactionIndex": 0,
+            "logIndex": 2,
+            "removed": false
+          },
+          {
+            "eventName": "Transfer",
+            "args": {
+              "from": "0x0000000000000000000000000000000000000000",
+              "to": "0x40aea668137089a51e6Ad4A6aB26045CcB20efc0",
+              "value": "636"
+            },
+            "address": "0x5ce033b2bfca3af30b3e8c8457deaf776a8b695a",
+            "topics": [
+              "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+              "0x0000000000000000000000000000000000000000000000000000000000000000",
+              "0x00000000000000000000000040aea668137089a51e6ad4a6ab26045ccb20efc0"
+            ],
+            "data": "0x000000000000000000000000000000000000000000000000000000000000027c",
+            "blockHash": "0x4951049fdca711dbee3d4d178be7c36ce1fbdc977ed8b8fa998ab2f6a103f642",
+            "blockNumber": "128812173",
+            "blockTimestamp": "1792529149",
+            "transactionHash": "0xe3111e3e08b8fdebdf1252f910100c8134987b1325faf947b44e442577a74d5c",
+            "transactionIndex": 0,
+            "logIndex": 0,
+            "removed": false
+          },
+          {
+            "eventName": "Transfer",
+            "args": {
+              "from": "0x0000000000000000000000000000000000000000",
+              "to": "0x40aea668137089a51e6Ad4A6aB26045CcB20efc0",
+              "value": "626"
+            },
+            "address": "0x5ce033b2bfca3af30b3e8c8457deaf776a8b695a",
+            "topics": [
+              "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+              "0x0000000000000000000000000000000000000000000000000000000000000000",
+              "0x00000000000000000000000040aea668137089a51e6ad4a6ab26045ccb20efc0"
+            ],
+            "data": "0x0000000000000000000000000000000000000000000000000000000000000272",
+            "blockHash": "0x23375bbfccdf69afe92d8169eac570f75d2c0005b4f2fa6bd2e40cd7a1b133d2",
+            "blockNumber": "128812176",
+            "blockTimestamp": "1792529209",
+            "transactionHash": "0x1e8a80c3e76b9b83a00aeeb4034654b93892d680da3a3f2e836caad3170e10c3",
+            "transactionIndex": 0,
+            "logIndex": 1,
+            "removed": false
+          },
+          {
+            "eventName": "Transfer",
+            "args": {
+              "from": "0x0000000000000000000000000000000000000000",
+              "to": "0x40aea668137089a51e6Ad4A6aB26045CcB20efc0",
+              "value": "188120"
+            },
+            "address": "0x5ce033b2bfca3af30b3e8c8457deaf776a8b695a",
+            "topics": [
+              "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+              "0x0000000000000000000000000000000000000000000000000000000000000000",
+              "0x00000000000000000000000040aea668137089a51e6ad4a6ab26045ccb20efc0"
+            ],
+            "data": "0x000000000000000000000000000000000000000000000000000000000002ded8",
+            "blockHash": "0x23375bbfccdf69afe92d8169eac570f75d2c0005b4f2fa6bd2e40cd7a1b133d2",
+            "blockNumber": "128812176",
+            "blockTimestamp": "1792529209",
+            "transactionHash": "0x1e8a80c3e76b9b83a00aeeb4034654b93892d680da3a3f2e836caad3170e10c3",
+            "transactionIndex": 0,
+            "logIndex": 7,
+            "removed": false
+          },
+          {
+            "eventName": "Transfer",
+            "args": {
+              "from": "0x0000000000000000000000000000000000000000",
+              "to": "0x40aea668137089a51e6Ad4A6aB26045CcB20efc0",
+              "value": "626"
+            },
+            "address": "0x5ce033b2bfca3af30b3e8c8457deaf776a8b695a",
+            "topics": [
+              "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+              "0x0000000000000000000000000000000000000000000000000000000000000000",
+              "0x00000000000000000000000040aea668137089a51e6ad4a6ab26045ccb20efc0"
+            ],
+            "data": "0x0000000000000000000000000000000000000000000000000000000000000272",
+            "blockHash": "0xf338ccb9021365bf192a9b646a34f61366135f11fa6e81853b310dc12fad8493",
+            "blockNumber": "128812178",
+            "blockTimestamp": "1792529269",
+            "transactionHash": "0x4262705dc553dd3f3b2fa916656171e9565ecd444bb481773b2278cb84d13d4d",
+            "transactionIndex": 0,
+            "logIndex": 0,
+            "removed": false
+          },
+          {
+            "eventName": "Transfer",
+            "args": {
+              "from": "0x0000000000000000000000000000000000000000",
+              "to": "0x40aea668137089a51e6Ad4A6aB26045CcB20efc0",
+              "value": "626"
+            },
+            "address": "0x5ce033b2bfca3af30b3e8c8457deaf776a8b695a",
+            "topics": [
+              "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+              "0x0000000000000000000000000000000000000000000000000000000000000000",
+              "0x00000000000000000000000040aea668137089a51e6ad4a6ab26045ccb20efc0"
+            ],
+            "data": "0x0000000000000000000000000000000000000000000000000000000000000272",
+            "blockHash": "0xf338ccb9021365bf192a9b646a34f61366135f11fa6e81853b310dc12fad8493",
+            "blockNumber": "128812178",
+            "blockTimestamp": "1792529269",
+            "transactionHash": "0x4262705dc553dd3f3b2fa916656171e9565ecd444bb481773b2278cb84d13d4d",
+            "transactionIndex": 0,
+            "logIndex": 3,
+            "removed": false
+          },
+          {
+            "eventName": "Transfer",
+            "args": {
+              "from": "0x40aea668137089a51e6Ad4A6aB26045CcB20efc0",
+              "to": "0x8424FCb139D8BA8D02a4be7D9cd61fCFD42Db9C5",
+              "value": "112388"
+            },
+            "address": "0x5ce033b2bfca3af30b3e8c8457deaf776a8b695a",
+            "topics": [
+              "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+              "0x00000000000000000000000040aea668137089a51e6ad4a6ab26045ccb20efc0",
+              "0x0000000000000000000000008424fcb139d8ba8d02a4be7d9cd61fcfd42db9c5"
+            ],
+            "data": "0x000000000000000000000000000000000000000000000000000000000001b704",
+            "blockHash": "0x9afa26633996fe8ab4b873f51cb62faa8d95c44fcf6beeea2d5eb04346f90b6f",
+            "blockNumber": "128812180",
+            "blockTimestamp": "1792529269",
+            "transactionHash": "0x918dcbef4aa60a8118e1700931f4ae1a7f02558c159e6acc12e02026d616af32",
+            "transactionIndex": 0,
+            "logIndex": 2,
+            "removed": false
+          },
+          {
+            "eventName": "Transfer",
+            "args": {
+              "from": "0x40aea668137089a51e6Ad4A6aB26045CcB20efc0",
+              "to": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+              "value": "67859"
+            },
+            "address": "0x5ce033b2bfca3af30b3e8c8457deaf776a8b695a",
+            "topics": [
+              "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+              "0x00000000000000000000000040aea668137089a51e6ad4a6ab26045ccb20efc0",
+              "0x0000000000000000000000007eedccb674e9549b61b01eb65ac68da071adf129"
+            ],
+            "data": "0x0000000000000000000000000000000000000000000000000000000000010913",
+            "blockHash": "0x36369d9b17442a2821b84cbacffe25cd4157bdea3d5281c77047cc6a0ab31749",
+            "blockNumber": "128812181",
+            "blockTimestamp": "1792529269",
+            "transactionHash": "0x7d9ed5947d8581ac20905b2daae08ac9209ee24f56e5a87c2ef91ad2c3a449f8",
+            "transactionIndex": 0,
+            "logIndex": 2,
+            "removed": false
+          },
+          {
+            "eventName": "Transfer",
+            "args": {
+              "from": "0x40aea668137089a51e6Ad4A6aB26045CcB20efc0",
+              "to": "0x8424FCb139D8BA8D02a4be7D9cd61fCFD42Db9C5",
+              "value": "22920"
+            },
+            "address": "0x5ce033b2bfca3af30b3e8c8457deaf776a8b695a",
+            "topics": [
+              "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+              "0x00000000000000000000000040aea668137089a51e6ad4a6ab26045ccb20efc0",
+              "0x0000000000000000000000008424fcb139d8ba8d02a4be7d9cd61fcfd42db9c5"
+            ],
+            "data": "0x0000000000000000000000000000000000000000000000000000000000005988",
+            "blockHash": "0x83c17429861fa6ea6f0b280fae77b159c3c949d6ff9df6a4d9ea95e2b5cb4681",
+            "blockNumber": "128812183",
+            "blockTimestamp": "1792529269",
+            "transactionHash": "0x682e93fadaf6a57ba76801ccc38a7c75fb80ee9818c1ddf4f7f9981776b92de3",
+            "transactionIndex": 0,
+            "logIndex": 1,
+            "removed": false
+          },
+          {
+            "eventName": "Transfer",
+            "args": {
+              "from": "0x40aea668137089a51e6Ad4A6aB26045CcB20efc0",
+              "to": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+              "value": "4495"
+            },
+            "address": "0x5ce033b2bfca3af30b3e8c8457deaf776a8b695a",
+            "topics": [
+              "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+              "0x00000000000000000000000040aea668137089a51e6ad4a6ab26045ccb20efc0",
+              "0x0000000000000000000000007eedccb674e9549b61b01eb65ac68da071adf129"
+            ],
+            "data": "0x000000000000000000000000000000000000000000000000000000000000118f",
+            "blockHash": "0xe7468056243124a7d992991e302e25bca60698a1e7d084db1bd3d5899c1d565a",
+            "blockNumber": "128812185",
+            "blockTimestamp": "1792529269",
+            "transactionHash": "0x992cbbc7b6f19cbca802ac2180c021c0decee99a8e42ca58af44404f12343a09",
+            "transactionIndex": 0,
+            "logIndex": 0,
+            "removed": false
+          },
+          {
+            "eventName": "Transfer",
+            "args": {
+              "from": "0x40aea668137089a51e6Ad4A6aB26045CcB20efc0",
+              "to": "0x000000000000000000000000000000000000dEaD",
+              "value": "8991"
+            },
+            "address": "0x5ce033b2bfca3af30b3e8c8457deaf776a8b695a",
+            "topics": [
+              "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+              "0x00000000000000000000000040aea668137089a51e6ad4a6ab26045ccb20efc0",
+              "0x000000000000000000000000000000000000000000000000000000000000dead"
+            ],
+            "data": "0x000000000000000000000000000000000000000000000000000000000000231f",
+            "blockHash": "0xe7468056243124a7d992991e302e25bca60698a1e7d084db1bd3d5899c1d565a",
+            "blockNumber": "128812185",
+            "blockTimestamp": "1792529269",
+            "transactionHash": "0x992cbbc7b6f19cbca802ac2180c021c0decee99a8e42ca58af44404f12343a09",
+            "transactionIndex": 0,
+            "logIndex": 1,
+            "removed": false
+          },
+          {
+            "eventName": "Transfer",
+            "args": {
+              "from": "0x40aea668137089a51e6Ad4A6aB26045CcB20efc0",
+              "to": "0x8424FCb139D8BA8D02a4be7D9cd61fCFD42Db9C5",
+              "value": "4495"
+            },
+            "address": "0x5ce033b2bfca3af30b3e8c8457deaf776a8b695a",
+            "topics": [
+              "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+              "0x00000000000000000000000040aea668137089a51e6ad4a6ab26045ccb20efc0",
+              "0x0000000000000000000000008424fcb139d8ba8d02a4be7d9cd61fcfd42db9c5"
+            ],
+            "data": "0x000000000000000000000000000000000000000000000000000000000000118f",
+            "blockHash": "0x85e5111794f757f6074a332bd115d283090a0af5c5a2327085bbdbc4b08c665c",
+            "blockNumber": "128812186",
+            "blockTimestamp": "1792529269",
+            "transactionHash": "0x2b11d44330848137acdc2823d42a2c321b3d3a226fcdb2e5b0bfb31c883cc080",
+            "transactionIndex": 0,
+            "logIndex": 0,
+            "removed": false
+          },
+          {
+            "eventName": "Transfer",
+            "args": {
+              "from": "0x0000000000000000000000000000000000000000",
+              "to": "0x40aea668137089a51e6Ad4A6aB26045CcB20efc0",
+              "value": "10"
+            },
+            "address": "0x5ce033b2bfca3af30b3e8c8457deaf776a8b695a",
+            "topics": [
+              "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+              "0x0000000000000000000000000000000000000000000000000000000000000000",
+              "0x00000000000000000000000040aea668137089a51e6ad4a6ab26045ccb20efc0"
+            ],
+            "data": "0x000000000000000000000000000000000000000000000000000000000000000a",
+            "blockHash": "0xcd04eac74fc91eb57ccfd4dcba812521cc69b02393226dba91f984d17fe38a2a",
+            "blockNumber": "128812187",
+            "blockTimestamp": "1792529270",
+            "transactionHash": "0xbebabab9b4292813778fe15324867891b1c5f44b770c3f36d6bafb4a7e8bd282",
+            "transactionIndex": 0,
+            "logIndex": 0,
+            "removed": false
+          },
+          {
+            "eventName": "Transfer",
+            "args": {
+              "from": "0x0000000000000000000000000000000000000000",
+              "to": "0x40aea668137089a51e6Ad4A6aB26045CcB20efc0",
+              "value": "10"
+            },
+            "address": "0x5ce033b2bfca3af30b3e8c8457deaf776a8b695a",
+            "topics": [
+              "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+              "0x0000000000000000000000000000000000000000000000000000000000000000",
+              "0x00000000000000000000000040aea668137089a51e6ad4a6ab26045ccb20efc0"
+            ],
+            "data": "0x000000000000000000000000000000000000000000000000000000000000000a",
+            "blockHash": "0xcd04eac74fc91eb57ccfd4dcba812521cc69b02393226dba91f984d17fe38a2a",
+            "blockNumber": "128812187",
+            "blockTimestamp": "1792529270",
+            "transactionHash": "0xbebabab9b4292813778fe15324867891b1c5f44b770c3f36d6bafb4a7e8bd282",
+            "transactionIndex": 0,
+            "logIndex": 3,
+            "removed": false
+          },
+          {
+            "eventName": "Transfer",
+            "args": {
+              "from": "0x40aea668137089a51e6Ad4A6aB26045CcB20efc0",
+              "to": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+              "value": "67457"
+            },
+            "address": "0x5ce033b2bfca3af30b3e8c8457deaf776a8b695a",
+            "topics": [
+              "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+              "0x00000000000000000000000040aea668137089a51e6ad4a6ab26045ccb20efc0",
+              "0x0000000000000000000000007eedccb674e9549b61b01eb65ac68da071adf129"
+            ],
+            "data": "0x0000000000000000000000000000000000000000000000000000000000010781",
+            "blockHash": "0x8d7e091d240f19a9b0fd225e904b80d39f68fb0029eefc9af039f9abb5033ba2",
+            "blockNumber": "128812191",
+            "blockTimestamp": "1792529270",
+            "transactionHash": "0x7b24b47f03a610ea3ed58fed919e12daefbe31b139050c391546bfca86967d07",
+            "transactionIndex": 0,
+            "logIndex": 3,
+            "removed": false
+          },
+          {
+            "eventName": "Transfer",
+            "args": {
+              "from": "0x40aea668137089a51e6Ad4A6aB26045CcB20efc0",
+              "to": "0x8424FCb139D8BA8D02a4be7D9cd61fCFD42Db9C5",
+              "value": "8"
+            },
+            "address": "0x5ce033b2bfca3af30b3e8c8457deaf776a8b695a",
+            "topics": [
+              "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+              "0x00000000000000000000000040aea668137089a51e6ad4a6ab26045ccb20efc0",
+              "0x0000000000000000000000008424fcb139d8ba8d02a4be7d9cd61fcfd42db9c5"
+            ],
+            "data": "0x0000000000000000000000000000000000000000000000000000000000000008",
+            "blockHash": "0x697e02641d04071a7bfe57e7c8303a1adcd16b2edcbd583606aed1824bb0c5ac",
+            "blockNumber": "128812192",
+            "blockTimestamp": "1792529270",
+            "transactionHash": "0xfb1506ac4f7c48aa5136d2d46385f2d0bf05ff31aefa777446ec4bd6f0080a98",
+            "transactionIndex": 0,
+            "logIndex": 3,
+            "removed": false
+          },
+          {
+            "eventName": "Transfer",
+            "args": {
+              "from": "0x40aea668137089a51e6Ad4A6aB26045CcB20efc0",
+              "to": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+              "value": "1"
+            },
+            "address": "0x5ce033b2bfca3af30b3e8c8457deaf776a8b695a",
+            "topics": [
+              "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+              "0x00000000000000000000000040aea668137089a51e6ad4a6ab26045ccb20efc0",
+              "0x0000000000000000000000007eedccb674e9549b61b01eb65ac68da071adf129"
+            ],
+            "data": "0x0000000000000000000000000000000000000000000000000000000000000001",
+            "blockHash": "0xa31893182faa3780f873f200455c65186977bc35306f9ed4cb4f662ace6b0f56",
+            "blockNumber": "128812193",
+            "blockTimestamp": "1792529270",
+            "transactionHash": "0x966def51224a58b9a0ea4592147d525a51696d712735f79763237876dc0cf785",
+            "transactionIndex": 0,
+            "logIndex": 0,
+            "removed": false
+          },
+          {
+            "eventName": "Transfer",
+            "args": {
+              "from": "0x40aea668137089a51e6Ad4A6aB26045CcB20efc0",
+              "to": "0x000000000000000000000000000000000000dEaD",
+              "value": "1"
+            },
+            "address": "0x5ce033b2bfca3af30b3e8c8457deaf776a8b695a",
+            "topics": [
+              "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+              "0x00000000000000000000000040aea668137089a51e6ad4a6ab26045ccb20efc0",
+              "0x000000000000000000000000000000000000000000000000000000000000dead"
+            ],
+            "data": "0x0000000000000000000000000000000000000000000000000000000000000001",
+            "blockHash": "0xa31893182faa3780f873f200455c65186977bc35306f9ed4cb4f662ace6b0f56",
+            "blockNumber": "128812193",
+            "blockTimestamp": "1792529270",
+            "transactionHash": "0x966def51224a58b9a0ea4592147d525a51696d712735f79763237876dc0cf785",
+            "transactionIndex": 0,
+            "logIndex": 1,
+            "removed": false
+          },
+          {
+            "eventName": "Transfer",
+            "args": {
+              "from": "0x40aea668137089a51e6Ad4A6aB26045CcB20efc0",
+              "to": "0x8424FCb139D8BA8D02a4be7D9cd61fCFD42Db9C5",
+              "value": "1"
+            },
+            "address": "0x5ce033b2bfca3af30b3e8c8457deaf776a8b695a",
+            "topics": [
+              "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+              "0x00000000000000000000000040aea668137089a51e6ad4a6ab26045ccb20efc0",
+              "0x0000000000000000000000008424fcb139d8ba8d02a4be7d9cd61fcfd42db9c5"
+            ],
+            "data": "0x0000000000000000000000000000000000000000000000000000000000000001",
+            "blockHash": "0xb5920722a19ea8877b10cd4af485a7e89e31f0aa1f4c493a556c4cd6e0958794",
+            "blockNumber": "128812194",
+            "blockTimestamp": "1792529270",
+            "transactionHash": "0xe80f746f2f9ed2685e74e7a3b734bbed429f14731842f674d15ef108fc5a930c",
+            "transactionIndex": 0,
+            "logIndex": 0,
+            "removed": false
+          },
+          {
+            "eventName": "Transfer",
+            "args": {
+              "from": "0x8424FCb139D8BA8D02a4be7D9cd61fCFD42Db9C5",
+              "to": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+              "value": "139812"
+            },
+            "address": "0x5ce033b2bfca3af30b3e8c8457deaf776a8b695a",
+            "topics": [
+              "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+              "0x0000000000000000000000008424fcb139d8ba8d02a4be7d9cd61fcfd42db9c5",
+              "0x0000000000000000000000007eedccb674e9549b61b01eb65ac68da071adf129"
+            ],
+            "data": "0x0000000000000000000000000000000000000000000000000000000000022224",
+            "blockHash": "0x63cb5e7d676bd500c99ec927f9013e1848196cd2e16ec52855e5fad832812e61",
+            "blockNumber": "128812195",
+            "blockTimestamp": "1792529270",
+            "transactionHash": "0x5cd2a6dcefd3fad96767f5e277c663313dea7406515ccba4f890b5a2d16743c3",
+            "transactionIndex": 0,
+            "logIndex": 0,
+            "removed": false
+          }
+        ]
+      }
+    },
+    "independent-final-payout-reconciliation": {
+      "status": "PASS",
+      "evidence": {
+        "ledger": {
+          "bemBalance": "5",
+          "unrecognized": "0",
+          "deficit": "0",
+          "totalAccounted": "377679",
+          "totalPaid": "377674",
+          "recipientAAccrued": "4496",
+          "recipientAPaid": "4496",
+          "recipientBAccrued": "4496",
+          "recipientBPaid": "4496",
+          "sinkAccrued": "8992",
+          "sinkPaid": "8992",
+          "nandIncome": "269810",
+          "nandReceiptsAccrued": "269808",
+          "nandReceiptsPaid": "269808",
+          "latchIncome": "89883",
+          "latchReceiptsAccrued": "89882",
+          "latchReceiptsPaid": "89882",
+          "residue": "5"
+        },
+        "expectedNand": "269808",
+        "expectedLatch": "89882",
+        "nandClaimed": "269808",
+        "latchClaimed": "89882"
+      }
+    },
+    "no-unrelated-assets-or-collection-wide-approvals": {
+      "status": "PASS",
+      "evidence": {
+        "nftTransfers": [
+          {
+            "action": "phase-A-deposit-3204",
+            "tokenId": "3204"
+          },
+          {
+            "action": "phase-B-deposit-12485",
+            "tokenId": "12485"
+          },
+          {
+            "action": "return-3204",
+            "tokenId": "3204"
+          },
+          {
+            "action": "return-12485",
+            "tokenId": "12485"
+          }
+        ],
+        "transactionTargets": [
+          null,
+          "0x8424fcb139d8ba8d02a4be7d9cd61fcfd42db9c5",
+          "0x9461750ece26bfc1b5173c436b1a7224dc90ea1c",
+          "0x0ddbbf77f8d07fed18d38086e105ff3d8855142c",
+          "0xb00e455ba5d98542e1dc76b20f1d3fde8f036e3f",
+          "0x40aea668137089a51e6ad4a6ab26045ccb20efc0",
+          "0xb1024b89886B9a34Aa4ff5F31C411D708b20a14C",
+          "0x7E2E0DC66a3bD9103E69b766afA62d9f7b697b46"
+        ]
+      }
+    }
+  },
+  "observations": {
+    "initial": {
+      "scope": "READ_ONLY_BSC_SNAPSHOT",
+      "chainId": 56,
+      "block": "128812145",
+      "blockHash": "0x383f1f97b08e13da4cbfc88908ec57643a0f186ee89de5d0a7a765f920f4a922",
+      "timestamp": "1792529026",
+      "owner": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+      "checks": {
+        "miningImplementation": true,
+        "miningCode": true,
+        "beacon": true,
+        "collectionImplementation": true,
+        "bemDecimals": true,
+        "ownerIsEOA": true,
+        "bemRuntime": true,
+        "miningRuntime": true,
+        "minerCollectionRuntime": true,
+        "collectionImplementationCode": true,
+        "miner3204": true,
+        "miner12485": true
+      },
+      "protocol": {
+        "minerCollection": {
+          "address": "0xb1024b89886B9a34Aa4ff5F31C411D708b20a14C",
+          "codeHash": "0xd8c4b0216e0aadd615fbd134465b6af060a11769edc7c844d8f14d1b8a783992"
+        },
+        "mining": {
+          "address": "0x7E2E0DC66a3bD9103E69b766afA62d9f7b697b46",
+          "codeHash": "0xed6b710a769987f50494d713f278817992e3266e45898a990be878efc2fcbbce"
+        },
+        "bem": {
+          "address": "0x5ce033B2bFCa3Af30b3e8C8457DeaF776A8b695a",
+          "codeHash": "0x982ba79538b51e54ee1382f57522098af0635b0f67f2574d393b29ed0958b344"
+        }
+      },
+      "miningImplementation": "0xa3dbe873da37cd4e4a13c7cef23a7db6ca60f898",
+      "collectionImplementation": "0x8E1D125Def6d3826C278299273a0760D47626068",
+      "miners": [
+        {
+          "id": "3204",
+          "key": "0xb0e5b7d325dead6144886258056fb8e27ff5f6192aaa90fd0b45682c297c1c0d",
+          "owner": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+          "record": {
+            "circuits": "0xb1024b89886B9a34Aa4ff5F31C411D708b20a14C",
+            "circuitId": "3204",
+            "taskId": 1,
+            "gateCount": 2,
+            "stateCount": 0,
+            "depth": 2,
+            "area": "2",
+            "mult": 1,
+            "since": "1789703832",
+            "status": 1,
+            "registrant": "0x27D9672FBc61d5e47E2000863C1645ad406c1EB5",
+            "nandBurn": 2,
+            "latchBurn": 0,
+            "bstar": "2",
+            "bonus": "0",
+            "optimal": false,
+            "commitBlock": "0",
+            "firstUnusedId": "0",
+            "stopBlock": "0",
+            "verifWeight": "2",
+            "unverWeight": "0",
+            "debt": "82618143"
+          },
+          "cachedBurn": [
+            true,
+            2,
+            0
+          ],
+          "circuitBurn": [
+            2,
+            0
+          ],
+          "pendingRaw": "184510",
+          "approved": "0x0000000000000000000000000000000000000000"
+        },
+        {
+          "id": "12485",
+          "key": "0x1eab22e4977aa21abc69cf940272969e412c3e3e085180b3e4b30e37f299ca0b",
+          "owner": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+          "record": {
+            "circuits": "0xb1024b89886B9a34Aa4ff5F31C411D708b20a14C",
+            "circuitId": "12485",
+            "taskId": 74,
+            "gateCount": 2,
+            "stateCount": 1,
+            "depth": 1,
+            "area": "8",
+            "mult": 1,
+            "since": "1788230460",
+            "status": 1,
+            "registrant": "0xBc01D306B919614e66a43b176796F2116cFdA9A0",
+            "nandBurn": 1,
+            "latchBurn": 1,
+            "bstar": "2",
+            "bonus": "0",
+            "optimal": false,
+            "commitBlock": "0",
+            "firstUnusedId": "0",
+            "stopBlock": "0",
+            "verifWeight": "2",
+            "unverWeight": "0",
+            "debt": "82618310"
+          },
+          "cachedBurn": [
+            true,
+            1,
+            1
+          ],
+          "circuitBurn": [
+            1,
+            1
+          ],
+          "pendingRaw": "184343",
+          "approved": "0x0000000000000000000000000000000000000000"
+        }
+      ],
+      "bnbRaw": "10000000000000000000",
+      "bemRaw": "9404214",
+      "bemDecimals": 8,
+      "warning": "pending is an observation, not a promise of claim payout"
+    },
+    "boundary": {
+      "firstAdmission": {
+        "depositor": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+        "period": "1",
+        "count": "1",
+        "settledOldIncome": "0",
+        "carriedIncome": "186399",
+        "newPeriodIncome": "0",
+        "totalNandBurn": "2",
+        "totalLatchBurn": "0"
+      },
+      "secondAdmission": {
+        "depositor": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+        "period": "2",
+        "count": "1",
+        "settledOldIncome": "626",
+        "carriedIncome": "188120",
+        "newPeriodIncome": "0",
+        "totalNandBurn": "3",
+        "totalLatchBurn": "1"
+      },
+      "checkpoint": {
+        "period": "2",
+        "totalAccounted": "188287",
+        "nandBaseUnits": "15062960000000000000000000",
+        "latchBaseUnits": "0"
+      },
+      "oldInflow": "188287",
+      "carried": "188120",
+      "pendingBeforeSecondAdmissionRaw": "187494",
+      "pendingAfterSecondAdmissionRaw": "0"
+    },
+    "finalLedger": {
+      "bemBalance": "5",
+      "unrecognized": "0",
+      "deficit": "0",
+      "totalAccounted": "377679",
+      "totalPaid": "377674",
+      "recipientAAccrued": "4496",
+      "recipientAPaid": "4496",
+      "recipientBAccrued": "4496",
+      "recipientBPaid": "4496",
+      "sinkAccrued": "8992",
+      "sinkPaid": "8992",
+      "nandIncome": "269810",
+      "nandReceiptsAccrued": "269808",
+      "nandReceiptsPaid": "269808",
+      "latchIncome": "89883",
+      "latchReceiptsAccrued": "89882",
+      "latchReceiptsPaid": "89882",
+      "residue": "5"
+    },
+    "postReturn": [
+      {
+        "id": "3204",
+        "status": 1,
+        "paidRaw": "627",
+        "transaction": "0x38439444ea14e5ae6dbd71d731bdd927ee121e08ceffe3780c72022e67cfbf0d",
+        "scope": "POST_RETURN_PERSONAL_INCOME_EXCLUDED_FROM_POOL"
+      },
+      {
+        "id": "12485",
+        "status": 1,
+        "paidRaw": "627",
+        "transaction": "0xd100c252da331411c75c5ab2b7a3e4543668b328498def2a37f7d2e3ff8e9f27",
+        "scope": "POST_RETURN_PERSONAL_INCOME_EXCLUDED_FROM_POOL"
+      }
+    ],
+    "finalAllocation": {
+      "status": "FINALIZED_AND_MATCHES",
+      "mode": "full-round",
+      "blockNumber": "128812198",
+      "blockHash": "0x41e30bd33c7bcb478fe7ea2a7e768ae3d6db6506f8c09abecb7fe73f07e5e0d2",
+      "identity": {
+        "chainId": {
+          "expected": 56,
+          "artifact": 56,
+          "chain": 56
+        },
+        "distributor": {
+          "expected": "0xb00e455ba5d98542e1dc76b20f1d3fde8f036e3f",
+          "artifact": "0xb00e455ba5d98542e1dc76b20f1d3fde8f036e3f",
+          "chain": "0xb00E455Ba5d98542E1Dc76b20f1d3fde8F036E3f"
+        },
+        "pool": {
+          "expected": "0x40aea668137089a51e6ad4a6ab26045ccb20efc0",
+          "distributorPool": "0x40aea668137089a51e6Ad4A6aB26045CcB20efc0"
+        },
+        "receipts": {
+          "NAND": {
+            "expected": "0x9461750ece26bfc1b5173c436b1a7224dc90ea1c",
+            "artifact": "0x9461750ece26bfc1b5173c436b1a7224dc90ea1c",
+            "distributor": "0x9461750ECE26bfc1b5173C436B1A7224dc90EA1c",
+            "pool": "0x9461750ECE26bfc1b5173C436B1A7224dc90EA1c",
+            "category": "0x3a21099afcdd2a9c70a396879f9a993ecef026f2655bde3020c6f057720eebfb",
+            "categoryMatches": true
+          },
+          "LATCH": {
+            "expected": "0x0ddbbf77f8d07fed18d38086e105ff3d8855142c",
+            "artifact": "0x0ddbbf77f8d07fed18d38086e105ff3d8855142c",
+            "distributor": "0x0ddBBF77f8d07FEd18d38086E105FF3d8855142C",
+            "pool": "0x0ddBBF77f8d07FEd18d38086E105FF3d8855142C",
+            "category": "0xe6a67351fcf7d33ca0f77690db36dd300301b060e10693ad35e1c42c828dd427",
+            "categoryMatches": true
+          }
+        }
+      },
+      "coverage": {
+        "NAND": {
+          "supply": "4",
+          "issuanceFinalized": true,
+          "acceptedInventory": "4",
+          "assigned": "4",
+          "delivered": "4",
+          "undelivered": "0",
+          "unassignedInventory": "0",
+          "excluded": {
+            "count": 0,
+            "ids": "",
+            "holders": []
+          }
+        },
+        "LATCH": {
+          "supply": "2",
+          "issuanceFinalized": true,
+          "acceptedInventory": "2",
+          "assigned": "2",
+          "delivered": "2",
+          "undelivered": "0",
+          "unassignedInventory": "0",
+          "excluded": {
+            "count": 0,
+            "ids": "",
+            "holders": []
+          }
+        }
+      },
+      "review": {
+        "status": "NOT_PROVIDED",
+        "assignment": {
+          "status": "NOT_CHECKED"
+        }
+      },
+      "mismatches": [],
+      "mismatchCount": 0,
+      "readinessGaps": [],
+      "verified": {
+        "wallets": 2,
+        "listedWallets": 2,
+        "ids": {
+          "NAND": "4",
+          "LATCH": "2"
+        },
+        "delivered": {
+          "NAND": "4",
+          "LATCH": "2"
+        },
+        "holdingsChecked": 6,
+        "allocationFinalized": true
+      }
+    }
+  },
+  "sourceDigest": "bb9ebebd1725f20af7e90cbe37806491be6ee2f6b44d88fe7698c85487e35f9c",
+  "totalFeeRaw": "996373400000000",
+  "completedAt": "2026-10-28T19:58:19.835Z"
+}

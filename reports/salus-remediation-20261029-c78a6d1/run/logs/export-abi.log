@@ -1,0 +1,9 @@
+$ node scripts/export-abi.mjs
+# exit 0
+
+## stdout
+{"status":"EXPORTED","contracts":["TapeoutMinerPool","TapeoutEntitlementReceipt","TapeoutReceiptDistributor","MockBEM","MockMining","MockNFT"]}
+
+
+## stderr
+

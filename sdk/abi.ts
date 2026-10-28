@@ -65,6 +65,19 @@ export const tapeoutMinerPoolAbi = [
   },
   {
     "type": "function",
+    "name": "LEDGER_UNIT",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "MAX_ADMISSION_BATCH",
     "inputs": [],
     "outputs": [
@@ -347,6 +360,45 @@ export const tapeoutMinerPoolAbi = [
   },
   {
     "type": "function",
+    "name": "bindDistributor",
+    "inputs": [
+      {
+        "name": "distributor_",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "carriedIncome",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "carriedNandUnits",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "claim",
     "inputs": [
       {
@@ -485,6 +537,19 @@ export const tapeoutMinerPoolAbi = [
   },
   {
     "type": "function",
+    "name": "custodyOpen",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "depositMiners",
     "inputs": [
       {
@@ -500,7 +565,7 @@ export const tapeoutMinerPoolAbi = [
         "internalType": "uint256"
       },
       {
-        "name": "carriedIncome",
+        "name": "carried",
         "type": "uint256",
         "internalType": "uint256"
       }
@@ -516,6 +581,19 @@ export const tapeoutMinerPoolAbi = [
         "name": "",
         "type": "address[]",
         "internalType": "address[]"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "distributor",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
       }
     ],
     "stateMutability": "view"
@@ -594,19 +672,6 @@ export const tapeoutMinerPoolAbi = [
   },
   {
     "type": "function",
-    "name": "latchBase",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "latchReceipt",
     "inputs": [],
     "outputs": [
@@ -627,6 +692,56 @@ export const tapeoutMinerPoolAbi = [
         "name": "",
         "type": "uint256",
         "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "ledgerState",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "internalType": "struct PoolMath.State",
+        "components": [
+          {
+            "name": "accountedBase",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "nandBase",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "latchBase",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "totalNandBurn",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "totalLatchBurn",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "nandShares",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "latchShares",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
       }
     ],
     "stateMutability": "view"
@@ -671,6 +786,11 @@ export const tapeoutMinerPoolAbi = [
             "name": "registered",
             "type": "bool",
             "internalType": "bool"
+          },
+          {
+            "name": "carriedIncome",
+            "type": "uint120",
+            "internalType": "uint120"
           }
         ]
       }
@@ -771,19 +891,6 @@ export const tapeoutMinerPoolAbi = [
   },
   {
     "type": "function",
-    "name": "nandBase",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "nandReceipt",
     "inputs": [],
     "outputs": [
@@ -817,19 +924,6 @@ export const tapeoutMinerPoolAbi = [
         "name": "",
         "type": "address",
         "internalType": "address"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "participantBase",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
       }
     ],
     "stateMutability": "view"
@@ -1166,7 +1260,7 @@ export const tapeoutMinerPoolAbi = [
         "internalType": "uint256"
       },
       {
-        "name": "carriedIncome",
+        "name": "carried",
         "type": "uint256",
         "internalType": "uint256"
       }
@@ -1265,56 +1359,6 @@ export const tapeoutMinerPoolAbi = [
         "name": "",
         "type": "uint256",
         "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "state",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "tuple",
-        "internalType": "struct PoolMath.State",
-        "components": [
-          {
-            "name": "nandBase",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "latchBase",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "participantBase",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "totalNandBurn",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "totalLatchBurn",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "nandShares",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "latchShares",
-            "type": "uint256",
-            "internalType": "uint256"
-          }
-        ]
       }
     ],
     "stateMutability": "view"
@@ -1437,6 +1481,37 @@ export const tapeoutMinerPoolAbi = [
   },
   {
     "type": "event",
+    "name": "CarriedIncomeAttributed",
+    "inputs": [
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "received",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "nandUnits",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "latchUnits",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
     "name": "CompositionCheckpoint",
     "inputs": [
       {
@@ -1452,19 +1527,38 @@ export const tapeoutMinerPoolAbi = [
         "internalType": "uint256"
       },
       {
-        "name": "nandBase",
+        "name": "nandBaseUnits",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
       },
       {
-        "name": "latchBase",
+        "name": "latchBaseUnits",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "CustodyOpened",
+    "inputs": [
+      {
+        "name": "distributor",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "nandShares",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
       },
       {
-        "name": "participantBase",
+        "name": "latchShares",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
@@ -1505,6 +1599,19 @@ export const tapeoutMinerPoolAbi = [
         "type": "address[]",
         "indexed": false,
         "internalType": "address[]"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "DistributorBound",
+    "inputs": [
+      {
+        "name": "distributor",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
       }
     ],
     "anonymous": false
@@ -1670,6 +1777,12 @@ export const tapeoutMinerPoolAbi = [
       },
       {
         "name": "carriedIncome",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "newPeriodIncome",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
@@ -1848,6 +1961,11 @@ export const tapeoutMinerPoolAbi = [
   },
   {
     "type": "error",
+    "name": "AllocationNotFinalized",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "AlreadyActive",
     "inputs": []
   },
@@ -1877,6 +1995,16 @@ export const tapeoutMinerPoolAbi = [
         "internalType": "uint256"
       }
     ]
+  },
+  {
+    "type": "error",
+    "name": "DistributorAlreadyBound",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "DistributorNotBound",
+    "inputs": []
   },
   {
     "type": "error",
@@ -1918,6 +2046,11 @@ export const tapeoutMinerPoolAbi = [
   {
     "type": "error",
     "name": "InvalidDepositors",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidDistributor",
     "inputs": []
   },
   {
@@ -2027,6 +2160,17 @@ export const tapeoutMinerPoolAbi = [
     "inputs": [
       {
         "name": "account",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "OwnershipNotRenounced",
+    "inputs": [
+      {
+        "name": "target",
         "type": "address",
         "internalType": "address"
       }

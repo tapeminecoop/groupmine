@@ -9,14 +9,15 @@ import {TapeoutReceiptDistributor} from "../../src/TapeoutReceiptDistributor.sol
 import {TapeoutEntitlementReceipt} from "../../src/TapeoutEntitlementReceipt.sol";
 import {ForeignERC1155, ToggleReceiver} from "../helpers/Mocks.sol";
 
-/// @dev S_N = 30, S_L = 12, all issued to the operator, then moved into the distributor.
+/// @dev S_N = 30, S_L = 12, all issued to the operator, then moved into the distributor. Since 2.2.0 the
+///      pool activates only after the bound distributor's allocation is finalized, so tests that admit
+///      miners finalize the allocation and then `activate()` (which also renounces every owner).
 contract DistributorTest is SystemTestBase {
     function setUp() public override {
         super.setUp();
         issue(nandReceipt, operator, 30);
         issue(latchReceipt, operator, 12);
         finalizeIssuance();
-        activate();
     }
 
     function _fundAll() internal {
@@ -209,6 +210,7 @@ contract DistributorTest is SystemTestBase {
         _allocateExample();
         vm.prank(operator);
         distributor.finalizeAllocation();
+        activate();
         admitNew(1, 3, 1);
         accrue(1, 1_050_000);
         pool.harvestRange(0, 1);
@@ -227,6 +229,7 @@ contract DistributorTest is SystemTestBase {
     function testNoAdministrativeRouteToHeldReceiptsOrTheirBem() public {
         _fundAll();
         _allocateExample();
+        activate(); // finalizes the allocation, activates and renounces every owner
         admitNew(1, 1, 1);
         accrue(1, 1_050_000);
         pool.harvestRange(0, 1);
@@ -237,17 +240,24 @@ contract DistributorTest is SystemTestBase {
         assertEq(pool.claimed(NAND, 1), 0);
     }
 
+    /// @dev Since 2.2.0 receipts can carry claim history only after custody began, when the bound
+    ///      distributor is finalized and refuses all inventory; the history check still guards any other
+    ///      distributor of this pool (here a second, unbound one).
     function testReceiptsWithConsumedRewardHistoryAreRefused() public {
+        activate(); // the receipts stay with the operator; the bound distributor finalizes empty
         admitNew(1, 1, 1);
         accrue(1, 1_050_000);
         pool.harvestRange(0, 1);
+        TapeoutReceiptDistributor second = new TapeoutReceiptDistributor(operator, pool);
         vm.startPrank(operator);
         pool.claim(NAND, 30);
+        vm.expectRevert(TapeoutReceiptDistributor.AllocationClosed.selector);
+        nandReceipt.safeTransferFrom(operator, address(distributor), 29, 1, "");
         vm.expectRevert(
             abi.encodeWithSelector(TapeoutReceiptDistributor.ConsumedRewardHistory.selector, NAND, 30)
         );
-        nandReceipt.safeTransferFrom(operator, address(distributor), 30, 1, "");
-        nandReceipt.safeTransferFrom(operator, address(distributor), 29, 1, ""); // fresh one is fine
+        nandReceipt.safeTransferFrom(operator, address(second), 30, 1, "");
+        nandReceipt.safeTransferFrom(operator, address(second), 29, 1, ""); // fresh one is fine
         vm.stopPrank();
     }
 
@@ -382,6 +392,7 @@ contract DistributorTest is SystemTestBase {
         _fundAll();
         _allocateExample();
         _finalize();
+        activate();
         admitNew(1, 3, 1);
         accrue(1, 1_050_000);
         pool.harvestRange(0, 1);

@@ -61,29 +61,31 @@ contract PoolAccountingTest is SystemTestBase {
             pool.harvestRange(0, 1);
         }
         PoolMath.Accrual memory many = pool.accrual();
-        PoolMath.Accrual memory once = PoolMath.accrue(total, pool.state());
+        PoolMath.Accrual memory once = PoolMath.accrue(total, pool.ledgerState());
         assertEq(keccak256(abi.encode(many)), keccak256(abi.encode(once)));
     }
 
-    /// @notice A checkpoint carries at most one unallocated raw unit into the next period; settled
-    ///         category totals are frozen exactly.
+    /// @notice A checkpoint freezes the category entitlements with their fractions (ledger units of
+    ///         1 / (84 * 10^18) raw BEM). 2.2.0 replaces 2.1.0's whole-unit bases and one carried unit.
     function testCheckpointFreezesCategoryTotalsAndCarriesAtMostOneUnit() public {
         admitNew(1, 2, 1);
-        accrue(1, 10_500); // participants 10_000: NAND floor(6666.67) = 6_666, LATCH floor(3333.33) = 3_333
+        accrue(1, 10_500); // participants exactly 10_000: NAND 6_666.67, LATCH 3_333.33
         (uint256 settled,) = admitNew(2, 1, 1);
         assertEq(settled, 10_500);
-        assertEq(pool.nandBase(), 6_666);
-        assertEq(pool.latchBase(), 3_333);
-        assertEq(pool.participantBase(), 9_999);
+        PoolMath.State memory s = pool.ledgerState();
+        assertEq(s.accountedBase, 10_500);
+        assertEq(s.nandBase, 560_000 * 1e18); // 10_500 * 80e18 * 2 / 3, no fraction dropped
+        assertEq(s.latchBase, 280_000 * 1e18);
+        assertEq(s.nandBase + s.latchBase, s.accountedBase * 80 * 1e18);
         PoolMath.Accrual memory a = pool.accrual();
-        assertEq(a.participants - pool.participantBase(), 1); // the one unit carried into period 2
-        assertEq(a.nandIncome, 6_666); // floor(1 * 3 / 5) = 0: frozen totals unchanged
+        assertEq(a.nandIncome, 6_666); // the frozen entitlements, floored for display and claims
         assertEq(a.latchIncome, 3_333);
-        bem.mint(address(pool), 525); // participants +500 -> d = 501 at 3:2
+        assertEq(a.participants - a.nandIncome - a.latchIncome, 1);
+        bem.mint(address(pool), 525); // participants +500 exactly, at 3:2: NAND +300, LATCH +200
         pool.sync();
         a = pool.accrual();
-        assertEq(a.nandIncome, 6_666 + uint256(501) * 3 / 5);
-        assertEq(a.latchIncome, 3_333 + uint256(501) * 2 / 5);
+        assertEq(a.nandIncome, 6_966); // floor(6_666.67 + 300)
+        assertEq(a.latchIncome, 3_533); // floor(3_333.33 + 200)
         assertReconciled();
     }
 
@@ -124,15 +126,9 @@ contract PoolAccountingTest is SystemTestBase {
         // Period 0 up to firstTotal, then a checkpoint, then period 1 up to firstTotal + laterTotal.
         PoolMath.State memory s = PoolMath.State(0, 0, 0, n0, l0, sN, sL);
         PoolMath.Accrual memory a0 = PoolMath.accrue(firstTotal, s);
-        PoolMath.State memory s1 = PoolMath.State(
-            a0.nandIncome,
-            a0.latchIncome,
-            a0.nandIncome + a0.latchIncome,
-            uint256(n0) + n1,
-            uint256(l0) + l1,
-            sN,
-            sL
-        );
+        (uint256 nand0, uint256 latch0) = PoolMath.categoryUnits(firstTotal, s);
+        PoolMath.State memory s1 =
+            PoolMath.State(firstTotal, nand0, latch0, uint256(n0) + n1, uint256(l0) + l1, sN, sL);
         uint256 total = uint256(firstTotal) + laterTotal;
         PoolMath.Accrual memory a1 = PoolMath.accrue(total, s1);
         // Conservation and bounds.
@@ -147,14 +143,22 @@ contract PoolAccountingTest is SystemTestBase {
         assertLe(a1.participants * 84, total * 80);
         assertGt((a1.participants + 1) * 84, total * 80);
         assertLe(total - a1.recipientA - a1.recipientB - a1.sink - a1.participants, 3); // outer floors
-        // The old period's split is never recomputed with the new ratio.
+        assertLe(a1.participants - a1.nandIncome - a1.latchIncome, 1);
+        // The old period's split is never recomputed with the new ratio: against the exact rational
+        // entitlement firstTotal * 80/84 * n0/w0 + laterTotal * 80/84 * n1'/w1, NAND is at most one raw
+        // unit below (ledger floors are below 2 * 10^-18 of a unit) and never above; LATCH the mirror.
+        uint256 w0 = uint256(n0) + l0;
+        uint256 w1 = s1.totalNandBurn + s1.totalLatchBurn;
+        uint256 den = 84 * w0 * w1;
+        uint256 exactNand = 80 * (uint256(firstTotal) * n0 * w1 + uint256(laterTotal) * s1.totalNandBurn * w0);
+        uint256 exactLatch =
+            80 * (uint256(firstTotal) * l0 * w1 + uint256(laterTotal) * s1.totalLatchBurn * w0);
+        assertLe(a1.nandIncome * den, exactNand);
+        assertGt((a1.nandIncome + 2) * den, exactNand);
+        assertLe(a1.latchIncome * den, exactLatch + den);
+        assertGt((a1.latchIncome + 1) * den, exactLatch);
         assertGe(a1.nandIncome, a0.nandIncome);
         assertGe(a1.latchIncome, a0.latchIncome);
-        uint256 d = a1.participants - s1.participantBase;
-        assertEq(a1.nandIncome, a0.nandIncome + d * s1.totalNandBurn / (s1.totalNandBurn + s1.totalLatchBurn));
-        assertEq(
-            a1.latchIncome, a0.latchIncome + d * s1.totalLatchBurn / (s1.totalNandBurn + s1.totalLatchBurn)
-        );
         // Monotonic in the total within the period.
         PoolMath.Accrual memory a2 = PoolMath.accrue(total + 1_000_003, s1);
         assertGe(a2.perNandShare, a1.perNandShare);

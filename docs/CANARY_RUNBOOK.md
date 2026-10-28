@@ -117,6 +117,18 @@ it can only run through this local-candidate rehearsal, because every approved-c
 (`prepare`, `fork`, `live`, `verify-local`) stops at the `c4bc022` pin. The recovery authority is
 unchanged and remains canary-only. Nothing about canary-2 is approved for mainnet.
 
+**2.2.0 (SALUS remediation).** The `TapeoutMinerPool/2.2.0` source yields the next local-only candidate,
+`RecoverableTapeoutMinerPool/canary-3-local`. It carries production's per-miner carried-income
+attribution, the fractional category ledger, the one-time distributor binding and the custody finality
+gate. The patch list is the same (recovery controller, `shutdown`, `emergencyReturn` for #3204 and
+#12485 only, closed checks), plus one import path for the new `IReceiptDistributor` interface;
+`build-source.mjs` pins the 2.2.0 source and writes the diff to
+`reports/canary-local/canary-3-production-canary.diff` (canary-2's diff stays as it was). The workflow
+binds the distributor before activation (it already renounced all four owners before the first deposit)
+and its independent arithmetic now attributes #12485's carried income by its own 1:1 burn. Canary-3's
+runtime is 24,439 bytes, 137 under the EIP-170 limit. Nothing about canary-3 is approved for mainnet, and
+the approved path still stops at the `c4bc022` pin.
+
 ## Emergency recovery after interruption
 
 Do not restart the live runner, redeploy or repeat a deposit. The journal records intent, nonce and

@@ -10,6 +10,8 @@ import {TapeoutMinerPool} from "../../src/TapeoutMinerPool.sol";
 ///         release into every reachable entry point (not all share the same guard), role aliases,
 ///         role/holder overlap, and the prohibition on sink redirection. MOCK-ONLY CALLBACKS: the
 ///         bound BEM makes no calls during a transfer, so no reentry is reachable with it.
+/// @dev Adapted for TapeoutMinerPool/2.2.0 (SALUS remediation): custody requires a renounced pool
+///      owner, so the final owner assertion expects the zero address. As committed: a74f6d4.
 contract FeeSplitCallbacksTest is SystemTestBase {
     address internal constant SINK = 0x000000000000000000000000000000000000dEaD;
     TapeoutMinerPool.Recipient internal constant A = TapeoutMinerPool.Recipient.A;
@@ -76,7 +78,7 @@ contract FeeSplitCallbacksTest is SystemTestBase {
         assertFalse(ok);
         assertEq(bytes4(result), Ownable.OwnableUnauthorizedAccount.selector);
         assertEq(pool.recipientA(), recipientA);
-        assertEq(pool.owner(), operator);
+        assertEq(pool.owner(), address(0));
     }
 
     /// @notice INFORMATIONAL: views are not guarded. Between the two transfers of a release (after the

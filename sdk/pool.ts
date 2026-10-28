@@ -14,7 +14,10 @@ import { tapeoutEntitlementReceiptAbi, tapeoutMinerPoolAbi, tapeoutReceiptDistri
 import bytecode from './bytecode.json' with { type: 'json' };
 import { CATEGORY, MINER_STATUS_ACTIVE, erc20Abi, erc721Abi, miningAbi, type CategoryName } from './constants.js';
 import { poolDeployment, receiptConstructorArgs, type SystemFile } from './config.js';
-import { accrue, PARTICIPANT_PARTS, RECIPIENT_PARTS, residueBound, SINK, SINK_PARTS, TOTAL_PARTS, type Accrual, type State } from './math.js';
+import {
+  accrue, carriedUnits, categoryUnits, participantUnits, PARTICIPANT_PARTS, RECIPIENT_PARTS, residueBound, SINK, SINK_PARTS, TOTAL_PARTS,
+  type Accrual, type State,
+} from './math.js';
 import { allocationBatchGas, type DistributorInput } from './allocation.js';
 import {
   CALL_GAS, CLAIM_GAS, DEPLOY_GAS, FUND_GAS, HARVEST_GAS, ISSUE_GAS, admissionGasEstimate, deliveryBatches, idsGas, maxIdsPerTx,
@@ -118,25 +121,33 @@ export function deliveryPlans(distributor: Address, wallet: Address, ranges: rea
   });
 }
 
+/** Once, before activation: the pool binds the round's distributor (it must report this pool and these receipts). */
+export const bindDistributorPlan = (pool: Address, distributor: Address) =>
+  poolCall(pool, 'bindDistributor', [distributor], `bind distributor ${distributor} to the pool (once, before activation; never replaceable)`, CALL_GAS.bindDistributor);
+
 export const activatePlan = (pool: Address, nandShares: bigint, latchShares: bigint) =>
-  poolCall(pool, 'activate', [nandShares, latchShares], `activate with S_N=${nandShares}, S_L=${latchShares}`, CALL_GAS.activate);
+  poolCall(pool, 'activate', [nandShares, latchShares], `activate with S_N=${nandShares}, S_L=${latchShares} (needs the bound distributor's allocation finalized)`, CALL_GAS.activate);
 
 export const approveMinersPlan = (collection: Address, pool: Address) =>
   call(collection, erc721Abi as Abi, 'setApprovalForAll', [pool, true], `approve pool ${pool} to pull the caller's miners`, CALL_GAS.setApprovalForAll);
 
-/** `registered`: miners registered before the first batch; each batch settles all of them plus earlier batches. */
-function admissionPlans(pool: Address, fn: 'depositMiners' | 'registerMiners', ids: bigint[], batch: number, registered: bigint): TxPlan[] {
+/** `registered`: miners registered before the first batch; each batch settles all of them plus earlier batches.
+ *  `custodyOpen` false: the first batch is the admission that opens custody and gets its extra allowance. */
+function admissionPlans(pool: Address, fn: 'depositMiners' | 'registerMiners', ids: bigint[], batch: number, registered: bigint, custodyOpen: boolean): TxPlan[] {
   let before = registered;
-  return chunk(ids, batch).map(part => {
-    const plan = poolCall(pool, fn, [part], `admit ${fn === 'registerMiners' ? 'pool-held ' : ''}miners ${part.join(',')} (settles every registered miner first)`,
-      admissionGasEstimate(before, BigInt(part.length)));
+  return chunk(ids, batch).map((part, i) => {
+    const opens = !custodyOpen && i === 0;
+    const plan = poolCall(pool, fn, [part], `admit ${fn === 'registerMiners' ? 'pool-held ' : ''}miners ${part.join(',')} (settles every registered miner first${opens ? '; opens custody' : ''})`,
+      admissionGasEstimate(before, BigInt(part.length), opens));
     before += BigInt(part.length);
     return plan;
   });
 }
 
-export const depositPlans = (pool: Address, ids: bigint[], batch: number, registered: bigint) => admissionPlans(pool, 'depositMiners', ids, batch, registered);
-export const registerPlans = (pool: Address, ids: bigint[], batch: number, registered: bigint) => admissionPlans(pool, 'registerMiners', ids, batch, registered);
+export const depositPlans = (pool: Address, ids: bigint[], batch: number, registered: bigint, custodyOpen = true) =>
+  admissionPlans(pool, 'depositMiners', ids, batch, registered, custodyOpen);
+export const registerPlans = (pool: Address, ids: bigint[], batch: number, registered: bigint, custodyOpen = true) =>
+  admissionPlans(pool, 'registerMiners', ids, batch, registered, custodyOpen);
 
 export const harvestPlans = (pool: Address, ids: bigint[], batch: number) =>
   chunk(ids, batch).map(part => poolCall(pool, 'harvest', [part], `harvest miners ${part.join(',')}`, idsGas(HARVEST_GAS, part.length)));
@@ -304,13 +315,18 @@ export interface Reconciliation {
  * selectors, so a decoder for another layout misreads them without an error. The standard readers read
  * `VERSION` first and decode those tuples only for a version whose layout this SDK has.
  *
+ * 2.2.0 (SALUS remediation) keeps those three layouts and replaces `state()` with `ledgerState()`, whose
+ * tuple has other fields (bases in ledger units), so a 2.1.0 decoder fails on it instead of misreading it.
+ * Their values differ from 2.1.0 wherever carried income or a checkpoint's fraction is involved, so the
+ * version guard still applies to all of them.
+ *
  * A self-reported version does not authenticate code. Write commands keep the stronger controls: the
  * runtime-template, immutable-binding and addresses-file checks of `checkDeployment`.
  */
-export const READ_LAYOUT_VERSIONS = ['TapeoutMinerPool/2.1.0'] as const;
+export const READ_LAYOUT_VERSIONS = ['TapeoutMinerPool/2.2.0'] as const;
 /** The local-only canary candidate has the same layout. It is decoded only when the caller opts in (the
  *  CLI does so on a loopback development node, where canary rehearsals run); that is never an approval. */
-export const LOCAL_CANARY_LAYOUT_VERSIONS = ['RecoverableTapeoutMinerPool/canary-2-local'] as const;
+export const LOCAL_CANARY_LAYOUT_VERSIONS = ['RecoverableTapeoutMinerPool/canary-3-local'] as const;
 export interface ReadLayoutPolicy { allowLocalCanary?: boolean }
 
 /** The read-layout policy for a planning node of `kind` (see `executionContext`). */
@@ -345,21 +361,28 @@ export async function assertReadLayout(rpc: PublicClient, pool: Address, blockNu
 export async function readPoolSummary(rpc: PublicClient, pool: Address, blockNumber?: bigint, policy: ReadLayoutPolicy = {}) {
   const version = await assertReadLayout(rpc, pool, blockNumber, policy);
   const r = <T>(fn: string, args: readonly unknown[] = []) => readPool<T>(rpc, pool, fn, args, blockNumber);
-  const [name, owner, active, activatedAt, nandShares, latchShares, totalNandBurn, totalLatchBurn, compositionPeriod, state, accrual, reconciliation, minerCount, recipientA, recipientB, sink, depositors, nandReceipt, latchReceipt, bem, mining, collection] = await Promise.all([
+  const [name, owner, active, activatedAt, nandShares, latchShares, totalNandBurn, totalLatchBurn, compositionPeriod, state, accrual, reconciliation, minerCount, recipientA, recipientB, sink, depositors, nandReceipt, latchReceipt, bem, mining, collection,
+    distributor, custodyOpen, carriedIncome, carriedNandUnits] = await Promise.all([
     r<string>('poolName'), r<Address>('owner'), r<boolean>('active'), r<bigint>('activatedAt'), r<bigint>('nandShares'), r<bigint>('latchShares'),
-    r<bigint>('totalNandBurn'), r<bigint>('totalLatchBurn'), r<bigint>('compositionPeriod'), r<State>('state'), r<Accrual>('accrual'), r<Reconciliation>('reconciliation'),
+    r<bigint>('totalNandBurn'), r<bigint>('totalLatchBurn'), r<bigint>('compositionPeriod'), r<State>('ledgerState'), r<Accrual>('accrual'), r<Reconciliation>('reconciliation'),
     r<bigint>('minerCount'), r<Address>('recipientA'), r<Address>('recipientB'), r<Address>('SINK'), r<readonly Address[]>('depositors'), r<Address>('nandReceipt'), r<Address>('latchReceipt'),
-    r<Address>('bem'), r<Address>('mining'), r<Address>('minerCollection'),
+    r<Address>('bem'), r<Address>('mining'), r<Address>('minerCollection'), r<Address>('distributor'), r<boolean>('custodyOpen'), r<bigint>('carriedIncome'), r<bigint>('carriedNandUnits'),
   ]);
   return { pool, name, version, owner, active, activatedAt, nandShares, latchShares, composition: { totalNandBurn, totalLatchBurn, compositionPeriod },
-    state, accrual, reconciliation, minerCount, recipientA, recipientB, sink, depositors, nandReceipt, latchReceipt, bem, mining, collection };
+    state, accrual, reconciliation, carried: { carriedIncome, carriedNandUnits, carriedLatchUnits: participantUnits(carriedIncome) - carriedNandUnits },
+    distributor, custodyOpen, minerCount, recipientA, recipientB, sink, depositors, nandReceipt, latchReceipt, bem, mining, collection };
 }
 
+/** The carried-income totals (2.2.0) that `checkReconciliation` also checks when given. */
+export interface CarriedLedger { carriedIncome: bigint; carriedNandUnits: bigint }
+
 /** Recompute the allocation off-chain and check every ledger identity. */
-export function checkReconciliation(state: State, r: Reconciliation) {
+export function checkReconciliation(state: State, r: Reconciliation, carried?: CarriedLedger) {
   const expected = accrue(r.totalAccounted, state);
   const outstanding = (r.recipientAAccrued - r.recipientAPaid) + (r.recipientBAccrued - r.recipientBPaid) + (r.sinkAccrued - r.sinkPaid)
     + (r.nandReceiptsAccrued - r.nandReceiptsPaid) + (r.latchReceiptsAccrued - r.latchReceiptsPaid);
+  const weight = state.totalNandBurn + state.totalLatchBurn;
+  const units = categoryUnits(r.totalAccounted, state);
   const checks = {
     offChainMathMatches: expected.recipientA === r.recipientAAccrued && expected.sink === r.sinkAccrued && expected.nandIncome === r.nandIncome
       && expected.latchIncome === r.latchIncome && expected.nandReceipts === r.nandReceiptsAccrued && expected.latchReceipts === r.latchReceiptsAccrued
@@ -376,11 +399,83 @@ export function checkReconciliation(state: State, r: Reconciliation) {
     noBucketOverpaid: r.recipientAPaid <= r.recipientAAccrued && r.recipientBPaid <= r.recipientBAccrued && r.sinkPaid <= r.sinkAccrued
       && r.nandReceiptsPaid <= r.nandReceiptsAccrued && r.latchReceiptsPaid <= r.latchReceiptsAccrued,
     categoryWithoutReceiptsHasNoIncome: (state.nandShares !== 0n || r.nandIncome === 0n) && (state.latchShares !== 0n || r.latchIncome === 0n),
+    // 2.2.0 category ledger: the boundary keeps the participants' share exact, and so does the open period.
+    ledgerBoundaryIdentity: state.nandBase + state.latchBase === participantUnits(state.accountedBase) && state.accountedBase <= r.totalAccounted,
+    ledgerParticipantsExact: weight === 0n || units.nandUnits + units.latchUnits === participantUnits(r.totalAccounted),
+    ...(carried ? {
+      carriedIncomeWithinRecognized: carried.carriedIncome <= r.totalAccounted && carried.carriedIncome <= state.accountedBase,
+      carriedUnitsWithinItsShare: carried.carriedNandUnits <= participantUnits(carried.carriedIncome),
+    } : {}),
   };
   return { status: Object.values(checks).every(Boolean) ? 'PASS' as const : 'FAIL' as const, checks, outstanding: {
     recipientA: r.recipientAAccrued - r.recipientAPaid, recipientB: r.recipientBAccrued - r.recipientBPaid, sink: r.sinkAccrued - r.sinkPaid,
     nandReceipts: r.nandReceiptsAccrued - r.nandReceiptsPaid, latchReceipts: r.latchReceiptsAccrued - r.latchReceiptsPaid,
   } };
+}
+
+/**
+ * Deep check of the carried-income attribution (2.2.0): every registered miner's recorded carried income,
+ * split again here by its own burn (NAND the floor, LATCH the rest), must add up to the pool's totals.
+ * Independent of admission order by construction.
+ */
+export async function checkCarriedRecords(rpc: PublicClient, pool: Address, blockNumber?: bigint) {
+  const count = await readPool<bigint>(rpc, pool, 'minerCount', [], blockNumber);
+  let carriedSum = 0n;
+  let nandUnits = 0n;
+  let miners = 0;
+  for (let offset = 0n; offset < count; offset += 500n) {
+    const [tokenIds] = await readPool<readonly [readonly bigint[], readonly Hex[]]>(rpc, pool, 'minersPage', [offset, 500n], blockNumber);
+    for (const ids of chunk([...tokenIds], 50)) {
+      const records = await Promise.all(ids.map(id => readPool<{ nandBurn: number; latchBurn: number; carriedIncome: bigint }>(rpc, pool, 'miner', [id], blockNumber)));
+      for (const m of records) {
+        carriedSum += BigInt(m.carriedIncome);
+        nandUnits += carriedUnits(BigInt(m.carriedIncome), BigInt(m.nandBurn), BigInt(m.latchBurn)).toNand;
+        miners++;
+      }
+    }
+  }
+  const [carriedIncome, carriedNandUnits] = await Promise.all([
+    readPool<bigint>(rpc, pool, 'carriedIncome', [], blockNumber), readPool<bigint>(rpc, pool, 'carriedNandUnits', [], blockNumber),
+  ]);
+  return { miners, carriedSum, carriedIncome, recomputedNandUnits: nandUnits, carriedNandUnits,
+    match: carriedSum === carriedIncome && nandUnits === carriedNandUnits };
+}
+
+/**
+ * The first admission's conditions (SALUS #3), read from the four contracts at one block: both issuances
+ * finalized with owner zero and supplies equal to the pool's denominators, the bound distributor finalized
+ * with owner zero, the pool active with owner zero. `missing` lists what is not yet true; once custody is
+ * open the conditions are permanent. The contract enforces this itself; tooling reads it to refuse plans
+ * early and to show the state.
+ */
+export async function readFinality(rpc: PublicClient, pool: Address, blockNumber?: bigint) {
+  const p = <T>(fn: string) => readPool<T>(rpc, pool, fn, [], blockNumber);
+  const [active, custodyOpen, owner, distributor, nandReceipt, latchReceipt, nandShares, latchShares] = await Promise.all([
+    p<boolean>('active'), p<boolean>('custodyOpen'), p<Address>('owner'), p<Address>('distributor'), p<Address>('nandReceipt'), p<Address>('latchReceipt'),
+    p<bigint>('nandShares'), p<bigint>('latchShares'),
+  ]);
+  const [nand, latch] = await Promise.all([readReceiptSummary(rpc, nandReceipt, blockNumber), readReceiptSummary(rpc, latchReceipt, blockNumber)]);
+  const bound = distributor !== zeroAddress;
+  const d = bound ? await Promise.all([
+    readDistributor<boolean>(rpc, distributor, 'allocationFinalized', [], blockNumber), readDistributor<Address>(rpc, distributor, 'owner', [], blockNumber),
+    readDistributor<Address>(rpc, distributor, 'pool', [], blockNumber),
+  ]) : undefined;
+  const conditions = {
+    poolActive: active,
+    poolOwnerRenounced: owner === zeroAddress,
+    distributorBound: bound && !!d && getAddress(d[2]) === getAddress(pool),
+    distributorAllocationFinalized: !!d && d[0],
+    distributorOwnerRenounced: !!d && d[1] === zeroAddress,
+    nandIssuanceFinalized: nand.issuanceFinalized,
+    nandOwnerRenounced: nand.owner === zeroAddress,
+    nandSupplyEqualsDenominator: active && nand.supply === nandShares,
+    latchIssuanceFinalized: latch.issuanceFinalized,
+    latchOwnerRenounced: latch.owner === zeroAddress,
+    latchSupplyEqualsDenominator: active && latch.supply === latchShares,
+  };
+  const missing = Object.entries(conditions).filter(([, ok]) => !ok).map(([k]) => k);
+  return { custodyOpen, ready: missing.length === 0, missing, conditions, distributor: bound ? distributor : undefined,
+    owners: { pool: owner, nandReceipt: nand.owner, latchReceipt: latch.owner, distributor: d ? d[1] : undefined } };
 }
 
 /** Per-ID sum check: sum(claimed[id]) must equal receiptsPaid for each collection. */
@@ -420,15 +515,16 @@ export async function readHoldings(rpc: PublicClient, pool: Address, holder: Add
 export async function readMiners(rpc: PublicClient, pool: Address, withPending = false, blockNumber?: bigint) {
   const count = await readPool<bigint>(rpc, pool, 'minerCount', [], blockNumber);
   const mining = await readPool<Address>(rpc, pool, 'mining', [], blockNumber);
-  const miners: { tokenId: bigint; key: Hex; nandBurn?: number; latchBurn?: number; status?: number; pendingEstimate?: bigint }[] = [];
+  const miners: { tokenId: bigint; key: Hex; nandBurn?: number; latchBurn?: number; carriedIncome?: bigint; status?: number; pendingEstimate?: bigint }[] = [];
   for (let offset = 0n; offset < count; offset += 500n) {
     const [tokenIds, keys] = await readPool<readonly [readonly bigint[], readonly Hex[]]>(rpc, pool, 'minersPage', [offset, 500n], blockNumber);
     tokenIds.forEach((tokenId, i) => miners.push({ tokenId, key: keys[i] }));
   }
   await Promise.all(miners.map(async m => {
-    const record = await readPool<{ nandBurn: number; latchBurn: number }>(rpc, pool, 'miner', [m.tokenId], blockNumber);
+    const record = await readPool<{ nandBurn: number; latchBurn: number; carriedIncome: bigint }>(rpc, pool, 'miner', [m.tokenId], blockNumber);
     m.nandBurn = Number(record.nandBurn);
     m.latchBurn = Number(record.latchBurn);
+    m.carriedIncome = BigInt(record.carriedIncome);
     const live = await rpc.readContract({ address: mining, abi: miningAbi, functionName: 'getMiner', args: [m.key], blockNumber }).catch(() => undefined);
     m.status = live ? Number(live.status) : undefined;
     // Display only: pending() is an estimate and can be 0 while claim() pays. Never used to skip a claim.

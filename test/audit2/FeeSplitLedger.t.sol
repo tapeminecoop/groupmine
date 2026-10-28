@@ -15,6 +15,12 @@ import {PoolMath} from "../../src/PoolMath.sol";
 ///         test/audit/model.py.
 ///         Receipts: NAND 1-5 alice, 6-8 bob, 9-10 in the distributor for carol (delivered late);
 ///         LATCH 1-5 alice, 6-10 carol.
+/// @dev Adapted for TapeoutMinerPool/2.2.0 (SALUS remediation, docs/SALUS_AUDIT_REMEDIATION_REPORT.md):
+///      only the reference's category ledger changed. Bases are kept in ledger units of 1 / (84 * 10^18)
+///      raw BEM with their fractions (`baseT` replaces the one-unit carry `partBase`), each split gives
+///      NAND the floor and LATCH the rest, and an incoming miner's carried income is split by that
+///      miner's own burn instead of the post-admission composition. Everything else, the sequence and
+///      the checks, is as committed at a74f6d4.
 contract FeeSplitLedgerTest is SystemTestBase {
     address internal constant SINK = 0x000000000000000000000000000000000000dEaD;
     uint256 internal constant S_N = 10;
@@ -24,9 +30,9 @@ contract FeeSplitLedgerTest is SystemTestBase {
         uint256 T;
         uint256 N;
         uint256 L;
-        uint256 nandBase;
-        uint256 latchBase;
-        uint256 partBase;
+        uint256 nandBase; // ledger units (2.2.0)
+        uint256 latchBase; // ledger units (2.2.0)
+        uint256 baseT; // recognized total at the last boundary (2.2.0)
         uint256 periods;
         uint256 aPaid;
         uint256 bPaid;
@@ -74,15 +80,23 @@ contract FeeSplitLedgerTest is SystemTestBase {
         return t * 80 / 84;
     }
 
-    function _rIncomes() internal view returns (uint256 nand, uint256 latch) {
+    uint256 internal constant UNITS_PER_RAW = 84 * 1e18; // 2.2.0 ledger unit
+
+    function _rUnits() internal view returns (uint256 nand, uint256 latch) {
         nand = ref.nandBase;
         latch = ref.latchBase;
         uint256 w = ref.N + ref.L;
         if (w != 0) {
-            uint256 d = _rP(ref.T) - ref.partBase;
-            nand += d * ref.N / w;
-            latch += d * ref.L / w;
+            uint256 d = (ref.T - ref.baseT) * 80 * 1e18; // the participants' exact share, in units
+            uint256 toNand = d * ref.N / w;
+            nand += toNand;
+            latch += d - toNand;
         }
+    }
+
+    function _rIncomes() internal view returns (uint256 nand, uint256 latch) {
+        (uint256 nandUnits, uint256 latchUnits) = _rUnits();
+        return (nandUnits / UNITS_PER_RAW, latchUnits / UNITS_PER_RAW);
     }
 
     function _rPerShare() internal view returns (uint256 perN, uint256 perL) {
@@ -93,15 +107,20 @@ contract FeeSplitLedgerTest is SystemTestBase {
     function _refAdmit(uint32 n, uint32 l, uint256 settledOld, uint256 carried) internal {
         ref.T += settledOld; // step 3: old miners settle under the old composition
         ref.reached += settledOld;
-        (uint256 nand, uint256 latch) = _rIncomes(); // step 4: checkpoint
+        (uint256 nand, uint256 latch) = _rUnits(); // step 4: checkpoint, fractions kept
         ref.nandBase = nand;
         ref.latchBase = latch;
-        ref.partBase = nand + latch;
+        ref.baseT = ref.T;
         ref.periods += 1;
-        ref.N += n;
-        ref.L += l;
-        ref.T += carried; // step 5: carried income under the new composition
+        uint256 units = carried * 80 * 1e18; // step 5: carried income by the incoming miner's own burn
+        uint256 toNand = units * n / (uint256(n) + l);
+        ref.nandBase += toNand;
+        ref.latchBase += units - toNand;
+        ref.T += carried;
+        ref.baseT = ref.T;
         ref.reached += carried;
+        ref.N += n; // step 6: the new composition prices later income
+        ref.L += l;
     }
 
     function _refRecognize(uint256 amount) internal {

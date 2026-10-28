@@ -9,6 +9,10 @@ import {PoolMath} from "../../src/PoolMath.sol";
 /// @notice Review-only test (candidate 8cf31dc), risk group 5: boundary and dust behaviour of the
 ///         84-part split on the live pool. Expected values are the specification's arithmetic written
 ///         here; the checkpoint policy is checked as documented, not "corrected".
+/// @dev Adapted for TapeoutMinerPool/2.2.0 (SALUS remediation, docs/SALUS_AUDIT_REMEDIATION_REPORT.md):
+///      the same-ratio checkpoint test now checks 2.2.0's documented policy (category fractions persist
+///      across checkpoints) instead of 2.1.0's whole-unit freezing, and the far-beyond-reach total of
+///      testLargeSupportedTotals moved inside the ledger's new arithmetic range. As committed: a74f6d4.
 contract FeeSplitBoundaryTest is SystemTestBase {
     address internal constant SINK = 0x000000000000000000000000000000000000dEaD;
 
@@ -96,26 +100,35 @@ contract FeeSplitBoundaryTest is SystemTestBase {
         assertReconciled();
     }
 
+    /// @dev 2.2.0: each category takes the floor of its exact share of 80T/84, and its fraction survives a
+    ///      checkpoint, so a same-ratio checkpoint changes nothing. (2.1.0 froze whole units: 31 / 10 at
+    ///      the checkpoint, then 64 / 21 against 63 / 21 without it.)
     function testSameRatioCheckpointKeepsTheDocumentedPolicy() public {
         setupStandard();
         admitNew(1, 3, 1);
-        bem.mint(address(pool), 45); // P = 42: NAND floor(31.5) = 31, LATCH floor(10.5) = 10, one unit carried
+        bem.mint(address(pool), 45); // exact shares of 45 * 80 / 84: NAND 32.14..., LATCH 10.71...
         pool.sync();
         PoolMath.Accrual memory a = pool.accrual();
-        assertEq(a.nandIncome, 31);
+        assertEq(a.nandIncome, 32);
         assertEq(a.latchIncome, 10);
-        admitNew(2, 3, 1); // the same 3:1 ratio: bases freeze at 31 / 10, participantBase 41
-        assertEq(pool.nandBase(), 31);
-        assertEq(pool.latchBase(), 10);
-        assertEq(pool.participantBase(), 41);
-        bem.mint(address(pool), 45); // T = 90, P = 85, d = 85 - 41 = 44 -> NAND 31 + 33, LATCH 10 + 11
+        assertEq(a.participants - a.nandIncome - a.latchIncome, 0);
+        uint256 snapshot = vm.snapshotState();
+        admitNew(2, 3, 1); // the same 3:1 ratio: the bases keep the fractions (2,700 and 900 x 10^18 units)
+        PoolMath.State memory s = pool.ledgerState();
+        assertEq(s.nandBase, 2_700 * 1e18);
+        assertEq(s.latchBase, 900 * 1e18);
+        bem.mint(address(pool), 45); // T = 90: exact NAND 64.28..., LATCH 21.42...
         pool.sync();
         a = pool.accrual();
         assertEq(a.nandIncome, 64, "documented checkpoint policy");
         assertEq(a.latchIncome, 21);
-        // Without the checkpoint one period would have given floor(85 * 3 / 4) = 63 and 21: the policy
-        // shifts the carried unit, and docs/ACCOUNTING.md states it is pending the owner's acceptance.
-        assertEq(_p(90) * 3 / 4, 63);
+        // Without the checkpoint, one period gives the same totals.
+        vm.revertToState(snapshot);
+        bem.mint(address(pool), 45);
+        pool.sync();
+        assertEq(pool.accrual().nandIncome, 64);
+        assertEq(pool.accrual().latchIncome, 21);
+        assertEq(_p(90) * 3 / 4, 63); // what splitting the floored participant total would give
         assertEq(a.sink, _c(90), "C is unaffected by composition or checkpoints");
         assertReconciled();
     }
@@ -148,9 +161,11 @@ contract FeeSplitBoundaryTest is SystemTestBase {
         assertEq(a.recipientA + a.recipientB + a.sink + a.nandReceipts + a.latchReceipts + a.residue, maxBem);
         assertEq(pool.releaseA(), maxBem / 84);
         assertEq(bem.balanceOf(SINK), maxBem * 2 / 84);
-        // Far beyond any reachable amount the arithmetic still holds (no overflow below 2^256 / 80).
-        uint256 huge = 10 ** 60;
-        PoolMath.Accrual memory big = PoolMath.accrue(huge, pool.state());
+        // Far beyond any reachable amount the arithmetic still holds. 2.2.0's ledger multiplies by
+        // 80 * 10^18 and then by the composition, so its range is below 2^256 / (8 * 10^19 * N): about
+        // 2 * 10^56 here, against 2^256 / 80 under 2.1.0.
+        uint256 huge = 10 ** 50;
+        PoolMath.Accrual memory big = PoolMath.accrue(huge, pool.ledgerState());
         assertEq(big.sink, huge * 2 / 84);
         assertEq(big.recipientA + big.recipientB + big.sink + big.nandReceipts + big.latchReceipts + big.residue, huge);
         assertReconciled();

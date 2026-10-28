@@ -21,6 +21,7 @@ const CONTRACTS = [
   { file: 'TapeoutMinerPool.sol', name: 'TapeoutMinerPool', scope: 'production' },
   { file: 'PoolMath.sol', name: 'PoolMath', scope: 'production' },
   { file: 'IMining.sol', name: 'IMining', scope: 'production' },
+  { file: 'IReceiptDistributor.sol', name: 'IReceiptDistributor', scope: 'production' },
   { file: 'RecoverableTapeoutMinerPool.sol', name: 'RecoverableTapeoutMinerPool', scope: 'canary' },
   { file: 'CanaryParticipant.sol', name: 'CanaryParticipant', scope: 'canary' },
 ] as const;
@@ -43,7 +44,7 @@ async function identity() {
     const immutables = Object.values(a.deployedBytecode.immutableReferences ?? {}).reduce((s: number, r) => s + (r as unknown[]).length, 0);
     const settings = a.metadata?.settings ?? {};
     contracts[c.name] = {
-      scope: c.scope, source: `src/${c.scope === 'canary' ? 'canary/' : c.file === 'IMining.sol' ? 'interfaces/' : ''}${c.file}`,
+      scope: c.scope, source: `src/${c.scope === 'canary' ? 'canary/' : c.file === 'IMining.sol' || c.file === 'IReceiptDistributor.sol' ? 'interfaces/' : ''}${c.file}`,
       abiSha256: sha256(canonical(a.abi)), creationKeccak256: creation === '0x' ? null : keccak256(creation),
       runtimeTemplateKeccak256: runtime === '0x' ? null : keccak256(runtime), creationBytes: (creation.length - 2) / 2, runtimeBytes: (runtime.length - 2) / 2,
       immutableReferences: immutables,

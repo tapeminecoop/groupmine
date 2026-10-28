@@ -13,7 +13,7 @@ import { main as cli, json } from '../cli/pool.ts';
 import { startAnvil } from './lib/anvil.ts';
 import { BSC_PROTOCOL, erc20Abi, erc721Abi, miningAbi } from '../sdk/constants.ts';
 import { tapeoutMinerPoolAbi } from '../sdk/abi.ts';
-import { accrue, checkpoint, type State } from '../sdk/math.ts';
+import { accrue, admit, type State } from '../sdk/math.ts';
 import { simulate } from '../sdk/tx.ts';
 
 const DIR = '.runtime/fork-e2e';
@@ -98,8 +98,14 @@ async function main() {
     const verified = await step('verify-allocation', ['verify-allocation', '--addresses', addressesFile, '--artifact', `${DIR}/artifact.json`, '--allocation', allocationFile]);
     check('allocationVerified', verified.status === 'READY_TO_FINALIZE', verified);
     await step('finalize-allocation', ['finalize-allocation', '--addresses', addressesFile, '--artifact', `${DIR}/artifact.json`, '--allocation', allocationFile, '--from', operator, '--send-local']);
+    // 2.2.0 (SALUS #3): bind the distributor once, activate, then renounce all four owners before custody.
+    await step('bind-distributor', ['bind-distributor', '--addresses', addressesFile, '--from', operator, '--send-local']);
     await step('activate', ['activate', '--addresses', addressesFile, '--nand-shares', '40', '--latch-shares', '12', '--from', operator, '--send-local']);
-    await step('renounce-pool', ['renounce', '--addresses', addressesFile, '--target', 'pool', '--from', operator, '--send-local']);
+    const closed = await step('finality-before-renouncing', ['finality', '--addresses', addressesFile]);
+    check('custodyClosedWhileOwnersRemain', closed.status === 'NOT_FINAL' && (closed.missing as string[]).length === 4, closed);
+    for (const target of ['nand', 'latch', 'distributor', 'pool']) await step(`renounce-${target}`, ['renounce', '--addresses', addressesFile, '--target', target, '--from', operator, '--send-local']);
+    const ready = await step('finality-after-renouncing', ['finality', '--addresses', addressesFile]);
+    check('readyForFirstAdmission', ready.status === 'READY_FOR_FIRST_ADMISSION', ready);
 
     // Real miners: holders -> depositor (fork impersonation only).
     const moves = [];
@@ -126,7 +132,7 @@ async function main() {
     const first = await step('deposit-nand-miner', ['deposit', '--addresses', addressesFile, '--token-ids', String(nandMiner), '--from', depositor, '--send-local']);
     const admitted = async (r: Record<string, unknown>) => {
       const receipt = await rpc.getTransactionReceipt({ hash: (r.transactions as { hash: Hex }[]).at(-1)!.hash });
-      return parseEventLogs({ abi: tapeoutMinerPoolAbi as Abi, eventName: 'MinersAdmitted', logs: receipt.logs })[0].args as unknown as { settledOldIncome: bigint; carriedIncome: bigint };
+      return parseEventLogs({ abi: tapeoutMinerPoolAbi as Abi, eventName: 'MinersAdmitted', logs: receipt.logs })[0].args as unknown as { settledOldIncome: bigint; carriedIncome: bigint; newPeriodIncome: bigint };
     };
     const a1 = await admitted(first);
     check('carriedIncomeCollectedAtFirstAdmission', a1.carriedIncome > 0n);
@@ -136,11 +142,13 @@ async function main() {
     const a2 = await admitted(second);
     check('oldIncomeSettledInsideAdmission', a2.settledOldIncome > 0n);
     const n1 = BigInt(byId.get(nandMiner)!.nandBurn), n2 = BigInt(byId.get(latchMiner)!.nandBurn), l2 = BigInt(byId.get(latchMiner)!.latchBurn);
-    const s0: State = { nandBase: 0n, latchBase: 0n, participantBase: 0n, totalNandBurn: n1, totalLatchBurn: 0n, nandShares: 40n, latchShares: 12n };
-    const s1 = checkpoint(a1.carriedIncome + a2.settledOldIncome, s0, n2, l2);
-    const expected = accrue(a1.carriedIncome + a2.settledOldIncome + a2.carriedIncome, s1);
+    // 2.2.0: each miner's carried income by its own burn, the old period's income by the old composition.
+    const s0: State = { accountedBase: 0n, nandBase: 0n, latchBase: 0n, totalNandBurn: 0n, totalLatchBurn: 0n, nandShares: 40n, latchShares: 12n };
+    const afterFirst = admit(0n, s0, [{ received: a1.carriedIncome, nand: n1, latch: 0n }]);
+    const afterSecond = admit(afterFirst.total + a2.settledOldIncome, afterFirst.state, [{ received: a2.carriedIncome, nand: n2, latch: l2 }]);
+    const expected = accrue(afterSecond.total, afterSecond.state);
     const actual = await read<{ nandIncome: bigint; latchIncome: bigint; total: bigint }>(pool, tapeoutMinerPoolAbi as Abi, 'accrual');
-    check('realBoundaryMatchesOldNewCompositionModel', actual.total === expected.total && actual.nandIncome === expected.nandIncome && actual.latchIncome === expected.latchIncome, { actual, expected });
+    check('realBoundaryMatchesOldPeriodAndOwnBurnModel', actual.total === expected.total && actual.nandIncome === expected.nandIncome && actual.latchIncome === expected.latchIncome, { actual, expected });
     await step('deposit-batch-after-renounce', ['deposit', '--addresses', addressesFile, '--token-ids', extraMiners.join(','), '--from', depositor, '--send-local']);
 
     // Users: late receipt claims, BEM claims, transfer, releases.

@@ -4,16 +4,31 @@ All amounts are raw BEM units (8 decimals). Everything is derived from one cumul
 `totalAccounted`, the BEM the pool has recognized as income since deployment. Nothing is ever computed
 as "all income × latest ratio".
 
-This describes `TapeoutMinerPool/2.1.0`. The 2.0.0 candidate split `T` as 100 : 1 : 1 of 102 with no
-sink; its reports remain historical (see docs/FEE_SPLIT_CHANGE_REPORT.md).
+This describes `TapeoutMinerPool/2.2.0`. What changed from 2.1.0 (carried income attributed by each
+incoming miner's own burn, the fractional category ledger, and the custody finality gate) and why is in
+[SALUS_AUDIT_REMEDIATION_REPORT.md](SALUS_AUDIT_REMEDIATION_REPORT.md). The outer split (§2, §3) is
+unchanged from 2.1.0. The 2.0.0 candidate split `T` as 100 : 1 : 1 of 102 with no sink; its reports
+remain historical (see docs/FEE_SPLIT_CHANGE_REPORT.md).
 
 ## 1. Recognition
 
-`_sync` recognizes `received = balance − (totalAccounted − totalPaid)`: whatever reached the pool by any
-route (admissions, harvests, third-party `Mining.claim` calls, plain transfers). Only actual balance
-increases count; `pending()` is never used as income. A balance below the ledger reverts
-(`BalanceDecreased`). While no miner is admitted (`N + L = 0`) nothing is recognized; the first
-admission recognizes everything held, under the first composition.
+Income enters the ledger in two ways.
+
+- **Ordinary income.** `_sync` recognizes `received = balance − (totalAccounted − totalPaid)`: whatever
+  reached the pool by any route (harvests, settlement of registered miners at an admission, third-party
+  `Mining.claim` calls, plain transfers). It belongs to the current composition period (§4).
+- **Carried income.** During an admission, each incoming miner is claimed on its own, and the exact
+  balance increase of that claim is that miner's carried income: what it earned before it entered the
+  pool. It is attributed by that miner's own burn (§4) and recognized at the admission boundary, before
+  the incoming batch joins the composition. No `_sync` runs between the claim and the attribution, so the
+  pool's composition never splits carried income.
+
+Only actual balance increases count; `pending()` is never used as income (it can be 0 while a claim pays;
+on the BSC fork every incoming miner's claim paid more than its `pending()` just before). A balance below
+the ledger reverts (`BalanceDecreased`). While no miner is admitted (`N + L = 0`) nothing is recognized;
+the first admission attributes its incoming miners' carried income and then recognizes everything else
+held (donations, payouts for unregistered or revoked miners) as ordinary income of its new period, under
+the first composition.
 
 ## 2. The outer accounts: 80 + 1 + 1 + 2 = 84
 
@@ -26,10 +41,11 @@ C     = ⌊2 · T / 84⌋      (the sink, 0x000000000000000000000000000000000000
 P     = ⌊80 · T / 84⌋     (participants: NAND + LATCH receipts)
 ```
 
-Each account is its own floor of `T`. C is `⌊2T/84⌋`, not `2·⌊T/84⌋`: at `T = 42` C is 1 while A and B
-are 0, and at `T = 1,050` C is 25 while A and B are 12 each. The participants receive 100/105 ≈ 95.238%
-of `T` (not 95%), A and B 1.25/105 ≈ 1.190% each and C 2.5/105 ≈ 2.381%. The weights are code
-constants: no setter, no administrator-controlled fee, and no other fee.
+Each account is its own floor of `T`, carried income included. C is `⌊2T/84⌋`, not `2·⌊T/84⌋`: at
+`T = 42` C is 1 while A and B are 0, and at `T = 1,050` C is 25 while A and B are 12 each. The
+participants receive 100/105 ≈ 95.238% of `T` (not 95%), A and B 1.25/105 ≈ 1.190% each and C
+2.5/105 ≈ 2.381%. The weights are code constants: no setter, no administrator-controlled fee, and no
+other fee.
 
 A and B are paid by `releaseA`/`releaseB`, each tracking its own paid amount. The paid amount belongs
 to the role, not the address: when a recipient moves its role (`setRecipient`), whatever has accrued
@@ -63,26 +79,52 @@ no receipt, cannot be configured or migrated, and neither recipient may be set t
   transfer to the sink and never depend on a release. A token that
   refused transfers to the sink would block releases (A, B and C together) but not receipt claims.
 
-## 4. Composition periods
+## 4. The category ledger
 
-`N` and `L` are the summed `nandBurn`/`latchBurn` of all admitted miners. Each admission ends a period
-(step 4 of the boundary) by storing the category incomes reached so far:
+The participants' entitlement is split between NAND and LATCH in a ledger kept in units of
+1 / `LEDGER_UNIT` raw BEM, `LEDGER_UNIT = 84 · 10^18`. In those units the participants' share of `x` raw
+units is exact: `u(x) = x · 80 · 10^18`. Every split gives NAND the floor and LATCH the rest, so a split
+never loses anything and favours LATCH by less than one ledger unit (under 1.2 · 10^-20 raw BEM).
+
+**Ordinary income** recognized while the pool's aggregate composition is `(N, L)` (the summed
+`nandBurn`/`latchBurn` of all admitted miners) is split by `N : L`.
+
+**Carried income** `r` of an incoming miner with burn `(n, l)` is split by that miner's own `n : l`:
 
 ```
-nandBase  = nandIncome(T_k)       latchBase = latchIncome(T_k)       participantBase = nandBase + latchBase
+toNand  = ⌊u(r) · n / (n + l)⌋           toLatch = u(r) − toNand
 ```
 
-and income recognized afterwards is split by the new composition:
+whatever the pool's composition is. The depositor receives nothing; the income belongs to all existing
+receipts of each category.
+
+**Admissions are boundaries.** Each admission (1) recognizes held BEM and settles every registered miner
+under the old composition, (2) freezes the old period's entitlements, fractions included, (3) attributes
+each incoming miner's carried income, and (4) adds the batch to the composition. The boundary state is
+`accountedBase` (`T` at the boundary) and `nandBase`, `latchBase` (ledger units), always with
+`nandBase + latchBase = u(accountedBase)`. Inside a period:
 
 ```
-d           = P(T) − participantBase
-nandIncome  = nandBase  + ⌊d · N / (N + L)⌋
-latchIncome = latchBase + ⌊d · L / (N + L)⌋
+d          = u(T − accountedBase)
+nandUnits  = nandBase  + ⌊d · N / (N + L)⌋
+latchUnits = latchBase + d − ⌊d · N / (N + L)⌋
+nandIncome = ⌊nandUnits / LEDGER_UNIT⌋          latchIncome = ⌊latchUnits / LEDGER_UNIT⌋
 ```
 
-Earlier periods are frozen inside the bases, so a new miner never re-prices income settled before it.
-The two floors lose at most one unit together; that unit stays inside `d` and is distributed in the
-next period, not lost.
+`ledgerState()` returns the boundary state; `carriedIncome` and `carriedNandUnits` are the cumulative
+carried income and its NAND part (its LATCH part is `u(carriedIncome) − carriedNandUnits`); every
+miner's record (`miner(id).carriedIncome`) holds what its own claim paid at its admission, and the event
+`CarriedIncomeAttributed(tokenId, received, nandUnits, latchUnits)` reports each attribution.
+
+**Order independence.** A carried split depends only on the miner's `(r, n, l)`, and ledger entries add.
+Admitting the same miners in any order, in one batch, one by one with no intervening accrual, or in
+several batches, gives the same ledger to the ledger unit, hence the same raw-unit incomes. Only the
+period counter and the registry order differ. Income a miner earns *after* its admission is ordinary
+income of the pool: if time passes between two sequential admissions, the first miner's new income is
+split by the aggregate composition, as it should be.
+
+**Path independence.** Within one period every quantity depends only on `T`: receiving income in one
+harvest or in many gives identical results.
 
 ## 5. Receipts
 
@@ -97,46 +139,45 @@ longer claim it, and the same numeric ID in the other collection is independent.
 distributor accrue like any other.
 
 **Zero-supply categories.** Activation refuses `S_N = S_L = 0`. If one collection has no receipts, no
-miner that burns that category can be admitted (`UnsupportedCategory`), so that category's weight
-stays zero and its income is zero; nothing is redirected and no fallback weight exists.
+miner that burns that category can be admitted (`UnsupportedCategory`), so that category's weight and
+carried share stay zero and its income is zero; nothing is redirected and no fallback weight exists.
 
 ## 6. Rounding model
 
 ```
 residue = T − A − B − C − S_N·perNandShare − S_L·perLatchShare
-        ≤ 3 (outer floors) + 1 (carried category unit) + (S_N − 1) + (S_L − 1)
+        ≤ 3 (outer floors) + 1 (category floors) + (S_N − 1) + (S_L − 1)
 ```
 
 (a zero-supply category contributes 0 instead of `S − 1`). The outer term: with `T = 84q + r`
 (`0 ≤ r < 84`), the four floors leave `r − ⌊2r/84⌋ − ⌊80r/84⌋`, which is at most 3, reached for
-`r = 64 … 83` (the 102-part rule left at most 2). C receives exactly its own floor and never the
-residue. The residue stays in the pool and is not an account; it does not accumulate across harvests
-or periods because every quantity is recomputed from `T`. Within one composition period the allocation
-depends only on `T`, so receiving income in one harvest or in many gives identical results. Across
-periods, the only extra rounding is the at-most-one-unit carry above.
+`r = 64 … 83`. The category term: `nandUnits + latchUnits = u(T)` exactly, so the two raw-unit floors
+leave `P − nandIncome − latchIncome ∈ {0, 1}`. C receives exactly its own floor and never the residue.
+The residue stays in the pool and is not an account; it does not accumulate, because every quantity is
+recomputed from the ledger.
 
-**Bounded residue is not a lifetime category-fairness bound.** A checkpoint freezes each category's
-whole-unit income and carries only the single unassigned participant unit, not each category's
-fractional remainder. So admissions can shift lifetime category totals by more than one unit, even
-when they keep the same NAND:LATCH ratio, while the unassigned residue stays within the bound above.
+**Category fairness.** Against the exact rational entitlements (ordinary income at `N/(N+L)`, carried
+income at each miner's `n/(n+l)`), each category's income is within one raw unit: NAND is at most one
+unit below and never above, LATCH at most one unit below or a fraction of a unit above it. The ledger
+floors add at most one ledger unit per period and per carried miner, under 10^-17 raw units over any
+realistic history. 2.1.0 froze whole raw units at each checkpoint, so same-ratio admissions could shift
+lifetime category totals by more than a unit (test/remediation/RoundingPolicy.t.sol kept that example:
+NAND 0 / LATCH 8 with checkpoints, 3 / 6 without); 2.2.0 gives 3 / 6 both ways.
 
-Example (test/remediation/RoundingPolicy.t.sol, raw units):
-- **Setup.** One receipt per category and a 1:2 miner; 3 units are recognized, then one unit in each
-  of seven further periods.
-- **With checkpoints.** A zero-carry 1:2 miner is admitted between periods. At `T = 10` the result is
-  NAND 0, LATCH 8, residue 2.
-- **Without checkpoints.** The same 10 units recognized in one period give NAND 3, LATCH 6, residue 1.
+**Single-period difference from 2.1.0.** 2.1.0 split the floored total `P = ⌊80T/84⌋`; 2.2.0 splits the
+exact share `80T/84`. In one period a category can therefore receive one raw unit more than under 2.1.0
+(T = 45 at 3:1: NAND 32, LATCH 10 instead of 31, 10), and the sum stays within one unit of `P`.
 
-Both results conserve every unit and never reverse an accrued amount. Creating such boundaries needs
-whitelisted admissions of further eligible miners into permanent custody. This is the documented
-policy of this version, pending the owner's explicit economic acceptance. Changing it, for example by
-carrying each category's fraction, would be a separate specification and contract change.
+**Arithmetic range.** The ledger multiplies by `80 · 10^18` and then by the composition, so totals must
+stay below about `2^256 / (8 · 10^19 · (N + L))`: over 10^44 raw units even for a registry of 600 miners
+with the largest burns Mining can record, against BEM's maximum supply of 2.1 · 10^15 raw units.
 
 ## 7. Monotonicity
 
-`T` only grows, so `A`, `B`, `C` and `P` never decrease. Inside a period both category incomes are
-non-decreasing in `T`; at a checkpoint the new bases equal the current incomes, so no category,
-per-share value, recipient entitlement or sink entitlement ever decreases.
+`T` only grows, so `A`, `B`, `C` and `P` never decrease. Inside a period both category ledgers are
+non-decreasing in `T` (`⌊d·N/W⌋` and `d − ⌊d·N/W⌋` both are); at a checkpoint the bases equal the
+current values, and a carried attribution only adds. So no category, per-share value, recipient
+entitlement or sink entitlement ever decreases, and a claimed amount can never become claimable again.
 
 ## 8. Reconciliation identities
 
@@ -148,23 +189,36 @@ totalPaid            = A_paid + B_paid + C_paid + nandReceiptsPaid + latchReceip
 totalAccounted       = A + B + C + S_N·perNandShare + S_L·perLatchShare + residue
 A = B = ⌊T/84⌋,  C = ⌊2T/84⌋,  nandIncome + latchIncome ≤ ⌊80T/84⌋    each from T on its own
 A_paid ≤ A,  B_paid ≤ B,  C_paid ≤ C
+nandBase + latchBase = u(accountedBase),  nandUnits + latchUnits = u(T)   ledger identities
+carriedIncome ≤ accountedBase ≤ T,  carriedNandUnits ≤ u(carriedIncome)
 Σ_id claimed[NAND][id] = nandReceiptsPaid   (and LATCH)                 --deep
+Σ_miner carriedIncome = carriedIncome,  Σ_miner toNand(miner) = carriedNandUnits   --deep
 ```
 
 The pool's obligations are the five unpaid amounts, unpaid C included; the BEM balance covers them
-plus the residue and anything not yet recognized.
+plus the residue and anything not yet recognized. `T − carriedIncome` is the ordinary income.
 
-## 9. Acceptance example
+## 9. Acceptance examples
 
-Old composition `N:L = 9:1`; the registered miners have 105 BEM to collect; a `1:9` miner carrying
-105 BEM is admitted.
+**Old and carried income.** Old composition `N:L = 9:1`; the registered miners have 105 BEM to collect; a
+`1:9` miner carrying 105 BEM is admitted.
 
 | Step | T | A | B | C | NAND | LATCH |
 | --- | --- | --- | --- | --- | --- | --- |
-| 3. settle old miners (9:1) | 105 | 1.25 | 1.25 | 2.5 | 90 | 10 |
-| 4. checkpoint, composition becomes 10:10 | 105 | 1.25 | 1.25 | 2.5 | 90 (base) | 10 (base) |
-| 5. carried income (10:10) | 210 | 2.5 | 2.5 | 5 | 90 + 50 = 140 | 10 + 50 = 60 |
+| settle old miners (9:1) | 105 | 1.25 | 1.25 | 2.5 | 90 | 10 |
+| checkpoint | 105 | 1.25 | 1.25 | 2.5 | 90 (frozen) | 10 (frozen) |
+| carried income (the miner's own 1:9) | 210 | 2.5 | 2.5 | 5 | 90 + 10 = 100 | 10 + 90 = 100 |
 
-`testSpecificationAcceptanceExample` and the local end-to-end run (`acceptanceExampleNand140Latch60`)
-reproduce exactly these numbers. With 1,050 BEM recognized in one period, A and B receive 12.5 BEM
-each, C 25 BEM and the participants 1,000 BEM (test/unit/PoolFeeSplit.t.sol).
+Later income is split 10:10. (2.1.0 split the carried income by the post-admission 10:10 composition:
+NAND 140, LATCH 60.) `testSpecificationAcceptanceExample` and the local end-to-end run
+(`acceptanceExampleCarriedByOwnBurnNand100Latch100`) reproduce these numbers.
+
+**SALUS example (finding #2).** Miner X burned 10 NAND / 0 LATCH and carries 105 BEM; miner Y burned 5 / 5
+and carries 105 BEM. Each contributes 100 BEM to the participants. X gives NAND 100, Y gives NAND 50 and
+LATCH 50: NAND 150, LATCH 50, whether X comes first, Y comes first, or both come in one batch (in either
+order); future income is split 15 : 5. (2.1.0 gave 175 / 25 or 125 / 75 depending on the order.)
+`testSalusExampleIsIndependentOfAdmissionOrder` checks all four orders, and the differential test checks
+them against the independent model.
+
+With 1,050 BEM recognized in one period, A and B receive 12.5 BEM each, C 25 BEM and the participants
+1,000 BEM (test/unit/PoolFeeSplit.t.sol).

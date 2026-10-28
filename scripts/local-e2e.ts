@@ -14,6 +14,7 @@ import { mockBEMAbi, mockMiningAbi, mockNFTAbi, tapeoutEntitlementReceiptAbi, ta
 import { loadSystemFile } from '../sdk/config.ts';
 import { CATEGORY, erc20Abi } from '../sdk/constants.ts';
 import { deployPoolPlan } from '../sdk/pool.ts';
+import { simulate } from '../sdk/tx.ts';
 
 const DIR = '.runtime/local-e2e';
 const BEM = 10n ** 8n;
@@ -187,17 +188,30 @@ async function main() {
     const emptyAfter = await variant('no-wallets-finalized', a => ({ ...a, wallets: [], totals: { NAND: 0, LATCH: 0, wallets: 0 } }));
     check('verifyNeverMatchesEmptyArtifactAfterFinalization', emptyAfter.status === 'MISMATCH', emptyAfter);
 
-    // 4. Activation, then every ownership renounced separately.
+    // 4. 2.2.0 initialization (SALUS #3): bind the distributor once, activate, then every ownership is
+    //    renounced separately; the first admission is refused until all four are.
+    const unbound = await fails('activate-before-binding', ['activate', '--addresses', addressesFile, '--nand-shares', '30', '--latch-shares', '10', '--from', operator, '--send-local']);
+    check('activationRefusedWithoutDistributorBinding', /no distributor is bound/.test(unbound), unbound);
+    await step('bind-distributor', ['bind-distributor', '--addresses', addressesFile, '--from', operator, '--send-local']);
+    const rebind = await fails('bind-distributor-twice', ['bind-distributor', '--addresses', addressesFile, '--from', operator, '--send-local']);
+    check('distributorBindingIsOneTime', /already bound/.test(rebind), rebind);
     await fails('activate-rejects-wrong-counts', ['activate', '--addresses', addressesFile, '--nand-shares', '31', '--latch-shares', '10', '--from', operator, '--send-local']);
     await step('activate', ['activate', '--addresses', addressesFile, '--nand-shares', '30', '--latch-shares', '10', '--from', operator, '--send-local']);
-    for (const target of ['pool', 'distributor', 'nand', 'latch']) await step(`renounce-${target}`, ['renounce', '--addresses', addressesFile, '--target', target, '--from', operator, '--send-local']);
-    check('allOwnershipsRenounced', (await read<Address>(pool, tapeoutMinerPoolAbi as Abi, 'owner')) === '0x0000000000000000000000000000000000000000');
-
-    // 5. Admissions by the whitelisted depositor: the specification's acceptance example.
     for (const [id, n, l] of [[1n, 9, 1], [2n, 1, 9], [3n, 4, 4], [4n, 2, 2]] as const) {
       await write(nft, mockNFTAbi as Abi, 'mint', [depositor, id]);
       await write(mining, mockMiningAbi as Abi, 'start', [nft, id, n, l]);
     }
+    const early = await fails('deposit-before-finality', ['deposit', '--addresses', addressesFile, '--token-ids', '1', '--from', depositor, '--send-local']);
+    check('cliRefusesTheFirstAdmissionBeforeFinality', /custody is not open/.test(early) && /poolOwnerRenounced/.test(early) && /nandOwnerRenounced/.test(early), early);
+    await write(nft, mockNFTAbi as Abi, 'setApprovalForAll', [pool, true], depositor);
+    const gateBypass = await simulate(rpc, { to: pool, value: 0n, description: 'deposit bypassing the CLI preflight', data: encodeFunctionData({ abi: tapeoutMinerPoolAbi as Abi, functionName: 'depositMiners', args: [[1n]] }) }, depositor);
+    check('chainRefusesTheFirstAdmissionBeforeFinality', !gateBypass.ok && /OwnershipNotRenounced/.test(gateBypass.error ?? ''), gateBypass);
+    for (const target of ['pool', 'distributor', 'nand', 'latch']) await step(`renounce-${target}`, ['renounce', '--addresses', addressesFile, '--target', target, '--from', operator, '--send-local']);
+    check('allOwnershipsRenounced', (await read<Address>(pool, tapeoutMinerPoolAbi as Abi, 'owner')) === '0x0000000000000000000000000000000000000000');
+    const finality = await step('finality', ['finality', '--addresses', addressesFile]);
+    check('readyForFirstAdmission', finality.status === 'READY_FOR_FIRST_ADMISSION' && (finality.missing as string[]).length === 0, finality);
+
+    // 5. Admissions by the whitelisted depositor: the specification's acceptance example.
     const comp = await step('composition', ['composition', '--addresses', addressesFile, '--token-ids', '1-2']);
     check('compositionReadable', (comp.miners as { admissible: boolean }[]).every(m => m.admissible));
     await step('deposit-first-miner', ['deposit', '--addresses', addressesFile, '--token-ids', '1', '--from', depositor, '--send-local']);
@@ -206,7 +220,11 @@ async function main() {
     await write(mining, mockMiningAbi as Abi, 'accrue', [nft, 2n, 105n * BEM]);
     await step('deposit-second-miner', ['deposit', '--addresses', addressesFile, '--token-ids', '2', '--from', depositor, '--send-local']);
     const accrual = await read<{ nandIncome: bigint; latchIncome: bigint; recipientA: bigint; recipientB: bigint; sink: bigint }>(pool, tapeoutMinerPoolAbi as Abi, 'accrual');
-    check('acceptanceExampleNand140Latch60', accrual.nandIncome === 140n * BEM && accrual.latchIncome === 60n * BEM && accrual.recipientA === 250_000_000n && accrual.recipientB === 250_000_000n && accrual.sink === 5n * BEM, accrual);
+    // 2.2.0: the old miner's 100 BEM go 9:1, the incoming miner's carried 100 BEM by its own 1:9 burn
+    // (under 2.1.0 the carried BEM went by the 10:10 post-batch composition: NAND 140, LATCH 60).
+    check('acceptanceExampleCarriedByOwnBurnNand100Latch100', accrual.nandIncome === 100n * BEM && accrual.latchIncome === 100n * BEM && accrual.recipientA === 250_000_000n && accrual.recipientB === 250_000_000n && accrual.sink === 5n * BEM, accrual);
+    check('carriedIncomeRecordedPerMiner', (await read<{ carriedIncome: bigint }>(pool, tapeoutMinerPoolAbi as Abi, 'miner', [2n])).carriedIncome === 105n * BEM
+      && (await read<bigint>(pool, tapeoutMinerPoolAbi as Abi, 'carriedIncome')) === 105n * BEM);
     check('depositorKeptNothing', (await read<bigint>(bem, erc20Abi as Abi, 'balanceOf', [depositor])) === 0n);
 
     // 6. Unauthorized admission paths.
@@ -285,6 +303,7 @@ async function main() {
     // 9. Reconciliation and the CLI entrypoint.
     const reconcile = await step('reconcile-deep', ['reconcile', '--addresses', addressesFile, '--deep', '--out', 'reports/local-e2e-reconcile.json']);
     check('reconcilePass', reconcile.status === 'PASS', reconcile);
+    check('carriedRecordsReconcile', (reconcile.carriedRecords as { match: boolean; miners: number }).match && (reconcile.carriedRecords as { miners: number }).miners === 4, reconcile.carriedRecords);
     const inspect = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'cli/pool.ts', 'inspect', '--addresses', addressesFile, '--holder', alice, '--miners', '--pending', '--rpc-url', node.url], { encoding: 'utf8' }));
     check('cliEntrypointInspect', inspect.pool.active === true && inspect.miners.length === 4 && inspect.holdings.NAND.ids.length === 20);
     report.final = inspect.pool;

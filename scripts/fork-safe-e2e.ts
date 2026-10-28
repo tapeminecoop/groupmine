@@ -300,10 +300,15 @@ async function main() {
     const ready = await step('verify-allocation', ['verify-allocation', '--addresses', addressesFile, '--artifact', `${DIR}/artifact.json`, '--allocation', allocationFile]);
     check('allocationReadyToFinalize', ready.status === 'READY_TO_FINALIZE', ready);
     await safeStep('finalize-allocation', ['finalize-allocation', '--addresses', addressesFile, '--artifact', `${DIR}/artifact.json`, '--allocation', allocationFile], operator);
+    // 2.2.0 (SALUS #3): the Safe binds the distributor once, activates, and renounces all four owners.
+    await safeStep('bind-distributor', ['bind-distributor', '--addresses', addressesFile], operator);
+    check('distributorBoundOnce', (await read<Address>(pool, poolAbi, 'distributor')).toLowerCase() === distributor.toLowerCase());
     await safeStep('activate', ['activate', '--addresses', addressesFile, '--nand-shares', '500', '--latch-shares', '60'], operator);
     check('poolActive', await read<boolean>(pool, poolAbi, 'active'));
     for (const target of ['nand', 'latch', 'distributor', 'pool']) await safeStep(`renounce-${target}`, ['renounce', '--addresses', addressesFile, '--target', target], operator);
     check('everyOwnershipRenounced', (await Promise.all([nand, latch, distributor, pool].map(a => read<Address>(a, ownableAbi, 'owner')))).every(o => o === zeroAddress));
+    const finality = await step('finality', ['finality', '--addresses', addressesFile]);
+    check('readyForFirstAdmission', finality.status === 'READY_FOR_FIRST_ADMISSION', finality);
 
     // Below the threshold the Safe refuses: one signature of two.
     const lone = await safeTx(operator, pool, 0n, encodeFunctionData({ abi: poolAbi, functionName: 'releaseA' }), 0);
@@ -324,12 +329,12 @@ async function main() {
     const [firstA, firstB, ...later] = miners;
     const first = await safeStep('deposit-first', ['deposit', '--addresses', addressesFile, '--token-ids', `${firstA},${firstB}`], member);
     check('approvalAndDepositInOneSafeTransaction', first.files.length === 1 && first.files[0].transactions === 2, first.files);
-    const firstAdmission = parseEventLogs({ abi: poolAbi, eventName: 'MinersAdmitted', logs: first.receipts[0].logs })[0]?.args as { settledOldIncome: bigint; carriedIncome: bigint } | undefined;
+    const firstAdmission = parseEventLogs({ abi: poolAbi, eventName: 'MinersAdmitted', logs: first.receipts[0].logs })[0]?.args as { settledOldIncome: bigint; carriedIncome: bigint; newPeriodIncome: bigint } | undefined;
     check('firstAdmissionCarriesRealIncome', firstAdmission !== undefined && firstAdmission.carriedIncome > 0n, firstAdmission);
     await advance(3600);
     const second = await safeStep('deposit-later', ['deposit', '--addresses', addressesFile, '--token-ids', later.join(',')], member);
     check('laterDepositIsOneCall', second.files.length === 1 && second.files[0].transactions === 1, second.files);
-    const laterAdmission = parseEventLogs({ abi: poolAbi, eventName: 'MinersAdmitted', logs: second.receipts[0].logs })[0]?.args as { settledOldIncome: bigint; carriedIncome: bigint } | undefined;
+    const laterAdmission = parseEventLogs({ abi: poolAbi, eventName: 'MinersAdmitted', logs: second.receipts[0].logs })[0]?.args as { settledOldIncome: bigint; carriedIncome: bigint; newPeriodIncome: bigint } | undefined;
     check('oldIncomeSettledInsideSafeAdmission', laterAdmission !== undefined && laterAdmission.settledOldIncome > 0n && laterAdmission.carriedIncome > 0n, laterAdmission);
     const custody = await Promise.all(miners.map(id => read<Address>(BSC_PROTOCOL.minerCollection, erc721Abi as Abi, 'ownerOf', [id])));
     check('everyMinerInPoolCustody', await read<bigint>(pool, poolAbi, 'minerCount') === BigInt(miners.length) && custody.every(o => getAddress(o) === pool), custody);

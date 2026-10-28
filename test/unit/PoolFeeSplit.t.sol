@@ -52,7 +52,7 @@ contract PoolFeeSplitTest is SystemTestBase {
         assertEq(pool.PARTICIPANT_PARTS(), 80);
         assertEq(pool.RECIPIENT_PARTS(), 1);
         assertEq(pool.SINK_PARTS(), 2);
-        PoolMath.Accrual memory a = PoolMath.accrue(BEM_1050, pool.state());
+        PoolMath.Accrual memory a = PoolMath.accrue(BEM_1050, pool.ledgerState());
         assertEq(a.participants, 1_000 * BEM_UNIT, "NAND + LATCH 1,000 BEM");
         assertEq(a.recipientA, 12 * BEM_UNIT + HALF_BEM, "A 12.5 BEM");
         assertEq(a.recipientB, 12 * BEM_UNIT + HALF_BEM, "B 12.5 BEM");
@@ -144,7 +144,7 @@ contract PoolFeeSplitTest is SystemTestBase {
         assertEq(a.sink, 25 * BEM_UNIT);
         (uint256 settled,) = admitNew(2, 1, 1); // aggregate 3:1 after a settled admission
         assertEq(settled, 0, "the old miner was harvested already");
-        assertEq(pool.nandBase(), 1_000 * BEM_UNIT, "old period frozen");
+        assertEq(pool.ledgerState().nandBase, 1_000 * BEM_UNIT * pool.LEDGER_UNIT(), "old period frozen");
         accrue(2, BEM_1050);
         pool.harvestRange(0, 2);
         a = pool.accrual();
@@ -156,9 +156,10 @@ contract PoolFeeSplitTest is SystemTestBase {
         assertReconciled();
     }
 
-    /// @notice Incoming miners' carried income (also when Mining's pending() shows zero) is settled at
-    ///         the boundary under the new composition; the old miner's under the old one; A, B and C
-    ///         accrue on both.
+    /// @notice The old miner's income (also when Mining's pending() shows zero) is settled at the
+    ///         boundary under the old composition, and the incoming miner's carried income goes by that
+    ///         miner's own burn (SALUS remediation, 2.2.0; under 2.1.0 it was split by the new 1:1
+    ///         composition, NAND 84,000 / LATCH 4,000); A, B and C accrue on both.
     function testAdmissionBoundaryUnderTheNewSplit() public {
         admitNew(1, 1, 0); // NAND only
         mining.accrueUnsettled(address(nft), 1, 84_000); // pending() 0, claim pays 84,000
@@ -170,9 +171,13 @@ contract PoolFeeSplitTest is SystemTestBase {
         PoolMath.Accrual memory a = pool.accrual();
         uint256 t = 84_000 + 8_400;
         assertEq(a.total, t);
-        assertEq(pool.nandBase(), _p(84_000), "old miner's income: old composition, all NAND");
-        assertEq(a.nandIncome, _p(84_000) + (_p(t) - _p(84_000)) / 2);
-        assertEq(a.latchIncome, (_p(t) - _p(84_000)) / 2);
+        assertEq(
+            pool.ledgerState().nandBase,
+            _p(84_000) * pool.LEDGER_UNIT(),
+            "old miner's income: old composition, all NAND"
+        );
+        assertEq(a.nandIncome, _p(84_000), "the LATCH-only incoming miner carries nothing to NAND");
+        assertEq(a.latchIncome, _p(8_400), "its carried income goes to LATCH by its own burn");
         assertEq(a.recipientA, _a(t));
         assertEq(a.sink, _c(t));
         assertEq(bem.balanceOf(SINK), 0, "admission accrues C but does not pay it");

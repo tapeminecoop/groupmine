@@ -11,6 +11,13 @@ participants : A : B : C = 80 : 1 : 1 : 2 of 84, each part floor(T * parts / 84)
 release of A or B also pays C's whole unpaid part to the fixed sink. The review's 102-part version of
 this file is at b846c0c.
 
+Updated for TapeoutMinerPool/2.2.0 (SALUS remediation, docs/SALUS_AUDIT_REMEDIATION_REPORT.md): the
+category bases are kept in ledger units of 1 / (84 * 10^18) raw BEM with their fractions (the participants'
+exact share of T is T * 80 * 10^18 units; NAND takes each split's floor, LATCH the rest), and an incoming
+miner's carried income is split by that miner's own burn before the new composition takes effect. The
+ideal (rational) split follows the same rule and the drift bound is now one raw unit in all. Only incomes(),
+op_A, the period bookkeeping and that bound changed; the 2.1.0 version of this file is at a74f6d4.
+
 Called by test/audit/AuditDifferential.t.sol through vm.ffi with one argument: a trace of operations
 "K:a,b,c;K:...;" (see the Solidity file for the op list). Prints an ABI-encoded uint256[] (hex) whose
 first word is a status (0 = all model invariants held, 1 = a model invariant was violated; the message
@@ -22,6 +29,8 @@ from fractions import Fraction
 TOTAL_PARTS = 84
 PARTICIPANT_PARTS = 80
 SINK_PARTS = 2
+UNITS = PARTICIPANT_PARTS * 10 ** 18       # ledger units per raw unit of the participants' share (2.2.0)
+LEDGER_UNIT = TOTAL_PARTS * 10 ** 18       # ledger units per raw BEM unit (2.2.0)
 SUPPLY = {0: 7, 1: 5}
 # Receipt holders at activation (actor indices): NAND 1-4 alice(0), 5-7 bob(1); LATCH 1-3 carol(2), 4-5 dave(3).
 INITIAL_HOLDER = {0: [None, 0, 0, 0, 0, 1, 1, 1], 1: [None, 2, 2, 2, 3, 3]}
@@ -40,9 +49,9 @@ class Model:
         self.bal = 0          # BEM actually held by the pool
         self.N = 0
         self.L = 0
-        self.nandBase = 0
-        self.latchBase = 0
-        self.partBase = 0
+        self.nandBase = 0     # ledger units (2.2.0)
+        self.latchBase = 0    # ledger units (2.2.0)
+        self.baseT = 0        # recognized total at the last boundary (2.2.0)
         self.periods = 0
         self.owed = {}        # miner -> BEM still inside Mining (pending or hidden)
         self.registered = []
@@ -55,7 +64,7 @@ class Model:
         self.actor = [0] * ACTORS
         self.reached = 0      # BEM that ever reached the pool
         self.ideal = [Fraction(0), Fraction(0)]
-        self.pStart = 0
+        self.tStart = 0
         self.last = (0, 0, 0, 0)
 
     # ---------------------------------------------------------------- specification arithmetic
@@ -68,16 +77,21 @@ class Model:
     def C(self, T):
         return T * SINK_PARTS // TOTAL_PARTS
 
-    def incomes(self, T):
+    def units(self, T):
         nand, latch = self.nandBase, self.latchBase
         weight = self.N + self.L
         if weight:
-            d = self.P(T) - self.partBase
+            d = (T - self.baseT) * UNITS
             if d < 0:
-                raise Violation("participants below the checkpointed base")
-            nand += d * self.N // weight
-            latch += d * self.L // weight
+                raise Violation("total below the checkpointed base")
+            to_nand = d * self.N // weight
+            nand += to_nand
+            latch += d - to_nand
         return nand, latch
+
+    def incomes(self, T):
+        nand, latch = self.units(T)
+        return nand // LEDGER_UNIT, latch // LEDGER_UNIT
 
     def per_share(self, T):
         nand, latch = self.incomes(T)
@@ -103,12 +117,12 @@ class Model:
         weight = self.N + self.L
         if weight == 0:
             return
-        dP = self.P(self.T) - self.pStart
-        self.ideal[0] += Fraction(dP * self.N, weight)
-        self.ideal[1] += Fraction(dP * self.L, weight)
+        dP = Fraction((self.T - self.tStart) * PARTICIPANT_PARTS, TOTAL_PARTS)
+        self.ideal[0] += dP * self.N / weight
+        self.ideal[1] += dP * self.L / weight
 
     def open_period(self):
-        self.pStart = self.P(self.T)
+        self.tStart = self.T
 
     # ---------------------------------------------------------------- operations (trace letters)
     def op_A(self, miner, n, l, carry):
@@ -118,16 +132,24 @@ class Model:
         for m in self.registered:                          # step 3: settle every registered miner
             self.settle(m)
         self.recognize()
-        nand, latch = self.incomes(self.T)                 # step 4: checkpoint
+        nand, latch = self.units(self.T)                   # step 4: checkpoint, fractions kept
         self.close_period()
-        self.nandBase, self.latchBase, self.partBase = nand, latch, nand + latch
+        self.nandBase, self.latchBase, self.baseT = nand, latch, self.T
         self.periods += 1
-        self.N += n
+        carried = self.owed.get(miner, 0)                  # step 5: carried income, the miner's own burn
+        self.settle(miner)
+        to_nand = carried * UNITS * n // (n + l)
+        self.nandBase += to_nand
+        self.latchBase += carried * UNITS - to_nand
+        self.ideal[0] += Fraction(carried * PARTICIPANT_PARTS * n, TOTAL_PARTS * (n + l))
+        self.ideal[1] += Fraction(carried * PARTICIPANT_PARTS * l, TOTAL_PARTS * (n + l))
+        self.T += carried
+        self.baseT = self.T
+        self.N += n                                        # step 6: the new composition
         self.L += l
         self.registered.append(miner)
         self.open_period()
-        self.settle(miner)                                 # step 5: carried income, new composition
-        self.recognize()
+        self.recognize()                                   # held before any composition (first admission)
 
     def op_R(self, miner, amount):
         self.owed[miner] = self.owed.get(miner, 0) + amount
@@ -200,8 +222,8 @@ class Model:
         self.close_period()
         nand, latch = self.incomes(self.T)
         for c, value in ((0, nand), (1, latch)):
-            if abs(Fraction(value) - self.ideal[c]) > self.periods + 1:
-                raise Violation("integer split drifts from the exact rational split by more than one unit per period")
+            if abs(Fraction(value) - self.ideal[c]) >= 1 + Fraction(2 * (self.periods + 1), LEDGER_UNIT):
+                raise Violation("integer split drifts from the exact rational split by a raw unit or more")
         pn, pl = self.per_share(self.T)
         for c, per in ((0, pn), (1, pl)):
             for i in range(1, SUPPLY[c] + 1):
