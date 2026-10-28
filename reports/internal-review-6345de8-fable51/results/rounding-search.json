@@ -1,0 +1,83 @@
+{
+  "random_traces": {
+    "runs": 20000,
+    "worst_nand_deficit_raw": 1.0,
+    "worst_latch_excess_raw": 0.0,
+    "nand_one_below_floor_of_exact": 2
+  },
+  "nand_one_below_floor_example": {
+    "denominator": 11,
+    "entries": [
+      [
+        924084,
+        1,
+        10
+      ]
+    ],
+    "count": 11,
+    "exact_nand_raw": "880080",
+    "policy_nand_raw": 880079
+  },
+  "nand_one_below_integer_exact_minimal": {
+    "entries": "9 x (1 raw, burn 7:5)",
+    "exact_nand_raw": 5,
+    "policy_nand_raw": 4
+  },
+  "order_independence_violations": 0,
+  "intervening_accrual_labelled_difference": {
+    "X_then_accrual_then_Y": [
+      31500000000,
+      25000000000,
+      5000000000
+    ],
+    "batch_then_accrual": [
+      31500000000,
+      22500000000,
+      7500000000
+    ],
+    "note": "expected to differ: ordinary income earned by X alone goes 10:0, in the batch case 15:5"
+  },
+  "salus_reference_example": {
+    "nand_raw": 15000000000,
+    "latch_raw": 5000000000,
+    "A_raw": 250000000,
+    "C_raw": 500000000,
+    "after_105_more_at_15_5": {
+      "nand_raw": 22500000000,
+      "latch_raw": 7500000000
+    }
+  },
+  "repeated_same_ratio": {
+    "1:2": {
+      "k": 100,
+      "nand_policy": 222,
+      "nand_exact": "2000/9",
+      "deficit_ledger_units": "56000000000000000000/3"
+    },
+    "1:10": {
+      "k": 100,
+      "nand_policy": 60,
+      "nand_exact": "2000/33",
+      "deficit_ledger_units": "560000000000000000000/11"
+    },
+    "3:8": {
+      "k": 1000,
+      "nand_policy": 1298,
+      "nand_exact": "100000/77",
+      "deficit_ledger_units": "648000000000000000000/11"
+    }
+  },
+  "cumulative_bound": {
+    "max_ledger_unit_deficit_after_k_entries": "< k",
+    "raw_unit_crossing_condition": "frac(exact NAND units / UNIT) < k / UNIT",
+    "k_for_one_raw_unit_without_special_structure": 84000000000000000000
+  },
+  "outer_residue_max": 3,
+  "overflow": {
+    "bem_cap_raw_assumed": 2100000000000000,
+    "max_total_burn_weight_before_overflow": 689238626412596401330779672670761356269464,
+    "uint32_burn_x_miners_needed": 160475873018753808301589375517973,
+    "carried_uint120_max_raw": 1329227995784915872903807060280344575,
+    "carried_units_x_burn_max": true
+  }
+}

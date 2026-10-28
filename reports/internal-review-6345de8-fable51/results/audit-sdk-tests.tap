@@ -1,0 +1,75 @@
+TAP version 13
+# Subtest: shape: structured data, generic message (mainnet RPC)
+ok 1 - shape: structured data, generic message (mainnet RPC)
+  ---
+  duration_ms: 35.8815
+  ...
+# Subtest: shape: structured data nested one level deeper
+ok 2 - shape: structured data nested one level deeper
+  ---
+  duration_ms: 5.734333
+  ...
+# Subtest: shape: bytes in the message text only (Anvil-like)
+ok 3 - shape: bytes in the message text only (Anvil-like)
+  ---
+  duration_ms: 5.86425
+  ...
+# Subtest: shape: reverted, no bytes anywhere
+ok 4 - shape: reverted, no bytes anywhere
+  ---
+  duration_ms: 4.943833
+  ...
+# Subtest: shape: reverted with another selector
+ok 5 - shape: reverted with another selector
+  ---
+  duration_ms: 4.902209
+  ...
+# Subtest: shape: transport failure (HTTP 502)
+ok 6 - shape: transport failure (HTTP 502)
+  ---
+  duration_ms: 5.170541
+  ...
+# Subtest: shape: call succeeds (no revert at all)
+ok 7 - shape: call succeeds (no revert at all)
+  ---
+  duration_ms: 3.50525
+  ...
+# Subtest: the frozen matcher is a false negative exactly on the structured shapes: it never passes an unexpected outcome
+ok 8 - the frozen matcher is a false negative exactly on the structured shapes: it never passes an unexpected outcome
+  ---
+  duration_ms: 0.743416
+  ...
+# Subtest: real Anvil: a custom-error revert is matched by both; the rehearsal passed because Anvil writes the bytes into the message
+ok 9 - real Anvil: a custom-error revert is matched by both; the rehearsal passed because Anvil writes the bytes into the message
+  ---
+  duration_ms: 283.909416
+  ...
+# Subtest: receipts retained outside the distributor are reported and block an unqualified full round
+ok 10 - receipts retained outside the distributor are reported and block an unqualified full round
+  ---
+  duration_ms: 3.214916
+  ...
+# Subtest: sdk/math.accrue equals the specification for every remainder and for random periods
+ok 11 - sdk/math.accrue equals the specification for every remainder and for random periods
+  ---
+  duration_ms: 11.949417
+  ...
+# Subtest: a 2.0.0 decoder reads the 2.1.0 accrual tuple shifted, without an error
+ok 12 - a 2.0.0 decoder reads the 2.1.0 accrual tuple shifted, without an error
+  ---
+  duration_ms: 1.804291
+  ...
+# Subtest: reconciliation checks: unpaid C is an obligation; C paid as 2*floor(T/84) or above its accrual fails
+ok 13 - reconciliation checks: unpaid C is an obligation; C paid as 2*floor(T/84) or above its accrual fails
+  ---
+  duration_ms: 1.147375
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1091.432375

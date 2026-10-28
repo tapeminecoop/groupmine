@@ -1,0 +1,428 @@
+{
+  "scope": "REAL_BSC_STATE_LOCAL_FORK_ONLY",
+  "status": "PASS",
+  "startedAt": "2026-10-28T21:01:47.929Z",
+  "completedAt": "2026-10-28T21:02:54.399Z",
+  "source": {
+    "chainId": 56,
+    "forkBlock": "128713128",
+    "blockHash": "0x760f050b7ec66ced2a2745918d7492650150f9d71d3159259412996ebe65081f",
+    "blockTimestamp": "1792484426",
+    "archiveRpcHost": "bsc-mainnet.public.blastapi.io",
+    "discoveryRpcHost": "bsc-mainnet.public.blastapi.io"
+  },
+  "protocol": {
+    "minerCollection": "0xb1024b89886B9a34Aa4ff5F31C411D708b20a14C",
+    "mining": "0x7E2E0DC66a3bD9103E69b766afA62d9f7b697b46",
+    "bem": "0x5ce033B2bFCa3Af30b3e8C8457DeaF776A8b695a"
+  },
+  "inputs": {
+    "FORK_NAND_MINER": "12733",
+    "FORK_LATCH_MINER": "13948",
+    "FORK_INACTIVE_TOKEN": "648",
+    "FORK_SCALE_MINERS": "4183,1574,6940,4307,4655,3207,13617,7924,11127,4951,3932,10031,14559,16112,8714,2161,6767,11214,6453,14011,16944,15731,7541,5930"
+  },
+  "discovery": "overrides provided",
+  "deployedArtifacts": {
+    "compiled": "paris (./out)",
+    "forkEvm": "cancun",
+    "sdkBytecodeSha256": {
+      "TapeoutMinerPool": "d2a571486898d703e0bd0301945782734d28aea59b83a4c8b298c6c39dc8ed30",
+      "TapeoutEntitlementReceipt": "b4b05cc13a0ab68fa9e1c107390554aede947d6d2efe8a528924a4c54835e799",
+      "TapeoutReceiptDistributor": "573145d37f906e0361111c1d1bbc5c95276e9eb6eb8d15ae825e39b7f2cbefe5",
+      "MockBEM": "a85311066c905e19abcbe0d81b2d3e002c83bdf8d3d10c6d8874c85bee13235c",
+      "MockMining": "e3ffbd5ec67a8d248db8a3b342130fea340e915af08cadd675b333bbeb006521",
+      "MockNFT": "a4b378e4f43b1bcd62584ae995916b1170ea679d4a9f00a2072f37bdab0fe8b1"
+    }
+  },
+  "forgeCommand": "forge test --match-path test/fork/* -vv --json --fork-url https://bsc-mainnet.public.blastapi.io --fork-block-number 128713128 --fork-retries 30 --fork-retry-backoff 3000 --compute-units-per-second 40",
+  "forgeExitCode": 0,
+  "results": [
+    {
+      "name": "testOnlyTheCurrentHolderCanStop()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testStopByHolderSettlesAccruedIncomeThenCools()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testCoolingMinerRestartsWithDebtRebased()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testRealRevocationPaysHolderOnceThenNothing()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testRestartNeedsMoreThanTheCooldown()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testRevokedMinerStaysRevokedAndEarnsNothing()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testStopCooldownDecidesBetweenRevocationAndRestart()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testForkBoundaryIsIndependentOfProcessingOrder()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testForkBoundaryWithThreeOldMinersAndAnIncomingBatch()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testForkFirstAdmissionAndZeroSupplyCategory()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testForkPlainTransferThenRegisterWindow()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testForkAdmissionGasScaling()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testForkCompositionMatchesCircuitBurnAndIgnoresReferences()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testForkProtocolIdentityAndCompositionAbi()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testForkReleaseTransfersCToTheSinkOnRealBem()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testForkStrictAdmissionBoundaryWithRealMiners()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testForkWhitelistAfterRenounceAndBypassRejection()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testForkCarriedIncomeIsAttributedPerMinerAndIndependentOfOrder()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testForkFinalityGateOnRealProtocol()",
+      "status": "Success",
+      "reason": null
+    },
+    {
+      "name": "testForkInactiveMinerAdmissionRevertsAndStaysWithTheWallet()",
+      "status": "Success",
+      "reason": null
+    }
+  ],
+  "observations": {
+    "identity": {
+      "bemCodeHash": "0x982ba79538b51e54ee1382f57522098af0635b0f67f2574d393b29ed0958b344",
+      "bemCodeSize": 2205,
+      "bemDecimals": 8,
+      "bemErc1967ImplementationSlot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "collectionBeaconCodeHash": "0x964014cd563c5bc62e1f8a3b2995969d6385f25da1e4efa353a01a62e0b75cca",
+      "collectionBeaconOwner": "0x68224F668083c29e9800Be2a646d42d18cedF7e2",
+      "collectionBeaconOwnerCodeSize": 130,
+      "collectionImplementation": "0x8E1D125Def6d3826C278299273a0760D47626068",
+      "collectionImplementationCodeHash": "0x2ea433839e23b3773b7880d6f1807affb0f648ae98760b9a3b6394879665c345",
+      "collectionProxyCodeHash": "0xd8c4b0216e0aadd615fbd134465b6af060a11769edc7c844d8f14d1b8a783992",
+      "forkBlock": 128713128,
+      "inactiveToken": 648,
+      "inactiveTokenStatus": 0,
+      "miner12733Bstar": 88,
+      "miner12733GateCount": 88,
+      "miner12733LatchBurn": 0,
+      "miner12733NandBurn": 88,
+      "miner13948Bstar": 66,
+      "miner13948GateCount": 66,
+      "miner13948LatchBurn": 64,
+      "miner13948NandBurn": 2,
+      "miningImplementation": "0xa3DBe873DA37cD4e4a13c7cEf23a7dB6Ca60f898",
+      "miningImplementationCodeHash": "0x63b1124d3448fdeb28b163c52142e15a7a464d7ae7d817e51f6c242b62424479",
+      "miningOwner": "0x0000000000000000000000000000000000000000",
+      "miningPaused": false,
+      "miningProxyCodeHash": "0xed6b710a769987f50494d713f278817992e3266e45898a990be878efc2fcbbce"
+    },
+    "composition": {
+      "forkBlock": 128713128,
+      "miner12733CircuitBurnLatch": 0,
+      "miner12733CircuitBurnNand": 88,
+      "miner13948CircuitBurnLatch": 64,
+      "miner13948CircuitBurnNand": 2,
+      "miner1574CircuitBurnLatch": 5,
+      "miner1574CircuitBurnNand": 4,
+      "miner4183CircuitBurnLatch": 9,
+      "miner4183CircuitBurnNand": 1,
+      "referenceCircuit": 109,
+      "referenceCircuitBurnCached": false,
+      "referenceCircuitKey": "0x3ceb7484a0dce891452b2d158abf086bedd65514799aab527d200917c4e6180e",
+      "referenceCircuitLocalLatch": 0,
+      "referenceCircuitLocalNand": 0,
+      "referenceCircuitRecordedGates": 123264,
+      "referenceCircuitStatus": 0
+    },
+    "boundary": {
+      "admissionGas": 217311,
+      "carriedIncome": 1078419271,
+      "firstAdmissionCarried": 20061449000,
+      "forkBlock": 128713128,
+      "latchIncome": 995942761,
+      "latchMiner": 13948,
+      "latchMinerHolder": "0x637505a590c30073D6fFaA601784FcB31B9b6A98",
+      "latchMinerLatchBurn": 64,
+      "latchMinerNandBurn": 2,
+      "nandIncome": 19163452775,
+      "nandMiner": 12733,
+      "nandMinerBurn": 88,
+      "nandMinerHolder": "0xb73C928D82926D58c4eC8d30b957e88FB973dBF5",
+      "oldMinerPendingAfterOneHour": 0,
+      "recipientAEach": 251992444,
+      "settledOldIncome": 27497042
+    },
+    "boundaryMulti": {
+      "admissionGas": 354411,
+      "carriedIncome": 1079198599,
+      "firstAdmissionCarried": 20070567015,
+      "firstAdmissionCarriedPerMiner": [
+        20061449000,
+        7291939,
+        1826076
+      ],
+      "forkBlock": 128713128,
+      "heldBeforeAdmission": 6539575478,
+      "incomingCarriedPerMiner": [
+        1078419271,
+        779328
+      ],
+      "incomingMiners": [
+        13948,
+        6940
+      ],
+      "latchIfSplitByPostBatchComposition": 11465463885,
+      "latchIncome": 1821755153,
+      "nandIncome": 24575475653,
+      "oldLatchBurn": 14,
+      "oldMinerClaimable": [
+        27497042,
+        187821,
+        66392
+      ],
+      "oldMiners": [
+        12733,
+        4183,
+        1574
+      ],
+      "oldNandBurn": 93,
+      "postBatchLatchBurn": 86,
+      "postBatchNandBurn": 112,
+      "recipientAEach": 329965385,
+      "settledOldIncome": 27751255,
+      "sinkAccrued": 659930770
+    },
+    "boundaryOrder": {
+      "latchIncome": 1006854782,
+      "nandIncome": 19162208902,
+      "total": 21177516869
+    },
+    "registerWindow": {
+      "atomicLatchIncome": 995942761,
+      "atomicNandIncome": 19163452775,
+      "carriedIncome": 1078419271,
+      "windowLatchIncome": 0,
+      "windowNandIncome": 20159395536
+    },
+    "lifecycle": {
+      "claimRevertsAfterCooldown": true,
+      "claimWouldPayAtStopTime": 20088946042,
+      "claimedEventAmount": 20088946042,
+      "debtAfterStop": 60299771429,
+      "forkBlock": 128713128,
+      "paidByStop": 20088946042,
+      "pendingLiveImplemented": false,
+      "pendingStaleBeforeStop": 20061288600,
+      "statusAfterStop": 3,
+      "stopCooldownSeconds": 1200,
+      "stopHolder": "0xb73C928D82926D58c4eC8d30b957e88FB973dBF5",
+      "stopMiner": 12733
+    },
+    "lifecycleHolderOnly": {
+      "miner": 13948,
+      "originalHolder": "0x637505a590c30073D6fFaA601784FcB31B9b6A98",
+      "registrant": "0x637505a590c30073D6fFaA601784FcB31B9b6A98",
+      "registrantCouldStop": false
+    },
+    "gas": {
+      "admitWith0Registered": 514781,
+      "admitWith10Registered": 517144,
+      "admitWith11Registered": 544881,
+      "admitWith12Registered": 572618,
+      "admitWith13Registered": 600355,
+      "admitWith14Registered": 627972,
+      "admitWith15Registered": 655829,
+      "admitWith16Registered": 683446,
+      "admitWith17Registered": 711303,
+      "admitWith18Registered": 739040,
+      "admitWith19Registered": 766657,
+      "admitWith1Registered": 267511,
+      "admitWith20Registered": 794394,
+      "admitWith21Registered": 822131,
+      "admitWith22Registered": 849988,
+      "admitWith23Registered": 877605,
+      "admitWith2Registered": 295248,
+      "admitWith3Registered": 322985,
+      "admitWith4Registered": 350602,
+      "admitWith5Registered": 378339,
+      "admitWith6Registered": 406196,
+      "admitWith7Registered": 433933,
+      "admitWith8Registered": 461550,
+      "admitWith9Registered": 489287,
+      "forkBlock": 128713128,
+      "lastAdmissionGas": 877605,
+      "maxMarginalGasPerRegisteredMiner": 27857,
+      "registeredAtEnd": 24
+    },
+    "transitionsRevoked": {
+      "debt": 213588191,
+      "forkBlock": 128713128,
+      "holder": "0x6C3c29E866d32D5B6a26AdB163B163916bed4602",
+      "miner": 2247,
+      "startError": "0x802cdbc800000000000000000000000000000000000000000000000000000000",
+      "stillRevokedAfterMonth": true
+    },
+    "transitionsRevocation": {
+      "block": 119597281,
+      "debtAfter": 213588191,
+      "debtBefore": 212133524,
+      "holder": "0x216566D25Be326Cb7aE09bA37b485e644e89a36c",
+      "paidToHolder": 1454667,
+      "weightRemoved": 12
+    },
+    "transitionsCooldown": {
+      "challengeErrorAfterCooldown": "0x5f9bb3be00000000000000000000000000000000000000000000000000000000",
+      "cooldownBlocks": 1200,
+      "restartedAtStopBlockPlusCooldownPlusOne": true,
+      "revocableAtStopBlockPlusCooldown": true,
+      "stopBlock": 119597281,
+      "stopPaid": 1454667
+    },
+    "transitionsRestart": {
+      "claimableOneDayAfterRestart": 531091,
+      "debtAtRestart": 35610025,
+      "debtWhileCooling": 5408752,
+      "forkBlock": 128713128,
+      "holder": "0x343814Ed06F87f34c8f69486c02e06763a552074",
+      "miner": 672,
+      "stopBlock": 118184257,
+      "unverifiedWeight": 3
+    },
+    "transitionsBoundary": {
+      "acceptedAtStopBlockPlusCooldownPlusOne": true,
+      "refusedAtStopBlockPlusCooldown": true,
+      "stopBlock": 128721128
+    },
+    "sink": {
+      "bem": "0x5ce033B2bFCa3Af30b3e8C8457DeaF776A8b695a",
+      "bemRuntimeBytes": 2205,
+      "bemRuntimeCodeHash": "0x982ba79538b51e54ee1382f57522098af0635b0f67f2574d393b29ed0958b344",
+      "bemTotalSupplyAfterFirstRelease": 39451273037263,
+      "bemTotalSupplyAfterSecondHarvest": 39451301773926,
+      "bemTotalSupplyAfterSecondReleases": 39451301773926,
+      "bemTotalSupplyBefore": 39451273037263,
+      "firstReleaseRoleA": 251992444,
+      "firstReleaseSink": 503984888,
+      "forkBlock": 128713128,
+      "secondHarvestReceived": 28736663,
+      "sink": "0x000000000000000000000000000000000000dEaD",
+      "sinkBalanceAfter": 244931900284,
+      "sinkBalanceBefore": 244427231190,
+      "sinkPaid": 504669094,
+      "totalAccounted": 21196101976
+    },
+    "salusCarried": {
+      "forkBlock": 128713128,
+      "incomingCarriedActual": [
+        1078419271,
+        7479760,
+        1892468,
+        779328
+      ],
+      "incomingLatchBurn": [
+        64,
+        9,
+        5,
+        8
+      ],
+      "incomingMiners": [
+        13948,
+        4183,
+        1574,
+        6940
+      ],
+      "incomingNandBurn": [
+        2,
+        1,
+        4,
+        17
+      ],
+      "incomingPendingBeforeAdmission": [
+        1077179650,
+        7291939,
+        1826076,
+        309775
+      ],
+      "latchIncome": 1003592799,
+      "nandIncome": 19165470885,
+      "oldMiner": 12733,
+      "ordersCompared": "batch, reversed batch, one by one, two batches: identical",
+      "settledOldIncome": 27497042,
+      "total": 21177516869
+    },
+    "salusFinality": {
+      "carriedAfterGateOpened": 20061449000,
+      "forkBlock": 128713128,
+      "miner": 12733
+    },
+    "salusInactive": {
+      "status": 0,
+      "token": 648
+    }
+  },
+  "method": [
+    "Fork state is read from BSC at the pinned block; no protocol code or storage is modified (no vm.etch / vm.store / mockCall / deal).",
+    "Miner NFTs are moved from their current holders with fork-only impersonation (vm.prank), then admitted through depositMiners / registerMiners.",
+    "Time is advanced inside the fork only (vm.warp / vm.roll) so real Mining accrues income between admissions.",
+    "Expected settlement amounts are observed independently: what a real Mining.claim pays at the same timestamp, measured on a snapshot and undone (vm.snapshotState / vm.revertToState).",
+    "Lifecycle experiments impersonate the current NFT holder to call Mining.stop; BEM donations are real claims forwarded by an impersonated holder.",
+    "Status transitions: the current holders restart, stop, reclaim and claim through the real Mining functions; the real revocation of #2247 (tx 0x2234e269…bb14) is replayed from its real sender with its exact calldata on a fork of block 119,597,280, executing at the real block number and timestamp.",
+    "Gas is measured with protocol and pool accounts cooled (vm.cool), approximating stand-alone transactions; the 21,000 base cost is excluded.",
+    "The sink test pays C to 0x...dEaD with real BEM and compares balances, Transfer events and BEM totalSupply before and after (observed on the fork, not assumed).",
+    "SALUS remediation (2.2.0): every deployment binds its distributor, finalizes it, activates and renounces all four owners before the first admission; the finality test admits only after each renunciation. Carried income is compared per real miner with what its own claim pays at the admission timestamp, and one batch, the reversed batch, one-by-one admissions and two batches are compared on snapshots."
+  ],
+  "mainnetTransactionsSent": 0,
+  "signaturesCreated": 0
+}

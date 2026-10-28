@@ -1,0 +1,40 @@
+{
+  "admissionGas": 354411,
+  "carriedIncome": 1079198599,
+  "firstAdmissionCarried": 20070567015,
+  "firstAdmissionCarriedPerMiner": [
+    20061449000,
+    7291939,
+    1826076
+  ],
+  "forkBlock": 128713128,
+  "heldBeforeAdmission": 6539575478,
+  "incomingCarriedPerMiner": [
+    1078419271,
+    779328
+  ],
+  "incomingMiners": [
+    13948,
+    6940
+  ],
+  "latchIfSplitByPostBatchComposition": 11465463885,
+  "latchIncome": 1821755153,
+  "nandIncome": 24575475653,
+  "oldLatchBurn": 14,
+  "oldMinerClaimable": [
+    27497042,
+    187821,
+    66392
+  ],
+  "oldMiners": [
+    12733,
+    4183,
+    1574
+  ],
+  "oldNandBurn": 93,
+  "postBatchLatchBurn": 86,
+  "postBatchNandBurn": 112,
+  "recipientAEach": 329965385,
+  "settledOldIncome": 27751255,
+  "sinkAccrued": 659930770
+}
