@@ -15,8 +15,10 @@ contract PoolAdmissionTest is SystemTestBase {
     }
 
     /// @notice The specification's acceptance example under the 105-part weights: old composition 9:1
-    ///         with 105 BEM collectible, a 1:9 miner carrying 105 BEM is admitted -> NAND 140, LATCH 60,
-    ///         A 2.5, B 2.5, C 5.
+    ///         with 105 BEM collectible, a 1:9 miner carrying 105 BEM is admitted -> the old 100 BEM go
+    ///         9:1, the carried 100 BEM by the incoming miner's own 1:9 burn: NAND 100, LATCH 100, A 2.5,
+    ///         B 2.5, C 5. (SALUS remediation, 2.2.0. Under 2.1.0 the carried BEM went by the 10:10
+    ///         post-batch composition: NAND 140, LATCH 60.)
     function testSpecificationAcceptanceExample() public {
         admitNew(1, 9, 1);
         accrue(1, 105 * BEM_UNIT); // earned by the old composition, still inside Mining
@@ -33,15 +35,14 @@ contract PoolAdmissionTest is SystemTestBase {
         assertEq(a.recipientA, 2 * BEM_UNIT + BEM_UNIT / 2);
         assertEq(a.recipientB, 2 * BEM_UNIT + BEM_UNIT / 2);
         assertEq(a.sink, 5 * BEM_UNIT);
-        assertEq(a.nandIncome, 140 * BEM_UNIT);
-        assertEq(a.latchIncome, 60 * BEM_UNIT);
+        assertEq(a.nandIncome, 100 * BEM_UNIT); // 90 + 10
+        assertEq(a.latchIncome, 100 * BEM_UNIT); // 10 + 90
         assertEq(a.residue, 0);
-        // Applying the latest 10:10 ratio to all history would give 100/100 instead.
-        assertTrue(a.nandIncome != a.participants / 2);
+        assertTrue(a.nandIncome != 140 * BEM_UNIT, "not the 2.1.0 post-batch split");
 
-        assertEq(claimAs(alice, range(1, 5), range(1, 5)), 5 * 14 * BEM_UNIT + 5 * 6 * BEM_UNIT);
-        assertEq(claimAs(bob, range(6, 10), none()), 5 * 14 * BEM_UNIT);
-        assertEq(claimAs(carol, none(), range(6, 10)), 5 * 6 * BEM_UNIT);
+        assertEq(claimAs(alice, range(1, 5), range(1, 5)), 5 * 10 * BEM_UNIT + 5 * 10 * BEM_UNIT);
+        assertEq(claimAs(bob, range(6, 10), none()), 5 * 10 * BEM_UNIT);
+        assertEq(claimAs(carol, none(), range(6, 10)), 5 * 10 * BEM_UNIT);
         assertEq(pool.releaseA(), 2 * BEM_UNIT + BEM_UNIT / 2);
         assertEq(pool.releaseB(), 2 * BEM_UNIT + BEM_UNIT / 2);
         assertEq(bem.balanceOf(address(pool)), 0);
@@ -61,6 +62,8 @@ contract PoolAdmissionTest is SystemTestBase {
         assertEq(pool.accrual().latchIncome, 10 * BEM_UNIT);
     }
 
+    /// @notice 2.2.0: each incoming miner's carried income goes by its own burn (2.1.0 used one post-batch
+    ///         composition, N=10 : L=20, for all of it).
     function testBatchUsesOnePostBatchCompositionForAllCarriedIncome() public {
         admitNew(1, 9, 1);
         accrue(1, 105 * BEM_UNIT);
@@ -71,11 +74,14 @@ contract PoolAdmissionTest is SystemTestBase {
         (uint256 settled, uint256 carried) = admit(two(2, 3));
         assertEq(settled, 105 * BEM_UNIT);
         assertEq(carried, 105 * BEM_UNIT);
-        // Post-batch composition N=10, L=20 for both carried amounts.
+        // Miner 2 carries 50 participant BEM split 1:9, miner 3 50 BEM all LATCH.
         PoolMath.Accrual memory a = pool.accrual();
-        assertEq(a.nandIncome, 90 * BEM_UNIT + (100 * BEM_UNIT * 10) / 30);
-        assertEq(a.latchIncome, 10 * BEM_UNIT + (100 * BEM_UNIT * 20) / 30);
-        assertEq(a.participants - a.nandIncome - a.latchIncome, 1); // one raw unit carried to the next period
+        assertEq(a.nandIncome, 90 * BEM_UNIT + 5 * BEM_UNIT);
+        assertEq(a.latchIncome, 10 * BEM_UNIT + 45 * BEM_UNIT + 50 * BEM_UNIT);
+        assertEq(a.participants - a.nandIncome - a.latchIncome, 0); // nothing left unassigned here
+        assertEq(pool.miner(2).carriedIncome, 105 * BEM_UNIT / 2);
+        assertEq(pool.miner(3).carriedIncome, 105 * BEM_UNIT / 2);
+        assertEq(pool.carriedIncome(), 105 * BEM_UNIT);
         assertReconciled();
     }
 
@@ -106,7 +112,11 @@ contract PoolAdmissionTest is SystemTestBase {
         accrue(1, 105 * BEM_UNIT / 2);
         (uint256 settled, uint256 carried) = admit(one(1));
         assertEq(settled, 0);
-        assertEq(carried, 105 * BEM_UNIT);
+        // 2.2.0: only the miner's own claim is carried income (by its burn); the BEM held before any
+        // composition is recognized after it, as income of the new period under the first composition.
+        assertEq(carried, 105 * BEM_UNIT / 2);
+        assertEq(pool.carriedIncome(), 105 * BEM_UNIT / 2);
+        assertEq(pool.totalAccounted(), 105 * BEM_UNIT);
         PoolMath.Accrual memory a = pool.accrual();
         assertEq(a.nandIncome, 75 * BEM_UNIT); // 3:1 of the first composition, no invented weights
         assertEq(a.latchIncome, 25 * BEM_UNIT);
@@ -306,8 +316,8 @@ contract PoolAdmissionTest is SystemTestBase {
         (uint256 settled, uint256 carried) = pool.registerMiners(one(2));
         assertEq(settled, 105 * BEM_UNIT);
         assertEq(carried, 105 * BEM_UNIT);
-        assertEq(pool.accrual().nandIncome, 140 * BEM_UNIT);
-        assertEq(pool.accrual().latchIncome, 60 * BEM_UNIT);
+        assertEq(pool.accrual().nandIncome, 100 * BEM_UNIT); // 90 + 10: the carried part by its 1:9 burn
+        assertEq(pool.accrual().latchIncome, 100 * BEM_UNIT); // 10 + 90 (2.1.0: 140 / 60)
     }
 
     function testSafeTransferIntoThePoolIsRefused() public {

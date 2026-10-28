@@ -63,8 +63,10 @@ npm run pool -- verify-deployment --addresses deployments/addresses.json --syste
 
 A runtime template hash, as printed by the build or the reports, is not a deployed code hash: the
 pool and the distributor fill immutable slots at deployment, at the offsets listed under
-`immutableReferences` in `sdk/bytecode.json` (generated from the build; for 2.1.0, 59 occurrences in
-the pool, 11 in the distributor and none in the receipts). Deployed identity is the masked
+`immutableReferences` in `sdk/bytecode.json` (generated from the build; for 2.2.0, 65 occurrences in
+the pool, 11 in the distributor and none in the receipts; 2.1.0 had 59 in the pool). Since 2.2.0 the check
+also reads the pool's bound distributor: a pool bound to any contract other than the addresses file's
+distributor is a mismatch, and an unbound one is noted. Deployed identity is the masked
 comparison plus the bindings read from the contracts. These are operator guards. They cannot stop an
 owner from calling a contract directly, and state can change between planning and execution, so
 review the exact payload at signing time.
@@ -257,18 +259,34 @@ and state can change between the check and the transaction. Afterwards beneficia
 immutable. Publish the artifact so contributors can see their IDs, and re-run verification after
 finalization.
 
-## 7. Activate the pool
+## 7. Bind the distributor and activate the pool
+
+Once the allocation is finalized, the pool owner binds the round's distributor, once and permanently:
+
+```bash
+npm run pool -- bind-distributor --addresses deployments/addresses.json --from 0xPoolOwner
+```
+
+The preflight requires the addresses file's distributor (already checked against the reviewed template
+by the deployment check) to report this pool and these receipts, the pool to be unbound and inactive.
+The pool checks the same views on chain; it cannot check the distributor's code, which is why the
+deployment check matters. Then:
 
 ```bash
 npm run pool -- activate --addresses deployments/addresses.json --nand-shares 1000 --latch-shares 400 --from 0xPoolOwner
 ```
 
-The counts must equal the finalized supplies; they become the permanent denominators. Activation does
-not wait for the allocation: receipts still in the distributor accrue BEM for their beneficiaries.
+The counts must equal the finalized supplies; they become the permanent denominators. Since 2.2.0,
+activation also requires the bound distributor's allocation to be finalized (the CLI and the contract
+both refuse otherwise), so the order is: finalize issuance (§5), finalize the allocation (§6), bind,
+activate. Receipts still in the distributor keep accruing BEM for their beneficiaries.
 
 ## 8. Renounce ownership
 
-Each contract is renounced separately; renouncing one finalizes nothing else.
+Each contract is renounced separately; renouncing one finalizes nothing else. **All four must be
+renounced before the first admission** (SALUS finding #3): the pool refuses it with
+`OwnershipNotRenounced(contract)` until both receipts, the distributor and the pool itself have no owner.
+The pool never renounces anything itself.
 
 ```bash
 npm run pool -- renounce --addresses deployments/addresses.json --target pool --from 0xPoolOwner
@@ -276,17 +294,28 @@ npm run pool -- renounce --addresses deployments/addresses.json --target pool --
 
 | Target | Renounce after | What it removes |
 | --- | --- | --- |
-| `nand`, `latch` | `finalize-issuance` | the issuer's `setURI`: until then the issuer can change the metadata URI (never balances or supply) |
+| `nand`, `latch` | `finalize-issuance` | the issuer's `setURI` (metadata only); issuance itself is already closed |
 | `distributor` | `finalize-allocation` | nothing further (all admin functions are closed) |
-| `pool` | `activate` | nothing further; renouncing **before** activation would make the pool unusable |
+| `pool` | `activate` | nothing further; renouncing **before** binding and activation would make the pool unusable |
 
 The CLI refuses to plan a renunciation before the step in the middle column (issuance not finalized,
-allocation not finalized, pool not activated). Deposits, harvests, claims and recipient payments do not
-depend on any owner.
+allocation not finalized, pool not activated). Then check:
+
+```bash
+npm run pool -- finality --addresses deployments/addresses.json
+```
+
+`READY_FOR_FIRST_ADMISSION` means every condition holds (both issuances finalized with supplies equal to
+the denominators, the bound distributor finalized, all four owners zero); `NOT_FINAL` lists what is
+missing; `CUSTODY_OPEN` means the first admission has happened. Finality does not prove that the
+contribution records or the allocation JSON were right: verify those before finalizing (§6). Using a
+multisig for the roles during initialization remains a sensible protection, since the setup keys can
+still issue and allocate until they finalize. Deposits, harvests, claims, deliveries and recipient
+payments never depend on an owner.
 
 ## 9. Admit miners (whitelisted depositors)
 
-Any time after activation, including after renunciation:
+Any time after the renunciations:
 
 ```bash
 npm run pool -- composition --addresses deployments/addresses.json --token-ids 4183,1574
@@ -296,16 +325,28 @@ npm run pool -- composition --addresses deployments/addresses.json --token-ids 4
 npm run pool -- deposit --addresses deployments/addresses.json --token-ids 4183,1574 --from 0xDepositor
 ```
 
-The preflight checks the whitelist, ownership, that Mining reports each miner ACTIVE with matching
-burn data, unsupported categories, and gas; the plan adds `setApprovalForAll` when needed. Every
-admission first claims all registered miners. If any registered miner's claim fails (other than a
-miner Mining reports as REVOKED, which is skipped with `RevokedMinerSkipped`), the admission reverts
-with `SettlementFailed(tokenId, reason)` and nothing changes; retry once the cause is gone.
+**The supported admission path** (SALUS finding #1) is `deposit` (`depositMiners`): the whitelisted wallet
+owns the ACTIVE miners, the plan adds `setApprovalForAll` when needed, and the pool validates, transfers,
+registers and accounts for the batch in one transaction. Any failure reverts all of it and leaves the
+miners with the wallet. The preflight checks the whitelist, custody finality (before the first
+admission), ownership, that Mining reports each miner ACTIVE with matching burn data, unsupported
+categories, and gas.
 
-Use `register` (same rules) only for miners that already reached the pool by plain transfer, and
-register them promptly. Income anyone claims for such a miner before registration is booked under the
-composition current at that moment, not the new one (see ARCHITECTURE.md §4.2); `deposit` has no such
-window.
+Every admission first claims all registered miners under the old composition. If any registered miner's
+claim fails (other than a miner Mining reports as REVOKED, which is skipped with `RevokedMinerSkipped`),
+the admission reverts with `SettlementFailed(tokenId, reason)` and nothing changes; retry once the cause
+is gone. Each incoming miner's carried income (what its own claim pays during the admission) then goes to
+the NAND and LATCH receipts by that miner's own burn (`CarriedIncomeAttributed`); its order in the batch,
+or splitting the miners over several admissions at the same time, changes nothing. The depositor keeps
+none of it.
+
+**Not supported:** a plain ERC-721 transfer into the pool followed later by `register`
+(`registerMiners`). The CLI still plans it (same whitelist and boundary) but warns: income anyone claims
+for such a miner before registration is booked under the composition current at that moment, and a miner
+revoked in between can never be registered. Its revocation payout then stays unrecognized until a valid
+admission, which books it under that admission's composition. Unsolicited NFT transfers are not
+guaranteed to be recoverable, registered or eligible for BEM, and no role can withdraw, sweep or
+redirect them.
 
 `inspect` reports `registryLimitForSingleAdmission`: 401 registered miners under the CLI's planning
 model. That is a tooling estimate, not an on-chain limit or a guarantee for every miner. The real
@@ -385,19 +426,23 @@ the worst case measured is about 207k (test/unit/GasModel.t.sol).
 
 ## 12. Monitoring
 
-- `inspect [--holder 0x…] [--miners --pending]`: pool, receipts, distributor, composition, gas outlook.
-- `verify-deployment [--system FILE]`: deployed code against the templates and every binding.
-- `reconcile --deep --out FILE`: checks the ledger identities and every per-ID history
-  ([ACCOUNTING.md](ACCOUNTING.md#8-reconciliation-identities)), unpaid C included.
-- Useful events: `MinersAdmitted`, `CompositionCheckpoint`, `RevokedMinerSkipped`,
-  `MinerHarvestFailed`, `IncomeRecognized`, `ReceiptIncomeClaimed`, `RecipientPaid`, `SinkPaid`,
-  `Delivered`.
+- `inspect [--holder 0x…] [--miners --pending]`: pool, receipts, distributor, finality, composition,
+  carried-income totals (per miner with `--miners`), gas outlook.
+- `finality`: the first admission's conditions and custody state (§8).
+- `verify-deployment [--system FILE]`: deployed code against the templates and every binding, the pool's
+  bound distributor included.
+- `reconcile --deep --out FILE`: checks the ledger identities, every per-ID history and every miner's
+  carried-income record ([ACCOUNTING.md](ACCOUNTING.md#8-reconciliation-identities)), unpaid C included.
+- Useful events: `DistributorBound`, `CustodyOpened`, `MinersAdmitted`, `CompositionCheckpoint`,
+  `CarriedIncomeAttributed`, `RevokedMinerSkipped`, `MinerHarvestFailed`, `IncomeRecognized`,
+  `ReceiptIncomeClaimed`, `RecipientPaid`, `SinkPaid`, `Delivered`.
 
-`inspect`, `reconcile` and `composition` read the pool's `VERSION` first. They decode its accrual and
-reconciliation tuples only for `TapeoutMinerPool/2.1.0`, because 2.1.0 changed those layouts without
-changing the selectors. `RecoverableTapeoutMinerPool/canary-2-local` is also read, but only on a loopback
-development node. Any other, missing or unreadable version is refused with a diagnostic, never decoded.
-`VERSION` is self-reported: it keeps this tooling from misreading a layout, but it does not
-authenticate code. The deployment check on every write and `verify-deployment` do that. A dashboard or
-script built on the 2.0.0 ABI misreads a 2.1.0 pool silently and must move to the 2.1.0 ABI; this SDK
-cannot protect it.
+`inspect`, `reconcile` and `composition` read the pool's `VERSION` first. They decode its accrual,
+reconciliation and ledger-state tuples only for `TapeoutMinerPool/2.2.0`. 2.1.0 changed the accrual and
+reconciliation layouts without changing their selectors; 2.2.0 keeps those layouts but changes their
+values for carried income and replaces `state()` with `ledgerState()` (other fields), so a 2.1.0 decoder
+fails on it instead of misreading it. `RecoverableTapeoutMinerPool/canary-3-local` is also read, but only
+on a loopback development node. Any other, missing or unreadable version (2.1.0 included) is refused with
+a diagnostic, never decoded. `VERSION` is self-reported: it keeps this tooling from misreading a layout,
+but it does not authenticate code. The deployment check on every write and `verify-deployment` do that.
+A dashboard or script built on an older ABI must move to the 2.2.0 ABI; this SDK cannot protect it.

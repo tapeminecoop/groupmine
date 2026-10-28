@@ -4,6 +4,7 @@ pragma solidity 0.8.24;
 import {Vm} from "forge-std/Test.sol";
 import {TapeoutMinerPool} from "../../src/TapeoutMinerPool.sol";
 import {TapeoutEntitlementReceipt} from "../../src/TapeoutEntitlementReceipt.sol";
+import {TapeoutReceiptDistributor} from "../../src/TapeoutReceiptDistributor.sol";
 import {PoolMath} from "../../src/PoolMath.sol";
 import {IMining} from "../../src/interfaces/IMining.sol";
 import {PoolForkBase} from "./PoolForkBase.sol";
@@ -106,97 +107,126 @@ contract PoolBoundaryForkTest is PoolForkBase {
     // ---------------------------------------------------------------------------------- tests
 
     /// @notice Three old miners accrue on the real protocol; a two-miner batch that shifts NAND:LATCH is
-    ///         admitted. Old income (and BEM already held) is recognized under the old composition, the
-    ///         batch's carried income under the full post-batch composition, and at the same timestamp
-    ///         nothing more can be collected from any of the miners.
+    ///         admitted. Old income (and BEM already held) is recognized under the old composition, each
+    ///         incoming miner's carried income by that miner's own burn (2.2.0, SALUS #2), and at the same
+    ///         timestamp nothing more can be collected from any of the miners.
+    struct Boundary {
+        uint256[] firstCarried;
+        uint256[] oldPay;
+        uint256[] newCarried;
+        uint256 carried0;
+        uint256 donation;
+        uint256 settled;
+        uint256 carried;
+        uint256 gasUsed;
+        uint256 n1;
+        uint256 l1;
+    }
+
     function testForkBoundaryWithThreeOldMinersAndAnIncomingBatch() public {
         _deploySystem();
         _moveAllToDepositor(_concat(oldIds, newIds));
-        (uint256 settled0, uint256 carried0,) = _admit(oldIds);
+        Boundary memory b;
+        b.firstCarried = new uint256[](oldIds.length);
+        for (uint256 i; i < oldIds.length; ++i) {
+            b.firstCarried[i] = _claimable(oldIds[i]); // what each brings into the first admission
+        }
+        uint256 settled0;
+        (settled0, b.carried0,) = _admit(oldIds);
         assertEq(settled0, 0);
-        (uint256 n1, uint256 l1) = _burns(oldIds);
-        assertEq(pool.totalNandBurn(), n1);
-        assertEq(pool.totalLatchBurn(), l1);
+        (b.n1, b.l1) = _burns(oldIds);
+        assertEq(pool.totalNandBurn(), b.n1);
+        assertEq(pool.totalLatchBurn(), b.l1);
 
         vm.warp(block.timestamp + HOUR);
         vm.roll(block.number + 8000);
-        uint256 donation = _donate();
+        b.donation = _donate();
 
         // Independent observations at the admission timestamp.
-        uint256[] memory oldPay = new uint256[](oldIds.length);
-        uint256 expectSettled;
+        b.oldPay = new uint256[](oldIds.length);
         for (uint256 i; i < oldIds.length; ++i) {
-            oldPay[i] = _claimable(oldIds[i]);
-            assertGt(oldPay[i], 0, "every old miner has income to settle");
-            expectSettled += oldPay[i];
+            b.oldPay[i] = _claimable(oldIds[i]);
+            assertGt(b.oldPay[i], 0, "every old miner has income to settle");
         }
-        uint256 expectCarried;
+        b.newCarried = new uint256[](newIds.length);
         for (uint256 i; i < newIds.length; ++i) {
-            expectCarried += _claimable(newIds[i]);
+            b.newCarried[i] = _claimable(newIds[i]);
         }
 
         uint256 poolBefore = bem.balanceOf(address(pool));
         vm.recordLogs();
-        (uint256 settled, uint256 carried, uint256 gasUsed) = _admit(newIds);
+        (b.settled, b.carried, b.gasUsed) = _admit(newIds);
         (uint256[] memory recognized, uint256[] memory periods) = _recognized(vm.getRecordedLogs());
 
-        assertEq(settled, expectSettled, "old miners settled exactly what real claims pay at this timestamp");
-        assertEq(carried, expectCarried, "the batch carried exactly what real claims pay at this timestamp");
-        assertEq(bem.balanceOf(address(pool)) - poolBefore, settled + carried, "pool balance delta");
+        assertEq(
+            b.settled, _sum(b.oldPay), "old miners settled exactly what real claims pay at this timestamp"
+        );
+        assertEq(
+            b.carried, _sum(b.newCarried), "the batch carried exactly what real claims pay at this timestamp"
+        );
+        assertEq(bem.balanceOf(address(pool)) - poolBefore, b.settled + b.carried, "pool balance delta");
         // Recognition order: held BEM and old income in period 1, carried income in period 2.
         assertEq(recognized.length, 3);
-        assertEq(recognized[0], donation);
+        assertEq(recognized[0], b.donation);
         assertEq(periods[0], 1);
-        assertEq(recognized[1], settled);
+        assertEq(recognized[1], b.settled);
         assertEq(periods[1], 1);
-        assertEq(recognized[2], carried);
+        assertEq(recognized[2], b.carried);
         assertEq(periods[2], 2);
 
         // Same timestamp: no old or incoming miner has anything left to pay.
         uint256[] memory all = _concat(oldIds, newIds);
         for (uint256 i; i < all.length; ++i) {
-            uint256 b = bem.balanceOf(address(pool));
+            uint256 before = bem.balanceOf(address(pool));
             mining.claim(mining.minerKey(COLLECTION, all[i]));
-            assertEq(bem.balanceOf(address(pool)), b, "nothing more collectible at the admission timestamp");
+            assertEq(
+                bem.balanceOf(address(pool)), before, "nothing more collectible at the admission timestamp"
+            );
         }
+        _checkBoundaryAllocation(b, all);
+    }
 
-        // The specification's allocation, computed here independently of PoolMath.
+    /// @dev The specification's allocation (2.2.0), computed here independently of PoolMath, in ledger
+    ///      units of 1 / (84 * 10^18) raw BEM: each miner's carried income by its own burn, the old
+    ///      period's ordinary income (held BEM and settlement) by the old aggregate n1 : l1.
+    function _checkBoundaryAllocation(Boundary memory b, uint256[] memory all) internal {
         (uint256 n2, uint256 l2) = _burns(all);
-        uint256 t2 = carried0 + donation + settled; // period 1: everything up to the checkpoint
-        uint256 t3 = t2 + carried; // period 2: the batch's carried income
-        uint256 nand1 = _participants(t2) * n1 / (n1 + l1);
-        uint256 latch1 = _participants(t2) * l1 / (n1 + l1);
-        uint256 d = _participants(t3) - nand1 - latch1;
-        uint256 expectNand = nand1 + d * n2 / (n2 + l2);
-        uint256 expectLatch = latch1 + d * l2 / (n2 + l2);
+        uint256 t3 = b.carried0 + b.donation + b.settled + b.carried;
+        assertEq(_sum(b.firstCarried), b.carried0, "the first admission carried what each miner's claim paid");
+        uint256 nandUnits = _ownSplits(oldIds, b.firstCarried) + (b.donation + b.settled) * 80e18 * b.n1
+            / (b.n1 + b.l1) + _ownSplits(newIds, b.newCarried);
         PoolMath.Accrual memory a = pool.accrual();
         assertEq(a.total, t3);
-        assertEq(a.nandIncome, expectNand);
-        assertEq(a.latchIncome, expectLatch);
+        assertEq(a.nandIncome, nandUnits / 84e18);
+        assertEq(a.latchIncome, (t3 * 80e18 - nandUnits) / 84e18);
         assertEq(a.recipientA, t3 / 84);
         assertEq(a.recipientB, t3 / 84);
         assertEq(a.sink, t3 * 2 / 84);
-        // Splitting everything by the latest ratio would have given LATCH more: the boundary mattered.
-        assertGt(_participants(t3) * l2 / (n2 + l2), expectLatch);
+        // 2.1.0 split the batch's carried income by the post-batch n2 : l2 instead; record both.
+        uint256 postBatchLatch = _participants(t3) * l2 / (n2 + l2);
+        assertTrue(postBatchLatch != a.latchIncome, "the attribution rule mattered for these miners");
 
         string memory key = "boundaryMulti";
         vm.serializeUint(key, "forkBlock", forkBlock);
         vm.serializeUint(key, "oldMiners", oldIds);
         vm.serializeUint(key, "incomingMiners", newIds);
-        vm.serializeUint(key, "oldNandBurn", n1);
-        vm.serializeUint(key, "oldLatchBurn", l1);
+        vm.serializeUint(key, "oldNandBurn", b.n1);
+        vm.serializeUint(key, "oldLatchBurn", b.l1);
         vm.serializeUint(key, "postBatchNandBurn", n2);
         vm.serializeUint(key, "postBatchLatchBurn", l2);
-        vm.serializeUint(key, "firstAdmissionCarried", carried0);
-        vm.serializeUint(key, "heldBeforeAdmission", donation);
-        vm.serializeUint(key, "oldMinerClaimable", oldPay);
-        vm.serializeUint(key, "settledOldIncome", settled);
-        vm.serializeUint(key, "carriedIncome", carried);
+        vm.serializeUint(key, "firstAdmissionCarried", b.carried0);
+        vm.serializeUint(key, "firstAdmissionCarriedPerMiner", b.firstCarried);
+        vm.serializeUint(key, "incomingCarriedPerMiner", b.newCarried);
+        vm.serializeUint(key, "latchIfSplitByPostBatchComposition", postBatchLatch);
+        vm.serializeUint(key, "heldBeforeAdmission", b.donation);
+        vm.serializeUint(key, "oldMinerClaimable", b.oldPay);
+        vm.serializeUint(key, "settledOldIncome", b.settled);
+        vm.serializeUint(key, "carriedIncome", b.carried);
         vm.serializeUint(key, "nandIncome", a.nandIncome);
         vm.serializeUint(key, "latchIncome", a.latchIncome);
         vm.serializeUint(key, "recipientAEach", a.recipientA);
         vm.serializeUint(key, "sinkAccrued", a.sink);
-        string memory out = vm.serializeUint(key, "admissionGas", gasUsed);
+        string memory out = vm.serializeUint(key, "admissionGas", b.gasUsed);
         vm.writeJson(out, "reports/fork-boundary-multi.json");
     }
 
@@ -220,6 +250,24 @@ contract PoolBoundaryForkTest is PoolForkBase {
         vm.serializeUint("order", "latchIncome", forward[2]);
         string memory out = vm.serializeUint("order", "total", forward[0]);
         vm.writeJson(out, "reports/fork-boundary-order.json");
+    }
+
+    /// @dev Incoming miners' NAND ledger units for what each carried: its own burn, NAND takes the floor.
+    function _ownSplits(uint256[] memory ids, uint256[] memory amounts)
+        internal
+        view
+        returns (uint256 units)
+    {
+        for (uint256 i; i < ids.length; ++i) {
+            IMining.MinerRecord memory r = mining.getMiner(mining.minerKey(COLLECTION, ids[i]));
+            units += amounts[i] * 80e18 * r.nandBurn / (uint256(r.nandBurn) + r.latchBurn);
+        }
+    }
+
+    function _sum(uint256[] memory a) internal pure returns (uint256 total) {
+        for (uint256 i; i < a.length; ++i) {
+            total += a[i];
+        }
     }
 
     function _firstRegistered() internal view returns (uint256 id) {
@@ -326,11 +374,19 @@ contract PoolBoundaryForkTest is PoolForkBase {
             poolName: "Fork NAND-only Pool"
         });
         pool = TapeoutMinerPool(_create(abi.encodePacked(_artifact("TapeoutMinerPool"), abi.encode(d))));
+        distributor = TapeoutReceiptDistributor(
+            _create(
+                abi.encodePacked(_artifact("TapeoutReceiptDistributor"), abi.encode(operator, address(pool)))
+            )
+        );
         vm.startPrank(operator);
         nandReceipt.issue(alice, 10);
         nandReceipt.finalizeIssuance();
         latchReceipt.finalizeIssuance(); // S_L = 0
+        distributor.finalizeAllocation(); // nothing to allocate: the receipts stay with alice
+        pool.bindDistributor(address(distributor));
         pool.activate(10, 0);
+        _renounceAll();
         vm.stopPrank();
 
         uint256 held = _donate();
@@ -351,10 +407,13 @@ contract PoolBoundaryForkTest is PoolForkBase {
         uint256 claimable = _claimable(nandOnly);
         (uint256 settled, uint256 carried,) = _admit(_one(nandOnly));
         assertEq(settled, 0);
-        assertEq(carried, claimable + held, "the first admission recognizes the BEM held before it");
+        assertEq(carried, claimable, "carried income is what the miner's own claim paid");
+        assertEq(
+            pool.totalAccounted(), claimable + held, "the first admission recognizes the BEM held before it"
+        );
         PoolMath.Accrual memory a = pool.accrual();
         assertEq(a.latchIncome, 0);
-        assertEq(a.nandIncome, _participants(carried));
-        assertEq(pool.claimable(NAND, 1), _participants(carried) / 10);
+        assertEq(a.nandIncome, _participants(claimable + held));
+        assertEq(pool.claimable(NAND, 1), _participants(claimable + held) / 10);
     }
 }

@@ -1,0 +1,8 @@
+$ npx tsc --noEmit
+# exit 0
+
+## stdout
+
+
+## stderr
+

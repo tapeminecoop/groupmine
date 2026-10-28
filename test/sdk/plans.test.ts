@@ -5,10 +5,10 @@ import { systemFileSchema, systemProblems, NAND_CATEGORY } from '../../sdk/confi
 import { tapeoutEntitlementReceiptAbi, tapeoutMinerPoolAbi, tapeoutReceiptDistributorAbi } from '../../sdk/abi.ts';
 import bytecode from '../../sdk/bytecode.json' with { type: 'json' };
 import {
-  ERC1155_RECEIVER_INTERFACE, allocatePlans, checkReconciliation, claimPlans, deployPoolPlan, deployReceiptPlans, fundPlans, issuePlans, receiverProblems, releasePlans,
-  type Reconciliation,
+  ERC1155_RECEIVER_INTERFACE, activatePlan, allocatePlans, bindDistributorPlan, checkReconciliation, claimPlans, deployPoolPlan, deployReceiptPlans, depositPlans, fundPlans, issuePlans,
+  receiverProblems, releasePlans, type Reconciliation,
 } from '../../sdk/pool.ts';
-import { CALL_GAS, FUND_GAS, ISSUE_GAS, admissionGasEstimate, maxAdmissionBatch, maxIdsPerTx, maxRegisteredForAdmission } from '../../sdk/gas.ts';
+import { CALL_GAS, FIRST_ADMISSION_GAS, FUND_GAS, ISSUE_GAS, admissionGasEstimate, maxAdmissionBatch, maxIdsPerTx, maxRegisteredForAdmission } from '../../sdk/gas.ts';
 import { accrue, SINK, type State } from '../../sdk/math.ts';
 import { BATCH_GAS_BUDGET, TX_GAS_CAP } from '../../sdk/constants.ts';
 import { castCommand, printableLoopback, safeBatch } from '../../sdk/tx.ts';
@@ -34,7 +34,7 @@ test('release plans: each call pays its role and C, with the 300k bound', () => 
 });
 
 test('reconciliation includes unpaid C and checks each outer part from T on its own', () => {
-  const state: State = { nandBase: 0n, latchBase: 0n, participantBase: 0n, totalNandBurn: 3n, totalLatchBurn: 1n, nandShares: 4n, latchShares: 2n };
+  const state: State = { accountedBase: 0n, nandBase: 0n, latchBase: 0n, totalNandBurn: 3n, totalLatchBurn: 1n, nandShares: 4n, latchShares: 2n };
   const ledger = (t: bigint, paid: { a: bigint; b: bigint; c: bigint }): Reconciliation => {
     const x = accrue(t, state);
     const totalPaid = paid.a + paid.b + paid.c;
@@ -53,6 +53,32 @@ test('reconciliation includes unpaid C and checks each outer part from T on its 
   assert.equal(doubled.checks.outerPartsFromTotal, false);
   assert.equal(doubled.status, 'FAIL');
   assert.equal(checkReconciliation(state, { ...r, sinkPaid: 2n, totalPaid: 2n, bemBalance: 40n }).checks.noBucketOverpaid, false);
+});
+
+test('2.2.0 initialization plans: bind the distributor once, then activate (each with its bound)', () => {
+  const D = '0x00000000000000000000000000000000000000dd' as const;
+  const bind = bindDistributorPlan(A, D);
+  const call = decodeFunctionData({ abi: tapeoutMinerPoolAbi as Abi, data: bind.data });
+  assert.equal(call.functionName, 'bindDistributor');
+  assert.deepEqual(call.args, [D]);
+  assert.equal(bind.gas, CALL_GAS.bindDistributor);
+  assert.match(bind.description, /once, before activation; never replaceable/);
+  assert.match(activatePlan(A, 10n, 4n).description, /allocation finalized/);
+});
+
+test('reconciliation checks the 2.2.0 ledger identities and the carried totals', () => {
+  const state: State = { accountedBase: 21n, nandBase: (21n * 80n * 10n ** 18n) / 3n, latchBase: 21n * 80n * 10n ** 18n - (21n * 80n * 10n ** 18n) / 3n,
+    totalNandBurn: 1n, totalLatchBurn: 2n, nandShares: 1n, latchShares: 1n };
+  const x = accrue(21n, state);
+  const r: Reconciliation = { bemBalance: 21n, unrecognized: 0n, deficit: 0n, totalAccounted: 21n, totalPaid: 0n, recipientAAccrued: x.recipientA, recipientAPaid: 0n,
+    recipientBAccrued: x.recipientB, recipientBPaid: 0n, sinkAccrued: x.sink, sinkPaid: 0n, nandIncome: x.nandIncome, nandReceiptsAccrued: x.nandReceipts, nandReceiptsPaid: 0n,
+    latchIncome: x.latchIncome, latchReceiptsAccrued: x.latchReceipts, latchReceiptsPaid: 0n, residue: x.residue };
+  const carried = { carriedIncome: 21n, carriedNandUnits: state.nandBase };
+  const ok = checkReconciliation(state, r, carried);
+  assert.equal(ok.status, 'PASS', JSON.stringify(ok.checks));
+  assert.equal(checkReconciliation({ ...state, latchBase: state.latchBase + 1n }, r, carried).checks.ledgerBoundaryIdentity, false);
+  assert.equal(checkReconciliation(state, r, { ...carried, carriedIncome: 22n }).checks.carriedIncomeWithinRecognized, false);
+  assert.equal(checkReconciliation(state, r, { carriedIncome: 1n, carriedNandUnits: 81n * 10n ** 18n }).checks.carriedUnitsWithinItsShare, false);
 });
 
 test('deployment plans carry the intended constructor arguments', () => {
@@ -104,8 +130,15 @@ test('admission gas model stays inside the BSC per-transaction cap', () => {
   assert.ok(maxRegisteredForAdmission(1n, TX_GAS_CAP) > limit);
   assert.equal(maxAdmissionBatch(0n), 49n); // (budget - base) / per-incoming-miner
   assert.equal(maxAdmissionBatch(10_000n), 0n);
-  // Fork measurement: 867,619 gas with 23 registered miners; the model must not underestimate it.
-  assert.ok(admissionGasEstimate(23n, 1n) >= 867_619n);
+  // Fork measurement (2.2.0): 877,605 gas with 23 registered miners; the model must not underestimate it.
+  assert.ok(admissionGasEstimate(23n, 1n) >= 877_605n);
+  // 2.2.0: the admission that opens custody gets an allowance (fork: 514,781 for one miner, 538,382 as a CLI transaction).
+  assert.equal(admissionGasEstimate(0n, 1n, true) - admissionGasEstimate(0n, 1n), FIRST_ADMISSION_GAS);
+  assert.ok(admissionGasEstimate(0n, 1n, true) >= 538_382n + 100_000n);
+  const firstPlans = depositPlans('0x00000000000000000000000000000000000000f1', [1n, 2n, 3n], 2, 0n, false);
+  assert.deepEqual(firstPlans.map(p => p.gas), [admissionGasEstimate(0n, 2n, true), admissionGasEstimate(2n, 1n)]);
+  assert.match(firstPlans[0].description, /opens custody/);
+  assert.equal(maxAdmissionBatch(0n, BATCH_GAS_BUDGET, true) <= maxAdmissionBatch(0n), true);
   // Default setup batches (bounds checked as gas limits in test/unit/GasModel.t.sol).
   assert.equal(maxIdsPerTx(ISSUE_GAS), 231);
   assert.equal(maxIdsPerTx(FUND_GAS), 312);

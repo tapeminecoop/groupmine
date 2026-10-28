@@ -93,14 +93,37 @@ abstract contract SystemTestBase is Test {
         vm.stopPrank();
     }
 
+    /// @dev The 2.2.0 initialization: bind the distributor, finalize its allocation, activate, then every
+    ///      owner renounces (custody, i.e. the first admission, requires all of it). Receipts the test
+    ///      put into the distributor must be allocated before this.
     function activate() internal {
-        uint256 sN = nandReceipt.totalSupply();
-        uint256 sL = latchReceipt.totalSupply();
-        vm.prank(operator);
-        pool.activate(sN, sL);
+        activateKeepingOwners();
+        renounceAll();
     }
 
-    /// @dev S_N = 10 (alice 1..5, bob 6..10), S_L = 10 (alice 1..5, carol 6..10); finalized and active.
+    /// @dev Bind, finalize the allocation and activate; owners are kept (admissions stay closed).
+    function activateKeepingOwners() internal {
+        uint256 sN = nandReceipt.totalSupply();
+        uint256 sL = latchReceipt.totalSupply();
+        vm.startPrank(operator);
+        if (pool.distributor() == address(0)) pool.bindDistributor(address(distributor));
+        if (!distributor.allocationFinalized()) distributor.finalizeAllocation();
+        pool.activate(sN, sL);
+        vm.stopPrank();
+    }
+
+    /// @dev Both receipt collections, the distributor and the pool renounce ownership (those not yet).
+    function renounceAll() internal {
+        vm.startPrank(operator);
+        if (nandReceipt.owner() == operator) nandReceipt.renounceOwnership();
+        if (latchReceipt.owner() == operator) latchReceipt.renounceOwnership();
+        if (distributor.owner() == operator) distributor.renounceOwnership();
+        if (pool.owner() == operator) pool.renounceOwnership();
+        vm.stopPrank();
+    }
+
+    /// @dev S_N = 10 (alice 1..5, bob 6..10), S_L = 10 (alice 1..5, carol 6..10); finalized, active,
+    ///      every owner renounced.
     function setupStandard() internal {
         issue(nandReceipt, alice, 5);
         issue(nandReceipt, bob, 5);

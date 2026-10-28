@@ -27,7 +27,7 @@ contract PoolSetupTest is SystemTestBase {
         assertEq(pool.RECIPIENT_PARTS(), 1);
         assertEq(pool.SINK_PARTS(), 2);
         assertEq(pool.SINK(), 0x000000000000000000000000000000000000dEaD);
-        assertEq(pool.VERSION(), "TapeoutMinerPool/2.1.0");
+        assertEq(pool.VERSION(), "TapeoutMinerPool/2.2.0");
     }
 
     function testReceiptsMustBeThisExactImplementationWithTheRightCategories() public {
@@ -124,6 +124,17 @@ contract PoolSetupTest is SystemTestBase {
         vm.prank(alice);
         vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
         pool.activate(10, 3);
+        // 2.2.0: the round's distributor must be bound and its allocation finalized first.
+        vm.prank(operator);
+        vm.expectRevert(TapeoutMinerPool.DistributorNotBound.selector);
+        pool.activate(10, 3);
+        vm.prank(operator);
+        pool.bindDistributor(address(distributor));
+        vm.prank(operator);
+        vm.expectRevert(TapeoutMinerPool.AllocationNotFinalized.selector);
+        pool.activate(10, 3);
+        vm.prank(operator);
+        distributor.finalizeAllocation();
         vm.prank(operator);
         pool.activate(10, 3);
         assertTrue(pool.active());
@@ -142,10 +153,11 @@ contract PoolSetupTest is SystemTestBase {
     }
 
     function testPoolKeepsWorkingAfterOwnershipIsRenounced() public {
-        setupStandard();
-        vm.prank(operator);
-        pool.renounceOwnership();
+        setupStandard(); // 2.2.0: custody needs every owner renounced, and setupStandard renounces them
         assertEq(pool.owner(), address(0));
+        assertEq(nandReceipt.owner(), address(0));
+        assertEq(latchReceipt.owner(), address(0));
+        assertEq(distributor.owner(), address(0));
         admitNew(1, 5, 5);
         accrue(1, 105_000);
         (uint256 received,) = pool.harvestRange(0, 1);

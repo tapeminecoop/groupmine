@@ -1,0 +1,26 @@
+{
+  "status": "DIFFERENT",
+  "before": {
+    "file": "reports/salus-remediation-20261029-c78a6d1/contract-identity-before.json",
+    "head": "be57e5942a44f3e4c681ebc611f1a7ddf87d5510"
+  },
+  "after": {
+    "file": "reports/salus-remediation-20261029-c78a6d1/run/contract-identity.json",
+    "head": "c78a6d1234441137f8407fd30f904061ba792510"
+  },
+  "differences": [
+    "source src/PoolMath.sol",
+    "source src/TapeoutMinerPool.sol",
+    "source src/canary/RecoverableTapeoutMinerPool.sol",
+    "source src/interfaces/IReceiptDistributor.sol",
+    "contract TapeoutReceiptDistributor",
+    "contract TapeoutMinerPool",
+    "contract PoolMath",
+    "contract RecoverableTapeoutMinerPool",
+    "contract CanaryParticipant",
+    "contract IReceiptDistributor",
+    "toolchain packageLockSha256"
+  ],
+  "contracts": 8,
+  "sources": 8
+}

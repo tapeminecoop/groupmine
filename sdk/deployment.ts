@@ -105,6 +105,12 @@ export async function checkDeployment(rpc: PublicClient, addresses: Addresses, s
         if (same(owner, zeroAddress)) notes.push('distributor ownership is renounced');
         else if (!same(owner, system.distributor.owner)) problems.push(`distributor owner ${owner} is not the system file's ${system.distributor.owner}`);
       }
+      // 2.2.0: the pool binds its distributor once; a pool bound to any other contract is a mismatch.
+      if (addresses.pool && (contracts.pool as { matches?: boolean } | undefined)?.matches) {
+        const bound = await read<Address>(rpc, getAddress(addresses.pool), tapeoutMinerPoolAbi as Abi, 'distributor', at);
+        if (same(bound, zeroAddress)) notes.push('the pool has no distributor bound yet (bind-distributor, before activation)');
+        else if (!same(bound, distributor)) problems.push(`pool is bound to distributor ${bound}, not ${distributor}`);
+      }
     }
   }
   return { status: problems.length ? 'MISMATCH' : 'MATCHES', chainId, block: { number: at, hash: block.hash }, contracts, problems, notes };

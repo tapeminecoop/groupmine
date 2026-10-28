@@ -1,0 +1,141 @@
+{
+  "scope": "LOCAL_BSC_FORK_ONLY",
+  "runIdentity": "local-candidate-537513ee-fda0-4b3d-83b8-fd03b679cb96",
+  "candidate": {
+    "kind": "LOCAL_CANDIDATE_NOT_APPROVED",
+    "approvedBaseRevision": "c4bc022c76c5de528a98caa58974ee5772f80d4a",
+    "head": "c78a6d1234441137f8407fd30f904061ba792510",
+    "files": {
+      ".env.example": "3d50f2e9440092fe220791892b2c7411b30352f0b8a3a8a3d5a46b2110030cfe",
+      "docs/CANARY_RUNBOOK.md": "385e4352f2abeb3463fe8244bd77c0b5f419f4d80802c3bcf923a8f6c683ff1e",
+      "foundry.toml": "f748e4561d6eb9a2fa7ff0ac9b62b659f5c568e4c6f37e2e57d244f54f337d24",
+      "package-lock.json": "d7f28635198fc44b4ff993bf82d27c7aaf8394178033d21c92354ed0fa147c07",
+      "package.json": "a876ba3dfa18eb971029bdda051e3c5605115f7d551148510a7a133bcb97bafb",
+      "scripts/canary/build-source.mjs": "cd4a88c8edfe01eaefeeac26abb33b415f173386dac20cb222f3fc28d2b578ba",
+      "scripts/canary/common.ts": "1b4d527bc6778cd2d3cb8cfded0c5ed5f79fb80efa0aa5a05e569bf1571bf1fe",
+      "scripts/canary/fork-local-candidate.ts": "b3ca5552afe1cec042edc844881b657ca679e26024fbbdc1d064e638bc51c0ce",
+      "scripts/canary/fork.ts": "37652abf886af969dceb2897fab5130952dd6ac68a32603fe793fdbea93b2643",
+      "scripts/canary/inspect.ts": "feb5863a27cda450b07f68df810c42690a2d72bba3b8fb8c2557798e33a83b59",
+      "scripts/canary/live-runner.ts": "1af1941276c70baa300f48111012e6b1bc6b659e6d7b3ada80f43a1d2ad06cab",
+      "scripts/canary/prepare.ts": "9f92d5f3adbeeb4d3560c425c4c9ead377e705d53fccaab5b6377dfc00bc0295",
+      "scripts/canary/recover.ts": "4c4ebd5e6c943a60b4f5689d26f60367325b5bf72912b6ca9b0d640d61095930",
+      "scripts/canary/report.ts": "de07284d368f1bdac20b2c759b5da84c406780d57db0988e1c6d1e8f50713a52",
+      "scripts/canary/revert-verifier.ts": "edba563b1c0d1e27a58ac829fbd6a614782491b3ef696d06122e77297b35d090",
+      "scripts/canary/transactions.ts": "b7b788abd28484a60f09e9fcccb4241b07dfb5b4dad9b7f8584d9b053563064b",
+      "scripts/canary/verify-local.ts": "618456ad24f0617828c96d89b1c172b7240954fd7e0ea796d5ab6f448ee6bb60",
+      "scripts/canary/workflow.ts": "391102ee312df3b78c87675a8df68d432f4945b5a99cfaa474eeb09f0383261d",
+      "sdk/abi.ts": "d98fe44cd81f414804504b32ba0816aa241adf91578a7865d22c9832f32daef2",
+      "sdk/allocation.ts": "4c8bbedb10cfda4ef7295572d2d3e40133c5c9e00675b9554cf0dea0aefff159",
+      "sdk/bytecode.json": "8e04aa24409121ac3ed6257d68a0ee31630a618348d457c01625af96572f713b",
+      "sdk/config.ts": "6f529f9c5642c4d0b46931fe8f199f4f11e667fd80531961abd0484b6934b167",
+      "sdk/constants.ts": "c6e7e327689845a119f5869eff0d21bf8ed7d92de6d148138237a953c4edf326",
+      "sdk/deployment.ts": "25419229a6433a375acc251039ffd4fc446879e3407f51b7d6aa3fa4cbb1c02c",
+      "sdk/gas.ts": "33de2c0afc60dd9cc4ff2ce877526ac27fdd7461eb06327c27af460310a2eecb",
+      "sdk/index.ts": "e05ba7ae326296306d27cbe68326eed99581a8ac3b64340e3ad2b34917af9828",
+      "sdk/math.ts": "4802fec635d37d9ab320ae33bc52f8db40307d88ad02d822018bbb2be502e225",
+      "sdk/pool.ts": "fc3979b8669752c050830305f60fb76878b4bb2551b88ad1fb1502695f5e7887",
+      "sdk/tx.ts": "81c532a6917a310a80b340fa5e21a136205a014e8553258cab852a7f6f78b3cc",
+      "sdk/verify.ts": "272e997ee99a1e96cc86618ef8b2bcd72f249a68b9d40c017ffc44370585f221",
+      "src/PoolMath.sol": "4b9b53b542d6424380f33cf5d44afe33993afdfe92ff4a7b3e615a60ff3acaea",
+      "src/TapeoutEntitlementReceipt.sol": "f5657c2827ca9650983d4eac567583b8bb70f09079e73d6906ce12433b4de910",
+      "src/TapeoutMinerPool.sol": "f8b8d4d0014bb20fb5d81262854ad4be6a26b576d6b50e002d07e4ffa7d56df1",
+      "src/TapeoutReceiptDistributor.sol": "67f0b24fa54783b16595cd8b0fa5e4e4ecea5888cd53c58af55294c2e7f18659",
+      "src/canary/CanaryParticipant.sol": "5a7bcd8273280b3ecedde9e60bce1b53e308cc7d507b5da4bacb76fb35eef7aa",
+      "src/canary/RecoverableTapeoutMinerPool.sol": "1325972a04eeba530b987561ac2ab71f5a307ab67a413fb04ba43a6e43a8f6e4",
+      "src/interfaces/IMining.sol": "c8d8c41b57f55bc38a8d5c6712b74062a588519ec5b024fa19f11043cd1dbf12",
+      "src/interfaces/IReceiptDistributor.sol": "17785fc0265ab40bbe420da956d7d78fa35a216c2ec62a247a089bcb493e6b1c",
+      "test/sdk/canary.test.ts": "6877e3fa46ff1c0faeb015e2197122bfce2afc324b96c242e8bfbf197fa00fdf",
+      "test/unit/CanaryRecovery.t.sol": "1109c5dccfa7431834421b7c04b43905ffc031afe969436fa8ce71702bf5cba4"
+    },
+    "build": {
+      "nand": "f070229cd015e8fb6c80a55a696ebf8df5fe7fba00ae6764fbea503d0a494d94",
+      "latch": "f070229cd015e8fb6c80a55a696ebf8df5fe7fba00ae6764fbea503d0a494d94",
+      "helper": "4e6be3f01e5e93bf6c62306078fdc49519801dd86c7206bda8810402de484464",
+      "pool": "4463eb6004e3c07c4879d9d8c418f05232f76b146d9d4164cdd1f5c00a2025b8",
+      "distributor": "a47fdeee20125f3dd07230ee3146dfa984f757f32ec7820486105db1ea5b776a"
+    },
+    "settings": {
+      "solc": "0.8.24",
+      "evm": "paris",
+      "viaIR": true,
+      "optimizerRuns": 200
+    },
+    "digest": "bb9ebebd1725f20af7e90cbe37806491be6ee2f6b44d88fe7698c85487e35f9c"
+  },
+  "forkSource": {
+    "block": "128812145",
+    "blockHash": "0x383f1f97b08e13da4cbfc88908ec57643a0f186ee89de5d0a7a765f920f4a922",
+    "rpcHost": "bsc-mainnet.public.blastapi.io"
+  },
+  "owner": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+  "signing": "NO_PRIVATE_KEY_LOADED_OR_USED",
+  "impersonation": "LOCAL_ANVIL_ONLY",
+  "mainnetTransactions": 0,
+  "signaturesCreated": 0,
+  "note": "Not the historical mainnet run (canary-588196bf…, PARTIAL_AUTOMATION_FAILED_RECOVERY_AND_ACCOUNTING_PASS), and not an approved candidate.",
+  "runs": [
+    {
+      "interrupted": false,
+      "status": "PASS",
+      "assertions": {
+        "PASS": 46
+      },
+      "negativeTests": {
+        "former-holder-claim-rejected": {
+          "status": "PASS",
+          "kind": "EXPECTED_REVERT"
+        },
+        "non-whitelisted-admission-rejected": {
+          "status": "PASS",
+          "kind": "EXPECTED_REVERT"
+        },
+        "closed-pool-admission-rejected": {
+          "status": "PASS",
+          "kind": "EXPECTED_REVERT"
+        },
+        "closed-pool-harvest-rejected": {
+          "status": "PASS",
+          "kind": "EXPECTED_REVERT"
+        }
+      },
+      "recovery": {
+        "closed": true,
+        "errors": {},
+        "verified": [
+          {
+            "id": "3204",
+            "owner": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129"
+          },
+          {
+            "id": "12485",
+            "owner": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129"
+          }
+        ]
+      }
+    },
+    {
+      "interrupted": true,
+      "status": "INTERRUPTED_FOR_STANDALONE_RECOVERY",
+      "assertions": {
+        "PASS": 9
+      },
+      "negativeTests": {},
+      "recovery": {
+        "closed": true,
+        "errors": {},
+        "verified": [
+          {
+            "id": "3204",
+            "owner": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129"
+          },
+          {
+            "id": "12485",
+            "owner": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129"
+          }
+        ]
+      }
+    }
+  ],
+  "status": "PASS",
+  "completedAt": "2026-10-28T19:58:23.714Z"
+}

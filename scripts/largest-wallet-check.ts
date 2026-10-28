@@ -92,7 +92,10 @@ async function main() {
     const verified = await step('verify', ['verify-allocation', '--addresses', addressesFile, '--artifact', artifact, '--allocation', allocationFile]);
     check('verifiedReadyWithReviewedJson', verified.status === 'READY_TO_FINALIZE' && (verified.review as { status: string }).status === 'VERIFIED', verified.readinessGaps);
     await step('finalize-allocation', ['finalize-allocation', '--addresses', addressesFile, '--artifact', artifact, '--allocation', allocationFile, ...as(operator)]);
+    // 2.2.0: bind the distributor, activate, and renounce every owner before the first admission.
+    await step('bind-distributor', ['bind-distributor', '--addresses', addressesFile, ...as(operator)]);
     await step('activate', ['activate', '--addresses', addressesFile, '--nand-shares', String(N + 10), '--latch-shares', String(L + 5), ...as(operator)]);
+    for (const target of ['nand', 'latch', 'distributor', 'pool']) await step(`renounce-${target}`, ['renounce', '--addresses', addressesFile, '--target', target, ...as(operator)]);
     const write = (to: Address, abi: Abi, functionName: string, args: unknown[]) => send(operator, to, encodeFunctionData({ abi, functionName, args } as never));
     await write(nft, mockNFTAbi as Abi, 'mint', [depositor, 1n]);
     await write(mining, mockMiningAbi as Abi, 'start', [nft, 1n, 1, 1]);

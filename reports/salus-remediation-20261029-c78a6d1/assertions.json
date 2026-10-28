@@ -1,0 +1,988 @@
+{
+ "schema": "tapeout-salus-remediation-assertions/1",
+ "baseRevision": "c78a6d1234441137f8407fd30f904061ba792510",
+ "sourceTreeSha256": "c464fe4bc89a9e1fd0de0943577458980b8231d2a33e6594b83373b442d87874",
+ "runOverall": "INCOMPLETE",
+ "method": "Generates assertions.json for the SALUS remediation evidence from the recorded run in run/. evidenceStatus is PASS only if every item passed in the recorded run, NOT_RUN if any item is absent from it.",
+ "counts": {
+  "PASS": 63
+ },
+ "assertions": [
+  {
+   "id": "F1-1",
+   "requirement": "#1 successful atomic admission of an ACTIVE miner",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "SalusAdmissionTest.testAtomicAdmissionOfAnActiveMiner",
+     "result": "Success"
+    },
+    {
+     "kind": "fork",
+     "ref": "test/fork testForkCarriedIncomeIsAttributedPerMinerAndIndependentOfOrder",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "F1-2",
+   "requirement": "#1 revocation before admission makes the admission revert",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "SalusAdmissionTest.testRevocationBeforeAdmissionRevertsTheAdmission",
+     "result": "Success"
+    },
+    {
+     "kind": "fork",
+     "ref": "test/fork testForkInactiveMinerAdmissionRevertsAndStaysWithTheWallet",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "F1-3",
+   "requirement": "#1 a failed admission leaves the miner with the original wallet",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "SalusAdmissionTest.testRevocationBeforeAdmissionRevertsTheAdmission",
+     "result": "Success"
+    },
+    {
+     "kind": "solidity",
+     "ref": "SalusAdmissionTest.testRolledBackAdmissionDoesNotAlterRegisteredTotalsOrAccounting",
+     "result": "Success"
+    },
+    {
+     "kind": "solidity",
+     "ref": "SalusAdmissionTest.testMissingApprovalOrForeignOwnershipRevertsAtomically",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "F1-4",
+   "requirement": "#1 a failed admission alters no registered totals or accounting",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "SalusAdmissionTest.testRolledBackAdmissionDoesNotAlterRegisteredTotalsOrAccounting",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "F1-5",
+   "requirement": "#1 a failing incoming Mining reward collection rolls back the whole admission",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "SalusAdmissionTest.testIncomingRewardCollectionFailureRollsBackTheWholeAdmission",
+     "result": "Success"
+    },
+    {
+     "kind": "solidity",
+     "ref": "SalusCarriedIncomeTest.testIncomingClaimFailureRollsBackTheCarriedAttribution",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "F1-6",
+   "requirement": "#1 a successful initial admission establishes a valid NAND/LATCH composition",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "SalusAdmissionTest.testInitialAdmissionEstablishesTheComposition",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "F1-7",
+   "requirement": "#1 a direct NFT transfer does not register a miner",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "SalusAdmissionTest.testDirectTransferDoesNotRegisterAMiner",
+     "result": "Success"
+    },
+    {
+     "kind": "fork",
+     "ref": "test/fork testForkWhitelistAfterRenounceAndBypassRejection",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "F1-8",
+   "requirement": "#1 the unsupported direct-transfer/revocation scenario stays documented",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "SalusAdmissionTest.testUnsupportedDirectTransferThenRevocationLeavesItsIncomeUnrecognized",
+     "result": "Success"
+    },
+    {
+     "kind": "solidity",
+     "ref": "SalusAdmissionTest.testRegisterAfterPlainTransferBooksEarlierClaimsUnderTheCurrentComposition",
+     "result": "Success"
+    },
+    {
+     "kind": "fork",
+     "ref": "test/fork testForkPlainTransferThenRegisterWindow",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "F2-1",
+   "requirement": "#2 single NAND-only miner",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "SalusCarriedIncomeTest.testSingleNandOnlyMiner",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "F2-2",
+   "requirement": "#2 single LATCH-only miner",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "SalusCarriedIncomeTest.testSingleLatchOnlyMiner",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "F2-3",
+   "requirement": "#2 mixed NAND/LATCH miner",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "SalusCarriedIncomeTest.testSingleMixedMiner",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "F2-4",
+   "requirement": "#2 multiple miners in one batch",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "SalusCarriedIncomeTest.testReversedBatchOrderGivesTheSameLedger",
+     "result": "Success"
+    },
+    {
+     "kind": "solidity",
+     "ref": "SalusCarriedIncomeTest.testFuzzCarriedAttributionIsIndependentOfOrderAndPartition",
+     "result": "Success"
+    },
+    {
+     "kind": "fork",
+     "ref": "test/fork testForkCarriedIncomeIsAttributedPerMinerAndIndependentOfOrder",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "F2-5",
+   "requirement": "#2 reversed batch order",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "SalusCarriedIncomeTest.testReversedBatchOrderGivesTheSameLedger",
+     "result": "Success"
+    },
+    {
+     "kind": "solidity",
+     "ref": "SalusCarriedIncomeTest.testSalusExampleIsIndependentOfAdmissionOrder",
+     "result": "Success"
+    },
+    {
+     "kind": "fork",
+     "ref": "test/fork testForkCarriedIncomeIsAttributedPerMinerAndIndependentOfOrder",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "F2-6",
+   "requirement": "#2 reversed sequential admission order; sequential equals batch",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "SalusCarriedIncomeTest.testReversedSequentialOrderAndBatchGiveTheSameLedger",
+     "result": "Success"
+    },
+    {
+     "kind": "solidity",
+     "ref": "SalusCarriedIncomeTest.testSalusExampleIsIndependentOfAdmissionOrder",
+     "result": "Success"
+    },
+    {
+     "kind": "solidity",
+     "ref": "SalusCarriedIncomeTest.testFuzzCarriedAttributionIsIndependentOfOrderAndPartition",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "F2-7",
+   "requirement": "#2 incoming miner with zero carried BEM",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "SalusCarriedIncomeTest.testZeroCarriedIncome",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "F2-8",
+   "requirement": "#2 incoming miner with positive carried BEM",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "SalusCarriedIncomeTest.testPositiveCarriedIncomeIsRecordedPerMinerWithItsUnits",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "F2-9",
+   "requirement": "#2 pending() == 0 followed by a positive actual claim",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "SalusCarriedIncomeTest.testPendingZeroButPositiveClaimIsAttributedByTheActualBalanceDelta",
+     "result": "Success"
+    },
+    {
+     "kind": "fork",
+     "ref": "test/fork testForkCarriedIncomeIsAttributedPerMinerAndIndependentOfOrder",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "F2-10",
+   "requirement": "#2 existing pool income before admission",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "SalusCarriedIncomeTest.testExistingPoolIncomeBeforeAdmissionStaysWithTheOldComposition",
+     "result": "Success"
+    },
+    {
+     "kind": "fork",
+     "ref": "test/fork testForkBoundaryWithThreeOldMinersAndAnIncomingBatch",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "F2-11",
+   "requirement": "#2 old miners with accumulated income; several, strict settlement",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "SalusCarriedIncomeTest.testMultipleExistingMinersSettleStrictlyUnderTheOldComposition",
+     "result": "Success"
+    },
+    {
+     "kind": "fork",
+     "ref": "test/fork testForkBoundaryWithThreeOldMinersAndAnIncomingBatch",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "F2-12",
+   "requirement": "#2 new Mining claim failure and complete rollback",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "SalusCarriedIncomeTest.testIncomingClaimFailureRollsBackTheCarriedAttribution",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "F2-13",
+   "requirement": "#2 very small raw BEM amounts",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "SalusCarriedIncomeTest.testVerySmallRawAmountsAccumulateExactly",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "F2-14",
+   "requirement": "#2 fractional allocation and rounding boundaries",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "SalusCarriedIncomeTest.testFractionalAllocationAndRoundingBoundaries",
+     "result": "Success"
+    },
+    {
+     "kind": "solidity",
+     "ref": "RoundingPolicyTest.testSameRatioCheckpointsChangeLifetimeCategoryTotals",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "F2-15",
+   "requirement": "#2 receipt transfers before and after admission; repeated claims, no double payment",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "SalusCarriedIncomeTest.testReceiptTransfersBeforeAndAfterAdmissionAndNoDoublePayment",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "F2-16",
+   "requirement": "#2 A/B/C accounting and sink settlement",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "SalusCarriedIncomeTest.testABAndSinkAccrueOnCarriedIncomeAndSettleOnRelease",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "F2-17",
+   "requirement": "#2 independent reconciliation of all five revenue accounts",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "SalusCarriedIncomeTest.testFiveRevenueAccountsReconcileIndependently",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "F2-18",
+   "requirement": "#2 independent reference model (differential, FFI)",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity-ffi",
+     "ref": "SalusDifferentialTest.testFuzzLedgerMatchesTheSalusReferenceModel",
+     "result": "Success"
+    },
+    {
+     "kind": "solidity-ffi",
+     "ref": "SalusDifferentialTest.testSalusExampleMatchesTheModelInEveryOrder",
+     "result": "Success"
+    },
+    {
+     "kind": "step",
+     "ref": "run-manifest step salus-differential",
+     "result": "PASS"
+    }
+   ]
+  },
+  {
+   "id": "F2-19",
+   "requirement": "#2 the SALUS example: NAND 150 / LATCH 50 in every order, then 15 : 5",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "SalusCarriedIncomeTest.testSalusExampleIsIndependentOfAdmissionOrder",
+     "result": "Success"
+    },
+    {
+     "kind": "solidity-ffi",
+     "ref": "SalusDifferentialTest.testSalusExampleMatchesTheModelInEveryOrder",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "F2-20",
+   "requirement": "#2 real protocol on an isolated BSC fork",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "fork",
+     "ref": "test/fork testForkCarriedIncomeIsAttributedPerMinerAndIndependentOfOrder",
+     "result": "Success"
+    },
+    {
+     "kind": "fork",
+     "ref": "test/fork testForkBoundaryWithThreeOldMinersAndAnIncomingBatch",
+     "result": "Success"
+    },
+    {
+     "kind": "fork",
+     "ref": "test/fork testForkStrictAdmissionBoundaryWithRealMiners",
+     "result": "Success"
+    },
+    {
+     "kind": "e2e",
+     "ref": "fork-e2e.checks.realBoundaryMatchesOldPeriodAndOwnBurnModel",
+     "result": true
+    }
+   ]
+  },
+  {
+   "id": "F3-1",
+   "requirement": "#3 NAND issuance not finalized",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "SalusFinalityTest.testNandIssuanceNotFinalizedBlocksCustody",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "F3-2",
+   "requirement": "#3 LATCH issuance not finalized",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "SalusFinalityTest.testLatchIssuanceNotFinalizedBlocksCustody",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "F3-3",
+   "requirement": "#3 NAND owner not zero",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "SalusFinalityTest.testNandOwnerNotRenouncedBlocksTheFirstAdmission",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "F3-4",
+   "requirement": "#3 LATCH owner not zero",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "SalusFinalityTest.testLatchOwnerNotRenouncedBlocksTheFirstAdmission",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "F3-5",
+   "requirement": "#3 distributor allocation not finalized",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "SalusFinalityTest.testDistributorAllocationNotFinalizedBlocksActivationAndCustody",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "F3-6",
+   "requirement": "#3 distributor owner not zero",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "SalusFinalityTest.testDistributorOwnerNotRenouncedBlocksTheFirstAdmission",
+     "result": "Success"
+    },
+    {
+     "kind": "solidity",
+     "ref": "SalusFinalityTest.testCompletedOwnershipTransferKeepsCustodyClosed",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "F3-7",
+   "requirement": "#3 pool not activated",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "SalusFinalityTest.testPoolNotActivatedBlocksAdmission",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "F3-8",
+   "requirement": "#3 pool owner not zero (mandatory gate)",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "SalusFinalityTest.testPoolOwnerNotRenouncedBlocksTheFirstAdmission",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "F3-9",
+   "requirement": "#3 incorrect distributor binding",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "SalusFinalityTest.testIncorrectDistributorBindingIsRefused",
+     "result": "Success"
+    },
+    {
+     "kind": "solidity",
+     "ref": "SalusFinalityTest.testBindingChecksReportedViewsNotCode",
+     "result": "Success"
+    },
+    {
+     "kind": "e2e",
+     "ref": "local-e2e.checks.distributorBindingIsOneTime",
+     "result": true
+    },
+    {
+     "kind": "e2e",
+     "ref": "local-e2e.checks.activationRefusedWithoutDistributorBinding",
+     "result": true
+    }
+   ]
+  },
+  {
+   "id": "F3-10",
+   "requirement": "#3 incorrect receipt addresses",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "SalusFinalityTest.testIncorrectReceiptAddressesAreRefused",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "F3-11",
+   "requirement": "#3 incorrect finalized supplies",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "SalusFinalityTest.testIncorrectFinalizedSuppliesAreRefused",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "F3-12",
+   "requirement": "#3 successful admission after all conditions",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "SalusFinalityTest.testSuccessfulAdmissionAfterEveryConditionAndNoRenunciationByThePool",
+     "result": "Success"
+    },
+    {
+     "kind": "fork",
+     "ref": "test/fork testForkFinalityGateOnRealProtocol",
+     "result": "Success"
+    },
+    {
+     "kind": "e2e",
+     "ref": "local-e2e.checks.readyForFirstAdmission",
+     "result": true
+    },
+    {
+     "kind": "e2e",
+     "ref": "fork-safe-e2e.checks.readyForFirstAdmission",
+     "result": true
+    }
+   ]
+  },
+  {
+   "id": "F3-13",
+   "requirement": "#3 subsequent admissions after ownership renunciation, no liveness dependency",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "SalusFinalityTest.testLaterAdmissionsAfterRenunciationNeedNoFurtherChecks",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "F3-14",
+   "requirement": "#3 ordinary receipt transfers; delivery after distributor renunciation; BEM claims and A/B release after pool renunciation",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "SalusFinalityTest.testReceiptsDeliverTransferAndClaimWithoutAnyOwner",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "F3-15",
+   "requirement": "#3 no post-initialization privileged power",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "SalusFinalityTest.testNoPrivilegedPowerRemainsAfterInitialization",
+     "result": "Success"
+    },
+    {
+     "kind": "solidity",
+     "ref": "SalusFinalityTest.testPendingOrCompletedOwnershipTransfersAreHandled",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "F3-16",
+   "requirement": "#3 tooling cannot silently bypass the requirements",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "e2e",
+     "ref": "local-e2e.checks.cliRefusesTheFirstAdmissionBeforeFinality",
+     "result": true
+    },
+    {
+     "kind": "e2e",
+     "ref": "local-e2e.checks.chainRefusesTheFirstAdmissionBeforeFinality",
+     "result": true
+    },
+    {
+     "kind": "e2e",
+     "ref": "fork-e2e.checks.custodyClosedWhileOwnersRemain",
+     "result": true
+    }
+   ]
+  },
+  {
+   "id": "F3-17",
+   "requirement": "#3 real protocol",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "fork",
+     "ref": "test/fork testForkFinalityGateOnRealProtocol",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "INV-1",
+   "requirement": "invariant: carried-income allocation independent of admission order",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "PoolInvariantTest.invariantCarriedIncomeIsIndependentOfAdmissionOrder",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "INV-2",
+   "requirement": "invariant: no double recognition of incoming BEM",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "PoolInvariantTest.invariantModelMatchesTheLedger",
+     "result": "Success"
+    },
+    {
+     "kind": "solidity",
+     "ref": "PoolInvariantTest.invariantRecognitionPaymentsAndLedgerIdentity",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "INV-3",
+   "requirement": "invariant: correct cumulative A/B/C accrual",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "PoolInvariantTest.invariantFourAccountConservation",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "INV-4",
+   "requirement": "invariant: total paid never exceeds recognized income",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "PoolInvariantTest.invariantRecognitionPaymentsAndLedgerIdentity",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "INV-5",
+   "requirement": "invariant: receipt entitlement monotonicity",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "PoolInvariantTest.invariantEntitlementsNeverDecrease",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "INV-6",
+   "requirement": "invariant: previous paid histories remain valid",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "PoolInvariantTest.invariantPerIdHistories",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "INV-7",
+   "requirement": "invariant: failed admission causes complete rollback",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "PoolInvariantTest.invariantModelMatchesTheLedger",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "INV-8",
+   "requirement": "invariant: no first admission before finality and renunciation",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "SalusFinalityInvariantTest.invariantNoAdmissionBeforeFinality",
+     "result": "Success"
+    },
+    {
+     "kind": "solidity",
+     "ref": "SalusFinalityInvariantTest.invariantCustodyOpensOnlyWithItsFirstAdmission",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "INV-9",
+   "requirement": "invariant: continued operation after ownership renunciation",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "PoolInvariantTest.invariantCustodyOnlyAfterFinality",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "INV-10",
+   "requirement": "invariant: BEM conservation including rounding residue",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "solidity",
+     "ref": "PoolInvariantTest.invariantFourAccountConservation",
+     "result": "Success"
+    }
+   ]
+  },
+  {
+   "id": "T-1",
+   "requirement": "build sizes within EIP-170 / EIP-3860",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "step",
+     "ref": "run-manifest step build-sizes",
+     "result": "PASS"
+    }
+   ]
+  },
+  {
+   "id": "T-2",
+   "requirement": "SDK ABI and bytecode equal the tested build",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "step",
+     "ref": "run-manifest step export-abi",
+     "result": "PASS"
+    }
+   ]
+  },
+  {
+   "id": "T-3",
+   "requirement": "SDK tests and TypeScript typecheck",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "step",
+     "ref": "run-manifest step sdk-tests",
+     "result": "PASS"
+    },
+    {
+     "kind": "step",
+     "ref": "run-manifest step typecheck",
+     "result": "PASS"
+    },
+    {
+     "kind": "step",
+     "ref": "run-manifest step audit-sdk-tests",
+     "result": "PASS"
+    }
+   ]
+  },
+  {
+   "id": "T-4",
+   "requirement": "local end to end with the new initialization and acceptance example",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "step",
+     "ref": "run-manifest step local-e2e",
+     "result": "PASS"
+    },
+    {
+     "kind": "e2e",
+     "ref": "local-e2e.checks.acceptanceExampleCarriedByOwnBurnNand100Latch100",
+     "result": true
+    },
+    {
+     "kind": "e2e",
+     "ref": "local-e2e.checks.carriedRecordsReconcile",
+     "result": true
+    }
+   ]
+  },
+  {
+   "id": "T-5",
+   "requirement": "fork and Safe end to end",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "step",
+     "ref": "run-manifest step fork-e2e",
+     "result": "PASS"
+    },
+    {
+     "kind": "step",
+     "ref": "run-manifest step fork-safe-e2e",
+     "result": "PASS"
+    },
+    {
+     "kind": "e2e",
+     "ref": "fork-safe-e2e.checks.distributorBoundOnce",
+     "result": true
+    }
+   ]
+  },
+  {
+   "id": "T-6",
+   "requirement": "internal review suites still pass (adapted where superseded)",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "step",
+     "ref": "run-manifest step audit-tests",
+     "result": "PASS"
+    },
+    {
+     "kind": "step",
+     "ref": "run-manifest step solidity-tests",
+     "result": "PASS"
+    }
+   ]
+  },
+  {
+   "id": "T-7",
+   "requirement": "canary-3 local rehearsal with preserved recovery restrictions",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "canary",
+     "ref": "canary-fork/summary.json status",
+     "result": "PASS"
+    },
+    {
+     "kind": "step",
+     "ref": "run-manifest step canary-fork-rehearsal",
+     "result": "PASS"
+    }
+   ]
+  },
+  {
+   "id": "T-8",
+   "requirement": "largest-wallet gate",
+   "evidenceStatus": "PASS",
+   "evidence": [
+    {
+     "kind": "step",
+     "ref": "run-manifest step largest-wallet",
+     "result": "PASS"
+    }
+   ]
+  }
+ ]
+}

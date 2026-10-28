@@ -119,7 +119,7 @@ contract PoolForkTest is PoolForkBase {
 
     /// @notice The admission boundary on real protocol state: the NAND-only miner's income is settled
     ///         under the old (all-NAND) composition inside the admission of the LATCH-burning miner,
-    ///         whose carried income is split by the new composition.
+    ///         whose carried income is split by that miner's own burn (2.2.0, SALUS #2).
     function testForkStrictAdmissionBoundaryWithRealMiners() public {
         _deploySystem();
         IMining.MinerRecord memory rn = mining.getMiner(mining.minerKey(COLLECTION, nandMiner));
@@ -141,23 +141,16 @@ contract PoolForkTest is PoolForkBase {
         assertGt(settled, 0, "old miner's income was collected inside the admission");
         assertGe(carried, pendingL);
 
-        // Expected allocation: settled under (n, 0), checkpoint, carried under (n + n', l').
-        PoolMath.State memory s = PoolMath.State(0, 0, 0, rn.nandBurn, 0, 20, 10);
-        PoolMath.Accrual memory afterOld = PoolMath.accrue(carried0 + settled, s);
-        PoolMath.State memory s1 = PoolMath.State(
-            afterOld.nandIncome,
-            afterOld.latchIncome,
-            afterOld.nandIncome + afterOld.latchIncome,
-            uint256(rn.nandBurn) + rl.nandBurn,
-            rl.latchBurn,
-            20,
-            10
-        );
-        PoolMath.Accrual memory expected = PoolMath.accrue(carried0 + settled + carried, s1);
+        // Expected allocation, written from the specification (ledger units of 1 / (84 * 10^18) raw BEM,
+        // the participants' exact share of x raw units being x * 80 * 10^18): the first miner's carried
+        // income and the old period's income all NAND, the incoming miner's carried income by its own
+        // burn n' : l'. Not computed with PoolMath.
+        (uint256 expectNand, uint256 expectLatch) =
+            _splitAfterBoundary(carried0 + settled, carried, rl.nandBurn, rl.latchBurn);
         PoolMath.Accrual memory a = pool.accrual();
-        assertEq(a.total, expected.total);
-        assertEq(a.nandIncome, expected.nandIncome, "NAND = old income at 100% + carried at n/(n+l)");
-        assertEq(a.latchIncome, expected.latchIncome, "LATCH only from the carried income");
+        assertEq(a.total, carried0 + settled + carried);
+        assertEq(a.nandIncome, expectNand, "NAND = old income at 100% + carried at n'/(n'+l')");
+        assertEq(a.latchIncome, expectLatch, "LATCH only from the carried income, by its own burn");
         assertEq(pool.totalNandBurn(), uint256(rn.nandBurn) + rl.nandBurn);
         assertEq(pool.totalLatchBurn(), rl.latchBurn);
 
@@ -181,6 +174,18 @@ contract PoolForkTest is PoolForkBase {
         vm.writeJson(out, "reports/fork-boundary.json");
 
         _claimsReleasesAndReconcile();
+    }
+
+    /// @dev `allNand` raw units entirely NAND, then `carried` by the burn n : l, in ledger units of
+    ///      1 / (84 * 10^18) raw BEM (the participants' share of x raw units is x * 80 * 10^18 units).
+    function _splitAfterBoundary(uint256 allNand, uint256 carried, uint256 n, uint256 l)
+        internal
+        pure
+        returns (uint256 nandIncome, uint256 latchIncome)
+    {
+        uint256 nandUnits = allNand * 80e18 + carried * 80e18 * n / (n + l);
+        nandIncome = nandUnits / 84e18;
+        latchIncome = ((allNand + carried) * 80e18 - nandUnits) / 84e18;
     }
 
     function _claimsReleasesAndReconcile() internal {
@@ -380,9 +385,8 @@ contract PoolForkTest is PoolForkBase {
     }
 
     function testForkWhitelistAfterRenounceAndBypassRejection() public {
-        _deploySystem();
-        vm.prank(operator);
-        pool.renounceOwnership();
+        _deploySystem(); // renounces every owner, the pool's included
+        assertEq(pool.owner(), address(0));
         // The miner's own holder is not whitelisted.
         address holder = collection.ownerOf(nandMiner);
         vm.startPrank(holder);
@@ -424,6 +428,10 @@ contract PoolForkTest is PoolForkBase {
             uint256 registered = pool.minerCount();
             (,, uint256 gasUsed) = _admit(_one(ids[i]));
             vm.serializeUint(key, string.concat("admitWith", vm.toString(registered), "Registered"), gasUsed);
+            // The CLI's planned bound (sdk/gas.ts: 300k + 30k per registered + 250k per incoming miner, plus
+            // 150k for the admission that opens custody) must cover it with the 21,000 base and calldata.
+            uint256 bound = 300_000 + 30_000 * registered + 250_000 + (registered == 0 ? 150_000 : 0);
+            assertLe(gasUsed + 25_000, bound, "planned admission bound");
             if (registered > 1 && gasUsed > lastGas) {
                 uint256 perMiner = (gasUsed - lastGas) / (registered - lastCount);
                 if (perMiner > maxPerMiner) maxPerMiner = perMiner;

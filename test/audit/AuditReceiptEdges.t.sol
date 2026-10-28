@@ -10,13 +10,16 @@ import {ReceiptHolder} from "../helpers/Mocks.sol";
 
 /// @notice Internal security review (f2c8e50), workstream B: receipt transfer edge cases that the
 ///         holder index, the distributor's inventory and the pool's holder-only claims must survive.
+/// @dev Adapted for TapeoutMinerPool/2.2.0 (SALUS remediation): the pool now activates only after the
+///      bound distributor's allocation is finalized, and admits only after every owner renounced, so
+///      `activate()` moved from setUp to the point in each test where the pool must run (after the
+///      distributor steps). Every check is unchanged. As committed (2.1.0 adaptation): a74f6d4.
 contract AuditReceiptEdgesTest is SystemTestBase {
     function setUp() public override {
         super.setUp();
         issue(nandReceipt, alice, 3);
         issue(latchReceipt, alice, 2);
         finalizeIssuance();
-        activate();
     }
 
     function _entry(TapeoutMinerPool.Category c, address wallet, uint64 first, uint64 count)
@@ -47,16 +50,7 @@ contract AuditReceiptEdgesTest is SystemTestBase {
         vm.prank(bob);
         vm.expectRevert();
         nandReceipt.safeTransferFrom(bob, address(pool), 1, 0, "");
-        // Only the real holder claims.
-        admitNew(1, 1, 1);
-        accrue(1, 1_020_000);
-        pool.harvestRange(0, 1);
-        vm.prank(bob);
-        vm.expectRevert(abi.encodeWithSelector(TapeoutMinerPool.NotHolder.selector, NAND, 1));
-        pool.claim(NAND, 1);
-        vm.prank(alice);
-        assertGt(pool.claim(NAND, 1), 0);
-        // After finalization the distributor refuses even zero-value transfers.
+        // (2.2.0: the distributor is funded and finalized before the pool can run.)
         vm.startPrank(alice);
         nandReceipt.safeBatchTransferFrom(alice, address(distributor), two(2, 3), two(1, 1), "");
         latchReceipt.safeBatchTransferFrom(alice, address(distributor), two(1, 2), two(1, 1), "");
@@ -68,6 +62,17 @@ contract AuditReceiptEdgesTest is SystemTestBase {
         distributor.allocate(e);
         distributor.finalizeAllocation();
         vm.stopPrank();
+        activate();
+        // Only the real holder claims.
+        admitNew(1, 1, 1);
+        accrue(1, 1_020_000);
+        pool.harvestRange(0, 1);
+        vm.prank(bob);
+        vm.expectRevert(abi.encodeWithSelector(TapeoutMinerPool.NotHolder.selector, NAND, 1));
+        pool.claim(NAND, 1);
+        vm.prank(alice);
+        assertGt(pool.claim(NAND, 1), 0);
+        // After finalization the distributor refuses even zero-value transfers.
         vm.prank(dave);
         vm.expectRevert(TapeoutReceiptDistributor.AllocationClosed.selector);
         nandReceipt.safeTransferFrom(dave, address(distributor), 1, 0, "");
@@ -95,6 +100,7 @@ contract AuditReceiptEdgesTest is SystemTestBase {
         vm.prank(carol);
         nandReceipt.safeTransferFrom(alice, alice, 3, 1, "");
         assertEq(nandReceipt.holderOf(3), alice);
+        activate();
         admitNew(1, 2, 1);
         accrue(1, 3_060_000);
         pool.harvestRange(0, 1);
@@ -118,6 +124,7 @@ contract AuditReceiptEdgesTest is SystemTestBase {
         distributor.allocate(e);
         distributor.finalizeAllocation();
         vm.stopPrank();
+        activate();
         admitNew(1, 4, 0);
         accrue(1, 3_060_000);
         pool.harvestRange(0, 1);

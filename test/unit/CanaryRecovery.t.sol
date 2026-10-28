@@ -5,6 +5,8 @@ import {Test} from "forge-std/Test.sol";
 import {RecoverableTapeoutMinerPool as Canary} from "../../src/canary/RecoverableTapeoutMinerPool.sol";
 import {CanaryParticipant} from "../../src/canary/CanaryParticipant.sol";
 import {TapeoutEntitlementReceipt as Entitlement} from "../../src/TapeoutEntitlementReceipt.sol";
+import {TapeoutMinerPool} from "../../src/TapeoutMinerPool.sol";
+import {TapeoutReceiptDistributor} from "../../src/TapeoutReceiptDistributor.sol";
 import {MockNFT, MockBEM, MockMining} from "../helpers/Mocks.sol";
 
 contract CanaryRecoveryTest is Test {
@@ -17,6 +19,7 @@ contract CanaryRecoveryTest is Test {
     Entitlement internal latch;
     Canary internal pool;
     CanaryParticipant internal helper;
+    TapeoutReceiptDistributor internal distributor;
 
     function setUp() public {
         nft = new MockNFT();
@@ -41,6 +44,8 @@ contract CanaryRecoveryTest is Test {
                 "RECOVERABLE CANARY"
             )
         );
+        // The production distributor, bound to the canary pool (same receipt views).
+        distributor = new TapeoutReceiptDistributor(wallet, TapeoutMinerPool(address(pool)));
         vm.prank(wallet);
         helper.bindPool(pool);
         nft.mint(wallet, 3204);
@@ -49,13 +54,21 @@ contract CanaryRecoveryTest is Test {
         mining.start(address(nft), 12485, 1, 1);
     }
 
+    /// @dev canary-3 keeps production's initialization: bind the distributor, finalize its (here empty)
+    ///      allocation, activate, and renounce every owner before the first admission. Recovery stays
+    ///      with the immutable recovery controller.
     function activate() internal {
         vm.startPrank(wallet);
         nand.issue(wallet, 4);
         latch.issue(wallet, 2);
         nand.finalizeIssuance();
         latch.finalizeIssuance();
+        pool.bindDistributor(address(distributor));
+        distributor.finalizeAllocation();
         pool.activate(4, 2);
+        nand.renounceOwnership();
+        latch.renounceOwnership();
+        distributor.renounceOwnership();
         pool.renounceOwnership();
         vm.stopPrank();
     }
@@ -245,18 +258,21 @@ contract CanaryRecoveryTest is Test {
         mining.accrueUnsettled(address(nft), 3204, 10500);
         mining.accrueUnsettled(address(nft), 12485, 10500);
         deposit(12485);
-        assertEq(pool.nandBase(), 30000);
-        assertEq(pool.latchBase(), 0);
+        // Old period (held 10500 + settled 10500 + first carried 10500) all NAND: 30000 participants'
+        // BEM; 12485's carried 10500 by its own 1:1 burn: NAND +5000, LATCH +5000 (canary-3).
+        assertEq(pool.ledgerState().nandBase, 35000 * pool.LEDGER_UNIT());
+        assertEq(pool.ledgerState().latchBase, 5000 * pool.LEDGER_UNIT());
+        assertEq(pool.carriedIncome(), 21000);
         assertEq(pool.claimed(Canary.Category.NAND, 1), 2500);
-        assertEq(pool.claimable(Canary.Category.NAND, 1), 6875);
-        assertEq(pool.claimable(Canary.Category.LATCH, 1), 1250);
+        assertEq(pool.claimable(Canary.Category.NAND, 1), 6250);
+        assertEq(pool.claimable(Canary.Category.LATCH, 1), 2500);
         // Already received, not yet synchronized; shutdown/recovery do not erase it.
         bem.mint(address(pool), 10500);
         closeAndReturn();
-        assertEq(pool.claimable(Canary.Category.NAND, 1), 8750);
+        assertEq(pool.claimable(Canary.Category.NAND, 1), 8125); // + 10000 at the final 3:1 composition
         vm.startPrank(wallet);
         nand.safeTransferFrom(wallet, address(helper), 1, 1, "");
-        assertEq(helper.claim(one(1), new uint256[](0)), 8750);
+        assertEq(helper.claim(one(1), new uint256[](0)), 8125);
         assertEq(helper.claim(one(1), new uint256[](0)), 0);
         vm.expectRevert(abi.encodeWithSelector(Canary.NotHolder.selector, Canary.Category.NAND, 1));
         pool.claim(Canary.Category.NAND, 1);

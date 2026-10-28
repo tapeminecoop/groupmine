@@ -1,0 +1,10 @@
+{
+  "claimableOneDayAfterRestart": 531091,
+  "debtAtRestart": 35610025,
+  "debtWhileCooling": 5408752,
+  "forkBlock": 128713128,
+  "holder": "0x343814Ed06F87f34c8f69486c02e06763a552074",
+  "miner": 672,
+  "stopBlock": 118184257,
+  "unverifiedWeight": 3
+}

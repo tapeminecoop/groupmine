@@ -1,0 +1,14 @@
+$ node --import tsx scripts/contract-identity.ts --out reports/contract-identity.json
+# exit 0
+
+## stdout
+{
+  "out": "reports/contract-identity.json",
+  "head": "c78a6d1234441137f8407fd30f904061ba792510",
+  "sources": 8,
+  "sourcesSha256": "531bb53ea77a01cbdd276167aa64d47fb71f4f58a27aa86a65ce3fa517f05375"
+}
+
+
+## stderr
+

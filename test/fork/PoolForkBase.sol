@@ -94,8 +94,17 @@ abstract contract PoolForkBase is Test {
         require(deployed != address(0), "artifact deployment failed");
     }
 
-    /// @dev Receipts S_N = 20 / S_L = 10 -> distributor -> alice 12 + 4, bob 8, carol 6; pool active.
+    /// @dev Receipts S_N = 20 / S_L = 10 -> distributor -> alice 12 + 4, bob 8, carol 6; distributor
+    ///      bound and finalized, pool active, and (2.2.0) every owner renounced, as custody requires.
     function _deploySystem() internal {
+        _deploySystemKeepingOwners();
+        vm.startPrank(operator);
+        _renounceAll();
+        vm.stopPrank();
+    }
+
+    /// @dev The same system with every owner still in place (custody closed).
+    function _deploySystemKeepingOwners() internal {
         bytes memory receiptCode = _artifact("TapeoutEntitlementReceipt");
         nandReceipt = TapeoutEntitlementReceipt(
             _create(
@@ -153,8 +162,17 @@ abstract contract PoolForkBase is Test {
         e[3] = TapeoutReceiptDistributor.AllocationInput(LATCH, carol, 5, 6);
         distributor.allocate(e);
         distributor.finalizeAllocation();
+        pool.bindDistributor(address(distributor));
         pool.activate(20, 10);
         vm.stopPrank();
+    }
+
+    /// @dev Called while pranking the operator: both receipts, the distributor and the pool renounce.
+    function _renounceAll() internal {
+        nandReceipt.renounceOwnership();
+        latchReceipt.renounceOwnership();
+        distributor.renounceOwnership();
+        pool.renounceOwnership();
     }
 
     function _moveToDepositor(uint256 tokenId) internal returns (address holder, uint256 pendingBefore) {

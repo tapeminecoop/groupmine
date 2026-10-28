@@ -1,0 +1,24 @@
+{
+ "schema": "tapeout-historical-unchanged/1",
+ "baseRevision": "c78a6d1234441137f8407fd30f904061ba792510",
+ "method": "every file tracked at the base revision under the listed paths, compared byte for byte with the working tree after the recorded run and the restore of reports/",
+ "paths": [
+  "docs/INTERNAL_SECURITY_REVIEW_f2c8e50.md",
+  "docs/AUDIT_REMEDIATION_REPORT.md",
+  "docs/VERIFICATION_REPORT.md",
+  "docs/BASELINE.md",
+  "docs/LIVE_TEST_PLAN.md",
+  "docs/FEE_SPLIT_CHANGE_REPORT.md",
+  "docs/FEE_SPLIT_AUDIT_REMEDIATION_REPORT.md",
+  "docs/INTERNAL_FEE_SPLIT_REVIEW_8cf31dc_FABLE.md",
+  "docs/MINING_LIFECYCLE.md",
+  "MAINNET_TEST_REPORT.md",
+  "Groupmine_audit_report_2026-10-28.pdf",
+  "proposed-patches",
+  "reports"
+ ],
+ "files": 431,
+ "identical": 431,
+ "different": [],
+ "status": "IDENTICAL"
+}

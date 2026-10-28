@@ -1,0 +1,8 @@
+$ forge fmt --check src script test/unit test/invariant test/fork test/helpers test/remediation test/salus test/salus-ffi
+# exit 0
+
+## stdout
+
+
+## stderr
+

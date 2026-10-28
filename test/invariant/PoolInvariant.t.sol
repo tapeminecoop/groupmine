@@ -8,11 +8,19 @@ import {TapeoutEntitlementReceipt} from "../../src/TapeoutEntitlementReceipt.sol
 import {PoolMath} from "../../src/PoolMath.sol";
 import {MockBEM, MockMining, MockNFT} from "../helpers/Mocks.sol";
 
-/// @dev Drives admissions (some of which must roll back), harvests, third-party claims, donations,
-///      status changes, claims, transfers and recipient payments. It keeps an independent model of the
-///      specification: expected settlement and carried amounts come from Mining's owed balances, and
-///      category totals are replayed with the old/new composition boundary.
+/// @dev Drives admissions (some of which must roll back, in a shuffled batch order), harvests, third-party
+///      claims, donations, status changes, claims, transfers and recipient payments. It keeps an
+///      independent model of the specification: expected settlement and carried amounts come from
+///      Mining's owed balances, and category totals are recomputed from scratch from a list of ledger
+///      entries (2.2.0: each closed composition period, and each incoming miner's carried income with that
+///      miner's own burn), not from PoolMath's running bases.
 contract SystemHandler is Test {
+    struct Entry {
+        uint256 amount;
+        uint256 n;
+        uint256 l;
+    }
+
     TapeoutMinerPool internal pool;
     MockBEM internal bem;
     MockMining internal mining;
@@ -27,11 +35,13 @@ contract SystemHandler is Test {
 
     // Reference model.
     uint256 public gTotal;
-    uint256 public gNandBase;
-    uint256 public gLatchBase;
-    uint256 public gParticipantBase;
+    uint256 public gPeriodIncome; // ordinary income of the open composition period
+    Entry[] internal entries; // closed periods and carried incomes
     uint256 public gNandBurn;
     uint256 public gLatchBurn;
+    uint256 public gCarried;
+    uint256 public gCarriedNandUnits; // sum of per-miner splits: independent of admission order by construction
+    mapping(uint256 => uint256) public gCarriedOf;
 
     bool public amountsMatch = true;
     bool public rollbacksClean = true;
@@ -64,16 +74,51 @@ contract SystemHandler is Test {
 
     // ------------------------------------------------------------------ model helpers
 
-    function modelCategories() public view returns (uint256 nand, uint256 latch) {
-        uint256 participants = gTotal * 80 / 84;
-        nand = gNandBase;
-        latch = gLatchBase;
-        uint256 weight = gNandBurn + gLatchBurn;
-        if (weight != 0) {
-            uint256 d = participants - gParticipantBase;
-            nand += d * gNandBurn / weight;
-            latch += d * gLatchBurn / weight;
+    /// @dev A ledger unit is 1 / (84 * 10^18) raw BEM; the participants' exact share of x raw units is
+    ///      x * 80 * 10^18 units. NAND takes the floor of each entry's share, LATCH the rest of the total.
+    function _nandPart(uint256 amount, uint256 n, uint256 l) internal pure returns (uint256) {
+        return amount * 80 * 1e18 * n / (n + l);
+    }
+
+    function modelUnits() public view returns (uint256 nandUnits, uint256 latchUnits) {
+        for (uint256 i; i < entries.length; ++i) {
+            nandUnits += _nandPart(entries[i].amount, entries[i].n, entries[i].l);
         }
+        if (gPeriodIncome != 0 && gNandBurn + gLatchBurn != 0) {
+            nandUnits += _nandPart(gPeriodIncome, gNandBurn, gLatchBurn);
+        }
+        latchUnits = gTotal * 80 * 1e18 - nandUnits;
+    }
+
+    function modelCategories() public view returns (uint256 nand, uint256 latch) {
+        (uint256 nandUnits, uint256 latchUnits) = modelUnits();
+        return (nandUnits / (84 * 1e18), latchUnits / (84 * 1e18));
+    }
+
+    function _recognized(uint256 amount) internal {
+        gTotal += amount;
+        gPeriodIncome += amount;
+    }
+
+    function _closePeriod() internal {
+        if (gPeriodIncome != 0) entries.push(Entry(gPeriodIncome, gNandBurn, gLatchBurn));
+        gPeriodIncome = 0;
+    }
+
+    /// @dev Everything an admission may change, to prove a failed one changed nothing.
+    function _snapshot() internal view returns (bytes32) {
+        return keccak256(
+            abi.encode(
+                pool.accrual(),
+                pool.ledgerState(),
+                pool.totalAccounted(),
+                pool.minerCount(),
+                pool.compositionPeriod(),
+                pool.carriedIncome(),
+                pool.carriedNandUnits(),
+                bem.balanceOf(address(pool))
+            )
+        );
     }
 
     function _unrecognized() internal view returns (uint256) {
@@ -131,6 +176,11 @@ contract SystemHandler is Test {
         for (uint256 i; i < k; ++i) {
             ids[i] = waiting[waiting.length - 1 - i];
         }
+        // Any order inside the batch: the outcome must not depend on it.
+        for (uint256 i = k; i > 1; --i) {
+            uint256 j = uint256(keccak256(abi.encode(countSeed, i))) % i;
+            (ids[i - 1], ids[j]) = (ids[j], ids[i - 1]);
+        }
         bool firstAdmission = gNandBurn + gLatchBurn == 0;
         uint256 preExisting = firstAdmission ? 0 : _unrecognized();
         uint256 heldBeforeComposition =
@@ -143,29 +193,40 @@ contract SystemHandler is Test {
             if (status != 1 || mining.keyBroken(_key(registered[i]))) shouldRevert = true;
             expectSettled += _owed(registered[i]);
         }
-        uint256 expectCarried = heldBeforeComposition;
+        uint256 expectCarried;
+        uint256[] memory owed = new uint256[](k);
         uint256 addNand;
         uint256 addLatch;
         for (uint256 i; i < k; ++i) {
             if (mining.keyBroken(_key(ids[i])) || _status(ids[i]) != 1) shouldRevert = true;
-            expectCarried += _owed(ids[i]);
+            owed[i] = _owed(ids[i]);
+            expectCarried += owed[i];
             (,,, uint32 n, uint32 l,,,,) = mining.records(_key(ids[i]));
             addNand += n;
             addLatch += l;
         }
-        uint256 totalBefore = pool.totalAccounted();
-        uint256 countBefore = pool.minerCount();
+        bytes32 before = _snapshot();
         vm.prank(depositor);
         try pool.depositMiners(ids) returns (uint256 settled, uint256 carried) {
             if (shouldRevert) amountsMatch = false;
             if (settled != expectSettled || carried != expectCarried) amountsMatch = false;
-            // Model: old income under the old composition, checkpoint, new composition, carried income.
-            gTotal += preExisting + settled;
-            (uint256 nand, uint256 latch) = modelCategories();
-            (gNandBase, gLatchBase, gParticipantBase) = (nand, latch, nand + latch);
+            // Model: old income under the old composition, close the period, each incoming miner's
+            // carried income by its own burn, then the new composition (it prices what was held before
+            // any composition existed, at a first admission).
+            _recognized(preExisting + settled);
+            _closePeriod();
+            for (uint256 i; i < k; ++i) {
+                (,,, uint32 n, uint32 l,,,,) = mining.records(_key(ids[i]));
+                if (owed[i] != 0) entries.push(Entry(owed[i], n, l));
+                gCarriedNandUnits += _nandPart(owed[i], n, l);
+                gCarriedOf[ids[i]] = owed[i];
+                if (pool.miner(ids[i]).carriedIncome != owed[i]) amountsMatch = false;
+            }
+            gTotal += expectCarried;
+            gCarried += expectCarried;
             gNandBurn += addNand;
             gLatchBurn += addLatch;
-            gTotal += carried;
+            _recognized(heldBeforeComposition);
             for (uint256 i; i < k; ++i) {
                 registered.push(ids[i]);
                 waiting.pop();
@@ -173,11 +234,11 @@ contract SystemHandler is Test {
             calls["admit"]++;
         } catch {
             if (!shouldRevert) amountsMatch = false;
-            if (pool.totalAccounted() != totalBefore || pool.minerCount() != countBefore) {
-                rollbacksClean = false;
-            }
+            if (_snapshot() != before) rollbacksClean = false;
             for (uint256 i; i < k; ++i) {
-                if (nft.ownerOf(ids[i]) != depositor) rollbacksClean = false;
+                if (nft.ownerOf(ids[i]) != depositor || pool.miner(ids[i]).registered) {
+                    rollbacksClean = false;
+                }
             }
             calls["admitReverted"]++;
         }
@@ -202,7 +263,7 @@ contract SystemHandler is Test {
         uint256 before = pool.totalAccounted();
         pool.harvestRange(0, registered.length);
         if (pool.totalAccounted() - before != expected) amountsMatch = false;
-        gTotal += expected;
+        _recognized(expected);
         _observe();
         calls["harvest"]++;
     }
@@ -254,7 +315,7 @@ contract SystemHandler is Test {
         uint256[] memory nandIds = _held(pool.nandReceipt(), actor, pick);
         uint256[] memory latchIds = _held(pool.latchReceipt(), actor, pick >> 64);
         if (nandIds.length + latchIds.length == 0) return;
-        gTotal += _unrecognized();
+        _recognized(_unrecognized());
         vm.prank(actor);
         pool.claimBatch(nandIds, latchIds);
         _observe();
@@ -275,7 +336,7 @@ contract SystemHandler is Test {
 
     function release(bool b) external {
         if (gNandBurn + gLatchBurn == 0) return;
-        gTotal += _unrecognized();
+        _recognized(_unrecognized());
         address sink = pool.SINK();
         uint256 sinkBefore = bem.balanceOf(sink);
         uint256 sinkPaidBefore = pool.sinkPaid();
@@ -314,6 +375,10 @@ contract SystemHandler is Test {
     function registeredCount() external view returns (uint256) {
         return registered.length;
     }
+
+    function entryCount() external view returns (uint256) {
+        return entries.length;
+    }
 }
 
 contract PoolInvariantTest is SystemTestBase {
@@ -350,10 +415,64 @@ contract PoolInvariantTest is SystemTestBase {
         assertEq(pool.totalAccounted(), handler.gTotal(), "recognized total");
         (uint256 nand, uint256 latch) = handler.modelCategories();
         PoolMath.Accrual memory a = pool.accrual();
-        assertEq(a.nandIncome, nand, "NAND income vs old/new composition model");
-        assertEq(a.latchIncome, latch, "LATCH income vs old/new composition model");
+        assertEq(a.nandIncome, nand, "NAND income vs the entry model");
+        assertEq(a.latchIncome, latch, "LATCH income vs the entry model");
+        (uint256 nandUnits, uint256 latchUnits) = handler.modelUnits();
+        (uint256 poolNand, uint256 poolLatch) =
+            PoolMath.categoryUnits(pool.totalAccounted(), pool.ledgerState());
+        assertEq(poolNand, nandUnits, "NAND ledger units vs the entry model");
+        assertEq(poolLatch, latchUnits, "LATCH ledger units vs the entry model");
         assertEq(pool.totalNandBurn(), handler.gNandBurn());
         assertEq(pool.totalLatchBurn(), handler.gLatchBurn());
+    }
+
+    /// @notice SALUS #2: the carried part of the ledger equals the sum of per-miner splits, a quantity
+    ///         that does not depend on batch order or partition; every miner's own record agrees.
+    function invariantCarriedIncomeIsIndependentOfAdmissionOrder() public view {
+        assertEq(pool.carriedIncome(), handler.gCarried(), "carried income");
+        assertEq(pool.carriedNandUnits(), handler.gCarriedNandUnits(), "carried NAND units: order-free sum");
+        uint256 sum;
+        for (uint256 i; i < handler.registeredCount(); ++i) {
+            uint256 id = handler.registered(i);
+            assertEq(pool.miner(id).carriedIncome, handler.gCarriedOf(id));
+            sum += pool.miner(id).carriedIncome;
+        }
+        assertEq(sum, pool.carriedIncome(), "per-miner records add up");
+    }
+
+    /// @notice No BEM is recognized twice and nothing is paid that was not recognized; the ledger's
+    ///         boundary keeps the participants' share exact.
+    function invariantRecognitionPaymentsAndLedgerIdentity() public view {
+        uint256 total = pool.totalAccounted();
+        assertLe(total, bem.balanceOf(address(pool)) + pool.totalPaid(), "recognized at most what arrived");
+        assertLe(pool.carriedIncome(), total, "carried income is part of the recognized total");
+        assertLe(pool.totalPaid(), total, "paid at most what was recognized");
+        TapeoutMinerPool.Reconciliation memory r = pool.reconciliation();
+        assertLe(r.recipientAPaid, r.recipientAAccrued);
+        assertLe(r.recipientBPaid, r.recipientBAccrued);
+        assertLe(r.nandReceiptsPaid, r.nandReceiptsAccrued);
+        assertLe(r.latchReceiptsPaid, r.latchReceiptsAccrued);
+        PoolMath.State memory s = pool.ledgerState();
+        assertEq(s.nandBase + s.latchBase, s.accountedBase * 80 * 1e18, "boundary identity");
+        (uint256 nandUnits, uint256 latchUnits) = PoolMath.categoryUnits(total, s);
+        if (pool.totalNandBurn() + pool.totalLatchBurn() != 0) {
+            assertEq(nandUnits + latchUnits, total * 80 * 1e18, "participants' share exact in the ledger");
+        }
+        assertLe(pool.carriedNandUnits(), pool.carriedIncome() * 80 * 1e18);
+    }
+
+    /// @notice SALUS #3: custody runs only with every initialization role finalized and renounced, and
+    ///         keeps running without any owner.
+    function invariantCustodyOnlyAfterFinality() public view {
+        if (handler.registeredCount() == 0) return;
+        assertTrue(pool.custodyOpen());
+        assertEq(pool.owner(), address(0));
+        assertEq(nandReceipt.owner(), address(0));
+        assertEq(latchReceipt.owner(), address(0));
+        assertEq(distributor.owner(), address(0));
+        assertTrue(distributor.allocationFinalized());
+        assertTrue(nandReceipt.issuanceFinalized() && latchReceipt.issuanceFinalized());
+        assertEq(pool.distributor(), address(distributor));
     }
 
     function invariantFourAccountConservation() public view {
