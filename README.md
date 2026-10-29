@@ -39,6 +39,8 @@ What changed, how each finding maps to the current code, how it was verified and
 [docs/SALUS_AUDIT_REMEDIATION_REPORT.md](docs/SALUS_AUDIT_REMEDIATION_REPORT.md), with the run's evidence in
 [reports/salus-remediation-20261029-c78a6d1/](reports/salus-remediation-20261029-c78a6d1/).
 
+Proposed operating constraints, residual risks and pending launch evidence: [Audit assumptions and operational risk acceptance](docs/AUDIT_ASSUMPTIONS.md).
+
 **Historical, for the 2.1.0 candidate (fee split and sink, 2.1.0 accounting).** What changed from 2.0.0,
 how it was verified on local chains and BSC forks, and what remained open:
 [docs/FEE_SPLIT_CHANGE_REPORT.md](docs/FEE_SPLIT_CHANGE_REPORT.md), with the run's evidence in
