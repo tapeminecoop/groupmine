@@ -11,7 +11,8 @@ import {PoolMath} from "../../src/PoolMath.sol";
 import {MockBEM, MockMining, MockNFT} from "../helpers/Mocks.sol";
 
 /// @dev A distributor look-alike with exactly the five views the pool reads, and a switch that lets its
-///      reported owner change later. Nothing else about it resembles the real distributor.
+///      reported owner change later. Nothing else about it resembles the real distributor. (2.3.0: the
+///      membership view is `isPool`, answered for one pool.)
 contract MimicDistributor {
     address public pool;
     address public nandReceipt;
@@ -23,6 +24,10 @@ contract MimicDistributor {
         pool = pool_;
         nandReceipt = n;
         latchReceipt = l;
+    }
+
+    function isPool(address candidate) external view returns (bool) {
+        return candidate == pool;
     }
 
     function setOwner(address o) external {
@@ -228,7 +233,9 @@ contract ReviewFindingsTest is SystemTestBase {
         TapeoutMinerPool.Deployment memory d = deployment(whitelist());
         d.minerCollection = address(hook);
         pool = new TapeoutMinerPool(d);
-        distributor = new TapeoutReceiptDistributor(operator, pool);
+        d.poolName = "Regular";
+        regularPool = new TapeoutMinerPool(d);
+        distributor = new TapeoutReceiptDistributor(operator, pool, regularPool);
         setupStandard();
         hook.mint(depositor, 1);
         mining.start(address(hook), 1, 10, 0);
@@ -358,7 +365,7 @@ contract ReviewFindingsTest is SystemTestBase {
     function testUnboundGenuineDistributorStillDelivers() public {
         issue(nandReceipt, address(distributor), 2);
         issue(latchReceipt, carol, 1);
-        TapeoutReceiptDistributor second = new TapeoutReceiptDistributor(operator, pool);
+        TapeoutReceiptDistributor second = new TapeoutReceiptDistributor(operator, pool, regularPool);
         issue(nandReceipt, address(second), 1);
         finalizeIssuance();
         TapeoutReceiptDistributor.AllocationInput[] memory e = new TapeoutReceiptDistributor.AllocationInput[](1);

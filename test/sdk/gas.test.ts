@@ -15,7 +15,7 @@ const plan = (gas?: bigint): TxPlan => ({ to: A, data: '0x', value: 0n, descript
 
 test('every plan carries a bound, and the bound is the printed gas limit', () => {
   const issue = issuePlans(A, 'NAND', A, 500);
-  assert.deepEqual(issue.map(p => p.gas), [ISSUE_GAS.base + 231n * ISSUE_GAS.perId, ISSUE_GAS.base + 231n * ISSUE_GAS.perId, ISSUE_GAS.base + 38n * ISSUE_GAS.perId]);
+  assert.deepEqual(issue.map(p => p.gas), [ISSUE_GAS.base + 222n * ISSUE_GAS.perId, ISSUE_GAS.base + 222n * ISSUE_GAS.perId, ISSUE_GAS.base + 56n * ISSUE_GAS.perId]);
   assert.ok(issue.every(p => p.gas! <= BATCH_GAS_BUDGET));
   assert.match(castCommand(issue[0]), new RegExp(` --gas-limit ${issue[0].gas} 0x`));
   assert.doesNotMatch(castCommand(plan()), /--gas-limit/);

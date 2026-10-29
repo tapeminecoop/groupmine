@@ -98,7 +98,7 @@ contract RecoverableTapeoutMinerPool is Ownable2Step, ReentrancyGuard {
         uint256 residue;
     }
 
-    string public constant VERSION = "RecoverableTapeoutMinerPool/canary-3-local";
+    string public constant VERSION = "RecoverableTapeoutMinerPool/canary-4-local";
     uint256 public constant TOTAL_PARTS = PoolMath.TOTAL_PARTS;
     uint256 public constant PARTICIPANT_PARTS = PoolMath.PARTICIPANT_PARTS;
     uint256 public constant RECIPIENT_PARTS = PoolMath.RECIPIENT_PARTS;
@@ -306,15 +306,17 @@ contract RecoverableTapeoutMinerPool is Ownable2Step, ReentrancyGuard {
     // Initialization (owner): bind the distributor once, then activate once
     // ---------------------------------------------------------------------------------------------
 
-    /// @notice Bind the round's receipt distributor, once, before activation. It must report this pool
-    ///         and these receipts. Nothing can replace it afterwards. The pool cannot check its code (its
-    ///         immutables differ per deployment); the operator's deployed-code identity check does.
+    /// @notice Bind the round's receipt distributor, once, before activation. It must count this pool
+    ///         among its two fixed pools (a processor's Optimal and Regular Pool share one distributor and
+    ///         one receipt pair, and each binds it) and report these receipts. Nothing can replace it
+    ///         afterwards. The pool cannot check its code (its immutables differ per deployment); the
+    ///         operator's deployed-code identity check does.
     function bindDistributor(address distributor_) external onlyOwner {
         // Activation requires a bound distributor, so a pool that is active is bound as well.
         if (distributor != address(0)) revert DistributorAlreadyBound();
         IReceiptDistributor d = IReceiptDistributor(distributor_);
         if (
-            distributor_.code.length == 0 || d.pool() != address(this)
+            distributor_.code.length == 0 || !d.isPool(address(this))
                 || d.nandReceipt() != address(nandReceipt) || d.latchReceipt() != address(latchReceipt)
         ) revert InvalidDistributor();
         distributor = distributor_;

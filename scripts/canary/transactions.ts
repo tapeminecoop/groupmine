@@ -25,7 +25,7 @@ export class Runner {
   }
   persist() {
     // Preserve the exact ABI/build with the journal so recovery survives a rebuilt working tree.
-    if (!existsSync(`${this.manifest.dir}/artifacts.json`)) save(`${this.manifest.dir}/artifacts.json`, Object.fromEntries((['nand', 'latch', 'helper', 'pool', 'distributor'] as const).map(name => [name, artifact(name)])));
+    if (!existsSync(`${this.manifest.dir}/artifacts.json`)) save(`${this.manifest.dir}/artifacts.json`, Object.fromEntries((['nand', 'latch', 'helper', 'pool', 'regularPool', 'distributor'] as const).map(name => [name, artifact(name)])));
     save(`${this.manifest.dir}/manifest.json`, this.manifest);
   }
   artifact(name: ContractName) {
@@ -68,6 +68,8 @@ export class Runner {
     return this.rpc.readContract({ address, abi, functionName, args, ...(blockNumber !== undefined ? { blockNumber } : {}) } as never) as Promise<T>;
   }
   pool<T = any>(functionName: string, args: unknown[] = []): Promise<T> { return this.read(this.manifest.contracts.pool!, this.artifact('pool').abi, functionName, args); }
+  /** The second canary pool (never admits a miner). */
+  regular<T = any>(functionName: string, args: unknown[] = []): Promise<T> { return this.read(this.manifest.contracts.regularPool!, this.artifact('regularPool').abi, functionName, args); }
   async snapshot(target?: Address) {
     const block = await this.rpc.getBlockNumber({ cacheTime: 0 });
     const state: Record<string, unknown> = { block, bnb: await this.rpc.getBalance({ address: this.manifest.owner, blockNumber: block }) };
@@ -87,14 +89,17 @@ export class Runner {
       const recorded = this.manifest.identities[key] as { codeHash?: string } | undefined;
       if (recorded?.codeHash && recorded.codeHash !== identity.codeHash) throw Error(`Deployed identity changed ${key}`);
     }
-    if (this.manifest.contracts.pool) {
-      if ((await this.pool<Address>('recoveryController')).toLowerCase() !== this.manifest.owner.toLowerCase()) throw Error('Wrong fixed recovery wallet');
-      if ((await this.pool<Address>('minerCollection')).toLowerCase() !== P.minerCollection.toLowerCase()) throw Error('Wrong miner collection');
+    // Both canary pools carry the same fixed recovery wallet, protocol, receipts, recipients and whitelist.
+    for (const name of ['pool', 'regularPool'] as const) {
+      if (!this.manifest.contracts[name]) continue;
+      const get = <T>(fn: string) => (name === 'pool' ? this.pool<T>(fn) : this.regular<T>(fn));
+      if ((await get<Address>('recoveryController')).toLowerCase() !== this.manifest.owner.toLowerCase()) throw Error(`Wrong fixed recovery wallet: ${name}`);
+      if ((await get<Address>('minerCollection')).toLowerCase() !== P.minerCollection.toLowerCase()) throw Error(`Wrong miner collection: ${name}`);
       // No reward dependency is invoked: these are immutable getters on our own pool.
-      if ((await this.pool<Address>('bem')).toLowerCase() !== P.bem.toLowerCase() || (await this.pool<Address>('mining')).toLowerCase() !== P.mining.toLowerCase()) throw Error('Protocol binding changed');
-      for (const [getter, expected] of [['nandReceipt', this.manifest.contracts.nand], ['latchReceipt', this.manifest.contracts.latch], ['recipientA', this.manifest.owner], ['recipientB', this.manifest.contracts.helper]] as const) if (expected && (await this.pool<Address>(getter)).toLowerCase() !== expected.toLowerCase()) throw Error(`Approved pool binding changed: ${getter}`);
-      const depositors = await this.pool<Address[]>('depositors');
-      if (depositors.length !== 1 || depositors[0].toLowerCase() !== this.manifest.owner.toLowerCase()) throw Error('Wrong depositor whitelist');
+      if ((await get<Address>('bem')).toLowerCase() !== P.bem.toLowerCase() || (await get<Address>('mining')).toLowerCase() !== P.mining.toLowerCase()) throw Error(`Protocol binding changed: ${name}`);
+      for (const [getter, expected] of [['nandReceipt', this.manifest.contracts.nand], ['latchReceipt', this.manifest.contracts.latch], ['recipientA', this.manifest.owner], ['recipientB', this.manifest.contracts.helper]] as const) if (expected && (await get<Address>(getter)).toLowerCase() !== expected.toLowerCase()) throw Error(`Approved ${name} binding changed: ${getter}`);
+      const depositors = await get<Address[]>('depositors');
+      if (depositors.length !== 1 || depositors[0].toLowerCase() !== this.manifest.owner.toLowerCase()) throw Error(`Wrong depositor whitelist: ${name}`);
     }
   }
   async send(action: string, to: Address | null, data: Hex, functionName: string, recovery = false) {
@@ -182,13 +187,19 @@ export class Runner {
       try { await this.write('pool', 'shutdown', [], 'permanent-shutdown', true); }
       catch (e) { errors.shutdown = redact(e); }
     }
+    // The second canary pool holds no miner, so closing it is all its recovery needs.
+    if (this.manifest.contracts.regularPool && !await this.regular('closed')) {
+      try { await this.write('regularPool', 'shutdown', [], 'permanent-shutdown-regular-pool', true); }
+      catch (e) { errors.regularShutdown = redact(e); }
+    }
     // Independent attempts, even after another return fails. No harvest or reward synchronization.
     for (const id of IDS) try {
       const holder = await this.read<Address>(P.minerCollection, nftAbi, 'ownerOf', [id]);
       if (holder.toLowerCase() === this.manifest.contracts.pool.toLowerCase()) await this.write('pool', 'emergencyReturn', [id], `return-${id}`, true);
       if ((await this.read<Address>(P.minerCollection, nftAbi, 'ownerOf', [id])).toLowerCase() !== this.manifest.owner.toLowerCase()) throw Error('NFT has not returned to original wallet');
     } catch (e) { errors[String(id)] = redact(e); }
-    save(`${this.manifest.dir}/recovery.json`, { closed: await this.pool('closed'), errors, verified: await Promise.all(IDS.map(async id => ({ id, owner: await this.read(P.minerCollection, nftAbi, 'ownerOf', [id]) }))) });
+    save(`${this.manifest.dir}/recovery.json`, { closed: await this.pool('closed'), ...(this.manifest.contracts.regularPool ? { regularPoolClosed: await this.regular('closed') } : {}),
+      errors, verified: await Promise.all(IDS.map(async id => ({ id, owner: await this.read(P.minerCollection, nftAbi, 'ownerOf', [id]) }))) });
     if (Object.keys(errors).length) throw Error(`Recovery needs attention: ${JSON.stringify(errors)}`);
   }
 }

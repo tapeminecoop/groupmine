@@ -374,9 +374,15 @@ contract PoolBoundaryForkTest is PoolForkBase {
             poolName: "Fork NAND-only Pool"
         });
         pool = TapeoutMinerPool(_create(abi.encodePacked(_artifact("TapeoutMinerPool"), abi.encode(d))));
+        d.poolName = "Fork NAND-only Regular Pool";
+        regularPool =
+            TapeoutMinerPool(_create(abi.encodePacked(_artifact("TapeoutMinerPool"), abi.encode(d))));
         distributor = TapeoutReceiptDistributor(
             _create(
-                abi.encodePacked(_artifact("TapeoutReceiptDistributor"), abi.encode(operator, address(pool)))
+                abi.encodePacked(
+                    _artifact("TapeoutReceiptDistributor"),
+                    abi.encode(operator, address(pool), address(regularPool))
+                )
             )
         );
         vm.startPrank(operator);

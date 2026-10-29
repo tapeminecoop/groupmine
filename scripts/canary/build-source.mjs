@@ -7,11 +7,13 @@ import { execFileSync } from 'node:child_process';
 // aa3f28c3…cb); its source, diff and approval records stay in the repository history and reports/canary/.
 // The local-only canary-2 (TapeoutMinerPool/2.1.0, sha256 6a2d0c34…5e6d) stays in the history of 00e37c7
 // with its diff in reports/canary-local/production-canary.diff.
-// This generates the LOCAL-ONLY canary-3 candidate from the TapeoutMinerPool/2.2.0 source (per-miner
-// carried-income attribution, fractional category ledger, distributor binding and the custody finality
-// gate). The recovery restrictions below are unchanged. It is not approved for any mainnet use.
+// The local-only canary-3 (TapeoutMinerPool/2.2.0, sha256 f8b8d4d0…6df1) stays in the history of bdf906f
+// with its diff in reports/canary-local/canary-3-production-canary.diff.
+// This generates the LOCAL-ONLY canary-4 candidate from the TapeoutMinerPool/2.3.0 source (2.2.0 plus a
+// distributor binding that accepts a distributor shared by the processor's two custody pools). The
+// recovery restrictions below are unchanged. It is not approved for any mainnet use.
 const original = readFileSync('src/TapeoutMinerPool.sol', 'utf8');
-const baseline = 'f8b8d4d0014bb20fb5d81262854ad4be6a26b576d6b50e002d07e4ffa7d56df1';
+const baseline = '5cb9e6bd8cca84094ad5fa992c498064aa2c1fee96926d0ab62e4f0f19920afd';
 if (createHash('sha256').update(original).digest('hex') !== baseline) throw Error('Production source changed; review the adaptation again');
 let candidate = original;
 function replace(before, after) {
@@ -23,7 +25,7 @@ replace('contract TapeoutMinerPool is Ownable2Step, ReentrancyGuard {', `/// @de
 ///      The production notice above describes the copied accounting, not these added permissions.
 ///      Shutdown is permanent. Claims/sync/releases retain the final composition and histories.
 contract RecoverableTapeoutMinerPool is Ownable2Step, ReentrancyGuard {`);
-replace('"TapeoutMinerPool/2.2.0"', '"RecoverableTapeoutMinerPool/canary-3-local"');
+replace('"TapeoutMinerPool/2.3.0"', '"RecoverableTapeoutMinerPool/canary-4-local"');
 replace('    string public poolName;', `    address public immutable recoveryController;
     bool public closed;
     mapping(uint256 => bool) public returned;
@@ -83,7 +85,7 @@ if (process.argv.includes('--check')) {
   try { diff = execFileSync('diff', ['-u', 'src/TapeoutMinerPool.sol', path], { encoding: 'utf8' }); }
   catch (e) { if (e.status !== 1) throw e; diff = e.stdout; }
   // Never reports/canary/production-canary.diff (the approved canary-1 adaptation), nor
-  // reports/canary-local/production-canary.diff (canary-2's).
-  writeFileSync('reports/canary-local/canary-3-production-canary.diff', diff);
+  // reports/canary-local/production-canary.diff (canary-2's) or canary-3-production-canary.diff (canary-3's).
+  writeFileSync('reports/canary-local/canary-4-production-canary.diff', diff);
 }
-console.log(`Local canary-3 source matches the exhaustive adaptation of production source sha256 ${baseline}`);
+console.log(`Local canary-4 source matches the exhaustive adaptation of production source sha256 ${baseline}`);

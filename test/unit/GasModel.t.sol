@@ -30,9 +30,9 @@ contract GasModelTest is SystemTestBase {
     uint256 internal constant BATCH_GAS_BUDGET = TX_GAS_CAP * 3 / 4;
     // Mirrors of sdk/gas.ts.
     uint256 internal constant ISSUE_BASE = 100_000;
-    uint256 internal constant ISSUE_PER_ID = 54_000;
+    uint256 internal constant ISSUE_PER_ID = 56_000;
     uint256 internal constant FUND_BASE = 100_000;
-    uint256 internal constant FUND_PER_ID = 40_000;
+    uint256 internal constant FUND_PER_ID = 44_000;
     uint256 internal constant ALLOCATE_BASE = 60_000;
     uint256 internal constant ALLOCATE_PER_ID = 27_000;
     uint256 internal constant ALLOCATE_PER_RANGE = 120_000;
@@ -152,7 +152,8 @@ contract GasModelTest is SystemTestBase {
     }
 
     function testFundBatchModelCoversMovingReceiptsIntoTheDistributor() public {
-        uint256 n = 300; // CLI default, below the model's maximum
+        uint256 n = (BATCH_GAS_BUDGET - FUND_BASE) / FUND_PER_ID; // CLI default: min(300, the model's maximum)
+        if (n > 300) n = 300;
         issue(nandReceipt, operator, n);
         bytes memory data = abi.encodeCall(
             nandReceipt.safeBatchTransferFrom, (operator, address(distributor), range(1, n), _ones(n), "")
@@ -329,7 +330,8 @@ contract GasModelTest is SystemTestBase {
             _deployWithin(abi.encodePacked(type(TapeoutMinerPool).creationCode, abi.encode(d)), DEPLOY_POOL);
         uint256 distributorGas = _deployWithin(
             abi.encodePacked(
-                type(TapeoutReceiptDistributor).creationCode, abi.encode(operator, address(pool))
+                type(TapeoutReceiptDistributor).creationCode,
+                abi.encode(operator, address(pool), address(regularPool))
             ),
             DEPLOY_DISTRIBUTOR
         );

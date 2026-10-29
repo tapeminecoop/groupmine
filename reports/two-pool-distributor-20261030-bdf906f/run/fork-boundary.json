@@ -1,0 +1,18 @@
+{
+  "admissionGas": 217311,
+  "carriedIncome": 1078419271,
+  "firstAdmissionCarried": 20061449000,
+  "forkBlock": 128713128,
+  "latchIncome": 995942761,
+  "latchMiner": 13948,
+  "latchMinerHolder": "0x637505a590c30073D6fFaA601784FcB31B9b6A98",
+  "latchMinerLatchBurn": 64,
+  "latchMinerNandBurn": 2,
+  "nandIncome": 19163452775,
+  "nandMiner": 12733,
+  "nandMinerBurn": 88,
+  "nandMinerHolder": "0xb73C928D82926D58c4eC8d30b957e88FB973dBF5",
+  "oldMinerPendingAfterOneHour": 0,
+  "recipientAEach": 251992444,
+  "settledOldIncome": 27497042
+}

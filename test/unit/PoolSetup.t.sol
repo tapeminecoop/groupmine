@@ -27,7 +27,7 @@ contract PoolSetupTest is SystemTestBase {
         assertEq(pool.RECIPIENT_PARTS(), 1);
         assertEq(pool.SINK_PARTS(), 2);
         assertEq(pool.SINK(), 0x000000000000000000000000000000000000dEaD);
-        assertEq(pool.VERSION(), "TapeoutMinerPool/2.2.0");
+        assertEq(pool.VERSION(), "TapeoutMinerPool/2.3.0");
     }
 
     function testReceiptsMustBeThisExactImplementationWithTheRightCategories() public {

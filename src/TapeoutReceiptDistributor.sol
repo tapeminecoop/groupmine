@@ -11,11 +11,18 @@ import {TapeoutMinerPool} from "./TapeoutMinerPool.sol";
 /// @notice Holds NAND and LATCH receipts until each allocated wallet claims its own. The operator
 ///         funds it with receipts, imports the allocation (tooling turns the JSON wallet counts into
 ///         ID ranges), and finalizes; afterwards beneficiaries and allocations are immutable.
-/// @dev While held here, receipts keep their place in the pool's accounting: nobody can claim their
-///      BEM (only a receipt's holder can, and this contract never calls the pool), approve them,
-///      or move them anywhere except to their recorded beneficiary. Receipts that already have BEM
-///      claim history are refused as inventory, and nothing can be received after finalization, so
-///      previously distributed receipts can never be redistributed.
+///         One distributor serves a processor's two custody pools (the Optimal Pool and the Regular
+///         Pool), which share this receipt pair: each receipt is allocated and delivered once, and its
+///         holder claims that receipt's income from each pool independently.
+/// @dev The two pools are fixed at deployment and cannot be changed, added or removed. They must be
+///      distinct contracts reporting the same receipts and the same BEM, Mining and miner collection.
+///      "Optimal" and "regular" are the deployment's labels: this contract treats both pools alike, and
+///      neither pool enforces any Mining property of the miners it admits.
+///      While held here, receipts keep their place in both pools' accounting: nobody can claim their
+///      BEM (only a receipt's holder can, and this contract never calls a pool except to read claim
+///      history), approve them, or move them anywhere except to their recorded beneficiary. Receipts
+///      with BEM claim history in either pool are refused as inventory, and nothing can be received
+///      after finalization, so previously distributed receipts can never be redistributed.
 contract TapeoutReceiptDistributor is Ownable2Step, ReentrancyGuard, IERC1155Receiver {
     struct Range {
         TapeoutMinerPool.Category category;
@@ -34,7 +41,9 @@ contract TapeoutReceiptDistributor is Ownable2Step, ReentrancyGuard, IERC1155Rec
     uint256 public constant MAX_RANGE = 1000;
     uint256 public constant MAX_PAGE = 500;
 
-    TapeoutMinerPool public immutable pool;
+    /// @notice The processor's two custody pools, fixed at deployment.
+    TapeoutMinerPool public immutable optimalPool;
+    TapeoutMinerPool public immutable regularPool;
     TapeoutEntitlementReceipt public immutable nandReceipt;
     TapeoutEntitlementReceipt public immutable latchReceipt;
 
@@ -50,6 +59,9 @@ contract TapeoutReceiptDistributor is Ownable2Step, ReentrancyGuard, IERC1155Rec
     mapping(address wallet => bool) private _listed;
 
     error InvalidAddress();
+    error DuplicatePool();
+    error IncompatiblePoolReceipts();
+    error IncompatiblePoolProtocol();
     error UnsupportedToken(address token);
     error AllocationClosed();
     error AllocationOpen();
@@ -73,11 +85,29 @@ contract TapeoutReceiptDistributor is Ownable2Step, ReentrancyGuard, IERC1155Rec
         address indexed wallet, TapeoutMinerPool.Category indexed category, uint256 firstId, uint256 count
     );
 
-    constructor(address owner_, TapeoutMinerPool pool_) Ownable(owner_) {
-        if (address(pool_).code.length == 0) revert InvalidAddress();
-        pool = pool_;
-        nandReceipt = pool_.nandReceipt();
-        latchReceipt = pool_.latchReceipt();
+    /// @param optimalPool_ The processor's Optimal Pool.
+    /// @param regularPool_ The processor's Regular Pool: a different contract with the same receipts,
+    ///        BEM, Mining and miner collection.
+    constructor(address owner_, TapeoutMinerPool optimalPool_, TapeoutMinerPool regularPool_)
+        Ownable(owner_)
+    {
+        if (address(optimalPool_).code.length == 0 || address(regularPool_).code.length == 0) {
+            revert InvalidAddress();
+        }
+        if (optimalPool_ == regularPool_) revert DuplicatePool();
+        TapeoutEntitlementReceipt nand = optimalPool_.nandReceipt();
+        TapeoutEntitlementReceipt latch = optimalPool_.latchReceipt();
+        if (regularPool_.nandReceipt() != nand || regularPool_.latchReceipt() != latch) {
+            revert IncompatiblePoolReceipts();
+        }
+        if (
+            optimalPool_.bem() != regularPool_.bem() || optimalPool_.mining() != regularPool_.mining()
+                || optimalPool_.minerCollection() != regularPool_.minerCollection()
+        ) revert IncompatiblePoolProtocol();
+        optimalPool = optimalPool_;
+        regularPool = regularPool_;
+        nandReceipt = nand;
+        latchReceipt = latch;
     }
 
     // ---------------------------------------------------------------------------------- funding
@@ -126,8 +156,9 @@ contract TapeoutReceiptDistributor is Ownable2Step, ReentrancyGuard, IERC1155Rec
         for (uint256 e; e < entries.length; ++e) {
             AllocationInput calldata a = entries[e];
             if (
-                a.wallet == address(0) || a.wallet == address(this) || a.wallet == address(pool)
-                    || a.count == 0 || a.count > MAX_RANGE || a.firstId == 0
+                a.wallet == address(0) || a.wallet == address(this) || a.wallet == address(optimalPool)
+                    || a.wallet == address(regularPool) || a.count == 0 || a.count > MAX_RANGE
+                    || a.firstId == 0
             ) revert InvalidAllocation();
             address[] memory holders = _receipt(a.category).holdersPage(a.firstId, a.count);
             mapping(uint256 => address) storage beneficiary = _beneficiary[a.category];
@@ -198,6 +229,11 @@ contract TapeoutReceiptDistributor is Ownable2Step, ReentrancyGuard, IERC1155Rec
 
     // ---------------------------------------------------------------------------------- views
 
+    /// @notice Whether `candidate` is one of the two custody pools this distributor serves.
+    function isPool(address candidate) external view returns (bool) {
+        return candidate == address(optimalPool) || candidate == address(regularPool);
+    }
+
     function beneficiaryOf(TapeoutMinerPool.Category category, uint256 id) external view returns (address) {
         return _beneficiary[category][id];
     }
@@ -257,7 +293,7 @@ contract TapeoutReceiptDistributor is Ownable2Step, ReentrancyGuard, IERC1155Rec
         return category == TapeoutMinerPool.Category.NAND ? nandReceipt : latchReceipt;
     }
 
-    /// @dev Inventory must be fresh: a receipt whose BEM has ever been claimed is refused.
+    /// @dev Inventory must be fresh: a receipt whose BEM has ever been claimed, in either pool, is refused.
     function _acceptOne(TapeoutMinerPool.Category category, uint256 id, uint256 value)
         private
         view
@@ -265,7 +301,9 @@ contract TapeoutReceiptDistributor is Ownable2Step, ReentrancyGuard, IERC1155Rec
     {
         if (value == 0) return false;
         if (value != 1) revert InvalidAmount(id, value);
-        if (pool.claimed(category, id) != 0) revert ConsumedRewardHistory(category, id);
+        if (optimalPool.claimed(category, id) != 0 || regularPool.claimed(category, id) != 0) {
+            revert ConsumedRewardHistory(category, id);
+        }
         return true;
     }
 

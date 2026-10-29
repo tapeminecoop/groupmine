@@ -2,10 +2,12 @@
  * Follow-up review findings Fable T2-1 / GPT ABI requirement: the standard readers decode the tuple
  * layouts of accrual(), previewAccrual(), reconciliation() and (2.2.0) ledgerState() only after VERSION
  * names a layout this SDK has (sdk/pool.ts assertReadLayout). Updated for TapeoutMinerPool/2.2.0 and the
- * local canary-3 (SALUS remediation): 2.1.0 is now one of the refused versions.
+ * local canary-3 (SALUS remediation): 2.1.0 is now one of the refused versions. Updated for 2.3.0 (one
+ * distributor for two pools) and the local canary-4: the tuple layouts are 2.2.0's, but this SDK pairs with
+ * the 2.3.0 distributor and addresses files, so 2.2.0 is refused too.
  * - Fake nodes (a viem custom transport answering eth_call by function) record every requested function,
  *   so the tests show what was read before a refusal.
- * - Loopback Anvil nodes run the actual CLI against real 2.2.0 and canary-3 pools and a legacy VERSION.
+ * - Loopback Anvil nodes run the actual CLI against real 2.3.0 and canary-4 pools and a legacy VERSION.
  * The old-ABI/new-blob proof for external consumers stays in test/audit2 (FeeSplitConsumers.t.sol,
  * fee-split-consumers.test.ts): this SDK cannot protect software that keeps the 2.0.0 ABI.
  */
@@ -74,12 +76,12 @@ const pool21 = (version: string = READ_LAYOUT_VERSIONS[0]): Record<string, Hex> 
   custodyOpen: answer('custodyOpen', true), carriedIncome: answer('carriedIncome', 0n), carriedNandUnits: answer('carriedNandUnits', 0n),
 });
 
-test('2.2.0: VERSION is read first, then every field decodes at the same block, sink and ledger fields included', async () => {
+test('2.3.0: VERSION is read first, then every field decodes at the same block, sink and ledger fields included', async () => {
   const { rpc, calls } = fakeNode(pool21());
   const s = await readPoolSummary(rpc, POOL, 100n);
   assert.equal(calls[0].fn, 'VERSION');
   assert.ok(calls.every(c => c.block === toHex(100n)), 'one pinned block for every read');
-  assert.equal(s.version, 'TapeoutMinerPool/2.2.0');
+  assert.equal(s.version, 'TapeoutMinerPool/2.3.0');
   assert.deepEqual(s.state, state);
   assert.equal(s.custodyOpen, true);
   assert.deepEqual([s.accrual.participants, s.accrual.recipientA, s.accrual.sink, s.accrual.residue], [1_000n, 12n, 25n, 3n]);
@@ -88,8 +90,9 @@ test('2.2.0: VERSION is read first, then every field decodes at the same block, 
   assert.equal(checkReconciliation(s.state, s.reconciliation).status, 'PASS');
 });
 
-test('2.0.0, unknown, empty or future versions are refused before any tuple is read', async () => {
-  for (const version of ['TapeoutMinerPool/2.0.0', 'TapeoutMinerPool/2.1.0', 'TapeoutMinerPool/2.3.0', 'SomethingElse/1', '', 'TapeoutMinerPool/2.2.0 ', 'tapeoutminerpool/2.2.0']) {
+test('2.0.0, 2.1.0, 2.2.0, unknown, empty or future versions are refused before any tuple is read', async () => {
+  for (const version of ['TapeoutMinerPool/2.0.0', 'TapeoutMinerPool/2.1.0', 'TapeoutMinerPool/2.2.0', 'TapeoutMinerPool/2.4.0', 'SomethingElse/1', '', 'TapeoutMinerPool/2.3.0 ', 'tapeoutminerpool/2.3.0',
+    'RecoverableTapeoutMinerPool/canary-3-local']) {
     const { rpc, calls } = fakeNode(pool21(version));
     const error = await readPoolSummary(rpc, POOL, 7n).then(() => undefined, e => e as Error);
     assert.ok(error?.message.includes(`reports VERSION ${JSON.stringify(version)};`), `${JSON.stringify(version)}: ${error?.message}`);
@@ -115,7 +118,7 @@ test('an unreadable, missing or malformed VERSION is refused, never taken for co
   }
 });
 
-test('the local canary-3 layout is decoded only when the caller opts in; only loopback development nodes opt in', async () => {
+test('the local canary-4 layout is decoded only when the caller opts in; only loopback development nodes opt in', async () => {
   const canary = LOCAL_CANARY_LAYOUT_VERSIONS[0];
   const refused = fakeNode(pool21(canary));
   await assert.rejects(readPoolSummary(refused.rpc, POOL), /loopback development node/);
@@ -126,7 +129,7 @@ test('the local canary-3 layout is decoded only when the caller opts in; only lo
   assert.equal(s.accrual.sink, 25n);
   assert.deepEqual(readLayoutPolicyFor('LOCAL_DEV_NODE'), { allowLocalCanary: true });
   for (const kind of ['REMOTE_DEV_NODE', 'LOCAL_NODE', 'REMOTE_NODE', 'unknown']) assert.deepEqual(readLayoutPolicyFor(kind), { allowLocalCanary: false }, kind);
-  assert.equal(await assertReadLayout(fakeNode(pool21()).rpc, POOL), 'TapeoutMinerPool/2.2.0');
+  assert.equal(await assertReadLayout(fakeNode(pool21()).rpc, POOL), 'TapeoutMinerPool/2.3.0');
 });
 
 test('why the gate is needed: a layout this SDK lacks decodes without an error but into the wrong fields', async () => {
@@ -137,8 +140,8 @@ test('why the gate is needed: a layout this SDK lacks decodes without an error b
   const misread = decodeFunctionResult({ abi, functionName: 'accrual', data: blob }) as { participants: bigint; residue: bigint };
   assert.equal(misread.participants, 7n, 'decoded silently: participants is the inserted field');
   assert.notEqual(misread.residue, accrual.residue);
-  const { rpc, calls } = fakeNode({ ...pool21('TapeoutMinerPool/2.3.0'), accrual: blob });
-  await assert.rejects(readPoolSummary(rpc, POOL), /reports VERSION "TapeoutMinerPool\/2\.3\.0"/);
+  const { rpc, calls } = fakeNode({ ...pool21('TapeoutMinerPool/2.4.0'), accrual: blob });
+  await assert.rejects(readPoolSummary(rpc, POOL), /reports VERSION "TapeoutMinerPool\/2\.4\.0"/);
   assert.deepEqual(calls.map(c => c.fn), ['VERSION'], 'the blob was never requested');
 });
 
@@ -180,7 +183,8 @@ before(async () => {
   await rpc.request({ method: 'anvil_setCode', params: [legacy, versionStub('TapeoutMinerPool/2.0.0')] } as never);
   const write = (label: string, pool: Address) => {
     files[label] = join(dir, `${label}.json`);
-    writeFileSync(files[label], JSON.stringify({ chainId: 31337, nandReceipt, latchReceipt, pool }));
+    // 2.3.0 addresses files name the pools by role; these read commands act on the optimal one.
+    writeFileSync(files[label], JSON.stringify({ chainId: 31337, nandReceipt, latchReceipt, optimalPool: pool }));
   };
   write('production', production);
   write('canary', canaryPool);
@@ -192,25 +196,25 @@ after(async () => {
   rmSync(dir, { recursive: true, force: true });
 });
 
-test('CLI on a loopback node: a real 2.2.0 pool is inspected and reconciled', async () => {
-  const inspect = await cli(['inspect', '--addresses', files.production, '--rpc-url', node.url]) as { pool: { version: string; sink: string }; finality: { custodyOpen: boolean; missing: string[] } };
-  assert.equal(inspect.pool.version, 'TapeoutMinerPool/2.2.0');
+test('CLI on a loopback node: a real 2.3.0 pool is inspected and reconciled', async () => {
+  const inspect = await cli(['inspect', '--addresses', files.production, '--pool', 'optimal', '--rpc-url', node.url]) as { pool: { version: string; sink: string }; finality: { custodyOpen: boolean; missing: string[] } };
+  assert.equal(inspect.pool.version, 'TapeoutMinerPool/2.3.0');
   assert.equal(inspect.finality.custodyOpen, false);
   assert.ok(inspect.finality.missing.includes('distributorBound') && inspect.finality.missing.includes('poolActive'));
   assert.equal(inspect.pool.sink, SINK);
-  const reconcile = await cli(['reconcile', '--addresses', files.production, '--rpc-url', node.url]) as { status: string };
+  const reconcile = await cli(['reconcile', '--addresses', files.production, '--pool', 'optimal', '--rpc-url', node.url]) as { status: string };
   assert.equal(reconcile.status, 'PASS');
 });
 
-test('CLI on a loopback node: the canary-3 layout is read there; the SDK default refuses it', async () => {
-  const inspect = await cli(['inspect', '--addresses', files.canary, '--rpc-url', node.url]) as { pool: { version: string } };
-  assert.equal(inspect.pool.version, 'RecoverableTapeoutMinerPool/canary-3-local');
+test('CLI on a loopback node: the canary-4 layout is read there; the SDK default refuses it', async () => {
+  const inspect = await cli(['inspect', '--addresses', files.canary, '--pool', 'optimal', '--rpc-url', node.url]) as { pool: { version: string } };
+  assert.equal(inspect.pool.version, 'RecoverableTapeoutMinerPool/canary-4-local');
   await assert.rejects(readPoolSummary(createPublicClient({ transport: http(node.url) }), canaryPool), /loopback development node/);
 });
 
 test('CLI: inspect, reconcile and composition refuse a 2.0.0 VERSION and an unreadable one', async () => {
   for (const command of [['inspect'], ['reconcile'], ['composition', '--token-ids', '1']]) {
-    await assert.rejects(cli([...command, '--addresses', files.legacy, '--rpc-url', node.url]), /reports VERSION "TapeoutMinerPool\/2\.0\.0"/, command[0]);
-    await assert.rejects(cli([...command, '--addresses', files.empty, '--rpc-url', node.url]), /VERSION\(\) could not be read/, command[0]);
+    await assert.rejects(cli([...command, '--addresses', files.legacy, '--pool', 'optimal', '--rpc-url', node.url]), /reports VERSION "TapeoutMinerPool\/2\.0\.0"/, command[0]);
+    await assert.rejects(cli([...command, '--addresses', files.empty, '--pool', 'optimal', '--rpc-url', node.url]), /VERSION\(\) could not be read/, command[0]);
   }
 });

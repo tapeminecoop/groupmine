@@ -98,8 +98,10 @@ async function main() {
     }
   }
   if (localCandidate().digest !== candidate.digest) throw Error('Candidate changed during the rehearsal');
-  const complete = record.runs[0] as { status: string }, interrupted = record.runs[1] as { status: string; recovery: { errors: object; closed: boolean } | null };
-  const status = complete.status === 'PASS' && interrupted.status === 'INTERRUPTED_FOR_STANDALONE_RECOVERY' && interrupted.recovery?.closed === true && Object.keys(interrupted.recovery.errors).length === 0 ? 'PASS' : 'FAIL';
+  const complete = record.runs[0] as { status: string }, interrupted = record.runs[1] as { status: string; recovery: { errors: object; closed: boolean; regularPoolClosed?: boolean } | null };
+  // canary-4: recovery closes the second (miner-less) canary pool as well.
+  const status = complete.status === 'PASS' && interrupted.status === 'INTERRUPTED_FOR_STANDALONE_RECOVERY' && interrupted.recovery?.closed === true
+    && interrupted.recovery.regularPoolClosed === true && Object.keys(interrupted.recovery.errors).length === 0 ? 'PASS' : 'FAIL';
   save(`${out}/summary.json`, { ...record, status, completedAt: new Date().toISOString() });
   console.log(json({ status, runIdentity: runId, candidate: candidate.digest, forkBlock: block.number, runs: record.runs.map(x => ({ status: (x as { status: string }).status, assertions: (x as { assertions: unknown }).assertions })) }));
   if (status !== 'PASS') process.exitCode = 1;

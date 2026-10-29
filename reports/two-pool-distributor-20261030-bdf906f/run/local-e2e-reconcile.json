@@ -1,0 +1,93 @@
+{
+  "command": "reconcile",
+  "status": "PASS",
+  "ledgerStatus": "PASS",
+  "blockNumber": "92",
+  "blockHash": "0x48e7dfd7dff2c2faac702878935b826aa8ef485431d5c2cc573b623ccefd03d3",
+  "pool": "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
+  "role": "optimal",
+  "composition": {
+    "totalNandBurn": "16",
+    "totalLatchBurn": "16",
+    "compositionPeriod": "4"
+  },
+  "reconciliation": {
+    "bemBalance": "6561904775",
+    "unrecognized": "0",
+    "deficit": "0",
+    "totalAccounted": "26100000000",
+    "totalPaid": "19538095225",
+    "recipientAAccrued": "310714285",
+    "recipientAPaid": "310714285",
+    "recipientBAccrued": "310714285",
+    "recipientBPaid": "310714285",
+    "sinkAccrued": "621428571",
+    "sinkPaid": "621428571",
+    "nandIncome": "12428571428",
+    "nandReceiptsAccrued": "12428571420",
+    "nandReceiptsPaid": "7080952374",
+    "latchIncome": "12428571428",
+    "latchReceiptsAccrued": "12428571420",
+    "latchReceiptsPaid": "11214285710",
+    "residue": "19"
+  },
+  "ledgerState": {
+    "accountedBase": "26100000000",
+    "nandBase": "1044000000000000000000000000000",
+    "latchBase": "1044000000000000000000000000000",
+    "totalNandBurn": "16",
+    "totalLatchBurn": "16",
+    "nandShares": "30",
+    "latchShares": "10"
+  },
+  "carried": {
+    "carriedIncome": "10500000000",
+    "carriedNandUnits": "84000000000000000000000000000",
+    "carriedLatchUnits": "756000000000000000000000000000"
+  },
+  "checks": {
+    "offChainMathMatches": true,
+    "recipientsAccrueEqually": true,
+    "outerPartsFromTotal": true,
+    "balanceIdentity": true,
+    "paidIdentity": true,
+    "accruedIdentity": true,
+    "noDeficit": true,
+    "residueWithinBound": true,
+    "noBucketOverpaid": true,
+    "categoryWithoutReceiptsHasNoIncome": true,
+    "ledgerBoundaryIdentity": true,
+    "ledgerParticipantsExact": true,
+    "carriedIncomeWithinRecognized": true,
+    "carriedUnitsWithinItsShare": true
+  },
+  "outstanding": {
+    "recipientA": "0",
+    "recipientB": "0",
+    "sink": "0",
+    "nandReceipts": "5347619046",
+    "latchReceipts": "1214285710"
+  },
+  "perIdHistories": {
+    "NAND": {
+      "ids": 30,
+      "claimedSum": "7080952374",
+      "receiptsPaid": "7080952374",
+      "match": true
+    },
+    "LATCH": {
+      "ids": 10,
+      "claimedSum": "11214285710",
+      "receiptsPaid": "11214285710",
+      "match": true
+    }
+  },
+  "carriedRecords": {
+    "miners": 4,
+    "carriedSum": "10500000000",
+    "carriedIncome": "10500000000",
+    "recomputedNandUnits": "84000000000000000000000000000",
+    "carriedNandUnits": "84000000000000000000000000000",
+    "match": true
+  }
+}

@@ -1,0 +1,776 @@
+{
+  "schema": "tapeout-run-manifest/1",
+  "startedAt": "2026-10-29T17:14:19.387Z",
+  "finishedAt": "2026-10-29T17:21:16.645Z",
+  "scope": "local Anvil chains and local BSC forks only; no public-chain transactions, no signatures",
+  "source": {
+    "baseCommit": "bdf906f801f59acefc49094361a530b823a73ab8",
+    "branch": "claude/groupmine-salus-remediation-257c97",
+    "uncommittedChangesOutsideReports": 50,
+    "changedFiles": [
+      " M README.md",
+      " M cli/pool.ts",
+      " M deployments/examples/addresses.bsc.example.json",
+      " M deployments/examples/system.bsc.example.json",
+      " M docs/ARCHITECTURE.md",
+      " M docs/CANARY_RUNBOOK.md",
+      " M docs/OPERATIONS.md",
+      " M package-lock.json",
+      " M package.json",
+      " M script/DeployPool.s.sol",
+      " M scripts/canary/build-source.mjs",
+      " M scripts/canary/common.ts",
+      " M scripts/canary/fork-local-candidate.ts",
+      " M scripts/canary/prepare.ts",
+      " M scripts/canary/transactions.ts",
+      " M scripts/canary/workflow.ts",
+      " M scripts/fork-e2e.ts",
+      " M scripts/fork-safe-e2e.ts",
+      " M scripts/fork-test.ts",
+      " M scripts/largest-wallet-check.ts",
+      " M scripts/local-e2e.ts",
+      " M scripts/verify-all.ts",
+      " M sdk/abi.ts",
+      " M sdk/bytecode.json",
+      " M sdk/config.ts",
+      " M sdk/deployment.ts",
+      " M sdk/gas.ts",
+      " M sdk/pool.ts",
+      " M sdk/verify.ts",
+      " M src/TapeoutMinerPool.sol",
+      " M src/TapeoutReceiptDistributor.sol",
+      " M src/canary/RecoverableTapeoutMinerPool.sol",
+      " M src/interfaces/IReceiptDistributor.sol",
+      " M test/audit/verify-supply-gap.test.ts",
+      " M test/fork/PoolBoundary.t.sol",
+      " M test/fork/PoolForkBase.sol",
+      " M test/helpers/SystemTestBase.sol",
+      " M test/review-fable51/ReviewFindings.t.sol",
+      " M test/salus/SalusFinality.t.sol",
+      " M test/sdk/gas.test.ts",
+      " M test/sdk/plans.test.ts",
+      " M test/sdk/read-layout.test.ts",
+      " M test/sdk/verify.test.ts",
+      " M test/unit/CanaryRecovery.t.sol",
+      " M test/unit/Distributor.t.sol",
+      " M test/unit/GasModel.t.sol",
+      " M test/unit/PoolSetup.t.sol",
+      "?? docs/TWO_POOL_DISTRIBUTOR_CHANGE.md",
+      "?? test/fork/TwoPoolFork.t.sol",
+      "?? test/unit/TwoPoolDistributor.t.sol"
+    ],
+    "sourceTreeSha256": "5beb9b98851030d337374ba0c4723f2a6da4e345868b4dd2fbb66b6a9b2940a0",
+    "sourceTreeFiles": 170,
+    "note": "sourceTreeSha256 hashes every non-ignored file except reports/, docs/ and *.md (path and sha256 per line); recompute with `node --import tsx scripts/verify-all.ts --fingerprint` on the commit that contains this run"
+  },
+  "tools": {
+    "forge": "forge Version: 1.4.3-stable",
+    "solc": "0.8.24",
+    "evmVersion": "paris",
+    "viaIR": true,
+    "optimizer": true,
+    "optimizerRuns": 200,
+    "node": "v20.19.5",
+    "os": "darwin 24.5.0",
+    "npm": {
+      "viem": "2.57.2",
+      "zod": "3.24.2",
+      "openzeppelin": "5.4.0",
+      "typescript": "5.7.3",
+      "tsx": "4.19.3"
+    },
+    "slither": "not provided"
+  },
+  "artifacts": {
+    "TapeoutEntitlementReceipt": {
+      "creationSha256": "b4b05cc13a0ab68fa9e1c107390554aede947d6d2efe8a528924a4c54835e799",
+      "creationKeccak256": "0xebe115e818b3a8f988fa334fcc0366d1d94df8bea716486a55a9b7b713f4790f",
+      "runtimeCodeHash": "0x7f59d20c18c4dec6ddf617a9f085a87d4622efc279fbc1438e5293333288ec8f",
+      "runtimeBytes": 8743,
+      "initcodeBytes": 10361
+    },
+    "TapeoutReceiptDistributor": {
+      "creationSha256": "cb0881fae317186cf14f1e03855f36e96d6d6c9c48067d58fe284cc7baaa3765",
+      "creationKeccak256": "0x7e0f1b2f1fc55735a9eaad5337f1c3be29a70b4b06662428257c7201ce643237",
+      "runtimeCodeHash": "0x34cd88bf46e59fbc7b1869d2fe0f8c6c0b87cd65d2ebf36cfae9f5c68f371644",
+      "runtimeBytes": 8137,
+      "initcodeBytes": 9597
+    },
+    "TapeoutMinerPool": {
+      "creationSha256": "25e60eecc26fb80df6beb34f5880e6b241fc9c525dc9e12dddd95273f826d9c9",
+      "creationKeccak256": "0x2ae2ca60c1191645f5608b4b8fbb83a34bb28aba8336250e0fe76d80bcebfd51",
+      "runtimeCodeHash": "0xf1f1dacbb2fa0de80d0c6862862b322ed912caf9b2b90a052d097c2fb05562b4",
+      "runtimeBytes": 23170,
+      "initcodeBytes": 35120
+    }
+  },
+  "forkInputs": {
+    "rpcHost": "bsc-mainnet.public.blastapi.io",
+    "FORK_BLOCK": "128713128",
+    "FORK_NAND_MINER": "12733",
+    "FORK_LATCH_MINER": "13948",
+    "FORK_INACTIVE_TOKEN": "648",
+    "FORK_SCALE_MINERS": "4183,1574,6940,4307,4655,3207,13617,7924,11127,4951,3932,10031,14559,16112,8714,2161,6767,11214,6453,14011,16944,15731,7541,5930"
+  },
+  "steps": [
+    {
+      "name": "build-sizes",
+      "command": "forge build --sizes",
+      "startedAt": "2026-10-29T17:14:19.505Z",
+      "finishedAt": "2026-10-29T17:14:19.634Z",
+      "durationSeconds": 0.1,
+      "exitCode": 0,
+      "status": "PASS",
+      "summary": {
+        "TapeoutEntitlementReceipt": "runtime 8,743 B (margin 15,833), initcode 10,361 B (margin 38,791)",
+        "TapeoutMinerPool": "runtime 23,170 B (margin 1,406), initcode 35,120 B (margin 14,032)",
+        "TapeoutReceiptDistributor": "runtime 8,137 B (margin 16,439), initcode 9,597 B (margin 39,555)"
+      },
+      "log": "reports/logs/build-sizes.log"
+    },
+    {
+      "name": "export-abi",
+      "command": "node scripts/export-abi.mjs",
+      "startedAt": "2026-10-29T17:14:19.644Z",
+      "finishedAt": "2026-10-29T17:14:19.678Z",
+      "durationSeconds": 0,
+      "exitCode": 0,
+      "status": "PASS",
+      "summary": {
+        "sdkFilesUnchangedByExport": {
+          "sdk/abi.ts": true,
+          "sdk/bytecode.json": true
+        },
+        "sdkBytecodeMatchesBuild": {
+          "TapeoutEntitlementReceipt": true,
+          "TapeoutReceiptDistributor": true,
+          "TapeoutMinerPool": true
+        }
+      },
+      "log": "reports/logs/export-abi.log"
+    },
+    {
+      "name": "format-check",
+      "command": "forge fmt --check src script test/unit test/invariant test/fork test/helpers test/remediation test/salus test/salus-ffi",
+      "startedAt": "2026-10-29T17:14:19.679Z",
+      "finishedAt": "2026-10-29T17:14:19.723Z",
+      "durationSeconds": 0,
+      "exitCode": 0,
+      "status": "PASS",
+      "summary": "formatted (src, script, test/{unit,invariant,fork,helpers,remediation,salus,salus-ffi})",
+      "log": "reports/logs/format-check.log"
+    },
+    {
+      "name": "solidity-tests",
+      "command": "forge test --no-match-path test/{fork,audit,salus-ffi,review-fable51}/* --json",
+      "startedAt": "2026-10-29T17:14:19.725Z",
+      "finishedAt": "2026-10-29T17:14:31.705Z",
+      "durationSeconds": 12,
+      "exitCode": 0,
+      "status": "PASS",
+      "summary": {
+        "total": 244,
+        "passed": 244,
+        "invariantAdmissionPaths": {
+          "runs": 2313,
+          "successfulAdmissions": 5541,
+          "rolledBackAdmissions": 1641,
+          "runsWithAdmission": 2262,
+          "runsWithRollback": 809,
+          "maxRegisteredMiners": 14
+        }
+      },
+      "log": "reports/logs/solidity-tests.log"
+    },
+    {
+      "name": "gas-model",
+      "command": "forge test --match-path test/unit/GasModel.t.sol -vv",
+      "startedAt": "2026-10-29T17:14:31.837Z",
+      "finishedAt": "2026-10-29T17:14:32.064Z",
+      "durationSeconds": 0.2,
+      "exitCode": 0,
+      "status": "PASS",
+      "summary": {
+        "passed": 11,
+        "gasUsedAndLimits": [
+          "allocate ranges 85 10550625 12555000",
+          "allocate 400 ids 10389356 10980000",
+          "claimBatch 386 10919817 12552000",
+          "deliver 300 ids, 1 range 9070519 11300000",
+          "deliver 60 ranges 2744313 8320000",
+          "deploy receipt 2293918 3000000",
+          "deploy pool (16 depositors) 6186766 7000000",
+          "deploy distributor 1898513 2500000",
+          "deliver 91 4144880 12567000",
+          "deliver 91 4113180 12567000",
+          "deliver 1 88257 237000",
+          "fund batch 283 10381962 12552000",
+          "issue batch 222 12532000",
+          "to operator 10350201",
+          "to distributor 11874168",
+          "release first A / then B 206902 154304 300000",
+          "release first B / then A 205604 155602 300000",
+          "revoke 1500 ids 6460254 12160000",
+          "revoke 85 ranges 811889 3330000",
+          "finalizeIssuance 49150",
+          "finalizeAllocation 69809",
+          "bindDistributor 53269",
+          "activate 98234",
+          "setApprovalForAll 48933",
+          "releaseA / releaseB 197741 133091",
+          "setRecipient 30827",
+          "renounceOwnership 26357"
+        ]
+      },
+      "log": "reports/logs/gas-model.log"
+    },
+    {
+      "name": "audit-tests",
+      "command": "forge test --match-path test/audit/* --ffi --json",
+      "startedAt": "2026-10-29T17:14:32.064Z",
+      "finishedAt": "2026-10-29T17:14:50.998Z",
+      "durationSeconds": 18.9,
+      "exitCode": 0,
+      "status": "PASS",
+      "summary": {
+        "total": 10,
+        "passed": 10,
+        "results": [
+          {
+            "suite": "AuditAdmissionLivenessTest",
+            "name": "testPermanentlyNonClaimableOldMinerBlocksEveryLaterAdmissionButNotPayouts()",
+            "status": "Success"
+          },
+          {
+            "suite": "AuditAdmissionLivenessTest",
+            "name": "testRevokedMinersKeepTheirWeightAndKeepCostingGasOnEveryAdmission()",
+            "status": "Success"
+          },
+          {
+            "suite": "AuditClaimOrderTest",
+            "name": "testClaimAndReleaseTimingDoesNotChangeAnyoneElsesEntitlement()",
+            "status": "Success"
+          },
+          {
+            "suite": "AuditClaimOrderTest",
+            "name": "testRoleMigrationPaysUnreleasedIncomeToTheNewAddressAndNothingToTheOld()",
+            "status": "Success"
+          },
+          {
+            "suite": "AuditDifferentialTest",
+            "name": "testFuzzLedgerMatchesIndependentReferenceModel(uint256)",
+            "status": "Success"
+          },
+          {
+            "suite": "AuditDistributorCursorTest",
+            "name": "testLastIdAfterManyCompletedRangesIsDeliveredByAThirdPartyAtTheOneRangeBound()",
+            "status": "Success"
+          },
+          {
+            "suite": "AuditDistributorCursorTest",
+            "name": "testPartialRangeRefusalAndRetryEachAtItsPlannedBound()",
+            "status": "Success"
+          },
+          {
+            "suite": "AuditReceiptEdgesTest",
+            "name": "testDuplicateIdRowsWithAZeroValueKeepTheIndexConsistent()",
+            "status": "Success"
+          },
+          {
+            "suite": "AuditReceiptEdgesTest",
+            "name": "testHookClaimDuringDeliveryPaysOnceAndReentrantDeliveryIsRefused()",
+            "status": "Success"
+          },
+          {
+            "suite": "AuditReceiptEdgesTest",
+            "name": "testZeroValueTransfersCannotForgeInventoryOrMoveTheHolderIndex()",
+            "status": "Success"
+          }
+        ]
+      },
+      "log": "reports/logs/audit-tests.log"
+    },
+    {
+      "name": "salus-differential",
+      "command": "forge test --match-path test/salus-ffi/* --ffi --json",
+      "startedAt": "2026-10-29T17:14:50.999Z",
+      "finishedAt": "2026-10-29T17:15:05.232Z",
+      "durationSeconds": 14.2,
+      "exitCode": 0,
+      "status": "PASS",
+      "summary": {
+        "total": 2,
+        "passed": 2,
+        "results": [
+          {
+            "suite": "SalusDifferentialTest",
+            "name": "testFuzzLedgerMatchesTheSalusReferenceModel(uint256)",
+            "status": "Success",
+            "kind": {
+              "Fuzz": {
+                "first_case": {
+                  "calldata": "0xd3066f180000000000000000000000000000000000000000000000000000000000000001",
+                  "gas": 3494991,
+                  "stipend": 21204
+                },
+                "runs": 301,
+                "mean_gas": 2676847,
+                "median_gas": 2724813,
+                "failed_corpus_replays": 0
+              }
+            }
+          },
+          {
+            "suite": "SalusDifferentialTest",
+            "name": "testSalusExampleMatchesTheModelInEveryOrder()",
+            "status": "Success",
+            "kind": {
+              "Unit": {
+                "gas": 3979453
+              }
+            }
+          }
+        ]
+      },
+      "log": "reports/logs/salus-differential.log"
+    },
+    {
+      "name": "review-fable51-tests",
+      "command": "forge test --match-path test/review-fable51/* --ffi --json",
+      "startedAt": "2026-10-29T17:15:05.235Z",
+      "finishedAt": "2026-10-29T17:15:19.516Z",
+      "durationSeconds": 14.3,
+      "exitCode": 0,
+      "status": "PASS",
+      "summary": {
+        "total": 20,
+        "passed": 20,
+        "results": [
+          {
+            "suite": "ReviewDifferentialTest",
+            "name": "testFuzzSmallAmountTracesMatchIndependentModel(uint256)",
+            "status": "Success"
+          },
+          {
+            "suite": "ReviewDifferentialTest",
+            "name": "testFuzzTraceMatchesIndependentModel(uint256)",
+            "status": "Success"
+          },
+          {
+            "suite": "ReviewFindingsTest",
+            "name": "testAdmissionGasGrowsLinearlyWithTheRegistry()",
+            "status": "Success"
+          },
+          {
+            "suite": "ReviewFindingsTest",
+            "name": "testBemHeldBeforeAnyCompositionIsRecognizedUnderTheFirstComposition()",
+            "status": "Success"
+          },
+          {
+            "suite": "ReviewFindingsTest",
+            "name": "testCarriedIncomeAboveUint120RevertsTheAdmission()",
+            "status": "Success"
+          },
+          {
+            "suite": "ReviewFindingsTest",
+            "name": "testEarlyRenunciationOfAReceiptIssuerIsUnrecoverable()",
+            "status": "Success"
+          },
+          {
+            "suite": "ReviewFindingsTest",
+            "name": "testEmptyDistributorFinalizationSatisfiesTheGateWhileTheIssuerHoldsAllReceipts()",
+            "status": "Success"
+          },
+          {
+            "suite": "ReviewFindingsTest",
+            "name": "testInterveningAccrualIsNotOrderIndependentByDesign()",
+            "status": "Success"
+          },
+          {
+            "suite": "ReviewFindingsTest",
+            "name": "testMimicDistributorPassesEveryOnChainCheck()",
+            "status": "Success"
+          },
+          {
+            "suite": "ReviewFindingsTest",
+            "name": "testNandIncomeCanBeOneRawUnitBelowItsExactIntegerEntitlement()",
+            "status": "Success"
+          },
+          {
+            "suite": "ReviewFindingsTest",
+            "name": "testNonRevokedSettlementFailureBlocksAdmissionsButNotHarvests()",
+            "status": "Success"
+          },
+          {
+            "suite": "ReviewFindingsTest",
+            "name": "testRegisterPathIsGatedByFinalityToo()",
+            "status": "Success"
+          },
+          {
+            "suite": "ReviewFindingsTest",
+            "name": "testReleaseWithEqualRecipientsPaysExactDeltas()",
+            "status": "Success"
+          },
+          {
+            "suite": "ReviewFindingsTest",
+            "name": "testRenounceClearsPendingOwnerOnAllFourContracts()",
+            "status": "Success"
+          },
+          {
+            "suite": "ReviewFindingsTest",
+            "name": "testRevokedOldMinerKeepsItsWeightInTheComposition()",
+            "status": "Success"
+          },
+          {
+            "suite": "ReviewFindingsTest",
+            "name": "testSalusReferenceExampleAllOrdersAtRawPrecision()",
+            "status": "Success"
+          },
+          {
+            "suite": "ReviewFindingsTest",
+            "name": "testSinkAtT42RepeatedReleaseAndAtomicFailure()",
+            "status": "Success"
+          },
+          {
+            "suite": "ReviewFindingsTest",
+            "name": "testTransferHookIncomeInANonFirstAdmissionIsBookedUnderTheNewComposition()",
+            "status": "Success"
+          },
+          {
+            "suite": "ReviewFindingsTest",
+            "name": "testUnboundGenuineDistributorStillDelivers()",
+            "status": "Success"
+          },
+          {
+            "suite": "ReviewFindingsTest",
+            "name": "testUnsolicitedReceiptBlocksFinalizationAndThereforeActivationUntilAllocated()",
+            "status": "Success"
+          }
+        ]
+      },
+      "log": "reports/logs/review-fable51-tests.log"
+    },
+    {
+      "name": "audit-sdk-tests",
+      "command": "node --import tsx --test --test-reporter=tap test/audit/revert-matcher.test.ts test/audit/verify-supply-gap.test.ts test/audit2/fee-split-consumers.test.ts",
+      "startedAt": "2026-10-29T17:15:19.519Z",
+      "finishedAt": "2026-10-29T17:15:20.221Z",
+      "durationSeconds": 0.7,
+      "exitCode": 0,
+      "status": "PASS",
+      "summary": {
+        "tests": 13,
+        "pass": 13,
+        "fail": 0
+      },
+      "log": "reports/logs/audit-sdk-tests.log"
+    },
+    {
+      "name": "sdk-tests",
+      "command": "node --import tsx --test --test-reporter=tap test/sdk/allocation.test.ts test/sdk/canary-metadata.test.ts test/sdk/canary-revert.test.ts test/sdk/canary.test.ts test/sdk/cli-chain-binding.test.ts test/sdk/gas.test.ts test/sdk/math.test.ts test/sdk/plans.test.ts test/sdk/read-layout.test.ts test/sdk/verify.test.ts",
+      "startedAt": "2026-10-29T17:15:20.222Z",
+      "finishedAt": "2026-10-29T17:15:26.040Z",
+      "durationSeconds": 5.8,
+      "exitCode": 0,
+      "status": "PASS",
+      "summary": {
+        "tests": 79,
+        "pass": 79,
+        "fail": 0
+      },
+      "log": "reports/logs/sdk-tests.log"
+    },
+    {
+      "name": "typecheck",
+      "command": "npx tsc --noEmit",
+      "startedAt": "2026-10-29T17:15:26.042Z",
+      "finishedAt": "2026-10-29T17:15:29.579Z",
+      "durationSeconds": 3.5,
+      "exitCode": 0,
+      "status": "PASS",
+      "summary": "no errors",
+      "log": "reports/logs/typecheck.log"
+    },
+    {
+      "name": "local-e2e",
+      "command": "node --import tsx scripts/local-e2e.ts",
+      "startedAt": "2026-10-29T17:15:29.579Z",
+      "finishedAt": "2026-10-29T17:15:39.948Z",
+      "durationSeconds": 10.4,
+      "exitCode": 0,
+      "status": "PASS",
+      "summary": {
+        "status": "PASS",
+        "checks": 79,
+        "failed": [],
+        "steps": 90,
+        "localTransactions": 59
+      },
+      "log": "reports/logs/local-e2e.log"
+    },
+    {
+      "name": "largest-wallet",
+      "command": "node --import tsx scripts/largest-wallet-check.ts",
+      "startedAt": "2026-10-29T17:15:39.951Z",
+      "finishedAt": "2026-10-29T17:19:15.180Z",
+      "durationSeconds": 215.2,
+      "exitCode": 0,
+      "status": "PASS",
+      "summary": {
+        "status": "PASS",
+        "parameters": {
+          "largestWallet": {
+            "NAND": 1200,
+            "LATCH": 300
+          },
+          "otherWallet": {
+            "NAND": 10,
+            "LATCH": 5
+          }
+        },
+        "revocation": "FITS_ONE_TRANSACTION",
+        "deliveries": 5,
+        "claimTransactions": 8,
+        "launchGate": "PENDING: run again with the actual largest allocation before finalization (these sizes are parameters, not launch inputs)"
+      },
+      "log": "reports/logs/largest-wallet.log"
+    },
+    {
+      "name": "fork-tests",
+      "command": "node --import tsx scripts/fork-test.ts",
+      "startedAt": "2026-10-29T17:19:15.182Z",
+      "finishedAt": "2026-10-29T17:19:37.821Z",
+      "durationSeconds": 22.6,
+      "exitCode": 0,
+      "status": "PASS",
+      "summary": {
+        "status": "PASS",
+        "forkBlock": "128713128",
+        "blockHash": "0x760f050b7ec66ced2a2745918d7492650150f9d71d3159259412996ebe65081f",
+        "results": [
+          {
+            "name": "testOnlyTheCurrentHolderCanStop()",
+            "status": "Success",
+            "reason": null
+          },
+          {
+            "name": "testStopByHolderSettlesAccruedIncomeThenCools()",
+            "status": "Success",
+            "reason": null
+          },
+          {
+            "name": "testCoolingMinerRestartsWithDebtRebased()",
+            "status": "Success",
+            "reason": null
+          },
+          {
+            "name": "testRealRevocationPaysHolderOnceThenNothing()",
+            "status": "Success",
+            "reason": null
+          },
+          {
+            "name": "testRestartNeedsMoreThanTheCooldown()",
+            "status": "Success",
+            "reason": null
+          },
+          {
+            "name": "testRevokedMinerStaysRevokedAndEarnsNothing()",
+            "status": "Success",
+            "reason": null
+          },
+          {
+            "name": "testStopCooldownDecidesBetweenRevocationAndRestart()",
+            "status": "Success",
+            "reason": null
+          },
+          {
+            "name": "testForkBoundaryIsIndependentOfProcessingOrder()",
+            "status": "Success",
+            "reason": null
+          },
+          {
+            "name": "testForkBoundaryWithThreeOldMinersAndAnIncomingBatch()",
+            "status": "Success",
+            "reason": null
+          },
+          {
+            "name": "testForkFirstAdmissionAndZeroSupplyCategory()",
+            "status": "Success",
+            "reason": null
+          },
+          {
+            "name": "testForkPlainTransferThenRegisterWindow()",
+            "status": "Success",
+            "reason": null
+          },
+          {
+            "name": "testForkAdmissionGasScaling()",
+            "status": "Success",
+            "reason": null
+          },
+          {
+            "name": "testForkCompositionMatchesCircuitBurnAndIgnoresReferences()",
+            "status": "Success",
+            "reason": null
+          },
+          {
+            "name": "testForkProtocolIdentityAndCompositionAbi()",
+            "status": "Success",
+            "reason": null
+          },
+          {
+            "name": "testForkReleaseTransfersCToTheSinkOnRealBem()",
+            "status": "Success",
+            "reason": null
+          },
+          {
+            "name": "testForkStrictAdmissionBoundaryWithRealMiners()",
+            "status": "Success",
+            "reason": null
+          },
+          {
+            "name": "testForkWhitelistAfterRenounceAndBypassRejection()",
+            "status": "Success",
+            "reason": null
+          },
+          {
+            "name": "testForkCarriedIncomeIsAttributedPerMinerAndIndependentOfOrder()",
+            "status": "Success",
+            "reason": null
+          },
+          {
+            "name": "testForkFinalityGateOnRealProtocol()",
+            "status": "Success",
+            "reason": null
+          },
+          {
+            "name": "testForkInactiveMinerAdmissionRevertsAndStaysWithTheWallet()",
+            "status": "Success",
+            "reason": null
+          },
+          {
+            "name": "testForkTwoPoolsShareOneDistributorAndClaimIndependently()",
+            "status": "Success",
+            "reason": null
+          }
+        ]
+      },
+      "log": "reports/logs/fork-tests.log"
+    },
+    {
+      "name": "fork-e2e",
+      "command": "node --import tsx scripts/fork-e2e.ts",
+      "startedAt": "2026-10-29T17:19:37.822Z",
+      "finishedAt": "2026-10-29T17:20:10.441Z",
+      "durationSeconds": 32.6,
+      "exitCode": 0,
+      "status": "PASS",
+      "summary": {
+        "status": "PASS",
+        "checks": 26,
+        "failed": [],
+        "localForkTransactions": 39
+      },
+      "log": "reports/logs/fork-e2e.log"
+    },
+    {
+      "name": "fork-safe-e2e",
+      "command": "node --import tsx scripts/fork-safe-e2e.ts",
+      "startedAt": "2026-10-29T17:20:10.444Z",
+      "finishedAt": "2026-10-29T17:21:01.880Z",
+      "durationSeconds": 51.4,
+      "exitCode": 0,
+      "status": "PASS",
+      "summary": {
+        "status": "PASS",
+        "checks": 294,
+        "failed": [],
+        "safeTransactions": 28,
+        "localForkTransactions": 47,
+        "gas": {
+          "safeTransactions": 28,
+          "largestEstimate": "11098058",
+          "largestPlannedBound": "12004688",
+          "largestPayloadBytes": 16690,
+          "smallestMargin": "148815",
+          "largestEstimateOverPlans": "8633"
+        }
+      },
+      "log": "reports/logs/fork-safe-e2e.log"
+    },
+    {
+      "name": "canary-fork-rehearsal",
+      "command": "node --import tsx scripts/canary/fork-local-candidate.ts --owner 0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129 --fork-rpc https://bsc-mainnet.public.blastapi.io --out reports/canary-local-rehearsal --block 128812145",
+      "startedAt": "2026-10-29T17:21:01.888Z",
+      "finishedAt": "2026-10-29T17:21:16.372Z",
+      "durationSeconds": 14.5,
+      "exitCode": 0,
+      "status": "PASS",
+      "summary": {
+        "status": "PASS",
+        "runIdentity": "local-candidate-2d027fd9-dc4d-4cf7-97a1-0ba6c8b2ebb7",
+        "candidate": "f18e2b25b697e3b8a082d859a8f367d36f7072dbbecf75320eb122d280132f0b",
+        "forkSource": {
+          "block": "128812145",
+          "blockHash": "0x383f1f97b08e13da4cbfc88908ec57643a0f186ee89de5d0a7a765f920f4a922",
+          "rpcHost": "bsc-mainnet.public.blastapi.io"
+        },
+        "runs": [
+          {
+            "status": "PASS",
+            "assertions": {
+              "PASS": 48
+            },
+            "negativeTests": {
+              "former-holder-claim-rejected": {
+                "status": "PASS",
+                "kind": "EXPECTED_REVERT"
+              },
+              "non-whitelisted-admission-rejected": {
+                "status": "PASS",
+                "kind": "EXPECTED_REVERT"
+              },
+              "closed-pool-admission-rejected": {
+                "status": "PASS",
+                "kind": "EXPECTED_REVERT"
+              },
+              "closed-pool-harvest-rejected": {
+                "status": "PASS",
+                "kind": "EXPECTED_REVERT"
+              }
+            }
+          },
+          {
+            "status": "INTERRUPTED_FOR_STANDALONE_RECOVERY",
+            "assertions": {
+              "PASS": 10
+            },
+            "negativeTests": {}
+          }
+        ]
+      },
+      "log": "reports/logs/canary-fork-rehearsal.log"
+    },
+    {
+      "name": "slither",
+      "command": "-",
+      "status": "SKIPPED",
+      "reason": "SLITHER not set"
+    },
+    {
+      "name": "contract-identity",
+      "command": "node --import tsx scripts/contract-identity.ts --out reports/contract-identity.json",
+      "startedAt": "2026-10-29T17:21:16.373Z",
+      "finishedAt": "2026-10-29T17:21:16.644Z",
+      "durationSeconds": 0.3,
+      "exitCode": 0,
+      "status": "PASS",
+      "summary": {
+        "sourcesSha256": "18f9776b7a9b6575d7f5498bd1dd96eb2bcc629a2116f4ce42fec288c8f45ff3",
+        "compared": "no baseline given"
+      },
+      "log": "reports/logs/contract-identity.log"
+    }
+  ],
+  "overall": "INCOMPLETE"
+}

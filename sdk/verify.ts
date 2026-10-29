@@ -3,15 +3,16 @@ import { getAddress, isAddress, zeroAddress, type Abi, type Address, type Hex, t
 import { z } from 'zod';
 import { tapeoutEntitlementReceiptAbi, tapeoutMinerPoolAbi, tapeoutReceiptDistributorAbi } from './abi.js';
 import { assignIds, validateAllocation, type AllocationFile, type Range } from './allocation.js';
-import { LATCH_CATEGORY, NAND_CATEGORY } from './config.js';
+import { LATCH_CATEGORY, NAND_CATEGORY, POOL_ROLES, type PoolRole } from './config.js';
 import type { CategoryName } from './constants.js';
 import type { OnChainRange } from './pool.js';
 
 /**
  * Verification of an allocation against the chain, in one pinned block. It establishes, as far as the
  * inputs allow:
- * - identity: the node's chain, the configured distributor, pool and receipts, the artifact, the
- *   distributor's own bindings and the pool's receipts all name the same system;
+ * - identity: the node's chain, the configured distributor, both pools and receipts, the artifact, the
+ *   distributor's own bindings (its two pools and receipts) and each pool's receipts all name the same
+ *   system;
  * - artifact <-> chain: the same beneficiaries with the same NAND and LATCH IDs in both directions, the
  *   same totals, and holdings consistent with what has been delivered;
  * - coverage: per category, finalized supply, cumulative accepted inventory, assigned, delivered and
@@ -96,10 +97,11 @@ export interface AllocationState {
   blockNumber: bigint;
   blockHash: Hex;
   distributor: Address;
-  /** `distributor.pool()`. */
-  pool: Address;
+  /** `distributor.optimalPool()` and `distributor.regularPool()`. */
+  pools: Record<PoolRole, Address>;
   distributorReceipts: Record<CategoryName, Address>;
-  poolReceipts: Record<CategoryName, Address>;
+  /** Each of the distributor's pools' `nandReceipt()` and `latchReceipt()`. */
+  poolReceipts: Record<PoolRole, Record<CategoryName, Address>>;
   /** `category()` of the distributor's receipts. */
   receiptCategories: Record<CategoryName, Hex>;
   finalized: boolean;
@@ -111,7 +113,8 @@ export interface AllocationState {
 }
 
 /** The system the operator configured (addresses file): every field is compared with the chain. */
-export interface VerifyTarget { chainId: number; distributor: Address; pool: Address; nandReceipt: Address; latchReceipt: Address }
+export interface VerifyTarget { chainId: number; distributor: Address; optimalPool: Address; regularPool: Address; nandReceipt: Address; latchReceipt: Address }
+const targetPool = (t: VerifyTarget, role: PoolRole) => (role === 'optimal' ? t.optimalPool : t.regularPool);
 
 /**
  * full-round (default): this round distributes every issued receipt, so finalized supply, accepted
@@ -163,13 +166,17 @@ export function verifyAllocation(artifact: AllocationArtifact, state: Allocation
   if (target.chainId !== state.chainId) mismatches.push(`addresses file chainId ${target.chainId} is not the node's ${state.chainId}`);
   if (!same(target.distributor, state.distributor)) mismatches.push(`configured distributor ${target.distributor} is not the one read (${state.distributor})`);
   if (!same(artifact.distributor, target.distributor)) mismatches.push(`artifact distributor ${artifact.distributor} is not ${target.distributor}`);
-  if (!same(target.pool, state.pool)) mismatches.push(`configured pool ${target.pool} is not the distributor's pool ${state.pool}`);
+  for (const role of POOL_ROLES) {
+    if (!same(targetPool(target, role), state.pools[role])) mismatches.push(`configured ${role} pool ${targetPool(target, role)} is not the distributor's ${role} pool ${state.pools[role]}`);
+  }
   const receipts = { NAND: [artifact.nandReceipt, target.nandReceipt], LATCH: [artifact.latchReceipt, target.latchReceipt] } as const;
   for (const c of CATEGORIES) {
     const [inArtifact, inFile] = receipts[c];
     if (!same(inArtifact, state.distributorReceipts[c])) mismatches.push(`artifact ${c} receipt ${inArtifact} is not the distributor's ${state.distributorReceipts[c]}`);
     if (!same(inFile, state.distributorReceipts[c])) mismatches.push(`addresses file ${c} receipt ${inFile} is not the distributor's ${state.distributorReceipts[c]}`);
-    if (!same(state.poolReceipts[c], state.distributorReceipts[c])) mismatches.push(`the pool's ${c} receipt ${state.poolReceipts[c]} is not the distributor's`);
+    for (const role of POOL_ROLES) {
+      if (!same(state.poolReceipts[role][c], state.distributorReceipts[c])) mismatches.push(`the ${role} pool's ${c} receipt ${state.poolReceipts[role][c]} is not the distributor's`);
+    }
     if (!same(state.receiptCategories[c], CATEGORY_ID[c])) mismatches.push(`${c} receipt ${state.distributorReceipts[c]} reports category ${state.receiptCategories[c]}, not ${c}`);
   }
 
@@ -296,9 +303,10 @@ export function verifyAllocation(artifact: AllocationArtifact, state: Allocation
     identity: {
       chainId: { expected: target.chainId, artifact: artifact.chainId, chain: state.chainId },
       distributor: { expected: target.distributor, artifact: artifact.distributor, chain: state.distributor },
-      pool: { expected: target.pool, distributorPool: state.pool },
+      pools: Object.fromEntries(POOL_ROLES.map(role => [role, { expected: targetPool(target, role), distributor: state.pools[role] }])),
       receipts: Object.fromEntries(CATEGORIES.map(c => [c, {
-        expected: receipts[c][1], artifact: receipts[c][0], distributor: state.distributorReceipts[c], pool: state.poolReceipts[c],
+        expected: receipts[c][1], artifact: receipts[c][0], distributor: state.distributorReceipts[c],
+        pools: Object.fromEntries(POOL_ROLES.map(role => [role, state.poolReceipts[role][c]])),
         category: state.receiptCategories[c], categoryMatches: same(state.receiptCategories[c], CATEGORY_ID[c]),
       }])),
     },
@@ -404,14 +412,19 @@ export async function readAllocationState(rpc: PublicClient, distributor: Addres
   const block = await rpc.getBlock(blockNumber === undefined ? { blockTag: 'latest' } : { blockNumber });
   const at = block.number!;
   const d = (fn: string, args: readonly unknown[] = []) => read<never>(rpc, distributor, tapeoutReceiptDistributorAbi as Abi, fn, args, at);
-  const [chainId, pool, nand, latch, finalized, totals, walletCount] = await Promise.all([
-    rpc.getChainId(), d('pool') as Promise<Address>, d('nandReceipt') as Promise<Address>, d('latchReceipt') as Promise<Address>,
+  const [chainId, optimalPool, regularPool, nand, latch, finalized, totals, walletCount] = await Promise.all([
+    rpc.getChainId(), d('optimalPool') as Promise<Address>, d('regularPool') as Promise<Address>,
+    d('nandReceipt') as Promise<Address>, d('latchReceipt') as Promise<Address>,
     d('allocationFinalized') as Promise<boolean>,
     d('totals') as Promise<readonly [readonly [bigint, bigint], readonly [bigint, bigint], readonly [bigint, bigint]]>,
     d('walletCount') as Promise<bigint>,
   ]);
-  const p = (fn: string) => read<Address>(rpc, pool, tapeoutMinerPoolAbi as Abi, fn, [], at);
-  const [poolNand, poolLatch] = await Promise.all([p('nandReceipt'), p('latchReceipt')]);
+  const poolReceipts = async (pool: Address) => {
+    const p = (fn: string) => read<Address>(rpc, pool, tapeoutMinerPoolAbi as Abi, fn, [], at);
+    const [NAND, LATCH] = await Promise.all([p('nandReceipt'), p('latchReceipt')]);
+    return { NAND, LATCH };
+  };
+  const [optimalReceipts, regularReceipts] = await Promise.all([poolReceipts(optimalPool), poolReceipts(regularPool)]);
   const wallets: { wallet: Address; ranges: readonly OnChainRange[] }[] = [];
   for (let offset = 0n; offset < walletCount; offset += 500n) {
     const page = await d('walletsPage', [offset, walletCount - offset < 500n ? walletCount - offset : 500n]) as readonly Address[];
@@ -430,8 +443,8 @@ export async function readAllocationState(rpc: PublicClient, distributor: Addres
   const [n, l] = await Promise.all([receiptState(nand), receiptState(latch)]);
   const [inventory, allocated, delivered] = totals;
   return {
-    chainId, blockNumber: at, blockHash: block.hash!, distributor: getAddress(distributor), pool,
-    distributorReceipts: { NAND: nand, LATCH: latch }, poolReceipts: { NAND: poolNand, LATCH: poolLatch },
+    chainId, blockNumber: at, blockHash: block.hash!, distributor: getAddress(distributor), pools: { optimal: optimalPool, regular: regularPool },
+    distributorReceipts: { NAND: nand, LATCH: latch }, poolReceipts: { optimal: optimalReceipts, regular: regularReceipts },
     receiptCategories: { NAND: n.category, LATCH: l.category },
     finalized,
     totals: {

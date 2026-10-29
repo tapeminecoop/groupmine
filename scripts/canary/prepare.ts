@@ -15,7 +15,7 @@ async function main() {
   const price = await rpc.getGasPrice();
   const ceiling = price * 2n;
   const gas = full.reduce((s: bigint, x: any) => s + BigInt(x.gas), 0n);
-  const recoveryGas = full.filter((x: any) => x.action === 'permanent-shutdown' || /^return-/.test(x.action)).reduce((s: bigint, x: any) => s + BigInt(x.gas), 0n);
+  const recoveryGas = full.filter((x: any) => /^permanent-shutdown/.test(x.action) || /^return-/.test(x.action)).reduce((s: bigint, x: any) => s + BigInt(x.gas), 0n);
   const reserveEstimate = recoveryGas * ceiling * 2n;
   const reserve = process.env.RECOVERY_RESERVE_BNB ? parseEther(process.env.RECOVERY_RESERVE_BNB) : reserveEstimate;
   const total = process.env.MAX_RUN_FEE_BNB ? parseEther(process.env.MAX_RUN_FEE_BNB) : gas * ceiling * 150n / 100n + reserve;
@@ -24,7 +24,7 @@ async function main() {
   if (reserve < reserveEstimate || total <= reserve || perTx <= 0n) throw Error('Proposed fee settings cannot protect the estimated recovery reserve');
   const nonce = await rpc.getTransactionCount({ address: owner, blockTag: 'latest' });
   if (await rpc.getTransactionCount({ address: owner, blockTag: 'pending' }) !== nonce) throw Error('Pending nonce must be reconciled first');
-  const predicted = Object.fromEntries(['nand', 'latch', 'helper', 'pool', 'distributor'].map((name, i) => [name, getContractAddress({ from: owner, nonce: BigInt(nonce + i) })]));
+  const predicted = Object.fromEntries(['nand', 'latch', 'helper', 'pool', 'regularPool', 'distributor'].map((name, i) => [name, getContractAddress({ from: owner, nonce: BigInt(nonce + i) })]));
   const maxWaitSeconds = Number(process.env.MAX_WAIT_SECONDS || '300');
   const accrualIntervalSeconds = Number(process.env.ACCRUAL_INTERVAL_SECONDS || '60');
   const minConfirmations = Number(process.env.MIN_CONFIRMATIONS || '3');
@@ -37,7 +37,7 @@ async function main() {
     maxWaitSeconds, accrualIntervalSeconds, minConfirmations,
     estimate: { rehearsedGasLimits: gas, observedGasUsed: full.reduce((s: bigint, x: any) => s + BigInt(x.gasUsed), 0n), currentGasPrice: price, estimatedAtCurrentPriceBNB: formatEther(gas * price), maxRunFeeBNB: formatEther(total), maxTxFeeBNB: formatEther(perTx), recoveryReserveBNB: formatEther(reserve), walletBNB: formatEther(source.bnbRaw), funded: source.bnbRaw >= total },
     operations: full.map((x: any) => ({ action: x.action, function: x.function, rehearsedGasLimit: x.gas, rehearsedGasUsed: x.gasUsed })),
-    recovery: 'Permanent shutdown; independent emergencyReturn(3204), emergencyReturn(12485), fixed wallet only. Finish existing BEM entitlements and forward helper BEM. No Mining/BEM call required for NFT return.',
+    recovery: 'Permanent shutdown of both canary pools; independent emergencyReturn(3204), emergencyReturn(12485), fixed wallet only. Finish existing BEM entitlements and forward helper BEM. No Mining/BEM call required for NFT return.',
     humanApproval: 'REQUIRED_BEFORE_ANY_MAINNET_TRANSACTION',
   };
   save(`reports/canary/proposals/${runId}.json`, proposal);

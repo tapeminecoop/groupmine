@@ -1,0 +1,18 @@
+{
+  "forkBlock": 128713128,
+  "miner12733CircuitBurnLatch": 0,
+  "miner12733CircuitBurnNand": 88,
+  "miner13948CircuitBurnLatch": 64,
+  "miner13948CircuitBurnNand": 2,
+  "miner1574CircuitBurnLatch": 5,
+  "miner1574CircuitBurnNand": 4,
+  "miner4183CircuitBurnLatch": 9,
+  "miner4183CircuitBurnNand": 1,
+  "referenceCircuit": 109,
+  "referenceCircuitBurnCached": false,
+  "referenceCircuitKey": "0x3ceb7484a0dce891452b2d158abf086bedd65514799aab527d200917c4e6180e",
+  "referenceCircuitLocalLatch": 0,
+  "referenceCircuitLocalNand": 0,
+  "referenceCircuitRecordedGates": 123264,
+  "referenceCircuitStatus": 0
+}

@@ -1,0 +1,15 @@
+{
+  "closed": true,
+  "regularPoolClosed": true,
+  "errors": {},
+  "verified": [
+    {
+      "id": "3204",
+      "owner": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129"
+    },
+    {
+      "id": "12485",
+      "owner": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129"
+    }
+  ]
+}

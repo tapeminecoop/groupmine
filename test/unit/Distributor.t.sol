@@ -76,7 +76,8 @@ contract DistributorTest is SystemTestBase {
         nandReceipt = new TapeoutEntitlementReceipt(NAND_CATEGORY, "Second NAND", "S2N", "", operator);
         latchReceipt = new TapeoutEntitlementReceipt(LATCH_CATEGORY, "Second LATCH", "S2L", "", operator);
         pool = deployPool(whitelist());
-        distributor = new TapeoutReceiptDistributor(operator, pool);
+        regularPool = deployRegularPool(whitelist());
+        distributor = new TapeoutReceiptDistributor(operator, pool, regularPool);
         vm.prank(operator);
         nandReceipt.issue(address(distributor), 6);
         (uint256[2] memory inventory,,) = distributor.totals();
@@ -242,13 +243,14 @@ contract DistributorTest is SystemTestBase {
 
     /// @dev Since 2.2.0 receipts can carry claim history only after custody began, when the bound
     ///      distributor is finalized and refuses all inventory; the history check still guards any other
-    ///      distributor of this pool (here a second, unbound one).
+    ///      distributor of these pools (here a second, unbound one). test/unit/TwoPoolDistributor.t.sol
+    ///      covers history in either pool.
     function testReceiptsWithConsumedRewardHistoryAreRefused() public {
         activate(); // the receipts stay with the operator; the bound distributor finalizes empty
         admitNew(1, 1, 1);
         accrue(1, 1_050_000);
         pool.harvestRange(0, 1);
-        TapeoutReceiptDistributor second = new TapeoutReceiptDistributor(operator, pool);
+        TapeoutReceiptDistributor second = new TapeoutReceiptDistributor(operator, pool, regularPool);
         vm.startPrank(operator);
         pool.claim(NAND, 30);
         vm.expectRevert(TapeoutReceiptDistributor.AllocationClosed.selector);

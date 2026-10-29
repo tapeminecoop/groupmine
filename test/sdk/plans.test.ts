@@ -1,11 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { decodeDeployData, decodeFunctionData, type Abi, type Hex, type PublicClient } from 'viem';
-import { systemFileSchema, systemProblems, NAND_CATEGORY } from '../../sdk/config.ts';
+import { parseAddresses, parseSystemFile, systemFileSchema, systemProblems, NAND_CATEGORY } from '../../sdk/config.ts';
 import { tapeoutEntitlementReceiptAbi, tapeoutMinerPoolAbi, tapeoutReceiptDistributorAbi } from '../../sdk/abi.ts';
 import bytecode from '../../sdk/bytecode.json' with { type: 'json' };
 import {
-  ERC1155_RECEIVER_INTERFACE, activatePlan, allocatePlans, bindDistributorPlan, checkReconciliation, claimPlans, deployPoolPlan, deployReceiptPlans, depositPlans, fundPlans, issuePlans,
+  ERC1155_RECEIVER_INTERFACE, activatePlan, allocatePlans, bindDistributorPlan, checkReconciliation, claimPlans, deployDistributorPlan, deployPoolPlan, deployReceiptPlans, depositPlans, fundPlans, issuePlans,
   receiverProblems, releasePlans, type Reconciliation,
 } from '../../sdk/pool.ts';
 import { CALL_GAS, FIRST_ADMISSION_GAS, FUND_GAS, ISSUE_GAS, admissionGasEstimate, maxAdmissionBatch, maxIdsPerTx, maxRegisteredForAdmission } from '../../sdk/gas.ts';
@@ -13,18 +13,31 @@ import { accrue, SINK, type State } from '../../sdk/math.ts';
 import { BATCH_GAS_BUDGET, TX_GAS_CAP } from '../../sdk/constants.ts';
 import { castCommand, printableLoopback, safeBatch } from '../../sdk/tx.ts';
 import example from '../../deployments/examples/system.bsc.example.json' with { type: 'json' };
+import addressesExample from '../../deployments/examples/addresses.bsc.example.json' with { type: 'json' };
 
 const A = '0x00000000000000000000000000000000000000aa' as const;
 
-test('system file validation mirrors the pool constructor', () => {
+test('system file validation mirrors each pool constructor', () => {
   const f = systemFileSchema.parse(example);
   assert.deepEqual(systemProblems(f), []);
-  assert.match(systemProblems({ ...f, pool: { ...f.pool, depositors: [f.pool.depositors[0], f.pool.depositors[0]] } }).join(), /twice/);
-  assert.match(systemProblems({ ...f, pool: { ...f.pool, depositors: [f.protocol.mining] } }).join(), /protocol contract/);
-  assert.throws(() => systemFileSchema.parse({ ...example, pool: { ...example.pool, depositors: [] } }));
+  const withPool = (role: 'optimal' | 'regular', change: Partial<typeof f.pools.optimal>) => ({ ...f, pools: { ...f.pools, [role]: { ...f.pools[role], ...change } } });
+  assert.match(systemProblems(withPool('optimal', { depositors: [f.pools.optimal.depositors[0], f.pools.optimal.depositors[0]] })).join(), /optimal pool: .*twice/);
+  assert.match(systemProblems(withPool('regular', { depositors: [f.protocol.mining] })).join(), /regular pool: .*protocol contract/);
+  assert.throws(() => systemFileSchema.parse({ ...example, pools: { ...example.pools, regular: { ...example.pools.regular, depositors: [] } } }));
   // C's sink is a constant, never a recipient (the constructor refuses it too).
-  assert.match(systemProblems({ ...f, pool: { ...f.pool, recipientA: SINK } }).join(), /fixed sink/);
-  assert.match(systemProblems({ ...f, pool: { ...f.pool, recipientB: SINK.toLowerCase() as typeof SINK } }).join(), /fixed sink/);
+  assert.match(systemProblems(withPool('optimal', { recipientA: SINK })).join(), /fixed sink/);
+  assert.match(systemProblems(withPool('regular', { recipientB: SINK.toLowerCase() as typeof SINK })).join(), /fixed sink/);
+  assert.match(systemProblems(withPool('regular', { name: f.pools.optimal.name })).join(), /both pools are named/);
+});
+
+test('single-pool system and addresses files (2.2.0 and earlier) are refused, never reinterpreted', () => {
+  const { pools, ...base } = example;
+  assert.throws(() => parseSystemFile({ ...base, pool: pools.optimal }), /single-pool key "pool"/);
+  // Even with both pools present, a leftover single-pool key is refused rather than ignored.
+  assert.throws(() => parseSystemFile({ ...example, pool: pools.optimal }), /single-pool key "pool"/);
+  assert.throws(() => parseAddresses({ chainId: 56, nandReceipt: A, latchReceipt: A, pool: A, distributor: A }), /single-pool key "pool"/);
+  assert.equal(parseAddresses(addressesExample).regularPool, addressesExample.regularPool);
+  assert.throws(() => parseAddresses({ ...addressesExample, extra: A }));
 });
 
 test('release plans: each call pays its role and C, with the 300k bound', () => {
@@ -87,11 +100,18 @@ test('deployment plans carry the intended constructor arguments', () => {
   const decoded = decodeDeployData({ abi: tapeoutEntitlementReceiptAbi as Abi, bytecode: bytecode.TapeoutEntitlementReceipt.bytecode as Hex, data: nand.data });
   assert.equal(decoded.args?.[0], NAND_CATEGORY);
   assert.notEqual(nand.data, latch.data);
-  const pool = deployPoolPlan(f, A, '0x00000000000000000000000000000000000000bb');
-  const p = decodeDeployData({ abi: tapeoutMinerPoolAbi as Abi, bytecode: bytecode.TapeoutMinerPool.bytecode as Hex, data: pool.data });
-  const d = p.args?.[0] as { depositors: string[]; recipientA: string; nandReceipt: string };
-  assert.equal(d.depositors.length, 1);
-  assert.equal(d.nandReceipt.toLowerCase(), A);
+  const decodePool = (role: 'optimal' | 'regular') => decodeDeployData({ abi: tapeoutMinerPoolAbi as Abi, bytecode: bytecode.TapeoutMinerPool.bytecode as Hex,
+    data: deployPoolPlan(f, role, A, '0x00000000000000000000000000000000000000bb').data }).args?.[0] as { depositors: string[]; nandReceipt: string; latchReceipt: string; poolName: string };
+  const [optimal, regular] = [decodePool('optimal'), decodePool('regular')];
+  assert.equal(optimal.depositors.length, 1);
+  assert.equal(optimal.nandReceipt.toLowerCase(), A);
+  // Both pools take the same receipt pair; each has its own name.
+  assert.equal(regular.nandReceipt, optimal.nandReceipt);
+  assert.equal(regular.latchReceipt, optimal.latchReceipt);
+  assert.deepEqual([optimal.poolName, regular.poolName], [f.pools.optimal.name, f.pools.regular.name]);
+  const O = '0x00000000000000000000000000000000000000c1', R = '0x00000000000000000000000000000000000000c2';
+  const distributor = decodeDeployData({ abi: tapeoutReceiptDistributorAbi as Abi, bytecode: bytecode.TapeoutReceiptDistributor.bytecode as Hex, data: deployDistributorPlan(A, O, R).data });
+  assert.deepEqual(distributor.args?.map(a => String(a).toLowerCase()), [A, O, R]);
 });
 
 test('issue, fund, allocate, claim and release plans encode the right calls in bounded batches', () => {
@@ -140,8 +160,9 @@ test('admission gas model stays inside the BSC per-transaction cap', () => {
   assert.match(firstPlans[0].description, /opens custody/);
   assert.equal(maxAdmissionBatch(0n, BATCH_GAS_BUDGET, true) <= maxAdmissionBatch(0n), true);
   // Default setup batches (bounds checked as gas limits in test/unit/GasModel.t.sol).
-  assert.equal(maxIdsPerTx(ISSUE_GAS), 231);
-  assert.equal(maxIdsPerTx(FUND_GAS), 312);
+  // 2.3.0 re-measurement (two claim-history reads per received ID): 231 -> 222 and 312 -> 283.
+  assert.equal(maxIdsPerTx(ISSUE_GAS), 222);
+  assert.equal(maxIdsPerTx(FUND_GAS), 283);
   assert.equal(maxIdsPerTx(ISSUE_GAS, 50_000n), 0);
 });
 

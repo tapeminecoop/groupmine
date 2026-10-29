@@ -44,13 +44,16 @@ export function maxAdmissionBatch(registered: bigint, limit: bigint = BATCH_GAS_
 /**
  * Worst-case bounds for whole transactions (21,000 base and calldata included). They are used as gas
  * limits, so test/unit/GasModel.t.sol runs each call as its own transaction with exactly its bound as
- * the limit (refunds cannot help: a limit must cover gas before refunds). Gas used per ID: issue ~47k to
- * a wallet and ~50k into the distributor, funding ~34k, allocate ~26k plus up to ~98k per new-wallet
- * range, delivery ~30k, BEM claims ~28k. Harvest runs the real Mining contract: ~62k per miner on the
- * BSC fork, bounded here at 100k.
+ * the limit (refunds cannot help: a limit must cover gas before refunds). Gas used per ID: issue ~46k to
+ * a wallet and ~53k into the distributor, funding ~36.5k (~41.3k before refunds), allocate ~26k plus up
+ * to ~98k per new-wallet range, delivery ~30k, BEM claims ~28k. Harvest runs the real Mining contract:
+ * ~62k per miner on the BSC fork, bounded here at 100k.
+ * 2.3.0: the distributor's receive hook reads the claim history of each ID in both pools (one more
+ * staticcall per ID, ~3.3k), so issuing into the distributor and funding were re-measured: ISSUE_GAS
+ * 54k -> 56k per ID and FUND_GAS 40k -> 44k per ID (defaults 231 -> 222 and 300 -> 283 IDs per transaction).
  */
-export const ISSUE_GAS = { base: 100_000n, perId: 54_000n } as const;
-export const FUND_GAS = { base: 100_000n, perId: 40_000n } as const;
+export const ISSUE_GAS = { base: 100_000n, perId: 56_000n } as const;
+export const FUND_GAS = { base: 100_000n, perId: 44_000n } as const;
 export const ALLOCATE_GAS = { base: 60_000n, perId: 27_000n, perRange: 120_000n } as const;
 export const REVOKE_GAS = { base: 100_000n, perId: 8_000n, perRange: 30_000n } as const;
 export const DELIVER_GAS = { base: 100_000n, perId: 37_000n, perRange: 100_000n } as const;

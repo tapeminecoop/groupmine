@@ -13,7 +13,7 @@ import {
 import { tapeoutEntitlementReceiptAbi, tapeoutMinerPoolAbi, tapeoutReceiptDistributorAbi } from './abi.js';
 import bytecode from './bytecode.json' with { type: 'json' };
 import { CATEGORY, MINER_STATUS_ACTIVE, erc20Abi, erc721Abi, miningAbi, type CategoryName } from './constants.js';
-import { poolDeployment, receiptConstructorArgs, type SystemFile } from './config.js';
+import { poolDeployment, receiptConstructorArgs, type PoolRole, type SystemFile } from './config.js';
 import {
   accrue, carriedUnits, categoryUnits, participantUnits, PARTICIPANT_PARTS, RECIPIENT_PARTS, residueBound, SINK, SINK_PARTS, TOTAL_PARTS,
   type Accrual, type State,
@@ -51,15 +51,17 @@ export function deployReceiptPlans(f: SystemFile): TxPlan[] {
   return [make('NAND', args.nand), make('LATCH', args.latch)];
 }
 
-export function deployPoolPlan(f: SystemFile, nandReceipt: Address, latchReceipt: Address): TxPlan {
-  const d = poolDeployment(f, nandReceipt, latchReceipt);
-  return { to: null, value: 0n, description: `deploy TapeoutMinerPool "${d.poolName}" (owner ${d.owner}, ${d.depositors.length} whitelisted depositors)`,
+export function deployPoolPlan(f: SystemFile, role: PoolRole, nandReceipt: Address, latchReceipt: Address): TxPlan {
+  const d = poolDeployment(f, role, nandReceipt, latchReceipt);
+  return { to: null, value: 0n, description: `deploy the ${role} TapeoutMinerPool "${d.poolName}" (owner ${d.owner}, ${d.depositors.length} whitelisted depositors)`,
     data: encodeDeployData({ abi: tapeoutMinerPoolAbi as Abi, bytecode: bytecode.TapeoutMinerPool.bytecode as Hex, args: [d] }), gas: DEPLOY_GAS.pool };
 }
 
-export function deployDistributorPlan(owner: Address, pool: Address): TxPlan {
-  return { to: null, value: 0n, description: `deploy TapeoutReceiptDistributor (owner ${owner}) for pool ${pool}`,
-    data: encodeDeployData({ abi: tapeoutReceiptDistributorAbi as Abi, bytecode: bytecode.TapeoutReceiptDistributor.bytecode as Hex, args: [owner, pool] }), gas: DEPLOY_GAS.distributor };
+/** The one distributor of a processor's two pools; its constructor refuses pools that do not share the
+ *  receipts, BEM, Mining and miner collection, and the same pool twice. */
+export function deployDistributorPlan(owner: Address, optimalPool: Address, regularPool: Address): TxPlan {
+  return { to: null, value: 0n, description: `deploy TapeoutReceiptDistributor (owner ${owner}) for the optimal pool ${optimalPool} and the regular pool ${regularPool}`,
+    data: encodeDeployData({ abi: tapeoutReceiptDistributorAbi as Abi, bytecode: bytecode.TapeoutReceiptDistributor.bytecode as Hex, args: [owner, optimalPool, regularPool] }), gas: DEPLOY_GAS.distributor };
 }
 
 export function issuePlans(receipt: Address, label: CategoryName, to: Address, count: number, batch = maxIdsPerTx(ISSUE_GAS)): TxPlan[] {
@@ -121,9 +123,10 @@ export function deliveryPlans(distributor: Address, wallet: Address, ranges: rea
   });
 }
 
-/** Once, before activation: the pool binds the round's distributor (it must report this pool and these receipts). */
+/** Once per pool, before its activation: the pool binds the round's distributor (it must count this pool
+ *  among its two pools and report these receipts). Each of the two pools sends its own binding. */
 export const bindDistributorPlan = (pool: Address, distributor: Address) =>
-  poolCall(pool, 'bindDistributor', [distributor], `bind distributor ${distributor} to the pool (once, before activation; never replaceable)`, CALL_GAS.bindDistributor);
+  poolCall(pool, 'bindDistributor', [distributor], `bind distributor ${distributor} to pool ${pool} (once, before activation; never replaceable)`, CALL_GAS.bindDistributor);
 
 export const activatePlan = (pool: Address, nandShares: bigint, latchShares: bigint) =>
   poolCall(pool, 'activate', [nandShares, latchShares], `activate with S_N=${nandShares}, S_L=${latchShares} (needs the bound distributor's allocation finalized)`, CALL_GAS.activate);
@@ -240,13 +243,14 @@ export async function readHeldIds(rpc: PublicClient, receipt: Address, holder: A
 }
 
 export async function readDistributorSummary(rpc: PublicClient, distributor: Address, blockNumber?: bigint) {
-  const [owner, finalized, totals, walletCount, pool] = await Promise.all([
+  const [owner, finalized, totals, walletCount, optimalPool, regularPool] = await Promise.all([
     readDistributor<Address>(rpc, distributor, 'owner', [], blockNumber), readDistributor<boolean>(rpc, distributor, 'allocationFinalized', [], blockNumber),
     readDistributor<readonly [readonly [bigint, bigint], readonly [bigint, bigint], readonly [bigint, bigint]]>(rpc, distributor, 'totals', [], blockNumber),
-    readDistributor<bigint>(rpc, distributor, 'walletCount', [], blockNumber), readDistributor<Address>(rpc, distributor, 'pool', [], blockNumber),
+    readDistributor<bigint>(rpc, distributor, 'walletCount', [], blockNumber),
+    readDistributor<Address>(rpc, distributor, 'optimalPool', [], blockNumber), readDistributor<Address>(rpc, distributor, 'regularPool', [], blockNumber),
   ]);
   const [inventory, allocated, delivered] = totals;
-  return { address: distributor, pool, owner, allocationFinalized: finalized, walletCount,
+  return { address: distributor, pools: { optimal: optimalPool, regular: regularPool }, owner, allocationFinalized: finalized, walletCount,
     NAND: { inventory: inventory[0], allocated: allocated[0], delivered: delivered[0] }, LATCH: { inventory: inventory[1], allocated: allocated[1], delivered: delivered[1] } };
 }
 
@@ -320,13 +324,17 @@ export interface Reconciliation {
  * Their values differ from 2.1.0 wherever carried income or a checkpoint's fraction is involved, so the
  * version guard still applies to all of them.
  *
+ * 2.3.0 (one distributor for two custody pools) keeps every 2.2.0 tuple layout. This SDK still reads only
+ * 2.3.0: its distributor ABI (`optimalPool`, `regularPool`, `isPool`; no `pool()`), addresses files and
+ * finality reads belong to the two-pool system, and a 2.2.0 system is read by the SDK of its own release.
+ *
  * A self-reported version does not authenticate code. Write commands keep the stronger controls: the
  * runtime-template, immutable-binding and addresses-file checks of `checkDeployment`.
  */
-export const READ_LAYOUT_VERSIONS = ['TapeoutMinerPool/2.2.0'] as const;
+export const READ_LAYOUT_VERSIONS = ['TapeoutMinerPool/2.3.0'] as const;
 /** The local-only canary candidate has the same layout. It is decoded only when the caller opts in (the
  *  CLI does so on a loopback development node, where canary rehearsals run); that is never an approval. */
-export const LOCAL_CANARY_LAYOUT_VERSIONS = ['RecoverableTapeoutMinerPool/canary-3-local'] as const;
+export const LOCAL_CANARY_LAYOUT_VERSIONS = ['RecoverableTapeoutMinerPool/canary-4-local'] as const;
 export interface ReadLayoutPolicy { allowLocalCanary?: boolean }
 
 /** The read-layout policy for a planning node of `kind` (see `executionContext`). */
@@ -443,10 +451,11 @@ export async function checkCarriedRecords(rpc: PublicClient, pool: Address, bloc
 
 /**
  * The first admission's conditions (SALUS #3), read from the four contracts at one block: both issuances
- * finalized with owner zero and supplies equal to the pool's denominators, the bound distributor finalized
- * with owner zero, the pool active with owner zero. `missing` lists what is not yet true; once custody is
- * open the conditions are permanent. The contract enforces this itself; tooling reads it to refuse plans
- * early and to show the state.
+ * finalized with owner zero and supplies equal to the pool's denominators, the bound distributor (which
+ * must count this pool among its two) finalized with owner zero, the pool active with owner zero. The
+ * distributor and the receipts are shared by both pools, so their conditions hold or fail for both.
+ * `missing` lists what is not yet true; once custody is open the conditions are permanent. The contract
+ * enforces this itself; tooling reads it to refuse plans early and to show the state.
  */
 export async function readFinality(rpc: PublicClient, pool: Address, blockNumber?: bigint) {
   const p = <T>(fn: string) => readPool<T>(rpc, pool, fn, [], blockNumber);
@@ -458,12 +467,12 @@ export async function readFinality(rpc: PublicClient, pool: Address, blockNumber
   const bound = distributor !== zeroAddress;
   const d = bound ? await Promise.all([
     readDistributor<boolean>(rpc, distributor, 'allocationFinalized', [], blockNumber), readDistributor<Address>(rpc, distributor, 'owner', [], blockNumber),
-    readDistributor<Address>(rpc, distributor, 'pool', [], blockNumber),
+    readDistributor<boolean>(rpc, distributor, 'isPool', [pool], blockNumber),
   ]) : undefined;
   const conditions = {
     poolActive: active,
     poolOwnerRenounced: owner === zeroAddress,
-    distributorBound: bound && !!d && getAddress(d[2]) === getAddress(pool),
+    distributorBound: bound && !!d && d[2],
     distributorAllocationFinalized: !!d && d[0],
     distributorOwnerRenounced: !!d && d[1] === zeroAddress,
     nandIssuanceFinalized: nand.issuanceFinalized,

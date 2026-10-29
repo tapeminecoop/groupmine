@@ -1,0 +1,39 @@
+{
+  "forkBlock": 128713128,
+  "incomingCarriedActual": [
+    1078419271,
+    7479760,
+    1892468,
+    779328
+  ],
+  "incomingLatchBurn": [
+    64,
+    9,
+    5,
+    8
+  ],
+  "incomingMiners": [
+    13948,
+    4183,
+    1574,
+    6940
+  ],
+  "incomingNandBurn": [
+    2,
+    1,
+    4,
+    17
+  ],
+  "incomingPendingBeforeAdmission": [
+    1077179650,
+    7291939,
+    1826076,
+    309775
+  ],
+  "latchIncome": 1003592799,
+  "nandIncome": 19165470885,
+  "oldMiner": 12733,
+  "ordersCompared": "batch, reversed batch, one by one, two batches: identical",
+  "settledOldIncome": 27497042,
+  "total": 21177516869
+}

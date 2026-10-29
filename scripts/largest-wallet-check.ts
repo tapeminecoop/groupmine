@@ -61,7 +61,11 @@ async function main() {
     await writeFile(systemFile, json({
       chainId: 31337, protocol: { bem, mining, minerCollection: nft },
       receipts: { issuer: operator, nand: { name: 'Scale NAND', symbol: 'sN', uri: '' }, latch: { name: 'Scale LATCH', symbol: 'sL', uri: '' } },
-      pool: { name: 'Largest wallet check', owner: operator, recipientA: operator, recipientB: other, depositors: [depositor] }, distributor: { owner: operator },
+      pools: {
+        optimal: { name: 'Largest wallet check', owner: operator, recipientA: operator, recipientB: other, depositors: [depositor] },
+        regular: { name: 'Largest wallet check (regular)', owner: operator, recipientA: operator, recipientB: other, depositors: [depositor] },
+      },
+      distributor: { owner: operator },
     }));
     const as = (from: Address) => ['--from', from, '--send-local'];
     await step('deploy-receipts', ['deploy-receipts', '--system', systemFile, '--addresses-out', addressesFile, ...as(operator)]);
@@ -92,16 +96,21 @@ async function main() {
     const verified = await step('verify', ['verify-allocation', '--addresses', addressesFile, '--artifact', artifact, '--allocation', allocationFile]);
     check('verifiedReadyWithReviewedJson', verified.status === 'READY_TO_FINALIZE' && (verified.review as { status: string }).status === 'VERIFIED', verified.readinessGaps);
     await step('finalize-allocation', ['finalize-allocation', '--addresses', addressesFile, '--artifact', artifact, '--allocation', allocationFile, ...as(operator)]);
-    // 2.2.0: bind the distributor, activate, and renounce every owner before the first admission.
-    await step('bind-distributor', ['bind-distributor', '--addresses', addressesFile, ...as(operator)]);
-    await step('activate', ['activate', '--addresses', addressesFile, '--nand-shares', String(N + 10), '--latch-shares', String(L + 5), ...as(operator)]);
-    for (const target of ['nand', 'latch', 'distributor', 'pool']) await step(`renounce-${target}`, ['renounce', '--addresses', addressesFile, '--target', target, ...as(operator)]);
+    // 2.3.0: each pool binds the shared distributor and activates; every owner renounces before the first
+    // admission. The measured wallet claims in the optimal pool.
+    for (const role of ['optimal', 'regular']) {
+      await step(`bind-distributor-${role}`, ['bind-distributor', '--addresses', addressesFile, '--pool', role, ...as(operator)]);
+      await step(`activate-${role}`, ['activate', '--addresses', addressesFile, '--pool', role, '--nand-shares', String(N + 10), '--latch-shares', String(L + 5), ...as(operator)]);
+    }
+    for (const [target, role] of [['nand'], ['latch'], ['distributor'], ['pool', 'optimal'], ['pool', 'regular']] as const) {
+      await step(`renounce-${role ?? target}`, ['renounce', '--addresses', addressesFile, '--target', target, ...(role ? ['--pool', role] : []), ...as(operator)]);
+    }
     const write = (to: Address, abi: Abi, functionName: string, args: unknown[]) => send(operator, to, encodeFunctionData({ abi, functionName, args } as never));
     await write(nft, mockNFTAbi as Abi, 'mint', [depositor, 1n]);
     await write(mining, mockMiningAbi as Abi, 'start', [nft, 1n, 1, 1]);
-    await step('deposit', ['deposit', '--addresses', addressesFile, '--token-ids', '1', ...as(depositor)]);
+    await step('deposit', ['deposit', '--addresses', addressesFile, '--pool', 'optimal', '--token-ids', '1', ...as(depositor)]);
     await write(mining, mockMiningAbi as Abi, 'accrue', [nft, 1n, 1_000_000n * 10n ** 8n]);
-    await step('harvest', ['harvest', '--addresses', addressesFile, '--all', ...as(depositor)]);
+    await step('harvest', ['harvest', '--addresses', addressesFile, '--pool', 'optimal', '--all', ...as(depositor)]);
 
     // Delivery of the whole wallet (replanned before each send) and the BEM claim for every ID.
     const delivered = await step('claim-receipts', ['claim-receipts', '--addresses', addressesFile, ...as(largest)]);
@@ -110,11 +119,11 @@ async function main() {
     check('everyIdDelivered', pending[0] === 0n && pending[1] === 0n, pending);
     report.deliveries = (delivered.transactions as unknown[]).length;
     const before = await rpc.readContract({ address: bem, abi: erc20Abi, functionName: 'balanceOf', args: [largest] });
-    const claimed = await step('claim-bem', ['claim', '--addresses', addressesFile, '--all', ...as(largest)]);
+    const claimed = await step('claim-bem', ['claim', '--addresses', addressesFile, '--pool', 'optimal', '--all', ...as(largest)]);
     const after = await rpc.readContract({ address: bem, abi: erc20Abi, functionName: 'balanceOf', args: [largest] });
     check('exactPayoutForEveryId', after - before === BigInt(claimed.expectedPayoutRaw as bigint | string) && after > before);
     report.claimTransactions = (claimed.transactions as unknown[]).length;
-    const reconcile = await step('reconcile', ['reconcile', '--addresses', addressesFile, '--deep']);
+    const reconcile = await step('reconcile', ['reconcile', '--addresses', addressesFile, '--pool', 'optimal', '--deep']);
     check('reconcilePass', reconcile.status === 'PASS');
     // A wallet whose revocation cannot be planned as one transaction cannot be corrected before
     // finalization (revokeWallet clears the whole wallet at once): that fails this gate.

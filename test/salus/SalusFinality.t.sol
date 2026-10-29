@@ -9,17 +9,22 @@ import {TapeoutEntitlementReceipt} from "../../src/TapeoutEntitlementReceipt.sol
 import {ForeignERC1155} from "../helpers/Mocks.sol";
 
 /// @dev Answers the distributor views the pool reads, with configurable values. Stands in for a wrong
-///      or non-genuine distributor; the pool can check its answers but not its code.
+///      or non-genuine distributor; the pool can check its answers but not its code. 2.3.0: membership
+///      is `isPool`, here true for one configured pool.
 contract FakeDistributor {
-    address public pool;
+    address public member;
     address public nandReceipt;
     address public latchReceipt;
     bool public allocationFinalized;
     address public owner;
 
-    constructor(address pool_, address nand_, address latch_, bool finalized_, address owner_) {
-        (pool, nandReceipt, latchReceipt, allocationFinalized, owner) =
-            (pool_, nand_, latch_, finalized_, owner_);
+    constructor(address member_, address nand_, address latch_, bool finalized_, address owner_) {
+        (member, nandReceipt, latchReceipt, allocationFinalized, owner) =
+            (member_, nand_, latch_, finalized_, owner_);
+    }
+
+    function isPool(address candidate) external view returns (bool) {
+        return candidate == member;
     }
 }
 
@@ -217,9 +222,10 @@ contract SalusFinalityTest is SystemTestBase {
         vm.expectRevert(TapeoutMinerPool.InvalidDistributor.selector);
         pool.bindDistributor(alice); // not a contract
         TapeoutMinerPool other = deployPool(whitelist());
-        TapeoutReceiptDistributor foreign = new TapeoutReceiptDistributor(operator, other);
+        TapeoutMinerPool other2 = deployRegularPool(whitelist());
+        TapeoutReceiptDistributor foreign = new TapeoutReceiptDistributor(operator, other, other2);
         vm.expectRevert(TapeoutMinerPool.InvalidDistributor.selector);
-        pool.bindDistributor(address(foreign)); // belongs to another pool on the same receipts
+        pool.bindDistributor(address(foreign)); // serves two other pools on the same receipts
         FakeDistributor wrongReceipts =
             new FakeDistributor(address(pool), address(latchReceipt), address(nandReceipt), true, address(0));
         vm.expectRevert(TapeoutMinerPool.InvalidDistributor.selector);

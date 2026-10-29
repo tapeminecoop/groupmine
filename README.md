@@ -13,18 +13,21 @@ actually receives:
   an incoming miner carries in (earned before its admission) by that miner's own burn;
 - within a category, equally per receipt ID; unclaimed BEM follows the receipt when it is transferred.
 
-There is one issuance round and one distribution. Custody begins only after both are final and every
-owner (both receipts, the distributor, the pool) has renounced; afterwards miners built from leftover
-materials are admitted into the same pool by whitelisted depositors and benefit the existing holders.
-Supplies and allocations never change after finalization.
+There is one issuance round and one distribution. Each processor runs two custody pools, the Optimal
+Pool and the Regular Pool, which recognize the same NAND/LATCH receipts and share one distributor: each
+receipt is allocated and delivered once and then earns in both pools, and its holder claims each pool's
+income for it separately. A pool's custody begins only after both are final and every owner (both
+receipts, the distributor, that pool) has renounced; afterwards miners built from leftover materials are
+admitted into either pool by its whitelisted depositors and benefit the existing holders. Supplies and
+allocations never change after finalization.
 
 ## Contracts
 
 | Contract | Purpose |
 | --- | --- |
 | [`TapeoutEntitlementReceipt`](src/TapeoutEntitlementReceipt.sol) | Unique-ID ERC-1155 (IDs `1..S`, supply 1 each), deployed separately for NAND and LATCH; batch issuance, then permanent finalization |
-| [`TapeoutReceiptDistributor`](src/TapeoutReceiptDistributor.sol) | Holds the receipts, records the imported allocation, lets each wallet claim its own receipts (no deadline) |
-| [`TapeoutMinerPool`](src/TapeoutMinerPool.sol) | Miner custody, admission by a fixed depositor whitelist with a strict settlement boundary and per-miner carried-income attribution, a one-time distributor binding and the custody finality gate, BEM ledger, claims, A/B payments that also settle the sink part C |
+| [`TapeoutReceiptDistributor`](src/TapeoutReceiptDistributor.sol) | One per processor, fixed at deployment to its two pools: holds the receipts, records the imported allocation, lets each wallet claim its own receipts (no deadline) |
+| [`TapeoutMinerPool`](src/TapeoutMinerPool.sol) | Deployed twice per processor (Optimal and Regular). Miner custody, admission by a fixed depositor whitelist with a strict settlement boundary and per-miner carried-income attribution, a one-time distributor binding and the custody finality gate, BEM ledger, claims, A/B payments that also settle the sink part C |
 | [`PoolMath`](src/PoolMath.sol) | Accounting math, mirrored by the SDK |
 
 How it fits together: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Allocation rules and rounding:
@@ -32,12 +35,19 @@ How it fits together: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Allocation r
 The Mining status lifecycle the pool relies on, established from Mining's deployed bytecode and on
 forks: [docs/MINING_LIFECYCLE.md](docs/MINING_LIFECYCLE.md).
 
-The current candidate is `TapeoutMinerPool/2.2.0` (package `2.2.0-rc.1`), the remediation of the SALUS
-Security assessment of 2026-10-28 (`Groupmine_audit_report_2026-10-28.pdf`, which covered `c3cb933`):
-carried income attributed by each miner's own burn, a fractional category ledger, and custody finality.
-What changed, how each finding maps to the current code, how it was verified and what remains open:
+The current candidate is `TapeoutMinerPool/2.3.0` (package `2.3.0-rc.1`): the 2.2.0 accounting with one
+`TapeoutReceiptDistributor` serving a processor's two custody pools that share one receipt pair. Design,
+the exact ABI, constructor and configuration changes, verification and what remains open:
+[docs/TWO_POOL_DISTRIBUTOR_CHANGE.md](docs/TWO_POOL_DISTRIBUTOR_CHANGE.md). This is new code: neither the
+SALUS assessment nor the internal reviews covered it.
+
+**Historical, for the 2.2.0 candidate (SALUS remediation).** The remediation of the SALUS Security
+assessment of 2026-10-28 (`Groupmine_audit_report_2026-10-28.pdf`, which covered `c3cb933`): carried
+income attributed by each miner's own burn, a fractional category ledger, and custody finality. What
+changed, how each finding maps to the code, how it was verified and what remained open:
 [docs/SALUS_AUDIT_REMEDIATION_REPORT.md](docs/SALUS_AUDIT_REMEDIATION_REPORT.md), with the run's evidence in
-[reports/salus-remediation-20261029-c78a6d1/](reports/salus-remediation-20261029-c78a6d1/).
+[reports/salus-remediation-20261029-c78a6d1/](reports/salus-remediation-20261029-c78a6d1/), and the
+internal review of 2.2.0: [docs/INTERNAL_GROUPMINE_2_2_REVIEW_6345de8_FABLE51.md](docs/INTERNAL_GROUPMINE_2_2_REVIEW_6345de8_FABLE51.md).
 
 Auditor navigation, owner-confirmed operational risk acceptances, operating constraints and pending launch evidence: [Audit assumptions and operational risk acceptance](docs/AUDIT_ASSUMPTIONS.md).
 
@@ -60,7 +70,8 @@ split and are kept unchanged; none of them validates 2.1.0:
 - the bounded mainnet canary that was run, canary-1 built from `c4bc022`:
   [MAINNET_TEST_REPORT.md](MAINNET_TEST_REPORT.md) (recorded outcome
   `PARTIAL_AUTOMATION_FAILED_RECOVERY_AND_ACCOUNTING_PASS`), runbook
-  [docs/CANARY_RUNBOOK.md](docs/CANARY_RUNBOOK.md) (which also covers the local-only canary-2 and canary-3);
+  [docs/CANARY_RUNBOOK.md](docs/CANARY_RUNBOOK.md) (which also covers the local-only canary-2, canary-3
+  and canary-4);
 - the internal security reviews of `f2c8e50` ([Fable](docs/INTERNAL_SECURITY_REVIEW_f2c8e50.md), plus an
   attached GPT review) and their remediation: [docs/AUDIT_REMEDIATION_REPORT.md](docs/AUDIT_REMEDIATION_REPORT.md).
 
@@ -130,6 +141,6 @@ npm run pool -- preview --income 1050 --nand-burn 90 --latch-burn 10 --nand-shar
 
 ## Status
 
-Release candidate. SALUS Security assessed `c3cb933`; 2.1.0 and the 2.2.0 remediation have not been
-audited, and SALUS has been asked to confirm the remediation. Not deployed to BSC mainnet; no live-value
-transaction was made for 2.1.0 or 2.2.0.
+Release candidate. SALUS Security assessed `c3cb933`; 2.1.0, the 2.2.0 remediation and the 2.3.0
+two-pool distributor have not been audited, and SALUS has been asked to confirm the remediation. Not
+deployed to BSC mainnet; no live-value transaction was made for 2.1.0, 2.2.0 or 2.3.0.

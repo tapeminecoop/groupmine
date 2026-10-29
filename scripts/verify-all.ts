@@ -149,9 +149,11 @@ async function main() {
     async o => ({ ok: o.status === 0, summary: o.status === 0 ? 'formatted (src, script, test/{unit,invariant,fork,helpers,remediation,salus,salus-ffi})' : 'unformatted files' }));
 
   await rm('reports/invariant-coverage.csv', { force: true });
-  // test/audit holds the internal review's suites and test/salus-ffi the SALUS differential test; both
-  // need FFI for their Python reference models (their own steps below).
-  await step('solidity-tests', 'forge', ['test', '--no-match-path', 'test/{fork,audit,salus-ffi}/*', '--json'], async o => {
+  // test/audit holds the internal review's suites, test/salus-ffi the SALUS differential test and
+  // test/review-fable51 the 2.2.0 review's suites; all need FFI for their Python reference models (their
+  // own steps below). Before 2.3.0, test/review-fable51 ran here without FFI, so its two differential
+  // tests failed in this step (never skipped: they now run in review-fable51-tests).
+  await step('solidity-tests', 'forge', ['test', '--no-match-path', 'test/{fork,audit,salus-ffi,review-fable51}/*', '--json'], async o => {
     await writeFile('.runtime/forge-tests.json', o.stdout);
     const s = run('node', ['scripts/summarize-forge.mjs', '.runtime/forge-tests.json', 'reports/invariant-coverage.csv']);
     await rm('reports/invariant-coverage.csv', { force: true });
@@ -178,6 +180,13 @@ async function main() {
   await step('salus-differential', 'forge', ['test', '--match-path', 'test/salus-ffi/*', '--ffi', '--json'], async o => {
     const suites = JSON.parse(o.stdout) as Record<string, { test_results: Record<string, { status: string; kind?: unknown }> }>;
     const results = Object.entries(suites).flatMap(([suite, s]) => Object.entries(s.test_results).map(([name, r]) => ({ suite: suite.split(':').pop(), name, status: r.status, kind: r.kind })));
+    return { ok: results.length > 0 && results.every(r => r.status === 'Success'), summary: { total: results.length, passed: results.filter(r => r.status === 'Success').length, results } };
+  });
+  // The 2.2.0 internal review's suites (6345de8): its findings and its differential test. FFI runs only
+  // `python3 -I test/review-fable51/model_fable.py <trace>`, the review's independent reference model.
+  await step('review-fable51-tests', 'forge', ['test', '--match-path', 'test/review-fable51/*', '--ffi', '--json'], async o => {
+    const suites = JSON.parse(o.stdout) as Record<string, { test_results: Record<string, { status: string }> }>;
+    const results = Object.entries(suites).flatMap(([suite, s]) => Object.entries(s.test_results).map(([name, r]) => ({ suite: suite.split(':').pop(), name, status: r.status })));
     return { ok: results.length > 0 && results.every(r => r.status === 'Success'), summary: { total: results.length, passed: results.filter(r => r.status === 'Success').length, results } };
   });
   // The internal reviews' TypeScript tests: test/audit (f2c8e50) and test/audit2 (the 2.1.0 follow-up).

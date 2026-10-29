@@ -253,7 +253,10 @@ async function main() {
     await writeFile(systemFile, json({
       chainId: 56, protocol: BSC_PROTOCOL,
       receipts: { issuer: operator.address, nand: { name: 'Fork Safe NAND Entitlement', symbol: 'sNAND', uri: '' }, latch: { name: 'Fork Safe LATCH Entitlement', symbol: 'sLATCH', uri: '' } },
-      pool: { name: 'Fork Safe E2E Pool', owner: operator.address, recipientA: operator.address, recipientB: recipient.address, depositors: [member.address] },
+      pools: {
+        optimal: { name: 'Fork Safe E2E Optimal Pool', owner: operator.address, recipientA: operator.address, recipientB: recipient.address, depositors: [member.address] },
+        regular: { name: 'Fork Safe E2E Regular Pool', owner: operator.address, recipientA: operator.address, recipientB: recipient.address, depositors: [member.address] },
+      },
       distributor: { owner: operator.address },
     }));
 
@@ -277,11 +280,13 @@ async function main() {
     check('issueSplitIntoThreeSafeTransactions', issueNand.files.map(f => f.transactions).join(',') === '2,2,1', issueNand.files);
     await safeStep('issue-latch', ['issue', '--addresses', addressesFile, '--category', 'LATCH', '--to', operator.address, '--count', '60'], operator);
     check('operatorSafeHoldsTheSupply', (await readHeldIds(rpc, nand, operator.address)).length === 500 && (await readHeldIds(rpc, latch, operator.address)).length === 60);
-    await step('deploy-pool-and-distributor', ['deploy', '--system', systemFile, '--addresses', addressesFile, '--from', actor.deployer, '--send-local']);
+    await step('deploy-pools-and-distributor', ['deploy', '--system', systemFile, '--addresses', addressesFile, '--from', actor.deployer, '--send-local']);
     addresses = JSON.parse(await readFile(addressesFile, 'utf8'));
-    const pool = getAddress(addresses.pool), distributor = getAddress(addresses.distributor);
+    // 2.3.0: the miners go to the optimal pool; the regular pool shares the receipts and the distributor.
+    const pool = getAddress(addresses.optimalPool), regularPool = getAddress(addresses.regularPool), distributor = getAddress(addresses.distributor);
     const poolAbi = tapeoutMinerPoolAbi as Abi;
-    check('poolAndDistributorOwnedByOperatorSafe', await read<Address>(pool, ownableAbi, 'owner') === operator.address && await read<Address>(distributor, ownableAbi, 'owner') === operator.address);
+    check('poolsAndDistributorOwnedByOperatorSafe', await read<Address>(pool, ownableAbi, 'owner') === operator.address && await read<Address>(regularPool, ownableAbi, 'owner') === operator.address
+      && await read<Address>(distributor, ownableAbi, 'owner') === operator.address);
     const fundNand = await safeStep('fund-nand', ['fund-distributor', '--addresses', addressesFile, '--category', 'NAND', '--all-held', '--batch-size', '125'], operator);
     check('fundingSplitIntoTwoSafeTransactions', fundNand.files.map(f => f.transactions).join(',') === '2,2', fundNand.files);
     await safeStep('fund-latch', ['fund-distributor', '--addresses', addressesFile, '--category', 'LATCH', '--all-held'], operator);
@@ -300,15 +305,23 @@ async function main() {
     const ready = await step('verify-allocation', ['verify-allocation', '--addresses', addressesFile, '--artifact', `${DIR}/artifact.json`, '--allocation', allocationFile]);
     check('allocationReadyToFinalize', ready.status === 'READY_TO_FINALIZE', ready);
     await safeStep('finalize-allocation', ['finalize-allocation', '--addresses', addressesFile, '--artifact', `${DIR}/artifact.json`, '--allocation', allocationFile], operator);
-    // 2.2.0 (SALUS #3): the Safe binds the distributor once, activates, and renounces all four owners.
-    await safeStep('bind-distributor', ['bind-distributor', '--addresses', addressesFile], operator);
-    check('distributorBoundOnce', (await read<Address>(pool, poolAbi, 'distributor')).toLowerCase() === distributor.toLowerCase());
-    await safeStep('activate', ['activate', '--addresses', addressesFile, '--nand-shares', '500', '--latch-shares', '60'], operator);
-    check('poolActive', await read<boolean>(pool, poolAbi, 'active'));
-    for (const target of ['nand', 'latch', 'distributor', 'pool']) await safeStep(`renounce-${target}`, ['renounce', '--addresses', addressesFile, '--target', target], operator);
-    check('everyOwnershipRenounced', (await Promise.all([nand, latch, distributor, pool].map(a => read<Address>(a, ownableAbi, 'owner')))).every(o => o === zeroAddress));
-    const finality = await step('finality', ['finality', '--addresses', addressesFile]);
+    // SALUS #3, per pool (2.3.0): the Safe binds the shared distributor in each pool once, activates both,
+    // and renounces the shared receipts and distributor and both pools.
+    for (const role of ['optimal', 'regular']) {
+      await safeStep(`bind-distributor-${role}`, ['bind-distributor', '--addresses', addressesFile, '--pool', role], operator);
+      await safeStep(`activate-${role}`, ['activate', '--addresses', addressesFile, '--pool', role, '--nand-shares', '500', '--latch-shares', '60'], operator);
+    }
+    check('distributorBoundOnceInEachPool', (await read<Address>(pool, poolAbi, 'distributor')).toLowerCase() === distributor.toLowerCase()
+      && (await read<Address>(regularPool, poolAbi, 'distributor')).toLowerCase() === distributor.toLowerCase());
+    check('poolActive', await read<boolean>(pool, poolAbi, 'active') && await read<boolean>(regularPool, poolAbi, 'active'));
+    for (const [target, role] of [['nand'], ['latch'], ['distributor'], ['pool', 'optimal'], ['pool', 'regular']] as const) {
+      await safeStep(`renounce-${role ?? target}`, ['renounce', '--addresses', addressesFile, '--target', target, ...(role ? ['--pool', role] : [])], operator);
+    }
+    check('everyOwnershipRenounced', (await Promise.all([nand, latch, distributor, pool, regularPool].map(a => read<Address>(a, ownableAbi, 'owner')))).every(o => o === zeroAddress));
+    const finality = await step('finality', ['finality', '--addresses', addressesFile, '--pool', 'optimal']);
     check('readyForFirstAdmission', finality.status === 'READY_FOR_FIRST_ADMISSION', finality);
+    const regularFinality = await step('finality-regular', ['finality', '--addresses', addressesFile, '--pool', 'regular']);
+    check('regularPoolReadyForFirstAdmission', regularFinality.status === 'READY_FOR_FIRST_ADMISSION', regularFinality);
 
     // Below the threshold the Safe refuses: one signature of two.
     const lone = await safeTx(operator, pool, 0n, encodeFunctionData({ abi: poolAbi, functionName: 'releaseA' }), 0);
@@ -327,12 +340,12 @@ async function main() {
       moves.push({ id, holder });
     }
     const [firstA, firstB, ...later] = miners;
-    const first = await safeStep('deposit-first', ['deposit', '--addresses', addressesFile, '--token-ids', `${firstA},${firstB}`], member);
+    const first = await safeStep('deposit-first', ['deposit', '--addresses', addressesFile, '--pool', 'optimal', '--token-ids', `${firstA},${firstB}`], member);
     check('approvalAndDepositInOneSafeTransaction', first.files.length === 1 && first.files[0].transactions === 2, first.files);
     const firstAdmission = parseEventLogs({ abi: poolAbi, eventName: 'MinersAdmitted', logs: first.receipts[0].logs })[0]?.args as { settledOldIncome: bigint; carriedIncome: bigint; newPeriodIncome: bigint } | undefined;
     check('firstAdmissionCarriesRealIncome', firstAdmission !== undefined && firstAdmission.carriedIncome > 0n, firstAdmission);
     await advance(3600);
-    const second = await safeStep('deposit-later', ['deposit', '--addresses', addressesFile, '--token-ids', later.join(',')], member);
+    const second = await safeStep('deposit-later', ['deposit', '--addresses', addressesFile, '--pool', 'optimal', '--token-ids', later.join(',')], member);
     check('laterDepositIsOneCall', second.files.length === 1 && second.files[0].transactions === 1, second.files);
     const laterAdmission = parseEventLogs({ abi: poolAbi, eventName: 'MinersAdmitted', logs: second.receipts[0].logs })[0]?.args as { settledOldIncome: bigint; carriedIncome: bigint; newPeriodIncome: bigint } | undefined;
     check('oldIncomeSettledInsideSafeAdmission', laterAdmission !== undefined && laterAdmission.settledOldIncome > 0n && laterAdmission.carriedIncome > 0n, laterAdmission);
@@ -341,13 +354,13 @@ async function main() {
 
     // The member Safe takes its receipts and claims their BEM.
     await advance(3600);
-    await step('harvest', ['harvest', '--addresses', addressesFile, '--all', '--isolate-failures', '--from', actor.keeper, '--send-local']);
+    await step('harvest', ['harvest', '--addresses', addressesFile, '--pool', 'optimal', '--all', '--isolate-failures', '--from', actor.keeper, '--send-local']);
     await safeStep('member-claims-receipts', ['claim-receipts', '--addresses', addressesFile], member);
     check('memberSafeHoldsItsReceipts', (await readHeldIds(rpc, nand, member.address)).length === 50 && (await readHeldIds(rpc, latch, member.address)).length === 10);
     const matches = await step('verify-after-delivery', ['verify-allocation', '--addresses', addressesFile, '--artifact', `${DIR}/artifact.json`]);
     check('allocationMatchesAfterSafeDelivery', matches.status === 'FINALIZED_AND_MATCHES', matches);
     const before = await bemOf(member.address);
-    const claim = await safeStep('member-claims-bem', ['claim', '--addresses', addressesFile, '--all'], member);
+    const claim = await safeStep('member-claims-bem', ['claim', '--addresses', addressesFile, '--pool', 'optimal', '--all'], member);
     const expected = BigInt(claim.result.expectedPayoutRaw as bigint | string);
     check('memberSafeReceivedExactPayout', expected > 0n && (await bemOf(member.address)) - before === expected, { expected });
 
@@ -355,20 +368,20 @@ async function main() {
     // transfers C's whole unpaid floor(2T/84) to the fixed sink (which already holds BEM on BSC).
     const sink = await read<Address>(pool, poolAbi, 'SINK');
     const sinkBefore = await bemOf(sink);
-    await step('release', ['release', '--addresses', addressesFile, '--from', actor.keeper, '--send-local']);
+    await step('release', ['release', '--addresses', addressesFile, '--pool', 'optimal', '--from', actor.keeper, '--send-local']);
     const paidA = await bemOf(operator.address), paidB = await bemOf(recipient.address);
     check('safeRecipientsPaidEqually', paidA > 0n && paidA === paidB, { paidA, paidB });
     const sinkPaid1 = await read<bigint>(pool, poolAbi, 'sinkPaid');
     const total1 = await read<bigint>(pool, poolAbi, 'totalAccounted');
     check('sinkPaidCsWeightWithTheRelease', sinkPaid1 === (total1 * 2n) / 84n && (await bemOf(sink)) - sinkBefore === sinkPaid1 && paidA === total1 / 84n, { sinkPaid1, total1 });
-    await safeStep('set-recipient-a', ['set-recipient', '--addresses', addressesFile, '--role', 'A', '--to', actor.newRecipientA], operator);
-    await safeStep('set-recipient-b', ['set-recipient', '--addresses', addressesFile, '--role', 'B', '--to', actor.newRecipientB], recipient);
+    await safeStep('set-recipient-a', ['set-recipient', '--addresses', addressesFile, '--pool', 'optimal', '--role', 'A', '--to', actor.newRecipientA], operator);
+    await safeStep('set-recipient-b', ['set-recipient', '--addresses', addressesFile, '--pool', 'optimal', '--role', 'B', '--to', actor.newRecipientB], recipient);
     check('rolesMovedBySafes', await read<Address>(pool, poolAbi, 'recipientA') === actor.newRecipientA && await read<Address>(pool, poolAbi, 'recipientB') === actor.newRecipientB);
     await advance(3600);
-    await step('harvest-2', ['harvest', '--addresses', addressesFile, '--all', '--isolate-failures', '--from', actor.keeper, '--send-local']);
+    await step('harvest-2', ['harvest', '--addresses', addressesFile, '--pool', 'optimal', '--all', '--isolate-failures', '--from', actor.keeper, '--send-local']);
     // Releases are permissionless: the operator Safe, no longer a recipient, runs this one (a MultiSend of
     // releaseA and releaseB with the planned bound as gas limit).
-    await safeStep('release-2-by-safe', ['release', '--addresses', addressesFile], operator);
+    await safeStep('release-2-by-safe', ['release', '--addresses', addressesFile, '--pool', 'optimal'], operator);
     const newA = await bemOf(actor.newRecipientA), newB = await bemOf(actor.newRecipientB);
     check('newRecipientsPaidAndSafesNoLonger', newA > 0n && newA === newB && await bemOf(operator.address) === paidA && await bemOf(recipient.address) === paidB, { newA, newB });
     const sinkPaid2 = await read<bigint>(pool, poolAbi, 'sinkPaid');
@@ -382,15 +395,15 @@ async function main() {
     await send(actor.executor, member.address, transferData, 'member Safe transfers NAND #1 to alice (owner-signed Safe transaction)');
     check('memberSafeTransferredAReceipt', await read<bigint>(nand, receiptAbi, 'balanceOf', [actor.alice, 1n]) === 1n && await read<bigint>(nand, receiptAbi, 'balanceOf', [member.address, 1n]) === 0n);
     await advance(3600);
-    await step('harvest-3', ['harvest', '--addresses', addressesFile, '--all', '--isolate-failures', '--from', actor.keeper, '--send-local']);
+    await step('harvest-3', ['harvest', '--addresses', addressesFile, '--pool', 'optimal', '--all', '--isolate-failures', '--from', actor.keeper, '--send-local']);
     const aliceBefore = await bemOf(actor.alice);
-    const aliceClaim = await step('alice-claims-transferred-receipt', ['claim', '--addresses', addressesFile, '--from', actor.alice, '--nand', '1', '--send-local']);
+    const aliceClaim = await step('alice-claims-transferred-receipt', ['claim', '--addresses', addressesFile, '--pool', 'optimal', '--from', actor.alice, '--nand', '1', '--send-local']);
     const alicePaid = (await bemOf(actor.alice)) - aliceBefore;
     check('newHolderClaimsAfterSafeTransfer', alicePaid > 0n && alicePaid === BigInt(aliceClaim.expectedPayoutRaw as bigint | string), { alicePaid });
-    const formerHolder = await step('member-preview-for-transferred-receipt', ['claim', '--addresses', addressesFile, '--holder', member.address, '--nand', '1']);
+    const formerHolder = await step('member-preview-for-transferred-receipt', ['claim', '--addresses', addressesFile, '--pool', 'optimal', '--holder', member.address, '--nand', '1']);
     check('formerSafeHolderCannotClaimIt', json(formerHolder.notHeld ?? {}).includes('"1"'), formerHolder);
 
-    const reconcile = await step('reconcile-deep', ['reconcile', '--addresses', addressesFile, '--deep']);
+    const reconcile = await step('reconcile-deep', ['reconcile', '--addresses', addressesFile, '--pool', 'optimal', '--deep']);
     check('reconcilePass', reconcile.status === 'PASS', reconcile.checks);
 
     // Across every Safe transaction: estimate <= planned bound <= cap, and both execution paths used.

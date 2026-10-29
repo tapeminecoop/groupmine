@@ -11,11 +11,13 @@ const NAND = getAddress('0x00000000000000000000000000000000000000a1');
 const LATCH = getAddress('0x00000000000000000000000000000000000000a2');
 const POOL = getAddress('0x00000000000000000000000000000000000000a3');
 const POOL_Q = getAddress('0x00000000000000000000000000000000000000a4');
+/** The processor's second pool (2.3.0): the distributor serves POOL (optimal) and REGULAR. */
+const REGULAR = getAddress('0x00000000000000000000000000000000000000a5');
 const ISSUER = getAddress('0x0000000000000000000000000000000000001555');
 const ALICE = getAddress('0x00000000000000000000000000000000000a11ce');
 const BOB = getAddress('0x0000000000000000000000000000000000000b0b');
 const CAROL = getAddress('0x00000000000000000000000000000000000ca401');
-const TARGET = { chainId: 56, distributor: D, pool: POOL, nandReceipt: NAND, latchReceipt: LATCH };
+const TARGET = { chainId: 56, distributor: D, optimalPool: POOL, regularPool: REGULAR, nandReceipt: NAND, latchReceipt: LATCH };
 const ids = (first: number, count: number) => Array.from({ length: count }, (_, i) => first + i);
 
 const range = (category: number, firstId: number, count: number, delivered = 0): OnChainRange =>
@@ -32,8 +34,8 @@ function chain(overrides: Partial<AllocationState> = {}): AllocationState {
     for (let i = 0n; i < r.delivered; i++) holders[c][Number(r.firstId + i) - 1] = w.wallet;
   }
   return {
-    chainId: 56, blockNumber: 1000n, blockHash: '0x01', distributor: D, pool: POOL,
-    distributorReceipts: { NAND, LATCH }, poolReceipts: { NAND, LATCH }, receiptCategories: { NAND: NAND_CATEGORY, LATCH: LATCH_CATEGORY }, finalized: false,
+    chainId: 56, blockNumber: 1000n, blockHash: '0x01', distributor: D, pools: { optimal: POOL, regular: REGULAR },
+    distributorReceipts: { NAND, LATCH }, poolReceipts: { optimal: { NAND, LATCH }, regular: { NAND, LATCH } }, receiptCategories: { NAND: NAND_CATEGORY, LATCH: LATCH_CATEGORY }, finalized: false,
     totals: { NAND: { inventory: 100n, allocated: 100n, delivered: delivered.NAND }, LATCH: { inventory: 50n, allocated: 50n, delivered: delivered.LATCH } },
     issuance: { NAND: { finalized: true, supply: 100n }, LATCH: { finalized: true, supply: 50n } },
     wallets, holders, ...overrides,
@@ -60,18 +62,25 @@ test('a complete, matching artifact is ready before finalization and matches aft
   assert.deepEqual(ready.verified.ids, { NAND: 100n, LATCH: 50n });
   assert.equal(ready.verified.holdingsChecked, 150);
   assert.equal(ready.mode, 'full-round');
-  assert.deepEqual(ready.identity.pool, { expected: POOL, distributorPool: POOL });
+  assert.deepEqual(ready.identity.pools, { optimal: { expected: POOL, distributor: POOL }, regular: { expected: REGULAR, distributor: REGULAR } });
   assert.equal(ready.blockHash, '0x01');
   assert.equal(verifyAllocation(artifact(), chain({ finalized: true }), TARGET).status, 'FINALIZED_AND_MATCHES');
 });
 
-test('review T-01: a distributor of pool P does not verify against a configuration naming pool Q', () => {
-  // Valid pools P and Q can share the same receipts; the distributor belongs to P (distributor.pool()),
-  // the addresses file names Q. Every wallet and ID matches, so only the pool comparison catches it.
-  const r = verifyAllocation(artifact(), chain({ pool: POOL, poolReceipts: { NAND, LATCH } }), { ...TARGET, pool: POOL_Q });
+test('review T-01 (two pools): a distributor of pools P and R does not verify against a configuration naming pool Q', () => {
+  // Valid pools P, R and Q can share the same receipts; the distributor serves P and R (optimalPool(),
+  // regularPool()), the addresses file names Q in one role. Every wallet and ID matches, so only the
+  // pool comparison catches it.
+  const r = verifyAllocation(artifact(), chain(), { ...TARGET, regularPool: POOL_Q });
   assert.equal(r.status, 'MISMATCH');
-  assert.deepEqual(r.mismatches, [`configured pool ${POOL_Q} is not the distributor's pool ${POOL}`]);
-  assert.deepEqual(r.identity.pool, { expected: POOL_Q, distributorPool: POOL });
+  assert.deepEqual(r.mismatches, [`configured regular pool ${POOL_Q} is not the distributor's regular pool ${REGULAR}`]);
+  assert.deepEqual(r.identity.pools.regular, { expected: POOL_Q, distributor: REGULAR });
+  const q = verifyAllocation(artifact(), chain(), { ...TARGET, optimalPool: POOL_Q });
+  assert.deepEqual(q.mismatches, [`configured optimal pool ${POOL_Q} is not the distributor's optimal pool ${POOL}`]);
+  // Both of the distributor's pools, but in swapped roles: still a mismatch, for each role.
+  const swapped = verifyAllocation(artifact(), chain(), { ...TARGET, optimalPool: REGULAR, regularPool: POOL });
+  assert.equal(swapped.status, 'MISMATCH');
+  assert.equal(swapped.mismatches.length, 2);
   // The configured distributor is compared with the one actually read, and receipt categories are checked.
   const other = getAddress('0x00000000000000000000000000000000000000ee');
   assert.ok(verifyAllocation(artifact(), chain({ distributor: other }), TARGET).mismatches.some(m => m.includes(`configured distributor ${D} is not the one read`)));
@@ -107,7 +116,10 @@ test('review case: wrong chain, distributor or receipts are mismatches even when
   // The addresses file and the distributor's own bindings are checked too.
   assert.equal(verifyAllocation(artifact(), chain(), { ...TARGET, chainId: 97 }).status, 'MISMATCH');
   assert.equal(verifyAllocation(artifact(), chain({ distributorReceipts: { NAND: other, LATCH } }), TARGET).status, 'MISMATCH');
-  assert.equal(verifyAllocation(artifact(), chain({ poolReceipts: { NAND, LATCH: other } }), TARGET).status, 'MISMATCH');
+  assert.equal(verifyAllocation(artifact(), chain({ poolReceipts: { optimal: { NAND, LATCH: other }, regular: { NAND, LATCH } } }), TARGET).status, 'MISMATCH');
+  // Each of the two pools must report the distributor's receipts.
+  const regularOther = verifyAllocation(artifact(), chain({ poolReceipts: { optimal: { NAND, LATCH }, regular: { NAND: other, LATCH } } }), TARGET);
+  assert.ok(regularOther.mismatches.includes(`the regular pool's NAND receipt ${other} is not the distributor's`));
 });
 
 test('ID-level differences are reported in both directions', () => {

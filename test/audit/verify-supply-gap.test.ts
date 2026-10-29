@@ -22,17 +22,18 @@ const D = getAddress('0x00000000000000000000000000000000000000d1');
 const NAND = getAddress('0x00000000000000000000000000000000000000a1');
 const LATCH = getAddress('0x00000000000000000000000000000000000000a2');
 const POOL = getAddress('0x00000000000000000000000000000000000000a3');
+const REGULAR = getAddress('0x00000000000000000000000000000000000000a5'); // 2.3.0: the distributor's second pool
 const ISSUER = getAddress('0x0000000000000000000000000000000000001555');
 const ALICE = getAddress('0x00000000000000000000000000000000000a11ce');
-const TARGET = { chainId: 56, distributor: D, pool: POOL, nandReceipt: NAND, latchReceipt: LATCH };
+const TARGET = { chainId: 56, distributor: D, optimalPool: POOL, regularPool: REGULAR, nandReceipt: NAND, latchReceipt: LATCH };
 const range = (category: number, firstId: number, count: number): OnChainRange => ({ category, firstId: BigInt(firstId), count: BigInt(count), delivered: 0n });
 
 test('receipts retained outside the distributor are reported and block an unqualified full round', () => {
   // Supply is 100 NAND, but only 90 were funded into the distributor; the issuer kept #91-100.
   const holders = { NAND: [...Array<Address>(90).fill(D), ...Array<Address>(10).fill(ISSUER)], LATCH: [] as Address[] };
   const state: AllocationState = {
-    chainId: 56, blockNumber: 1000n, blockHash: '0x01', distributor: D, pool: POOL,
-    distributorReceipts: { NAND, LATCH }, poolReceipts: { NAND, LATCH }, receiptCategories: { NAND: NAND_CATEGORY, LATCH: LATCH_CATEGORY }, finalized: false,
+    chainId: 56, blockNumber: 1000n, blockHash: '0x01', distributor: D, pools: { optimal: POOL, regular: REGULAR },
+    distributorReceipts: { NAND, LATCH }, poolReceipts: { optimal: { NAND, LATCH }, regular: { NAND, LATCH } }, receiptCategories: { NAND: NAND_CATEGORY, LATCH: LATCH_CATEGORY }, finalized: false,
     totals: { NAND: { inventory: 90n, allocated: 90n, delivered: 0n }, LATCH: { inventory: 0n, allocated: 0n, delivered: 0n } },
     issuance: { NAND: { finalized: true, supply: 100n }, LATCH: { finalized: true, supply: 0n } },
     wallets: [{ wallet: ALICE, ranges: [range(0, 1, 90)] }], holders,

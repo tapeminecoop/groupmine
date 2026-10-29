@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
- * TapeOut pooled-mining operator CLI (receipts, distributor, custody pool).
+ * TapeOut pooled-mining operator CLI (receipts, the shared distributor, the two custody pools).
+ * Pool-scoped commands take `--pool optimal|regular`.
  *
  * Write commands never sign. By default they print the transaction plan (calldata, the equivalent
  * `cast send` command, and a simulation when --from is given). `--safe-json FILE` writes a Safe
@@ -25,13 +26,14 @@ import {
   receiverProblems, registerPlans, releasePlans, renouncePlan, residueBound, retractPlans, revokeWalletPlan, runs, safeBatch, sendLocal, setRecipientPlan, simulate,
   systemProblems, tapeoutMinerPoolAbi, validateAllocation, type Addresses, type CategoryName, type SentTx, type TxPlan,
   parseAllocationArtifact, readAllocationState, tapeoutEntitlementReceiptAbi, tapeoutReceiptDistributorAbi, verifyAllocation,
+  POOL_ADDRESS_KEY, POOL_ROLES, type PoolRole,
 } from '../sdk/index.js';
 
 type Flags = Record<string, string | boolean>;
 const BOOLEAN = new Set(['send-local', 'impersonate', 'all', 'all-held', 'miners', 'pending', 'deep', 'isolate-failures', 'partial', 'help']);
 const VALUE = new Set(['system', 'addresses', 'addresses-out', 'allocation', 'artifact', 'artifact-out', 'rpc-url', 'from', 'holder', 'wallet', 'out',
   'safe-json', 'safe', 'income', 'token-ids', 'nand', 'latch', 'ids', 'batch-size', 'category', 'to', 'count', 'role', 'target', 'max-ids',
-  'nand-shares', 'latch-shares', 'nand-burn', 'latch-burn']);
+  'nand-shares', 'latch-shares', 'nand-burn', 'latch-burn', 'pool']);
 export const COMMANDS = ['preview', 'check-system', 'protocol-check', 'deploy-receipts', 'issue', 'retract', 'finalize-issuance', 'deploy', 'deploy-distributor',
   'fund-distributor', 'import-allocation', 'verify-allocation', 'revoke-wallet', 'finalize-allocation', 'bind-distributor', 'activate', 'renounce', 'finality', 'composition',
   'deposit', 'register', 'harvest', 'claim-receipts', 'deliver', 'claim', 'release', 'set-recipient', 'inspect', 'reconcile', 'verify-deployment'] as const;
@@ -85,7 +87,18 @@ const batch = (f: Flags, fallback: number, max: number, command: string) => {
 const category = (f: Flags): CategoryName => { const c = need(f, 'category').toUpperCase(); if (c !== 'NAND' && c !== 'LATCH') throw new Error('--category must be NAND or LATCH'); return c; };
 const rpcUrl = (f: Flags) => str(f, 'rpc-url') ?? process.env.RPC_URL ?? (() => { throw new Error('Missing --rpc-url (or RPC_URL)'); })();
 const receiptAddress = (a: Addresses, c: CategoryName) => addr(c === 'NAND' ? a.nandReceipt : a.latchReceipt);
-const poolOf = (a: Addresses) => { if (!a.pool) throw new Error('addresses file has no pool yet (run deploy)'); return addr(a.pool); };
+/** `--pool optimal|regular`: which of the processor's two custody pools a pool-scoped command acts on. */
+const poolRole = (f: Flags): PoolRole => {
+  const role = str(f, 'pool')?.toLowerCase();
+  if (role !== 'optimal' && role !== 'regular') throw new Error('Missing or invalid --pool: pool-scoped commands act on one of the two custody pools, --pool optimal or --pool regular');
+  return role;
+};
+const poolAddress = (a: Addresses, role: PoolRole) => {
+  const pool = a[POOL_ADDRESS_KEY[role]];
+  if (!pool) throw new Error(`addresses file has no ${POOL_ADDRESS_KEY[role]} yet (run deploy)`);
+  return addr(pool);
+};
+const poolOf = (a: Addresses, f: Flags) => poolAddress(a, poolRole(f));
 const distributorOf = (a: Addresses) => { if (!a.distributor) throw new Error('addresses file has no distributor yet (run deploy)'); return addr(a.distributor); };
 
 /** Per-invocation binding, set by `main`: the chain the reviewed files name and the deployment check. */
@@ -186,7 +199,8 @@ async function writeAddresses(file: string, a: Addresses) {
  *  wallets still waiting for receipts. Full-round coverage unless --partial is given. */
 async function runVerification(rpc: ReturnType<typeof client>, addresses: Addresses, flags: Flags) {
   const distributor = distributorOf(addresses);
-  const target = { chainId: addresses.chainId, distributor, pool: poolOf(addresses), nandReceipt: addr(addresses.nandReceipt), latchReceipt: addr(addresses.latchReceipt) };
+  const target = { chainId: addresses.chainId, distributor, optimalPool: poolAddress(addresses, 'optimal'), regularPool: poolAddress(addresses, 'regular'),
+    nandReceipt: addr(addresses.nandReceipt), latchReceipt: addr(addresses.latchReceipt) };
   // Untrusted input: validated at runtime, then compared with the chain in both directions.
   const artifact = parseAllocationArtifact(JSON.parse(await readFile(need(flags, 'artifact'), 'utf8')));
   const review = str(flags, 'allocation') ? await loadAllocationFile(need(flags, 'allocation')) : undefined;
@@ -217,7 +231,7 @@ export async function main(argv = process.argv.slice(2)): Promise<unknown> {
   const { command, flags } = parse(argv);
   binding = {};
   if (!command || command === 'help' || flags.help || !(COMMANDS as readonly string[]).includes(command)) {
-    return { usage: 'npm run pool -- <command> [flags]', commands: COMMANDS, docs: 'docs/OPERATIONS.md' };
+    return { usage: 'npm run pool -- <command> [flags]', commands: COMMANDS, pools: 'pool-scoped commands take --pool optimal|regular', docs: 'docs/OPERATIONS.md' };
   }
 
   if (command === 'preview') {
@@ -231,7 +245,9 @@ export async function main(argv = process.argv.slice(2)): Promise<unknown> {
 
   if (command === 'check-system') {
     const f = await loadSystemFile(need(flags, 'system'));
-    return { command, status: 'SYSTEM_FILE_VALID', problems: systemProblems(f), depositors: f.pool.depositors, recipients: { A: f.pool.recipientA, B: f.pool.recipientB } };
+    return { command, status: 'SYSTEM_FILE_VALID', problems: systemProblems(f),
+      pools: Object.fromEntries(POOL_ROLES.map(role => [role, { name: f.pools[role].name, owner: f.pools[role].owner, depositors: f.pools[role].depositors,
+        recipients: { A: f.pools[role].recipientA, B: f.pools[role].recipientB } }])), distributorOwner: f.distributor.owner };
   }
 
   if (command === 'deploy-receipts') {
@@ -314,25 +330,36 @@ export async function main(argv = process.argv.slice(2)): Promise<unknown> {
   }
 
   if (command === 'deploy') {
+    // Both custody pools against the one receipt pair; the distributor that serves both comes after them.
     const f = await loadSystemFile(need(flags, 'system'));
-    const poolPlan = deployPoolPlan(f, addr(addresses.nandReceipt), addr(addresses.latchReceipt));
-    if (!flags['send-local']) return execute(command, flags, [poolPlan], { note: 'after deployment, add "pool" to the addresses file and run deploy-distributor' });
-    const first = await execute(command, flags, [poolPlan]) as { transactions: SentTx[] };
-    const pool = addr(first.transactions[0].contractAddress!);
-    const second = await execute(command, flags, [deployDistributorPlan(addr(f.distributor.owner), pool)]) as { transactions: SentTx[] };
-    const updated: Addresses = { ...addresses, pool, distributor: addr(second.transactions[0].contractAddress!) };
+    const poolPlans = POOL_ROLES.map(role => deployPoolPlan(f, role, addr(addresses.nandReceipt), addr(addresses.latchReceipt)));
+    if (!flags['send-local']) return execute(command, flags, poolPlans, { note: 'after deployment, add "optimalPool" and "regularPool" to the addresses file and run deploy-distributor' });
+    const first = await execute(command, flags, poolPlans) as { transactions: SentTx[] };
+    const [optimalPool, regularPool] = first.transactions.map(t => addr(t.contractAddress!));
+    const second = await execute(command, flags, [deployDistributorPlan(addr(f.distributor.owner), optimalPool, regularPool)]) as { transactions: SentTx[] };
+    const updated: Addresses = { ...addresses, optimalPool, regularPool, distributor: addr(second.transactions[0].contractAddress!) };
     await writeAddresses(need(flags, 'addresses'), updated);
     return { command, mode: 'SENT_LOCAL_ANVIL', transactions: [...first.transactions, ...second.transactions], addresses: updated };
   }
 
   if (command === 'deploy-distributor') {
     const f = await loadSystemFile(need(flags, 'system'));
-    const pool = poolOf(addresses);
-    const bound = await Promise.all((['nandReceipt', 'latchReceipt'] as const).map(fn => rpc.readContract({ address: pool, abi: tapeoutMinerPoolAbi, functionName: fn })));
-    if (getAddress(bound[0]) !== addr(addresses.nandReceipt) || getAddress(bound[1]) !== addr(addresses.latchReceipt)) {
-      throw new Error(`Pool ${pool} is bound to receipts ${bound.join(', ')}, not the ones in the addresses file`);
+    const pools = { optimal: poolAddress(addresses, 'optimal'), regular: poolAddress(addresses, 'regular') };
+    // Mirror of the distributor constructor: two different pools, both with the addresses file's
+    // receipts and the same BEM, Mining and miner collection.
+    if (pools.optimal === pools.regular) throw new Error(`The optimal and regular pool are the same contract ${pools.optimal}`);
+    const fields = ['nandReceipt', 'latchReceipt', 'bem', 'mining', 'minerCollection'] as const;
+    const [o, r] = await Promise.all(POOL_ROLES.map(role => Promise.all(fields.map(fn =>
+      rpc.readContract({ address: pools[role], abi: tapeoutMinerPoolAbi, functionName: fn }) as Promise<Address>))));
+    const problems: string[] = [];
+    for (const [role, values] of [['optimal', o], ['regular', r]] as const) {
+      if (getAddress(values[0]) !== addr(addresses.nandReceipt) || getAddress(values[1]) !== addr(addresses.latchReceipt)) {
+        problems.push(`the ${role} pool ${pools[role]} is bound to receipts ${values[0]}, ${values[1]}, not the ones in the addresses file`);
+      }
     }
-    const result = await execute(command, flags, [deployDistributorPlan(addr(f.distributor.owner), pool)]) as Record<string, unknown>;
+    fields.slice(2).forEach((fn, i) => { if (getAddress(o[i + 2]) !== getAddress(r[i + 2])) problems.push(`the pools report different ${fn} (${o[i + 2]}, ${r[i + 2]})`); });
+    if (problems.length) throw new Error(`deploy-distributor preflight failed: ${problems.join('; ')}`);
+    const result = await execute(command, flags, [deployDistributorPlan(addr(f.distributor.owner), pools.optimal, pools.regular)]) as Record<string, unknown>;
     const sent = result.transactions as SentTx[] | undefined;
     if (sent) {
       const updated: Addresses = { ...addresses, distributor: addr(sent[0].contractAddress!) };
@@ -424,30 +451,35 @@ export async function main(argv = process.argv.slice(2)): Promise<unknown> {
   }
 
   if (command === 'bind-distributor') {
-    // 2.2.0: once, before activation. The addresses file's distributor, already checked against the
-    // template and its bindings by the deployment check, must belong to this pool and these receipts.
-    const pool = poolOf(addresses);
+    // Once per pool, before that pool's activation. The addresses file's distributor, already checked
+    // against the template and its bindings by the deployment check, must count this pool, in this role,
+    // among its two pools and report these receipts. Each of the two pools binds it separately.
+    const role = poolRole(flags);
+    const pool = poolAddress(addresses, role);
     const distributor = distributorOf(addresses);
-    const [bound, active, dPool, dNand, dLatch] = await Promise.all([
+    const [bound, active, member, fixed, dNand, dLatch] = await Promise.all([
       rpc.readContract({ address: pool, abi: tapeoutMinerPoolAbi, functionName: 'distributor' }),
       rpc.readContract({ address: pool, abi: tapeoutMinerPoolAbi, functionName: 'active' }),
-      rpc.readContract({ address: distributor, abi: tapeoutReceiptDistributorAbi, functionName: 'pool' }),
+      rpc.readContract({ address: distributor, abi: tapeoutReceiptDistributorAbi, functionName: 'isPool', args: [pool] }),
+      rpc.readContract({ address: distributor, abi: tapeoutReceiptDistributorAbi, functionName: role === 'optimal' ? 'optimalPool' : 'regularPool' }),
       rpc.readContract({ address: distributor, abi: tapeoutReceiptDistributorAbi, functionName: 'nandReceipt' }),
       rpc.readContract({ address: distributor, abi: tapeoutReceiptDistributorAbi, functionName: 'latchReceipt' }),
-    ]) as [Address, boolean, Address, Address, Address];
+    ]) as [Address, boolean, boolean, Address, Address, Address];
     const problems: string[] = [];
-    if (getAddress(bound) !== zeroAddress) problems.push(getAddress(bound) === distributor ? 'the distributor is already bound' : `the pool is already bound to another distributor ${bound}; it can never be replaced`);
-    if (active) problems.push('the pool is already active');
-    if (getAddress(dPool) !== pool) problems.push(`distributor ${distributor} belongs to pool ${dPool}`);
+    if (getAddress(bound) !== zeroAddress) problems.push(getAddress(bound) === distributor ? `the distributor is already bound to the ${role} pool` : `the ${role} pool is already bound to another distributor ${bound}; it can never be replaced`);
+    if (active) problems.push(`the ${role} pool is already active`);
+    if (!member) problems.push(`distributor ${distributor} does not serve pool ${pool}`);
+    else if (getAddress(fixed) !== pool) problems.push(`distributor ${distributor} serves ${pool} as its other pool, not as its ${role} pool`);
     if (getAddress(dNand) !== addr(addresses.nandReceipt) || getAddress(dLatch) !== addr(addresses.latchReceipt)) problems.push('the distributor reports other receipts');
     if (problems.length) throw new Error(`bind-distributor preflight failed: ${problems.join('; ')}`);
-    return execute(command, flags, [bindDistributorPlan(pool, distributor)], { note: 'One-time and permanent: the pool keeps this distributor; activation needs it bound and finalized.' });
+    return execute(command, flags, [bindDistributorPlan(pool, distributor)], { pool: { role, address: pool },
+      note: 'One-time and permanent: the pool keeps this distributor; activation needs it bound and finalized. The other pool binds the same distributor with its own bind-distributor.' });
   }
 
   if (command === 'activate') {
     const nandShares = uint(need(flags, 'nand-shares'));
     const latchShares = uint(need(flags, 'latch-shares'));
-    const pool = poolOf(addresses);
+    const pool = poolOf(addresses, flags);
     const receipts = await Promise.all([readReceiptSummary(rpc, addr(addresses.nandReceipt)), readReceiptSummary(rpc, addr(addresses.latchReceipt))]);
     const bound = await rpc.readContract({ address: pool, abi: tapeoutMinerPoolAbi, functionName: 'distributor' }) as Address;
     const problems: string[] = [];
@@ -457,38 +489,75 @@ export async function main(argv = process.argv.slice(2)): Promise<unknown> {
     else if (!addresses.distributor || getAddress(bound) !== addr(addresses.distributor)) problems.push(`the pool is bound to distributor ${bound}, not the addresses file's ${addresses.distributor ?? 'none'}`);
     else if (!(await readDistributorSummary(rpc, getAddress(bound))).allocationFinalized) problems.push('the bound distributor\'s allocation is not finalized (finalize-allocation first)');
     if (problems.length) throw new Error(`Activation preflight failed: ${problems.join('; ')}`);
-    return execute(command, flags, [activatePlan(pool, nandShares, latchShares)], { note: 'After activation, renounce the NAND and LATCH receipts, the distributor and the pool: the first admission requires all four renounced.' });
+    return execute(command, flags, [activatePlan(pool, nandShares, latchShares)], { pool: { role: poolRole(flags), address: pool },
+      note: 'After activation, renounce this pool; the shared NAND and LATCH receipts and the shared distributor are renounced once for both pools. The first admission into this pool requires all four renounced.' });
   }
 
   if (command === 'renounce') {
     const target = need(flags, 'target');
-    const map: Record<string, Address | undefined> = { pool: addresses.pool as Address, distributor: addresses.distributor as Address, nand: addresses.nandReceipt as Address, latch: addresses.latchReceipt as Address };
-    if (!map[target]) throw new Error('--target must be pool, distributor, nand or latch (and deployed)');
+    // `--target pool` names one of the two pools with --pool; the distributor and receipts are shared.
+    const role = target === 'pool' ? poolRole(flags) : undefined;
+    const map: Record<string, Address | undefined> = { pool: role ? addresses[POOL_ADDRESS_KEY[role]] as Address : undefined, distributor: addresses.distributor as Address,
+      nand: addresses.nandReceipt as Address, latch: addresses.latchReceipt as Address };
+    if (!map[target]) throw new Error('--target must be pool (with --pool optimal|regular), distributor, nand or latch (and deployed)');
     const contract = addr(map[target]!);
     // Renouncing before a contract's one-time setup is done would leave it permanently unusable.
     const check = {
       pool: { abi: tapeoutMinerPoolAbi, fn: 'active', unready: 'the pool is not activated: binding the distributor and activation (the owner\'s only powers) would become impossible', removes: 'the last owner of the pool; custody (the first admission) requires it' },
-      distributor: { abi: tapeoutReceiptDistributorAbi, fn: 'allocationFinalized', unready: 'the allocation is not finalized: it could never be finalized and no receipt could be delivered', removes: 'nothing further: allocation functions are closed after finalization' },
+      distributor: { abi: tapeoutReceiptDistributorAbi, fn: 'allocationFinalized', unready: 'the allocation is not finalized: it could never be finalized and no receipt could be delivered', removes: 'nothing further: allocation functions are closed after finalization (the first admission into either pool requires it)' },
       nand: { abi: tapeoutEntitlementReceiptAbi, fn: 'issuanceFinalized', unready: 'NAND issuance is not finalized: it could never be finalized and the pool could never activate', removes: 'the issuer\'s setURI (metadata only); the supply is already fixed' },
       latch: { abi: tapeoutEntitlementReceiptAbi, fn: 'issuanceFinalized', unready: 'LATCH issuance is not finalized: it could never be finalized and the pool could never activate', removes: 'the issuer\'s setURI (metadata only); the supply is already fixed' },
     }[target]!;
     const ready = await rpc.readContract({ address: contract, abi: check.abi, functionName: check.fn } as never) as boolean;
     if (!ready) throw new Error(`Refusing to plan renounceOwnership of the ${target}: ${check.unready}`);
-    return execute(command, flags, [renouncePlan(contract, target)], { removes: check.removes,
-      note: 'Each contract is renounced separately; renouncing one finalizes nothing else. The first admission requires the receipts, the distributor and the pool all renounced (see finality).' });
+    return execute(command, flags, [renouncePlan(contract, role ? `${role} pool` : target)], { removes: check.removes,
+      note: 'Each contract is renounced separately; renouncing one finalizes nothing else. The first admission into a pool requires the shared receipts, the shared distributor and that pool all renounced (see finality).' });
   }
 
   if (command === 'finality') {
-    const pool = poolOf(addresses);
+    const pool = poolOf(addresses, flags);
     const block = await rpc.getBlock({ blockTag: 'latest' });
     const f = await readFinality(rpc, pool, block.number);
-    return { command, blockNumber: block.number, blockHash: block.hash, status: f.custodyOpen ? 'CUSTODY_OPEN' : f.ready ? 'READY_FOR_FIRST_ADMISSION' : 'NOT_FINAL', ...f,
+    return { command, pool: { role: poolRole(flags), address: pool }, blockNumber: block.number, blockHash: block.hash, status: f.custodyOpen ? 'CUSTODY_OPEN' : f.ready ? 'READY_FOR_FIRST_ADMISSION' : 'NOT_FINAL', ...f,
       note: 'The pool enforces these conditions at the first admission; finality does not prove the off-chain contribution records or the allocation JSON were correct.' };
   }
 
-  const pool = poolOf(addresses);
+  if (command === 'claim-receipts' || command === 'deliver') {
+    const distributor = distributorOf(addresses);
+    const wallet = addr(need(flags, command === 'deliver' ? 'wallet' : 'from'));
+    const ranges = await readWalletRanges(rpc, distributor, wallet);
+    const waiting = { NAND: 0n, LATCH: 0n };
+    for (const r of ranges) waiting[r.category === 0 ? 'NAND' : 'LATCH'] += r.count - r.delivered;
+    if (waiting.NAND + waiting.LATCH === 0n) return { command, status: 'NOTHING_TO_DELIVER', wallet };
+    // A delivery's cost grows with the IDs and ranges it transfers, and anyone may deliver part of the
+    // wallet before a planned call executes: every call is bounded for any reachable cursor position
+    // (--max-ids caps every delivery).
+    const fits = maxSafeDeliverable(ranges);
+    const cap = str(flags, 'max-ids') ? Number(uint(need(flags, 'max-ids'))) : 300;
+    if (cap < 1) throw new Error('Invalid --max-ids');
+    if (str(flags, 'max-ids') && cap > fits) throw new Error(`--max-ids ${cap} is above ${fits} for this wallet's ranges at every reachable cursor position: BSC limits a transaction's gas to ${TX_GAS_CAP} (BEP-652)`);
+    const push = command === 'deliver';
+    const note = 'Each delivery fits its gas limit even if others deliver part of this wallet first. If they deliver all of it, a remaining delivery reverts with NothingToDeliver (nothing is lost); replan instead of retrying it. A delivered receipt earns in both pools.';
+    if (flags['send-local']) {
+      // Re-read and replan before every submission (in addition to the reachable-state bound).
+      const transactions: SentTx[] = [];
+      let last: Record<string, unknown> = {};
+      for (let i = 0; i < 10_000; i++) {
+        const current = await readWalletRanges(rpc, distributor, wallet);
+        if (!current.some(r => r.delivered < r.count)) break;
+        last = await execute(command, flags, [deliveryPlans(distributor, wallet, current, cap, push)[0]]) as Record<string, unknown>;
+        transactions.push(...(last.transactions as SentTx[]));
+      }
+      return { ...last, transactions, waiting, deliveries: transactions.length, replannedBeforeEachSend: true, note };
+    }
+    const plans = deliveryPlans(distributor, wallet, ranges, cap, push);
+    return execute(command, flags, plans, { waiting, deliveries: plans.length, note });
+  }
+
+  // Everything below acts on one of the two pools (--pool optimal|regular).
+  const pool = poolOf(addresses, flags);
   // Read commands have no deployment check: the pool's VERSION gates its tuple layout (sdk/pool.ts
-  // assertReadLayout). The local canary-3 layout is readable on a loopback development node only.
+  // assertReadLayout). The local canary-4 layout is readable on a loopback development node only.
   const readPolicy = async () => readLayoutPolicyFor((await executionContext(rpc, rpcUrl(flags))).kind);
 
   if (command === 'composition') {
@@ -545,38 +614,6 @@ export async function main(argv = process.argv.slice(2)): Promise<unknown> {
     return execute(command, flags, plans, { miners: ids.length, excludedFailingMiners: failing });
   }
 
-  if (command === 'claim-receipts' || command === 'deliver') {
-    const distributor = distributorOf(addresses);
-    const wallet = addr(need(flags, command === 'deliver' ? 'wallet' : 'from'));
-    const ranges = await readWalletRanges(rpc, distributor, wallet);
-    const waiting = { NAND: 0n, LATCH: 0n };
-    for (const r of ranges) waiting[r.category === 0 ? 'NAND' : 'LATCH'] += r.count - r.delivered;
-    if (waiting.NAND + waiting.LATCH === 0n) return { command, status: 'NOTHING_TO_DELIVER', wallet };
-    // A delivery's cost grows with the IDs and ranges it transfers, and anyone may deliver part of the
-    // wallet before a planned call executes: every call is bounded for any reachable cursor position
-    // (--max-ids caps every delivery).
-    const fits = maxSafeDeliverable(ranges);
-    const cap = str(flags, 'max-ids') ? Number(uint(need(flags, 'max-ids'))) : 300;
-    if (cap < 1) throw new Error('Invalid --max-ids');
-    if (str(flags, 'max-ids') && cap > fits) throw new Error(`--max-ids ${cap} is above ${fits} for this wallet's ranges at every reachable cursor position: BSC limits a transaction's gas to ${TX_GAS_CAP} (BEP-652)`);
-    const push = command === 'deliver';
-    const note = 'Each delivery fits its gas limit even if others deliver part of this wallet first. If they deliver all of it, a remaining delivery reverts with NothingToDeliver (nothing is lost); replan instead of retrying it.';
-    if (flags['send-local']) {
-      // Re-read and replan before every submission (in addition to the reachable-state bound).
-      const transactions: SentTx[] = [];
-      let last: Record<string, unknown> = {};
-      for (let i = 0; i < 10_000; i++) {
-        const current = await readWalletRanges(rpc, distributor, wallet);
-        if (!current.some(r => r.delivered < r.count)) break;
-        last = await execute(command, flags, [deliveryPlans(distributor, wallet, current, cap, push)[0]]) as Record<string, unknown>;
-        transactions.push(...(last.transactions as SentTx[]));
-      }
-      return { ...last, transactions, waiting, deliveries: transactions.length, replannedBeforeEachSend: true, note };
-    }
-    const plans = deliveryPlans(distributor, wallet, ranges, cap, push);
-    return execute(command, flags, plans, { waiting, deliveries: plans.length, note });
-  }
-
   if (command === 'claim') {
     const holder = addr(str(flags, 'holder') ?? need(flags, 'from'));
     const block = await rpc.getBlockNumber();
@@ -600,7 +637,8 @@ export async function main(argv = process.argv.slice(2)): Promise<unknown> {
     const expected = holdings.NAND.ids.reduce((s, id, i) => (nand.includes(BigInt(id)) ? s + holdings.NAND.claimable[i] : s), 0n)
       + holdings.LATCH.ids.reduce((s, id, i) => (latch.includes(BigInt(id)) ? s + holdings.LATCH.claimable[i] : s), 0n);
     return execute(command, flags, claimPlans(pool, nand, latch, batch(flags, 200, maxIdsPerTx(CLAIM_GAS), command)), {
-      holder, ids: { NAND: nand, LATCH: latch },
+      holder, pool: { role: poolRole(flags), address: pool, note: 'each pool pays its own income for a receipt; claiming here leaves the other pool\'s entitlement unchanged' },
+      ids: { NAND: nand, LATCH: latch },
       ...(canonical.normalized ? { normalized: { removedDuplicates: canonical.duplicates, note: 'each receipt is claimed once per category; repeated IDs were removed from the preview, simulation and transaction' } } : {}),
       ...(notHeld.NAND.length + notHeld.LATCH.length ? { notHeld, warning: `${holder} does not hold these IDs at block ${block}: claimBatch would revert NotHolder` } : {}),
       expectedPayoutRaw: expected, expectedPayoutBem: formatBem(expected),
@@ -624,7 +662,7 @@ export async function main(argv = process.argv.slice(2)): Promise<unknown> {
     const finality = await readFinality(rpc, pool, block.number);
     const holder = str(flags, 'holder');
     return {
-      command, blockNumber: block.number, blockHash: block.hash, pool: summary, receipts, distributor, finality,
+      command, role: poolRole(flags), blockNumber: block.number, blockHash: block.hash, pool: summary, receipts, distributor, finality,
       admission: { registeredMiners: summary.minerCount, estimatedGasForOneMiner: admissionGasEstimate(summary.minerCount, 1n, !summary.custodyOpen), registryLimitForSingleAdmission: maxRegisteredForAdmission(1n) },
       ...(holder ? { holdings: await readHoldings(rpc, pool, addr(holder), addresses.distributor ? addr(addresses.distributor) : undefined, block.number) } : {}),
       ...(flags.miners ? { miners: await readMiners(rpc, pool, !!flags.pending, block.number) } : {}),
@@ -639,7 +677,7 @@ export async function main(argv = process.argv.slice(2)): Promise<unknown> {
     const carriedRecords = flags.deep ? await checkCarriedRecords(rpc, pool, block.number) : undefined;
     const { status: ledgerStatus, ...ledgerDetail } = ledger;
     const status = ledgerStatus === 'PASS' && (!perId || (perId.NAND.match && perId.LATCH.match)) && (!carriedRecords || carriedRecords.match) ? 'PASS' : 'FAIL';
-    const report = { command, status, ledgerStatus, blockNumber: block.number, blockHash: block.hash, pool, composition: summary.composition, reconciliation: summary.reconciliation,
+    const report = { command, status, ledgerStatus, blockNumber: block.number, blockHash: block.hash, pool, role: poolRole(flags), composition: summary.composition, reconciliation: summary.reconciliation,
       ledgerState: summary.state, carried: summary.carried, ...ledgerDetail, ...(perId ? { perIdHistories: perId } : {}), ...(carriedRecords ? { carriedRecords } : {}) };
     const out = str(flags, 'out');
     if (out) await writeFile(out, json(report) + '\n');

@@ -18,6 +18,8 @@ contract CanaryRecoveryTest is Test {
     Entitlement internal nand;
     Entitlement internal latch;
     Canary internal pool;
+    /// @dev canary-4: the second canary pool the shared distributor needs; it never admits a miner.
+    Canary internal regularPool;
     CanaryParticipant internal helper;
     TapeoutReceiptDistributor internal distributor;
 
@@ -44,8 +46,24 @@ contract CanaryRecoveryTest is Test {
                 "RECOVERABLE CANARY"
             )
         );
-        // The production distributor, bound to the canary pool (same receipt views).
-        distributor = new TapeoutReceiptDistributor(wallet, TapeoutMinerPool(address(pool)));
+        regularPool = new Canary(
+            Canary.Deployment(
+                wallet,
+                address(bem),
+                address(mining),
+                address(nft),
+                address(nand),
+                address(latch),
+                wallet,
+                address(helper),
+                list,
+                "RECOVERABLE CANARY REGULAR (NO MINERS)"
+            )
+        );
+        // The production distributor, serving both canary pools (same receipt and protocol views).
+        distributor = new TapeoutReceiptDistributor(
+            wallet, TapeoutMinerPool(address(pool)), TapeoutMinerPool(address(regularPool))
+        );
         vm.prank(wallet);
         helper.bindPool(pool);
         nft.mint(wallet, 3204);
@@ -54,9 +72,9 @@ contract CanaryRecoveryTest is Test {
         mining.start(address(nft), 12485, 1, 1);
     }
 
-    /// @dev canary-3 keeps production's initialization: bind the distributor, finalize its (here empty)
-    ///      allocation, activate, and renounce every owner before the first admission. Recovery stays
-    ///      with the immutable recovery controller.
+    /// @dev canary-4 keeps production's initialization: each pool binds the shared distributor, its (here
+    ///      empty) allocation is finalized, both pools activate, and every owner renounces before the first
+    ///      admission. Recovery stays with the immutable recovery controller.
     function activate() internal {
         vm.startPrank(wallet);
         nand.issue(wallet, 4);
@@ -64,13 +82,35 @@ contract CanaryRecoveryTest is Test {
         nand.finalizeIssuance();
         latch.finalizeIssuance();
         pool.bindDistributor(address(distributor));
+        regularPool.bindDistributor(address(distributor));
         distributor.finalizeAllocation();
         pool.activate(4, 2);
+        regularPool.activate(4, 2);
         nand.renounceOwnership();
         latch.renounceOwnership();
         distributor.renounceOwnership();
         pool.renounceOwnership();
+        regularPool.renounceOwnership();
         vm.stopPrank();
+    }
+
+    /// @dev canary-4: both canary pools bind the one distributor; the second never holds a miner and its
+    ///      shutdown is independent of the first's.
+    function testSecondCanaryPoolSharesTheDistributorAndClosesOnItsOwn() public {
+        activate();
+        assertEq(pool.distributor(), address(distributor));
+        assertEq(regularPool.distributor(), address(distributor));
+        assertTrue(distributor.isPool(address(pool)) && distributor.isPool(address(regularPool)));
+        vm.prank(wallet);
+        regularPool.shutdown();
+        assertTrue(regularPool.closed());
+        assertFalse(pool.closed());
+        assertEq(regularPool.minerCount(), 0);
+        deposit(3204);
+        assertEq(pool.minerCount(), 1);
+        vm.prank(wallet);
+        vm.expectRevert(Canary.CanaryClosed.selector);
+        regularPool.depositMiners(one(12485));
     }
 
     function one(uint256 id) internal pure returns (uint256[] memory ids) {

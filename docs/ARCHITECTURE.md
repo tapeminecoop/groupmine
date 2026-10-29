@@ -1,33 +1,37 @@
 # Architecture
 
-Four contracts, each deployed and finalized on its own:
+Four contract types, five deployments per processor, each deployed and finalized on its own. Since
+2.3.0 a processor has two custody pools, the **Optimal Pool** and the **Regular Pool**, which share one
+NAND/LATCH receipt pair and one distributor (§2a):
 
 | Contract | Holds | Privileged role and what it can do | What remains after finalization |
 | --- | --- | --- | --- |
 | `TapeoutEntitlementReceipt` (NAND) | — | issuer: `issue`, `retract` (own top IDs only), `finalizeIssuance`, `setURI` | supply fixed forever; until it renounces, the issuer can still change the metadata URI (never balances or supply) |
 | `TapeoutEntitlementReceipt` (LATCH) | — | same code, LATCH category | same |
-| `TapeoutReceiptDistributor` | receipts until delivered | owner: `allocate`, `revokeWallet`, `finalizeAllocation` (all before finalization only) | nothing: beneficiaries and ranges are immutable |
-| `TapeoutMinerPool` | miner NFTs, BEM | owner: `bindDistributor` once (before activation), `activate` once | nothing: distributor, whitelist, protocol addresses, weights and the sink address are fixed; recipient A or B can only move its own role (`setRecipient`) |
+| `TapeoutReceiptDistributor` (one, for both pools) | receipts until delivered | owner: `allocate`, `revokeWallet`, `finalizeAllocation` (all before finalization only) | nothing: its two pools, beneficiaries and ranges are immutable |
+| `TapeoutMinerPool` (Optimal and Regular, same code) | miner NFTs, BEM (each pool its own) | owner: `bindDistributor` once (before activation), `activate` once | nothing: distributor, whitelist, protocol addresses, weights and the sink address are fixed; recipient A or B can only move its own role (`setRecipient`) |
 
-Since 2.2.0 (SALUS finding #3) custody cannot begin while any of these powers remains: the first
-admission requires both issuances and the allocation finalized and all four contracts renounced (§4.6).
+Since 2.2.0 (SALUS finding #3) a pool's custody cannot begin while any of these powers remains: its
+first admission requires both issuances and the allocation finalized and four contracts renounced, the
+two shared receipts, the shared distributor and the pool itself (§4.6).
 
 `PoolMath` is the pure accounting library shared by the pool, the tests and (mirrored in TypeScript) the SDK.
 `IMining` is the subset of the deployed Mining ABI the pool uses.
 
 ```
 receipts:     deploy NAND, deploy LATCH ─► issue in batches ─► move into distributor ─► finalizeIssuance (each)
-pool:         deploy (receipt addresses, A, B, depositor whitelist, protocol)
-distributor:  deploy(pool) ─► import JSON allocation ─► verify ─► finalizeAllocation
-pool:         bindDistributor(distributor) ─► activate(S_N, S_L)
-renounce:     NAND receipt, LATCH receipt, distributor, pool (each separately) ─► custody may begin
-operation:    whitelisted deposits (the first one checks finality) · anyone harvests · holders claim BEM ·
-              anyone releases A or B (each also pays C) · beneficiaries take their receipts (no deadline)
+pools:        deploy Optimal and Regular (same receipt addresses and protocol; own A, B, whitelist, name)
+distributor:  deploy(owner, optimalPool, regularPool) ─► import JSON allocation ─► verify ─► finalizeAllocation
+each pool:    bindDistributor(distributor) ─► activate(S_N, S_L)
+renounce:     NAND receipt, LATCH receipt, distributor (once, shared), each pool ─► that pool's custody may begin
+operation:    per pool: whitelisted deposits (the first one checks finality) · anyone harvests · holders claim
+              BEM · anyone releases A or B (each also pays C) · shared: beneficiaries take their receipts
+              once (no deadline), and the receipts then earn in both pools
 ```
 
 Activation needs finalized issuance, the reviewed supplies, a bound distributor and that distributor's
-allocation finalized. Receipts held by the distributor are part of `S_N`/`S_L` and accrue BEM like any
-other receipt.
+allocation finalized. Receipts held by the distributor are part of `S_N`/`S_L` in both pools and accrue
+BEM in each pool like any other receipt.
 
 ## 1. Entitlement receipts
 
@@ -53,8 +57,9 @@ rejected (`IncompatibleReceipt`), because none of them is guaranteed to keep uni
 supply. Receipts must therefore be deployed from this repository's artifacts, which the CLI does.
 
 `bindDistributor(distributor)` (owner, once, before activation) binds the round's distributor. It must
-be a contract that reports this pool and these receipts (`pool()`, `nandReceipt()`, `latchReceipt()`);
-afterwards nothing can replace it. The pool cannot verify the distributor's code: its immutables differ
+be a contract that counts this pool among its two pools and reports these receipts
+(`isPool(address(this))`, `nandReceipt()`, `latchReceipt()`); afterwards nothing can replace it. Both
+pools of a processor bind the same distributor, each with its own call. The pool cannot verify the distributor's code: its immutables differ
 per deployment, so its code hash does too. The operator's deployed-code identity check (masked
 comparison with the SDK template, `verify-deployment`, run before every write) is what proves the bound
 contract is the reviewed `TapeoutReceiptDistributor`; a contract that merely mimics the views could be
@@ -65,18 +70,49 @@ finalized issuance and their supplies to equal the counts the operator reviewed,
 `S_N + S_L = 0`, and requires the bound distributor's allocation to be finalized. The supplies become the
 pool's permanent denominators.
 
+## 2a. Two custody pools, one distributor (2.3.0)
+
+New in 2.3.0 and not covered by the SALUS assessment or the internal reviews
+([TWO_POOL_DISTRIBUTOR_CHANGE.md](TWO_POOL_DISTRIBUTOR_CHANGE.md)).
+
+- **Fixed pair.** The distributor's constructor takes `(owner, optimalPool, regularPool)` and stores
+  both as immutables (`optimalPool()`, `regularPool()`). It refuses a zero or code-less pool
+  (`InvalidAddress`), the same pool twice (`DuplicatePool`), pools whose `nandReceipt()` or
+  `latchReceipt()` differ (`IncompatiblePoolReceipts`), and pools whose `bem()`, `mining()` or
+  `minerCollection()` differ (`IncompatiblePoolProtocol`), i.e. pools of another processor. Its receipts
+  are the pools' receipts. There is no setter, registration or list: membership is
+  `isPool(candidate)`, true for exactly these two addresses.
+- **Binding.** Each pool binds the distributor once, before its own activation, with the same checks as
+  before plus membership (§2). A third pool cannot bind it, even with the same receipts. The pools do
+  not read each other: one may be bound, activated and holding miners while the other is still unbound.
+  Neither pool checks which distributor the other bound; the operator's deployment check requires both
+  bound to the addresses file's distributor (an accepted limitation, §7).
+- **One issuance, one allocation.** The receipts are issued once; the distributor holds the round's
+  inventory, allocates each ID once and delivers it once, to its beneficiary. A delivered receipt
+  earns in both pools at once: each pool pays its own income for it.
+- **Shared finality.** The distributor and the receipts are part of both pools' first-admission
+  conditions (§4.6): while the allocation is open, neither pool activates; while the distributor or a
+  receipt keeps an owner, neither pool admits a miner. Each pool's own ownership gates only that pool.
+- **Independent pools.** Each pool keeps its own miners, composition, ledger, per-ID claim history
+  (`claimed`), carried-income records, recipients, sink payments and custody state. A claim in one pool
+  never reads or changes the other's. Unpaid entitlement follows a receipt's transfer in each pool
+  separately.
+- **Labels only.** "Optimal" and "regular" are the deployment's names for the two roles. The contracts
+  treat both pools alike; neither checks any Mining property (such as an optimal flag) of the miners it
+  admits, so which miner goes to which pool is the depositors' choice.
+
 ## 3. Receipt distributor
 
 - **Funding.** Accepts single and batch transfers of the two bound receipts only (`UnsupportedToken`
-  otherwise). Refuses any receipt that already has BEM claim history in the pool
-  (`ConsumedRewardHistory`) and refuses everything after finalization, so a receipt that was delivered
-  can never return as fresh inventory. Anything received before finalization counts as inventory and
+  otherwise). Refuses any receipt that already has BEM claim history in either pool
+  (`ConsumedRewardHistory`; both pools' `claimed` are read for every ID) and refuses everything after
+  finalization, so a receipt that was delivered can never return as fresh inventory. Anything received before finalization counts as inventory and
   must be allocated.
 - **Allocation.** Direct on-chain records. The CLI turns the JSON file
   (`{"allocations":[{"wallet","nandCount","latchCount"}]}`) into ID ranges, deterministically: wallets
   in file order take the lowest available IDs. `allocate(entries)` checks every ID is held by the
-  distributor and not yet allocated; the wallet must not be zero, the distributor or the pool; a range
-  is at most 1,000 IDs. `revokeWallet` corrects a wallet before finalization. `finalizeAllocation`
+  distributor and not yet allocated; the wallet must not be zero, the distributor or either pool; a
+  range is at most 1,000 IDs. `revokeWallet` corrects a wallet before finalization. `finalizeAllocation`
   requires both issuances finalized and `allocated == inventory` for each category. After it, no
   function can change a beneficiary or a range.
 - **Delivery.** `claim(maxIds)` by the beneficiary, or `deliver(wallet, maxIds)` by anyone, always to
@@ -84,8 +120,9 @@ pool's permanent denominators.
   every ID deliverable once, and a per-wallet cursor (`nextRangeOf`) resumes at the first range with
   undelivered IDs, so a delivery costs only the ranges and IDs it transfers however many were
   delivered before. A receiver hook that reverts reverts the whole delivery. There is no deadline.
-- **No administrative route.** The distributor never calls the pool, never approves an operator, and
-  can only move a receipt to its beneficiary. Because only a receipt's holder can claim its BEM, the
+- **No administrative route.** The distributor makes no state-changing call to either pool (it only
+  reads their claim history while accepting inventory), never claims BEM, never approves an operator,
+  and can only move a receipt to its beneficiary. Because only a receipt's holder can claim its BEM, the
   income of held receipts stays attached to them; a late claimer receives receipts whose full
   accumulated BEM is still claimable.
 - **Why not a Merkle tree.** One round with hundreds to low thousands of wallets fits batched
@@ -238,6 +275,11 @@ initialization. The first successful admission (`depositMiners` or `registerMine
 | Distributor (the bound one) | `allocationFinalized()`, `owner() == address(0)` |
 | Pool | `active`, `owner() == address(0)` |
 
+With two pools (2.3.0), each pool checks this table for itself at its own first admission. The receipts
+and the distributor are the same contracts for both, so an unfinished allocation blocks both pools'
+activation and an unrenounced receipt or distributor blocks both pools' first admission; each pool's own
+row gates only that pool.
+
 Activation already establishes the finalizations and supplies, and they are irreversible; the first
 admission adds the four renunciations (`OwnershipNotRenounced(contract)` otherwise) and then latches
 `custodyOpen` (event `CustodyOpened`). A renounced owner cannot come back (Ownable2Step clears a pending
@@ -305,8 +347,16 @@ under this boundary. Measurements are in [VERIFICATION_REPORT.md](VERIFICATION_R
 - **Sink.** C's 2/84 is transferred to `0x…dEaD`, which nobody is known to control; BEM keeps counting
   it in `totalSupply` (observed on the fork). If BEM ever refused transfers to that address, releases
   of A and B would revert with it (one atomic payment), while receipt claims would continue.
-- **Distributor code.** The pool trusts the distributor it was bound to for `allocationFinalized()` and
-  `owner()`; that it is the reviewed code is established off chain by the deployed-code identity check.
-- **Audit scope.** SALUS Security assessed revision `c3cb933` (2.0.0 accounting). 2.1.0 and this 2.2.0
+- **Distributor code.** The pool trusts the distributor it was bound to for `isPool()`,
+  `allocationFinalized()` and `owner()`; that it is the reviewed code is established off chain by the
+  deployed-code identity check.
+- **One distributor for both pools.** Neither pool reads the other's binding (no cross-pool dependency),
+  so before binding a pool could bind any genuine distributor that counts it, for example a second one
+  built for the same two pools. The deployment check (`verify-deployment`, before every write) requires
+  both pools bound to the addresses file's distributor, which must serve exactly the addresses file's
+  two pools, and full-round verification requires that distributor to hold and allocate the whole supply.
+  Binding still does not prove where receipts sit (as in 2.2.0).
+- **Audit scope.** SALUS Security assessed revision `c3cb933` (2.0.0 accounting). 2.1.0 and the 2.2.0
   remediation are not covered by that assessment; docs/SALUS_AUDIT_REMEDIATION_REPORT.md lists what was
-  changed in response and asks SALUS to confirm. Nothing was deployed to BSC mainnet.
+  changed in response and asks SALUS to confirm. The 2.3.0 two-pool distributor (§2a) is new code that
+  neither SALUS nor the internal reviews covered. Nothing was deployed to BSC mainnet.

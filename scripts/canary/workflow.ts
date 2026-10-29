@@ -95,7 +95,12 @@ export async function workflow(r: Runner, interrupted = false) {
     const latch = await r.deploy('latch', [await import('viem').then(v => v.keccak256(v.stringToHex('TAPEOUT_LATCH_ENTITLEMENT'))), 'Recoverable Canary LATCH', 'cLATCH', '', owner]);
     const helper = await r.deploy('helper', [owner, P.bem, nand, latch]);
     const pool = await r.deploy('pool', [{ owner, ...P, nandReceipt: nand, latchReceipt: latch, recipientA: owner, recipientB: helper, depositors: [owner], poolName: 'RECOVERABLE CANARY 3204 + 12485' }]);
-    const distributor = await r.deploy('distributor', [owner, pool]);
+    // canary-4 (2.3.0): the production distributor serves two pools sharing the receipts. The second
+    // canary pool is initialized like the first but never admits a miner.
+    const regularPool = await r.deploy('regularPool', [{ owner, ...P, nandReceipt: nand, latchReceipt: latch, recipientA: owner, recipientB: helper, depositors: [owner], poolName: 'RECOVERABLE CANARY REGULAR (NO MINERS)' }]);
+    const distributor = await r.deploy('distributor', [owner, pool, regularPool]);
+    check('one-distributor-for-both-pools', (await r.read<Address>(distributor, r.artifact('distributor').abi, 'optimalPool')).toLowerCase() === pool.toLowerCase()
+      && (await r.read<Address>(distributor, r.artifact('distributor').abi, 'regularPool')).toLowerCase() === regularPool.toLowerCase());
     await r.write('helper', 'bindPool', [pool]);
     check('recovery-fixed-before-any-approval', (await r.pool<Address>('recoveryController')).toLowerCase() === owner.toLowerCase() && !await r.pool('closed'));
     await r.write('nand', 'issue', [owner, 4n]);
@@ -111,20 +116,25 @@ export async function workflow(r: Runner, interrupted = false) {
     const inventory = { NAND: [1, 2, 3, 4], LATCH: [1, 2] };
     const assignments = assignIds(validated.entries, inventory);
     for (const batch of allocationBatches(assignments)) await r.write('distributor', 'allocate', [batch]);
-    const target = { chainId: 56, distributor, pool, nandReceipt: nand, latchReceipt: latch };
+    const target = { chainId: 56, distributor, optimalPool: pool, regularPool, nandReceipt: nand, latchReceipt: latch };
     const importBlock = await r.rpc.getBlock({ blockTag: 'latest' });
     const alloc = allocationArtifact({ chainId: 56, distributor, nandReceipt: nand, latchReceipt: latch, sourceSha256: input.sha256, blockNumber: importBlock.number },
       assignments, inventoryRecordFor(inventory, importBlock.number, importBlock.hash));
     save(`${dir}/allocation-artifact.json`, alloc);
-    // Identity (pool included), full-round coverage of both supplies, and the reviewed JSON -> artifact.
+    // Identity (both pools included), full-round coverage of both supplies, and the reviewed JSON -> artifact.
     const verified = verifyAllocation(parseAllocationArtifact(alloc), await readAllocationState(r.rpc, distributor), target, { review: { file: input.file, sha256: input.sha256 } });
     check('complete-allocation-verified', verified.status === 'READY_TO_FINALIZE' && verified.review.status === 'VERIFIED', verified);
     await r.write('distributor', 'finalizeAllocation');
-    await r.write('pool', 'bindDistributor', [distributor]); // canary-3 (2.2.0): once, before activation
+    // canary-4 (2.3.0): each pool binds the shared distributor once, before its own activation.
+    await r.write('pool', 'bindDistributor', [distributor]);
+    await r.write('regularPool', 'bindDistributor', [distributor], 'bindDistributor-regular-pool');
     await r.write('pool', 'activate', [4n, 2n]);
-    for (const name of ['nand', 'latch', 'distributor', 'pool'] as const) await r.write(name, 'renounceOwnership', [], `renounce-${name}`);
-    check('owner-renounced-recovery-retained', await r.pool('owner') === '0x0000000000000000000000000000000000000000' && (await r.pool<Address>('recoveryController')).toLowerCase() === owner.toLowerCase());
-    check('distributor-bound-and-custody-ready', (await r.pool<Address>('distributor')).toLowerCase() === distributor.toLowerCase() && !await r.pool('custodyOpen'));
+    await r.write('regularPool', 'activate', [4n, 2n], 'activate-regular-pool');
+    for (const name of ['nand', 'latch', 'distributor', 'pool', 'regularPool'] as const) await r.write(name, 'renounceOwnership', [], `renounce-${name}`);
+    check('owner-renounced-recovery-retained', await r.pool('owner') === '0x0000000000000000000000000000000000000000' && (await r.pool<Address>('recoveryController')).toLowerCase() === owner.toLowerCase()
+      && await r.regular('owner') === '0x0000000000000000000000000000000000000000' && (await r.regular<Address>('recoveryController')).toLowerCase() === owner.toLowerCase());
+    check('distributor-bound-and-custody-ready', (await r.pool<Address>('distributor')).toLowerCase() === distributor.toLowerCase() && !await r.pool('custodyOpen')
+      && (await r.regular<Address>('distributor')).toLowerCase() === distributor.toLowerCase() && !await r.regular('custodyOpen'));
 
     // Live state is rechecked AFTER setup and immediately before either designated admission.
     await preflight(r.rpc, owner);
@@ -226,8 +236,9 @@ export async function workflow(r: Runner, interrupted = false) {
   // Recovery happens before any report generation or optional payout completion.
   try { await r.recover(); }
   catch (e) { results.recoveryError = redact(e); }
-  const { pool, helper, nand, latch, distributor } = r.manifest.contracts;
+  const { pool, regularPool, helper, nand, latch, distributor } = r.manifest.contracts;
   try {
+    if (regularPool) check('regular-pool-closed-and-never-held-a-miner', await r.regular('closed') === true && await r.regular<bigint>('minerCount') === 0n && await r.regular('custodyOpen') === false);
     if (pool) {
       check('permanently-closed', await r.pool('closed') === true);
       await rejected('closed-pool-admission-rejected', owner, pool, encodeFunctionData({ abi: pabi, functionName: 'depositMiners', args: [[3204n]] }), { name: 'CanaryClosed', args: [] });
@@ -277,7 +288,7 @@ export async function workflow(r: Runner, interrupted = false) {
       results.observations.postReturn = returned;
       if (distributor && existsSync(`${dir}/allocation-artifact.json`)) {
         const allocation = JSON.parse(readFileSync(`${dir}/allocation-artifact.json`, 'utf8'));
-        results.observations.finalAllocation = verifyAllocation(allocation, await readAllocationState(r.rpc, distributor), { chainId: 56, distributor, pool, nandReceipt: nand!, latchReceipt: latch! });
+        results.observations.finalAllocation = verifyAllocation(allocation, await readAllocationState(r.rpc, distributor), { chainId: 56, distributor, optimalPool: pool, regularPool: regularPool!, nandReceipt: nand!, latchReceipt: latch! });
       }
       const rows = readFileSync(`${dir}/journal.jsonl`, 'utf8').trim().split('\n').map(x => JSON.parse(x)).filter(x => x.stage === 'CONFIRMED');
       const nftTransfers = rows.flatMap(x => x.events.filter((e: any) => e.address.toLowerCase() === P.minerCollection.toLowerCase() && e.topics[0] === keccak256(stringToHex('Transfer(address,address,uint256)')) && e.topics.length === 4).map((e: any) => ({ action: x.action, tokenId: BigInt(e.topics[3]) })));

@@ -1,0 +1,65 @@
+{
+  "schema": "recoverable-canary-run/1",
+  "mode": "fork",
+  "runId": "local-candidate-2d027fd9-dc4d-4cf7-97a1-0ba6c8b2ebb7-interrupted",
+  "candidateDigest": "f18e2b25b697e3b8a082d859a8f367d36f7072dbbecf75320eb122d280132f0b",
+  "owner": "0x7eEDccb674e9549b61B01Eb65aC68DA071ADF129",
+  "contracts": {
+    "nand": "0x9461750ece26bfc1b5173c436b1a7224dc90ea1c",
+    "latch": "0x0ddbbf77f8d07fed18d38086e105ff3d8855142c",
+    "helper": "0x8424fcb139d8ba8d02a4be7d9cd61fcfd42db9c5",
+    "pool": "0x40aea668137089a51e6ad4a6ab26045ccb20efc0",
+    "regularPool": "0xb00e455ba5d98542e1dc76b20f1d3fde8f036e3f",
+    "distributor": "0xc8dc7e5bb52dddc7ff8c903eecd3fcef4fde93b5"
+  },
+  "identities": {
+    "nand": {
+      "codeHash": "0x7f59d20c18c4dec6ddf617a9f085a87d4622efc279fbc1438e5293333288ec8f",
+      "bytes": 8743,
+      "immutableTemplateMatched": true
+    },
+    "latch": {
+      "codeHash": "0x7f59d20c18c4dec6ddf617a9f085a87d4622efc279fbc1438e5293333288ec8f",
+      "bytes": 8743,
+      "immutableTemplateMatched": true
+    },
+    "helper": {
+      "codeHash": "0xef0e1247c989b8472c8338b2204c70abae4f42047627830249f9c594f8360b5a",
+      "bytes": 3410,
+      "immutableTemplateMatched": true
+    },
+    "pool": {
+      "codeHash": "0x415bfc0f56ea8ef48f968ea5bd3c33a704c5b30dd75e6251229df2b07dcd00aa",
+      "bytes": 24441,
+      "immutableTemplateMatched": true
+    },
+    "regularPool": {
+      "codeHash": "0x415bfc0f56ea8ef48f968ea5bd3c33a704c5b30dd75e6251229df2b07dcd00aa",
+      "bytes": 24441,
+      "immutableTemplateMatched": true
+    },
+    "distributor": {
+      "codeHash": "0xb04afb24da19d96adebee5f188253855983a47df87ffb9ee6ea646047c01b1e7",
+      "bytes": 8137,
+      "immutableTemplateMatched": true
+    }
+  },
+  "totalFeeRaw": "1186621920000000",
+  "maxRunFee": "100000000000000000",
+  "maxTxFee": "20000000000000000",
+  "recoveryReserve": "10000000000000000",
+  "feePriceCeiling": "100000000",
+  "forkGasPrice": "50000000",
+  "minConfirmations": 1,
+  "maxWaitSeconds": 300,
+  "accrualIntervalSeconds": 60,
+  "dir": ".runtime/canary-local/local-candidate-2d027fd9-dc4d-4cf7-97a1-0ba6c8b2ebb7/interrupted",
+  "startedAt": "2026-10-29T17:21:13.062Z",
+  "status": "IN_PROGRESS",
+  "forkSource": {
+    "block": "128812145",
+    "blockHash": "0x383f1f97b08e13da4cbfc88908ec57643a0f186ee89de5d0a7a765f920f4a922"
+  },
+  "nextNonce": 91,
+  "poolDeployBlock": "128812149"
+}

@@ -5,7 +5,7 @@
  *     miner that burns LATCH, an inactive token, and further active miners for the gas-scaling run —
  *     all held by plain EOAs (impersonated on the fork only).
  *  2. Runs every test in test/fork/ (PoolFork, PoolBoundary, MiningLifecycle, MiningTransitions, SalusFork;
- *     fork profile: Cancun EVM, Paris artifacts from ./out) and requires all 20 to pass. MiningTransitions also
+ *     fork profile: Cancun EVM, Paris artifacts from ./out) and requires all 21 to pass. MiningTransitions also
  *     forks the block before a real revocation (119,597,280) from the same archive endpoint.
  *  3. Writes reports/fork-test.json with the observations each test wrote.
  *
@@ -114,8 +114,8 @@ async function main() {
   const readJson = async (file: string) => { try { return JSON.parse(await readFile(file, 'utf8')); } catch { return null; } };
   const bytecode = JSON.parse(await readFile('sdk/bytecode.json', 'utf8'));
   // Every fork test must have run and passed: PoolForkTest (6), PoolBoundaryForkTest (4), MiningLifecycleForkTest (2),
-  // MiningTransitionsForkTest (5), SalusForkTest (3).
-  const passed = run.status === 0 && results.length === 20 && results.every(r => r.status === 'Success');
+  // MiningTransitionsForkTest (5), SalusForkTest (3), TwoPoolForkTest (1, 2.3.0).
+  const passed = run.status === 0 && results.length === 21 && results.every(r => r.status === 'Success');
   const report = {
     scope: 'REAL_BSC_STATE_LOCAL_FORK_ONLY', status: passed ? 'PASS' : 'FAIL', startedAt, completedAt: new Date().toISOString(),
     source: { chainId: 56, forkBlock, blockHash: block.hash, blockTimestamp: block.timestamp, archiveRpcHost: new URL(archiveUrl).host, discoveryRpcHost: new URL(discoveryUrl).host },

@@ -41,8 +41,12 @@ export function remote() {
   if (!process.env.BSC_RPC_URL) throw Error('Configure BSC_RPC_URL in this project .env');
   return createPublicClient({ transport: http(process.env.BSC_RPC_URL, { timeout: 30_000, retryCount: 1 }) });
 }
+// `regularPool` (canary-4-local): the second canary pool that the shared production distributor needs
+// (2.3.0 serves a processor's two pools). It is bound and activated with the same receipts but never
+// admits a miner, and it is shut down with the canary.
 export const artifacts = {
-  nand: 'TapeoutEntitlementReceipt', latch: 'TapeoutEntitlementReceipt', helper: 'CanaryParticipant', pool: 'RecoverableTapeoutMinerPool', distributor: 'TapeoutReceiptDistributor',
+  nand: 'TapeoutEntitlementReceipt', latch: 'TapeoutEntitlementReceipt', helper: 'CanaryParticipant', pool: 'RecoverableTapeoutMinerPool',
+  regularPool: 'RecoverableTapeoutMinerPool', distributor: 'TapeoutReceiptDistributor',
 } as const;
 export type ContractName = keyof typeof artifacts;
 export function artifact(name: ContractName) {

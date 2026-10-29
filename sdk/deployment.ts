@@ -1,7 +1,7 @@
 import { getAddress, keccak256, zeroAddress, type Abi, type Address, type Hex, type PublicClient } from 'viem';
 import { tapeoutEntitlementReceiptAbi, tapeoutMinerPoolAbi, tapeoutReceiptDistributorAbi } from './abi.js';
 import bytecode from './bytecode.json' with { type: 'json' };
-import { LATCH_CATEGORY, NAND_CATEGORY, type Addresses, type SystemFile } from './config.js';
+import { LATCH_CATEGORY, NAND_CATEGORY, POOL_ADDRESS_KEY, POOL_ROLES, type Addresses, type PoolRole, type SystemFile } from './config.js';
 
 /**
  * Deployed identity of the production contracts. A runtime template (compiled runtime with immutable
@@ -34,9 +34,10 @@ const same = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
 
 /**
  * Identity and bindings of the addresses file's contracts at one block: code against the templates,
- * receipt categories, the pool's receipts, the distributor's pool and receipts, and with `system` the
- * protocol addresses, whitelist and initial roles. `problems` are hard mismatches; `notes` are
- * legitimate differences (a renounced owner, a recipient role that moved).
+ * receipt categories, each pool's receipts and protocol, the distributor's two pools (exactly the
+ * addresses file's optimal and regular pool, in those roles) and receipts, each pool's bound distributor,
+ * and with `system` the protocol addresses, whitelists and initial roles. `problems` are hard
+ * mismatches; `notes` are legitimate differences (a renounced owner, a recipient role that moved).
  */
 export async function checkDeployment(rpc: PublicClient, addresses: Addresses, system?: SystemFile, blockNumber?: bigint) {
   const block = await rpc.getBlock(blockNumber === undefined ? { blockTag: 'latest' } : { blockNumber });
@@ -64,38 +65,57 @@ export async function checkDeployment(rpc: PublicClient, addresses: Addresses, s
       else if (!same(owner, system.receipts.issuer)) problems.push(`${c} receipt owner ${owner} is not the system file's issuer ${system.receipts.issuer}`);
     }
   }
-  if (addresses.pool) {
-    const pool = getAddress(addresses.pool);
-    if (await code('pool', pool, 'TapeoutMinerPool')) {
-      const p = <T>(fn: string) => read<T>(rpc, pool, tapeoutMinerPoolAbi as Abi, fn, at);
-      for (const [c, fn] of [['NAND', 'nandReceipt'], ['LATCH', 'latchReceipt']] as const) {
-        const bound = await p<Address>(fn);
-        if (!same(bound, receipts[c])) problems.push(`pool ${pool} is bound to ${c} receipt ${bound}, not ${receipts[c]}`);
+  // 2.3.0: a processor's two custody pools share the receipts (and one distributor).
+  const pools: Partial<Record<PoolRole, Address>> = {};
+  const protocolOf: Partial<Record<PoolRole, Record<'bem' | 'mining' | 'minerCollection', Address>>> = {};
+  for (const role of POOL_ROLES) {
+    const configured = addresses[POOL_ADDRESS_KEY[role]];
+    if (!configured) continue;
+    const pool = getAddress(configured);
+    if (!await code(POOL_ADDRESS_KEY[role], pool, 'TapeoutMinerPool')) continue;
+    pools[role] = pool;
+    const p = <T>(fn: string) => read<T>(rpc, pool, tapeoutMinerPoolAbi as Abi, fn, at);
+    for (const [c, fn] of [['NAND', 'nandReceipt'], ['LATCH', 'latchReceipt']] as const) {
+      const bound = await p<Address>(fn);
+      if (!same(bound, receipts[c])) problems.push(`${role} pool ${pool} is bound to ${c} receipt ${bound}, not ${receipts[c]}`);
+    }
+    const [bem, mining, minerCollection] = await Promise.all([p<Address>('bem'), p<Address>('mining'), p<Address>('minerCollection')]);
+    protocolOf[role] = { bem, mining, minerCollection };
+    if (system) {
+      const expectedPool = system.pools[role];
+      for (const fn of ['bem', 'mining', 'minerCollection'] as const) {
+        if (!same(protocolOf[role][fn], system.protocol[fn])) problems.push(`${role} pool ${fn} is ${protocolOf[role][fn]}, the system file names ${system.protocol[fn]}`);
       }
-      if (system) {
-        for (const fn of ['bem', 'mining', 'minerCollection'] as const) {
-          const bound = await p<Address>(fn);
-          if (!same(bound, system.protocol[fn])) problems.push(`pool ${fn} is ${bound}, the system file names ${system.protocol[fn]}`);
-        }
-        const depositors = (await p<readonly Address[]>('depositors')).map(a => a.toLowerCase()).sort();
-        const expected = system.pool.depositors.map(a => a.toLowerCase()).sort();
-        if (JSON.stringify(depositors) !== JSON.stringify(expected)) problems.push(`pool depositors ${depositors.join(',')} are not the system file's ${expected.join(',')}`);
-        const owner = await p<Address>('owner');
-        if (same(owner, zeroAddress)) notes.push('pool ownership is renounced');
-        else if (!same(owner, system.pool.owner)) problems.push(`pool owner ${owner} is not the system file's ${system.pool.owner}`);
-        for (const [role, fn] of [['A', 'recipientA'], ['B', 'recipientB']] as const) {
-          const current = await p<Address>(fn);
-          if (!same(current, system.pool[fn])) notes.push(`recipient ${role} is ${current}, not the initial ${system.pool[fn]} (only the role holder can move it)`);
-        }
+      const depositors = (await p<readonly Address[]>('depositors')).map(a => a.toLowerCase()).sort();
+      const expected = expectedPool.depositors.map(a => a.toLowerCase()).sort();
+      if (JSON.stringify(depositors) !== JSON.stringify(expected)) problems.push(`${role} pool depositors ${depositors.join(',')} are not the system file's ${expected.join(',')}`);
+      const owner = await p<Address>('owner');
+      if (same(owner, zeroAddress)) notes.push(`${role} pool ownership is renounced`);
+      else if (!same(owner, expectedPool.owner)) problems.push(`${role} pool owner ${owner} is not the system file's ${expectedPool.owner}`);
+      for (const [r, fn] of [['A', 'recipientA'], ['B', 'recipientB']] as const) {
+        const current = await p<Address>(fn);
+        if (!same(current, expectedPool[fn])) notes.push(`${role} pool recipient ${r} is ${current}, not the initial ${expectedPool[fn]} (only the role holder can move it)`);
       }
+    }
+  }
+  if (addresses.optimalPool && addresses.regularPool && same(addresses.optimalPool, addresses.regularPool)) {
+    problems.push(`the addresses file names ${addresses.optimalPool} as both pools; a processor has two distinct custody pools`);
+  }
+  if (protocolOf.optimal && protocolOf.regular) {
+    for (const fn of ['bem', 'mining', 'minerCollection'] as const) {
+      if (!same(protocolOf.optimal[fn], protocolOf.regular[fn])) problems.push(`the pools report different ${fn} (${protocolOf.optimal[fn]}, ${protocolOf.regular[fn]}); one distributor serves only pools of the same processor`);
     }
   }
   if (addresses.distributor) {
     const distributor = getAddress(addresses.distributor);
     if (await code('distributor', distributor, 'TapeoutReceiptDistributor')) {
-      const d = <T>(fn: string) => read<T>(rpc, distributor, tapeoutReceiptDistributorAbi as Abi, fn, at);
-      const pool = await d<Address>('pool');
-      if (!addresses.pool || !same(pool, addresses.pool)) problems.push(`distributor ${distributor} belongs to pool ${pool}, the addresses file names ${addresses.pool ?? 'none'}`);
+      const d = <T>(fn: string, args: readonly unknown[] = []) =>
+        rpc.readContract({ address: distributor, abi: tapeoutReceiptDistributorAbi as Abi, functionName: fn, args, blockNumber: at } as never) as Promise<T>;
+      const fixed: Record<PoolRole, Address> = { optimal: await d<Address>('optimalPool'), regular: await d<Address>('regularPool') };
+      for (const role of POOL_ROLES) {
+        const configured = addresses[POOL_ADDRESS_KEY[role]];
+        if (!configured || !same(fixed[role], configured)) problems.push(`distributor ${distributor} serves ${fixed[role]} as its ${role} pool, the addresses file names ${configured ?? 'none'}`);
+      }
       for (const [c, fn] of [['NAND', 'nandReceipt'], ['LATCH', 'latchReceipt']] as const) {
         const bound = await d<Address>(fn);
         if (!same(bound, receipts[c])) problems.push(`distributor is bound to ${c} receipt ${bound}, not ${receipts[c]}`);
@@ -105,11 +125,14 @@ export async function checkDeployment(rpc: PublicClient, addresses: Addresses, s
         if (same(owner, zeroAddress)) notes.push('distributor ownership is renounced');
         else if (!same(owner, system.distributor.owner)) problems.push(`distributor owner ${owner} is not the system file's ${system.distributor.owner}`);
       }
-      // 2.2.0: the pool binds its distributor once; a pool bound to any other contract is a mismatch.
-      if (addresses.pool && (contracts.pool as { matches?: boolean } | undefined)?.matches) {
-        const bound = await read<Address>(rpc, getAddress(addresses.pool), tapeoutMinerPoolAbi as Abi, 'distributor', at);
-        if (same(bound, zeroAddress)) notes.push('the pool has no distributor bound yet (bind-distributor, before activation)');
-        else if (!same(bound, distributor)) problems.push(`pool is bound to distributor ${bound}, not ${distributor}`);
+      // Each pool binds the shared distributor once; a pool bound to any other contract is a mismatch.
+      for (const role of POOL_ROLES) {
+        const pool = pools[role];
+        if (!pool) continue;
+        if (!await d<boolean>('isPool', [pool])) problems.push(`distributor ${distributor} does not count the ${role} pool ${pool} among its pools`);
+        const bound = await read<Address>(rpc, pool, tapeoutMinerPoolAbi as Abi, 'distributor', at);
+        if (same(bound, zeroAddress)) notes.push(`the ${role} pool has no distributor bound yet (bind-distributor --pool ${role}, before activation)`);
+        else if (!same(bound, distributor)) problems.push(`${role} pool is bound to distributor ${bound}, not ${distributor}`);
       }
     }
   }

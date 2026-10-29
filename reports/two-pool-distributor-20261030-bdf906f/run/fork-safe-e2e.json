@@ -1,0 +1,1866 @@
+{
+  "scope": "REAL_BSC_STATE_LOCAL_ANVIL_FORK_ONLY",
+  "status": "PASS",
+  "startedAt": "2026-10-29T17:20:10.751Z",
+  "source": {
+    "chainId": 56,
+    "forkBlock": "128713128",
+    "archiveRpcHost": "bsc-mainnet.public.blastapi.io",
+    "blockHash": "0x760f050b7ec66ced2a2745918d7492650150f9d71d3159259412996ebe65081f"
+  },
+  "miners": [
+    "12733",
+    "13948",
+    "4183",
+    "1574"
+  ],
+  "method": [
+    "Fork state is read from BSC at the pinned block; no protocol or Safe code or storage is modified.",
+    "Safes are created through the canonical SafeProxyFactory deployments on BSC, from the canonical L2 singletons (SafeL2 1.4.1, GnosisSafeL2 1.3.0) with their CompatibilityFallbackHandler.",
+    "Owner keys are derived by this script from fixed labels; they sign EIP-712 SafeTx messages for the local fork only.",
+    "Each CLI batch file is executed like Safe{Wallet} executes a Transaction Builder batch: one entry as a call, several as a DELEGATECALL to the version's MultiSendCallOnly; safeTxGas, baseGas and gasPrice 0.",
+    "Every Safe transaction is sent with the file's maxGas (the CLI's planned bound) as its gas limit, after checking that the node's estimate does not exceed it.",
+    "Miner NFTs are moved from their current holders with fork-only impersonation; EOA actors are impersonated labelled addresses.",
+    "Not exercised: the Safe{Wallet} interface itself (Transaction Builder import and checksum, its own gas estimation), Safe modules and guards, more than 10 signatures."
+  ],
+  "safeContracts": {
+    "1.4.1": {
+      "singletonName": "SafeL2",
+      "singleton": {
+        "address": "0x29fcB43b46531BcA003ddC8FCB67FFE91900C762",
+        "bytes": 24421,
+        "codeHash": "0xb1f926978a0f44a2c0ec8fe822418ae969bd8c3f18d61e5103100339894f81ff"
+      },
+      "factory": {
+        "address": "0x4e1DCf7AD4e460CfD30791CCC4F9c8a4f820ec67",
+        "bytes": 3054,
+        "codeHash": "0x50c3cdc4074750a7a974204a716c999edd37482f907608d960b2b025ee0b3317"
+      },
+      "multiSendCallOnly": {
+        "address": "0x9641d764fc13c8B624c04430C7356C1C7C8102e2",
+        "bytes": 410,
+        "codeHash": "0xecd5bd14a08c5d2122379900b2f272bdf107a7e92423c10dd5fe3254386c9939"
+      },
+      "fallbackHandler": {
+        "address": "0xfd0732Dc9E303f09fCEf3a7388Ad10A83459Ec99",
+        "bytes": 5637,
+        "codeHash": "0x7c6007a5d711cea8dfd5d91f5940ec29c7f200fe511eb1fc1397b367af3c42f9"
+      }
+    },
+    "1.3.0": {
+      "singletonName": "GnosisSafeL2",
+      "singleton": {
+        "address": "0x3E5c63644E683549055b9Be8653de26E0B4CD36E",
+        "bytes": 23800,
+        "codeHash": "0x21842597390c4c6e3c1239e434a682b054bd9548eee5e9b1d6a4482731023c0f"
+      },
+      "factory": {
+        "address": "0xa6B71E26C5e0845f74c812102Ca7114b6a896AB2",
+        "bytes": 3774,
+        "codeHash": "0x337d7f54be11b6ed55fef7b667ea5488db53db8320a05d1146aa4bd169a39a9b"
+      },
+      "multiSendCallOnly": {
+        "address": "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D",
+        "bytes": 410,
+        "codeHash": "0xa9865ac2d9c7a1591619b188c4d88167b50df6cc0c5327fcbd1c8c75f7c066ad"
+      },
+      "fallbackHandler": {
+        "address": "0xf48f2B2d2a534e402487b3ee7C18c33Aec0Fe5e4",
+        "bytes": 5492,
+        "codeHash": "0x03e69f7ce809e81687c69b19a7d7cca45b6d551ffdec73d9bb87178476de1abf"
+      }
+    }
+  },
+  "safes": {
+    "operatorSafe": {
+      "address": "0xdbf55155187472Aed8C487dFbd026Cd4A8806f01",
+      "version": "1.4.1",
+      "singleton": "SafeL2",
+      "owners": [
+        "0xc2eF90b223F239415B121242c82aeBC7F8bd4D76",
+        "0xFBe15DCa2De1d226076bD6487958AD1501A7b765",
+        "0x49D985fC07D75126Df7871c7356643C092fdFd90"
+      ],
+      "threshold": 2,
+      "fallbackHandler": "0xfd0732Dc9E303f09fCEf3a7388Ad10A83459Ec99",
+      "multiSendCallOnly": "0x9641d764fc13c8B624c04430C7356C1C7C8102e2"
+    },
+    "memberSafe": {
+      "address": "0xC38010E76E6B23B3CDAf04D34a27A08967974663",
+      "version": "1.3.0",
+      "singleton": "GnosisSafeL2",
+      "owners": [
+        "0xA4614F63B558B67606e4eD7eD1183A5c3eE2c62D",
+        "0xC45d8477d1c1Dd8773d1d17eE072A193c0aA0cFc",
+        "0xc34897C7525fc6a36Bd4245e71D97Fb7F6e5607B"
+      ],
+      "threshold": 2,
+      "fallbackHandler": "0xf48f2B2d2a534e402487b3ee7C18c33Aec0Fe5e4",
+      "multiSendCallOnly": "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D"
+    },
+    "recipientSafe": {
+      "address": "0xDb9a163c29bFacdBdA4d44f2a27e659cEbFD0E76",
+      "version": "1.4.1",
+      "singleton": "SafeL2",
+      "owners": [
+        "0x3c6c45d5986050198BB029D652729C7bc0296FCC",
+        "0x9e2584cc48AD860c2fba29546EaF8454ddaE436A",
+        "0xDe7966BcF4588d6B02B7b6f01b227c3594882445",
+        "0x502A7b734F93b04C0c6fb2c473e6D21C9186aC6A",
+        "0x1c8497ea20ed81f49d364ecB76d95a26Ba4FaB32",
+        "0x8fBde698c282Aaaa84bb90a425aae3e922616dc3",
+        "0xbC4E58F5B9C7700557F7D4c8807543e2Fd50C5c0",
+        "0x6fb83c545433383f14BaA62fa1eb1869ee068108",
+        "0x1F460F0cEB2d83E09cc190fE5b8765c8A537A5bd",
+        "0x286CA9E4fBBcC2C3f5529e8C44207Fe8C7485671"
+      ],
+      "threshold": 10,
+      "fallbackHandler": "0xfd0732Dc9E303f09fCEf3a7388Ad10A83459Ec99",
+      "multiSendCallOnly": "0x9641d764fc13c8B624c04430C7356C1C7C8102e2"
+    }
+  },
+  "steps": [
+    {
+      "label": "create the operatorSafe (SafeL2 1.4.1, 2 of 3)",
+      "transactions": [
+        {
+          "hash": "0x54befb06e6aba768f5eb9027626b84de630b4796e184f8329b8e1f019043660c",
+          "gasUsed": "306195",
+          "blockNumber": "128713129"
+        }
+      ]
+    },
+    {
+      "label": "create the memberSafe (GnosisSafeL2 1.3.0, 2 of 3)",
+      "transactions": [
+        {
+          "hash": "0xe05c2c093f025073299254d22b23e16bc9fc5ada026b003db2ce62a4c7d828b1",
+          "gasUsed": "305904",
+          "blockNumber": "128713130"
+        }
+      ]
+    },
+    {
+      "label": "create the recipientSafe (SafeL2 1.4.1, 10 of 10)",
+      "transactions": [
+        {
+          "hash": "0x741d5f998d49429998cdf58b03e13ecea0c0b8112b50b957913ea620a0393dc5",
+          "gasUsed": "470531",
+          "blockNumber": "128713131"
+        }
+      ]
+    },
+    {
+      "label": "deploy-receipts",
+      "argv": [
+        "deploy-receipts",
+        "--system",
+        ".runtime/fork-safe-e2e/system.json",
+        "--addresses-out",
+        ".runtime/fork-safe-e2e/addresses.json",
+        "--from",
+        "0xC6Ecd32137D992172e1EC67E69dBFaC9cacA9880",
+        "--send-local"
+      ],
+      "mode": "SENT_LOCAL_ANVIL",
+      "transactions": [
+        {
+          "hash": "0x612aedc0508a3159831d6bc3e078412586e550d3ee22051a3d378a96da6646dc",
+          "gasUsed": "2066068",
+          "blockNumber": "128713132",
+          "description": "deploy NAND entitlement receipt (issuer 0xdbf55155187472Aed8C487dFbd026Cd4A8806f01)"
+        },
+        {
+          "hash": "0x1051be0ccc53cac200d7e4717f371108b5d1c76d4cc396df477fc48671b06c12",
+          "gasUsed": "2066118",
+          "blockNumber": "128713133",
+          "description": "deploy LATCH entitlement receipt (issuer 0xdbf55155187472Aed8C487dFbd026Cd4A8806f01)"
+        }
+      ]
+    },
+    {
+      "label": "issue-nand",
+      "argv": [
+        "issue",
+        "--addresses",
+        ".runtime/fork-safe-e2e/addresses.json",
+        "--category",
+        "NAND",
+        "--to",
+        "0xdbf55155187472Aed8C487dFbd026Cd4A8806f01",
+        "--count",
+        "500",
+        "--batch-size",
+        "100"
+      ],
+      "safe": "operatorSafe",
+      "files": [
+        {
+          "file": "issue-nand.1.json",
+          "transactions": 2,
+          "plansMaxGas": "11400000",
+          "maxGas": "11934896"
+        },
+        {
+          "file": "issue-nand.2.json",
+          "transactions": 2,
+          "plansMaxGas": "11400000",
+          "maxGas": "11934896"
+        },
+        {
+          "file": "issue-nand.3.json",
+          "transactions": 1,
+          "plansMaxGas": "5700000",
+          "maxGas": "6042448"
+        }
+      ]
+    },
+    {
+      "label": "issue-latch",
+      "argv": [
+        "issue",
+        "--addresses",
+        ".runtime/fork-safe-e2e/addresses.json",
+        "--category",
+        "LATCH",
+        "--to",
+        "0xdbf55155187472Aed8C487dFbd026Cd4A8806f01",
+        "--count",
+        "60"
+      ],
+      "safe": "operatorSafe",
+      "files": [
+        {
+          "file": "issue-latch.json",
+          "transactions": 1,
+          "plansMaxGas": "3460000",
+          "maxGas": "3727781"
+        }
+      ]
+    },
+    {
+      "label": "deploy-pools-and-distributor",
+      "argv": [
+        "deploy",
+        "--system",
+        ".runtime/fork-safe-e2e/system.json",
+        "--addresses",
+        ".runtime/fork-safe-e2e/addresses.json",
+        "--from",
+        "0xC6Ecd32137D992172e1EC67E69dBFaC9cacA9880",
+        "--send-local"
+      ],
+      "mode": "SENT_LOCAL_ANVIL",
+      "transactions": [
+        {
+          "hash": "0xcc0ba93b223535d796af59d5f28568083d5755702a35396d5a2fc47f7808f773",
+          "gasUsed": "5442294",
+          "blockNumber": "128713138",
+          "description": "deploy the optimal TapeoutMinerPool \"Fork Safe E2E Optimal Pool\" (owner 0xdbf55155187472Aed8C487dFbd026Cd4A8806f01, 1 whitelisted depositors)"
+        },
+        {
+          "hash": "0xd22c7b8df33f64d9d37ef0f2ab64947454ac86fc23b5b7658920cf983ac6a4dd",
+          "gasUsed": "5442294",
+          "blockNumber": "128713139",
+          "description": "deploy the regular TapeoutMinerPool \"Fork Safe E2E Regular Pool\" (owner 0xdbf55155187472Aed8C487dFbd026Cd4A8806f01, 1 whitelisted depositors)"
+        },
+        {
+          "hash": "0xf92ff4541ac5de9295b0bdeb37ce41d2d667bd37a767ddbf3cf14741bd4b44ec",
+          "gasUsed": "1895680",
+          "blockNumber": "128713140",
+          "description": "deploy TapeoutReceiptDistributor (owner 0xdbf55155187472Aed8C487dFbd026Cd4A8806f01) for the optimal pool 0x46FC7A2F9b26813558051804A0975C83f3415E4E and the regular pool 0x9A6de4F69E3047955F491ee898C76f6a5072C1C2"
+        }
+      ]
+    },
+    {
+      "label": "fund-nand",
+      "argv": [
+        "fund-distributor",
+        "--addresses",
+        ".runtime/fork-safe-e2e/addresses.json",
+        "--category",
+        "NAND",
+        "--all-held",
+        "--batch-size",
+        "125"
+      ],
+      "safe": "operatorSafe",
+      "files": [
+        {
+          "file": "fund-nand.1.json",
+          "transactions": 2,
+          "plansMaxGas": "11200000",
+          "maxGas": "11990373"
+        },
+        {
+          "file": "fund-nand.2.json",
+          "transactions": 2,
+          "plansMaxGas": "11200000",
+          "maxGas": "11990373"
+        }
+      ]
+    },
+    {
+      "label": "fund-latch",
+      "argv": [
+        "fund-distributor",
+        "--addresses",
+        ".runtime/fork-safe-e2e/addresses.json",
+        "--category",
+        "LATCH",
+        "--all-held"
+      ],
+      "safe": "operatorSafe",
+      "files": [
+        {
+          "file": "fund-latch.json",
+          "transactions": 1,
+          "plansMaxGas": "2740000",
+          "maxGas": "3048293"
+        }
+      ]
+    },
+    {
+      "label": "finalize-issuance-nand",
+      "argv": [
+        "finalize-issuance",
+        "--addresses",
+        ".runtime/fork-safe-e2e/addresses.json",
+        "--category",
+        "NAND"
+      ],
+      "safe": "operatorSafe",
+      "files": [
+        {
+          "file": "finalize-issuance-nand.json",
+          "transactions": 1,
+          "plansMaxGas": "100000",
+          "maxGas": "254757"
+        }
+      ]
+    },
+    {
+      "label": "finalize-issuance-latch",
+      "argv": [
+        "finalize-issuance",
+        "--addresses",
+        ".runtime/fork-safe-e2e/addresses.json",
+        "--category",
+        "LATCH"
+      ],
+      "safe": "operatorSafe",
+      "files": [
+        {
+          "file": "finalize-issuance-latch.json",
+          "transactions": 1,
+          "plansMaxGas": "100000",
+          "maxGas": "254757"
+        }
+      ]
+    },
+    {
+      "label": "import-allocation",
+      "argv": [
+        "import-allocation",
+        "--addresses",
+        ".runtime/fork-safe-e2e/addresses.json",
+        "--allocation",
+        ".runtime/fork-safe-e2e/allocation.json",
+        "--artifact-out",
+        ".runtime/fork-safe-e2e/artifact.json"
+      ],
+      "safe": "operatorSafe",
+      "files": [
+        {
+          "file": "import-allocation.1.json",
+          "transactions": 1,
+          "plansMaxGas": "11460000",
+          "maxGas": "12004688"
+        },
+        {
+          "file": "import-allocation.2.json",
+          "transactions": 1,
+          "plansMaxGas": "4620000",
+          "maxGas": "4930544"
+        }
+      ]
+    },
+    {
+      "label": "verify-allocation",
+      "argv": [
+        "verify-allocation",
+        "--addresses",
+        ".runtime/fork-safe-e2e/addresses.json",
+        "--artifact",
+        ".runtime/fork-safe-e2e/artifact.json",
+        "--allocation",
+        ".runtime/fork-safe-e2e/allocation.json"
+      ],
+      "mode": "full-round",
+      "transactions": [],
+      "status": "READY_TO_FINALIZE"
+    },
+    {
+      "label": "finalize-allocation",
+      "argv": [
+        "finalize-allocation",
+        "--addresses",
+        ".runtime/fork-safe-e2e/addresses.json",
+        "--artifact",
+        ".runtime/fork-safe-e2e/artifact.json",
+        "--allocation",
+        ".runtime/fork-safe-e2e/allocation.json"
+      ],
+      "safe": "operatorSafe",
+      "files": [
+        {
+          "file": "finalize-allocation.json",
+          "transactions": 1,
+          "plansMaxGas": "150000",
+          "maxGas": "306424"
+        }
+      ]
+    },
+    {
+      "label": "bind-distributor-optimal",
+      "argv": [
+        "bind-distributor",
+        "--addresses",
+        ".runtime/fork-safe-e2e/addresses.json",
+        "--pool",
+        "optimal"
+      ],
+      "safe": "operatorSafe",
+      "files": [
+        {
+          "file": "bind-distributor-optimal.json",
+          "transactions": 1,
+          "plansMaxGas": "150000",
+          "maxGas": "306936"
+        }
+      ]
+    },
+    {
+      "label": "activate-optimal",
+      "argv": [
+        "activate",
+        "--addresses",
+        ".runtime/fork-safe-e2e/addresses.json",
+        "--pool",
+        "optimal",
+        "--nand-shares",
+        "500",
+        "--latch-shares",
+        "60"
+      ],
+      "safe": "operatorSafe",
+      "files": [
+        {
+          "file": "activate-optimal.json",
+          "transactions": 1,
+          "plansMaxGas": "250000",
+          "maxGas": "410781"
+        }
+      ]
+    },
+    {
+      "label": "bind-distributor-regular",
+      "argv": [
+        "bind-distributor",
+        "--addresses",
+        ".runtime/fork-safe-e2e/addresses.json",
+        "--pool",
+        "regular"
+      ],
+      "safe": "operatorSafe",
+      "files": [
+        {
+          "file": "bind-distributor-regular.json",
+          "transactions": 1,
+          "plansMaxGas": "150000",
+          "maxGas": "306936"
+        }
+      ]
+    },
+    {
+      "label": "activate-regular",
+      "argv": [
+        "activate",
+        "--addresses",
+        ".runtime/fork-safe-e2e/addresses.json",
+        "--pool",
+        "regular",
+        "--nand-shares",
+        "500",
+        "--latch-shares",
+        "60"
+      ],
+      "safe": "operatorSafe",
+      "files": [
+        {
+          "file": "activate-regular.json",
+          "transactions": 1,
+          "plansMaxGas": "250000",
+          "maxGas": "410781"
+        }
+      ]
+    },
+    {
+      "label": "renounce-nand",
+      "argv": [
+        "renounce",
+        "--addresses",
+        ".runtime/fork-safe-e2e/addresses.json",
+        "--target",
+        "nand"
+      ],
+      "safe": "operatorSafe",
+      "files": [
+        {
+          "file": "renounce-nand.json",
+          "transactions": 1,
+          "plansMaxGas": "100000",
+          "maxGas": "254757"
+        }
+      ]
+    },
+    {
+      "label": "renounce-latch",
+      "argv": [
+        "renounce",
+        "--addresses",
+        ".runtime/fork-safe-e2e/addresses.json",
+        "--target",
+        "latch"
+      ],
+      "safe": "operatorSafe",
+      "files": [
+        {
+          "file": "renounce-latch.json",
+          "transactions": 1,
+          "plansMaxGas": "100000",
+          "maxGas": "254757"
+        }
+      ]
+    },
+    {
+      "label": "renounce-distributor",
+      "argv": [
+        "renounce",
+        "--addresses",
+        ".runtime/fork-safe-e2e/addresses.json",
+        "--target",
+        "distributor"
+      ],
+      "safe": "operatorSafe",
+      "files": [
+        {
+          "file": "renounce-distributor.json",
+          "transactions": 1,
+          "plansMaxGas": "100000",
+          "maxGas": "254757"
+        }
+      ]
+    },
+    {
+      "label": "renounce-optimal",
+      "argv": [
+        "renounce",
+        "--addresses",
+        ".runtime/fork-safe-e2e/addresses.json",
+        "--target",
+        "pool",
+        "--pool",
+        "optimal"
+      ],
+      "safe": "operatorSafe",
+      "files": [
+        {
+          "file": "renounce-optimal.json",
+          "transactions": 1,
+          "plansMaxGas": "100000",
+          "maxGas": "254757"
+        }
+      ]
+    },
+    {
+      "label": "renounce-regular",
+      "argv": [
+        "renounce",
+        "--addresses",
+        ".runtime/fork-safe-e2e/addresses.json",
+        "--target",
+        "pool",
+        "--pool",
+        "regular"
+      ],
+      "safe": "operatorSafe",
+      "files": [
+        {
+          "file": "renounce-regular.json",
+          "transactions": 1,
+          "plansMaxGas": "100000",
+          "maxGas": "254757"
+        }
+      ]
+    },
+    {
+      "label": "finality",
+      "argv": [
+        "finality",
+        "--addresses",
+        ".runtime/fork-safe-e2e/addresses.json",
+        "--pool",
+        "optimal"
+      ],
+      "transactions": [],
+      "status": "READY_FOR_FIRST_ADMISSION"
+    },
+    {
+      "label": "finality-regular",
+      "argv": [
+        "finality",
+        "--addresses",
+        ".runtime/fork-safe-e2e/addresses.json",
+        "--pool",
+        "regular"
+      ],
+      "transactions": [],
+      "status": "READY_FOR_FIRST_ADMISSION"
+    },
+    {
+      "label": "impersonated holder moves miner 12733 to the member Safe",
+      "transactions": [
+        {
+          "hash": "0x72b5efdaaeb9ffb8edff1e2d5053c4787a4dbf83a958ac0cef3e4f8403828b03",
+          "gasUsed": "67506",
+          "blockNumber": "128713158"
+        }
+      ]
+    },
+    {
+      "label": "impersonated holder moves miner 13948 to the member Safe",
+      "transactions": [
+        {
+          "hash": "0x6ea580e2f17560b5fdcbaed3a8a0eab0e9979d09351a538a19d94631b1be7a6b",
+          "gasUsed": "50394",
+          "blockNumber": "128713159"
+        }
+      ]
+    },
+    {
+      "label": "impersonated holder moves miner 4183 to the member Safe",
+      "transactions": [
+        {
+          "hash": "0x72f862af2a0441371b3800214501021ed69a93a50300cb152767a5ab96b34151",
+          "gasUsed": "50406",
+          "blockNumber": "128713160"
+        }
+      ]
+    },
+    {
+      "label": "impersonated holder moves miner 1574 to the member Safe",
+      "transactions": [
+        {
+          "hash": "0x407798447bb2c3651c9b3faef4c55c927b42765a929e7156ca4b7f989e0c0aa1",
+          "gasUsed": "50406",
+          "blockNumber": "128713161"
+        }
+      ]
+    },
+    {
+      "label": "deposit-first",
+      "argv": [
+        "deposit",
+        "--addresses",
+        ".runtime/fork-safe-e2e/addresses.json",
+        "--pool",
+        "optimal",
+        "--token-ids",
+        "12733,13948"
+      ],
+      "safe": "memberSafe",
+      "files": [
+        {
+          "file": "deposit-first.json",
+          "transactions": 2,
+          "plansMaxGas": "1100000",
+          "maxGas": "1292586"
+        }
+      ]
+    },
+    {
+      "label": "deposit-later",
+      "argv": [
+        "deposit",
+        "--addresses",
+        ".runtime/fork-safe-e2e/addresses.json",
+        "--pool",
+        "optimal",
+        "--token-ids",
+        "4183,1574"
+      ],
+      "safe": "memberSafe",
+      "files": [
+        {
+          "file": "deposit-later.json",
+          "transactions": 1,
+          "plansMaxGas": "860000",
+          "maxGas": "1042138"
+        }
+      ]
+    },
+    {
+      "label": "harvest",
+      "argv": [
+        "harvest",
+        "--addresses",
+        ".runtime/fork-safe-e2e/addresses.json",
+        "--pool",
+        "optimal",
+        "--all",
+        "--isolate-failures",
+        "--from",
+        "0xb11307e95E3C765B73A9049eE60c9fd2cf1422bb",
+        "--send-local"
+      ],
+      "mode": "SENT_LOCAL_ANVIL",
+      "transactions": [
+        {
+          "hash": "0x32c3b7644ce411b9a7a76e71e1560acd893483211fcccad357890fe04bf2cce8",
+          "gasUsed": "247905",
+          "blockNumber": "128713166",
+          "description": "harvest miners 12733,13948,4183,1574"
+        }
+      ]
+    },
+    {
+      "label": "member-claims-receipts",
+      "argv": [
+        "claim-receipts",
+        "--addresses",
+        ".runtime/fork-safe-e2e/addresses.json"
+      ],
+      "safe": "memberSafe",
+      "files": [
+        {
+          "file": "member-claims-receipts.json",
+          "transactions": 1,
+          "plansMaxGas": "2520000",
+          "maxGas": "2755936"
+        }
+      ]
+    },
+    {
+      "label": "verify-after-delivery",
+      "argv": [
+        "verify-allocation",
+        "--addresses",
+        ".runtime/fork-safe-e2e/addresses.json",
+        "--artifact",
+        ".runtime/fork-safe-e2e/artifact.json"
+      ],
+      "mode": "full-round",
+      "transactions": [],
+      "status": "FINALIZED_AND_MATCHES"
+    },
+    {
+      "label": "member-claims-bem",
+      "argv": [
+        "claim",
+        "--addresses",
+        ".runtime/fork-safe-e2e/addresses.json",
+        "--pool",
+        "optimal",
+        "--all"
+      ],
+      "safe": "memberSafe",
+      "files": [
+        {
+          "file": "member-claims-bem.json",
+          "transactions": 1,
+          "plansMaxGas": "2120000",
+          "maxGas": "2374858"
+        }
+      ]
+    },
+    {
+      "label": "release",
+      "argv": [
+        "release",
+        "--addresses",
+        ".runtime/fork-safe-e2e/addresses.json",
+        "--pool",
+        "optimal",
+        "--from",
+        "0xb11307e95E3C765B73A9049eE60c9fd2cf1422bb",
+        "--send-local"
+      ],
+      "mode": "SENT_LOCAL_ANVIL",
+      "transactions": [
+        {
+          "hash": "0x77ebf9870757a383d484c8635b07f484f0662bce50e1ed695a459c4549d3406e",
+          "gasUsed": "151434",
+          "blockNumber": "128713169",
+          "description": "pay recipient A its unpaid 1/84, and transfer C's whole unpaid 2/84 to the sink 0x000000000000000000000000000000000000dEaD"
+        },
+        {
+          "hash": "0x5afc51ea771f886d797eac4b5666e3cce27905a83856b3427287e140da81a545",
+          "gasUsed": "124055",
+          "blockNumber": "128713170",
+          "description": "pay recipient B its unpaid 1/84, and transfer C's whole unpaid 2/84 to the sink 0x000000000000000000000000000000000000dEaD"
+        }
+      ]
+    },
+    {
+      "label": "set-recipient-a",
+      "argv": [
+        "set-recipient",
+        "--addresses",
+        ".runtime/fork-safe-e2e/addresses.json",
+        "--pool",
+        "optimal",
+        "--role",
+        "A",
+        "--to",
+        "0x77A918c4151C22937C08bc44361601a093ccef96"
+      ],
+      "safe": "operatorSafe",
+      "files": [
+        {
+          "file": "set-recipient-a.json",
+          "transactions": 1,
+          "plansMaxGas": "150000",
+          "maxGas": "307448"
+        }
+      ]
+    },
+    {
+      "label": "set-recipient-b",
+      "argv": [
+        "set-recipient",
+        "--addresses",
+        ".runtime/fork-safe-e2e/addresses.json",
+        "--pool",
+        "optimal",
+        "--role",
+        "B",
+        "--to",
+        "0x74b06b487fc760916b2d5FC94c47484D410d1e57"
+      ],
+      "safe": "recipientSafe",
+      "files": [
+        {
+          "file": "set-recipient-b.json",
+          "transactions": 1,
+          "plansMaxGas": "150000",
+          "maxGas": "307448"
+        }
+      ]
+    },
+    {
+      "label": "harvest-2",
+      "argv": [
+        "harvest",
+        "--addresses",
+        ".runtime/fork-safe-e2e/addresses.json",
+        "--pool",
+        "optimal",
+        "--all",
+        "--isolate-failures",
+        "--from",
+        "0xb11307e95E3C765B73A9049eE60c9fd2cf1422bb",
+        "--send-local"
+      ],
+      "mode": "SENT_LOCAL_ANVIL",
+      "transactions": [
+        {
+          "hash": "0xc615594ae1089c0a9d79f240ed6c9faf57d030cf6dc47168f982d643f1a02234",
+          "gasUsed": "247905",
+          "blockNumber": "128713174",
+          "description": "harvest miners 12733,13948,4183,1574"
+        }
+      ]
+    },
+    {
+      "label": "release-2-by-safe",
+      "argv": [
+        "release",
+        "--addresses",
+        ".runtime/fork-safe-e2e/addresses.json",
+        "--pool",
+        "optimal"
+      ],
+      "safe": "operatorSafe",
+      "files": [
+        {
+          "file": "release-2-by-safe.json",
+          "transactions": 2,
+          "plansMaxGas": "600000",
+          "maxGas": "772848"
+        }
+      ]
+    },
+    {
+      "label": "member Safe transfers NAND #1 to alice (owner-signed Safe transaction)",
+      "transactions": [
+        {
+          "hash": "0xcd1b9b6768db08e3ecc7921c5bd45b8483e409039b1e336f0d7a0225e27c83c9",
+          "gasUsed": "106469",
+          "blockNumber": "128713176"
+        }
+      ]
+    },
+    {
+      "label": "harvest-3",
+      "argv": [
+        "harvest",
+        "--addresses",
+        ".runtime/fork-safe-e2e/addresses.json",
+        "--pool",
+        "optimal",
+        "--all",
+        "--isolate-failures",
+        "--from",
+        "0xb11307e95E3C765B73A9049eE60c9fd2cf1422bb",
+        "--send-local"
+      ],
+      "mode": "SENT_LOCAL_ANVIL",
+      "transactions": [
+        {
+          "hash": "0x897b42415999a6d3758ffbfd40b266e14bfa2fec4e9c4b03bb7fcb80159ad93b",
+          "gasUsed": "247905",
+          "blockNumber": "128713178",
+          "description": "harvest miners 12733,13948,4183,1574"
+        }
+      ]
+    },
+    {
+      "label": "alice-claims-transferred-receipt",
+      "argv": [
+        "claim",
+        "--addresses",
+        ".runtime/fork-safe-e2e/addresses.json",
+        "--pool",
+        "optimal",
+        "--from",
+        "0x013090F73B9e00639319c96aA845dBc2B2f5435A",
+        "--nand",
+        "1",
+        "--send-local"
+      ],
+      "mode": "SENT_LOCAL_ANVIL",
+      "transactions": [
+        {
+          "hash": "0x3a12bd993d941a31b12471e3aea429b0c42dea1fee138ed0002a4a2cabf838c6",
+          "gasUsed": "110775",
+          "blockNumber": "128713179",
+          "description": "claim BEM for 1 NAND + 0 LATCH receipts"
+        }
+      ]
+    },
+    {
+      "label": "member-preview-for-transferred-receipt",
+      "argv": [
+        "claim",
+        "--addresses",
+        ".runtime/fork-safe-e2e/addresses.json",
+        "--pool",
+        "optimal",
+        "--holder",
+        "0xC38010E76E6B23B3CDAf04D34a27A08967974663",
+        "--nand",
+        "1"
+      ],
+      "mode": "PLAN_ONLY_NOT_SENT",
+      "transactions": []
+    },
+    {
+      "label": "reconcile-deep",
+      "argv": [
+        "reconcile",
+        "--addresses",
+        ".runtime/fork-safe-e2e/addresses.json",
+        "--pool",
+        "optimal",
+        "--deep"
+      ],
+      "transactions": [],
+      "status": "PASS"
+    }
+  ],
+  "safeTransactions": [
+    {
+      "step": "issue-nand#1",
+      "safe": "operatorSafe",
+      "file": "issue-nand.1.json",
+      "fileSha256": "66f3ddf992c39896d60f659fbb0d1dfb0ae674a0093bf520b11b6e983f495783",
+      "entries": 2,
+      "operation": "DELEGATECALL MultiSendCallOnly",
+      "signatures": 2,
+      "payloadBytes": 306,
+      "plansMaxGas": "11400000",
+      "maxGas": "11934896",
+      "estimate": "9828900",
+      "gasUsed": "9454076",
+      "hash": "0x45361bc03b4b92d501d4c4f9a48e78515a460e98c1aa45a90434d11503ae369b",
+      "blockNumber": "128713134",
+      "safeNonce": "0"
+    },
+    {
+      "step": "issue-nand#2",
+      "safe": "operatorSafe",
+      "file": "issue-nand.2.json",
+      "fileSha256": "4c86a56d92b9abb1499566dd2e3fb8d0b859d3770600fd66ccf146e95ba1b335",
+      "entries": 2,
+      "operation": "DELEGATECALL MultiSendCallOnly",
+      "signatures": 2,
+      "payloadBytes": 306,
+      "plansMaxGas": "11400000",
+      "maxGas": "11934896",
+      "estimate": "9793882",
+      "gasUsed": "9419876",
+      "hash": "0x34848efe348361338760b6f814deedfb1e04fad8579beb46002048a756a41e09",
+      "blockNumber": "128713135",
+      "safeNonce": "1"
+    },
+    {
+      "step": "issue-nand#3",
+      "safe": "operatorSafe",
+      "file": "issue-nand.3.json",
+      "fileSha256": "2dbcf756906c1e7d20cad10078e60dd58966038b79a57b3f72f4e269bed3b54a",
+      "entries": 1,
+      "operation": "CALL",
+      "signatures": 2,
+      "payloadBytes": 153,
+      "plansMaxGas": "5700000",
+      "maxGas": "6042448",
+      "estimate": "4894920",
+      "gasUsed": "4746595",
+      "hash": "0xf6c2b666c004f08771f0fcb9ae37ade90bb7e76465173df1093570d671ff60a1",
+      "blockNumber": "128713136",
+      "safeNonce": "2"
+    },
+    {
+      "step": "issue-latch",
+      "safe": "operatorSafe",
+      "file": "issue-latch.json",
+      "fileSha256": "49c5c766494b52a3e2d17017bd9576f3e03df5432e82e0641b8825d903c84571",
+      "entries": 1,
+      "operation": "CALL",
+      "signatures": 2,
+      "payloadBytes": 153,
+      "plansMaxGas": "3460000",
+      "maxGas": "3727781",
+      "estimate": "2991445",
+      "gasUsed": "2902139",
+      "hash": "0xff8db1e32fc357e4e010bc451ec9cba867056c3281ab1911ab123ac58570020b",
+      "blockNumber": "128713137",
+      "safeNonce": "3"
+    },
+    {
+      "step": "fund-nand#1",
+      "safe": "operatorSafe",
+      "file": "fund-nand.1.json",
+      "fileSha256": "5a50e976db044e3ab78a7357e6f0a92b2714ce70a03176b05d961563ea40f065",
+      "entries": 2,
+      "operation": "DELEGATECALL MultiSendCallOnly",
+      "signatures": 2,
+      "payloadBytes": 16690,
+      "plansMaxGas": "11200000",
+      "maxGas": "11990373",
+      "estimate": "11020622",
+      "gasUsed": "9392546",
+      "hash": "0x8a49291e078c712422157947e4820ddc9e98511bb633c1f05571d13d77d60700",
+      "blockNumber": "128713141",
+      "safeNonce": "4"
+    },
+    {
+      "step": "fund-nand#2",
+      "safe": "operatorSafe",
+      "file": "fund-nand.2.json",
+      "fileSha256": "fe8480dcecc7f755bd595adf15f50fbf984b4033622ab0f76b9254743aa8fde9",
+      "entries": 2,
+      "operation": "DELEGATECALL MultiSendCallOnly",
+      "signatures": 2,
+      "payloadBytes": 16690,
+      "plansMaxGas": "11200000",
+      "maxGas": "11990373",
+      "estimate": "11005926",
+      "gasUsed": "9378398",
+      "hash": "0x29eb53a8481d825cced3df6f7c4db012ecab3a464838a17e5727114e157a30bd",
+      "blockNumber": "128713142",
+      "safeNonce": "5"
+    },
+    {
+      "step": "fund-latch",
+      "safe": "operatorSafe",
+      "file": "fund-latch.json",
+      "fileSha256": "b1774d3ca5af9a0d3b161ed7a9646938c37edcdb7ea27669bbaa765145b93b02",
+      "entries": 1,
+      "operation": "CALL",
+      "signatures": 2,
+      "payloadBytes": 4185,
+      "plansMaxGas": "2740000",
+      "maxGas": "3048293",
+      "estimate": "2707619",
+      "gasUsed": "2333950",
+      "hash": "0x835717de75bb217d2849572044f7c3bd8e70aefd5480c8d04c42bf1e06602be5",
+      "blockNumber": "128713143",
+      "safeNonce": "6"
+    },
+    {
+      "step": "finalize-issuance-nand",
+      "safe": "operatorSafe",
+      "file": "finalize-issuance-nand.json",
+      "fileSha256": "9f53827e6a65238f69b435011af89b3a894e0b7b00a8b25f45f393f2594df926",
+      "entries": 1,
+      "operation": "CALL",
+      "signatures": 2,
+      "payloadBytes": 89,
+      "plansMaxGas": "100000",
+      "maxGas": "254757",
+      "estimate": "96570",
+      "gasUsed": "95578",
+      "hash": "0x12ca17170496497ae9aecdf8892f2ecee2b31f964a91bb2b950654b948d0a727",
+      "blockNumber": "128713144",
+      "safeNonce": "7"
+    },
+    {
+      "step": "finalize-issuance-latch",
+      "safe": "operatorSafe",
+      "file": "finalize-issuance-latch.json",
+      "fileSha256": "0289765cb055ad48290303da3cb94f1b1ce73eee5d64d05aa471980891ccd40f",
+      "entries": 1,
+      "operation": "CALL",
+      "signatures": 2,
+      "payloadBytes": 89,
+      "plansMaxGas": "100000",
+      "maxGas": "254757",
+      "estimate": "96582",
+      "gasUsed": "95590",
+      "hash": "0x48b6f2d7c8a73724c786541b86db3f530465a20effe800991aec574b437d88c3",
+      "blockNumber": "128713145",
+      "safeNonce": "8"
+    },
+    {
+      "step": "import-allocation#1",
+      "safe": "operatorSafe",
+      "file": "import-allocation.1.json",
+      "fileSha256": "0c174bb80500b3cb734a2dc0a7fc4acb51b585370753557c4cd3466dfd9d0614",
+      "entries": 1,
+      "operation": "CALL",
+      "signatures": 2,
+      "payloadBytes": 793,
+      "plansMaxGas": "11460000",
+      "maxGas": "12004688",
+      "estimate": "11098058",
+      "gasUsed": "10757603",
+      "hash": "0xc30d7a5e9912b6ba77d127f707175d8fe934f5e11405b00ee6180269a3354c57",
+      "blockNumber": "128713146",
+      "safeNonce": "9"
+    },
+    {
+      "step": "import-allocation#2",
+      "safe": "operatorSafe",
+      "file": "import-allocation.2.json",
+      "fileSha256": "49a487a6da1bcbea406af3488435bffcec13a524e82ba76a8c5d7f3ab227536e",
+      "entries": 1,
+      "operation": "CALL",
+      "signatures": 2,
+      "payloadBytes": 409,
+      "plansMaxGas": "4620000",
+      "maxGas": "4930544",
+      "estimate": "4392525",
+      "gasUsed": "4259855",
+      "hash": "0x26fdbdee0c19d8bf57662ab5d77bed48ff1b4b3ab13be11f8f0634d963abd398",
+      "blockNumber": "128713147",
+      "safeNonce": "10"
+    },
+    {
+      "step": "finalize-allocation",
+      "safe": "operatorSafe",
+      "file": "finalize-allocation.json",
+      "fileSha256": "f59f6bedff5b563f1d5d6649f949424ba6319ee88e601101f09dc8e5335212b8",
+      "entries": 1,
+      "operation": "CALL",
+      "signatures": 2,
+      "payloadBytes": 89,
+      "plansMaxGas": "150000",
+      "maxGas": "306424",
+      "estimate": "117569",
+      "gasUsed": "116249",
+      "hash": "0xfc7e25f9c50c102c1adb47d82d0239e31172efc6c68c70366e11aafda5a6da35",
+      "blockNumber": "128713148",
+      "safeNonce": "11"
+    },
+    {
+      "step": "bind-distributor-optimal",
+      "safe": "operatorSafe",
+      "file": "bind-distributor-optimal.json",
+      "fileSha256": "1cf28f33a027c83062b623ece23de6ccb1ae882f9309bab5f3bc011c7dd2d37b",
+      "entries": 1,
+      "operation": "CALL",
+      "signatures": 2,
+      "payloadBytes": 121,
+      "plansMaxGas": "150000",
+      "maxGas": "306936",
+      "estimate": "101054",
+      "gasUsed": "99998",
+      "hash": "0xaa71c7ff3eaa2723adbe5eb35750686656e12d3fe928f32479e34a4681915207",
+      "blockNumber": "128713149",
+      "safeNonce": "12"
+    },
+    {
+      "step": "activate-optimal",
+      "safe": "operatorSafe",
+      "file": "activate-optimal.json",
+      "fileSha256": "f4e0cc85a07234b234ec544052484fed393ba4064dd67b25b9d17bb85ff9d10f",
+      "entries": 1,
+      "operation": "CALL",
+      "signatures": 2,
+      "payloadBytes": 153,
+      "plansMaxGas": "250000",
+      "maxGas": "410781",
+      "estimate": "147031",
+      "gasUsed": "145255",
+      "hash": "0x9fd2bfed16a389c1fc3e4e1cc3206d2b1c96d270cd4baf3605a5b93cebc6835a",
+      "blockNumber": "128713150",
+      "safeNonce": "13"
+    },
+    {
+      "step": "bind-distributor-regular",
+      "safe": "operatorSafe",
+      "file": "bind-distributor-regular.json",
+      "fileSha256": "86e0a7e856e1fa402e063f643117619ea54bb94a6fe365e3e82267986af38e66",
+      "entries": 1,
+      "operation": "CALL",
+      "signatures": 2,
+      "payloadBytes": 121,
+      "plansMaxGas": "150000",
+      "maxGas": "306936",
+      "estimate": "101087",
+      "gasUsed": "100030",
+      "hash": "0x9aeeda7babc83a4d19ffbc28f0cba03443346428d0465f5766d226d8eeaefeb6",
+      "blockNumber": "128713151",
+      "safeNonce": "14"
+    },
+    {
+      "step": "activate-regular",
+      "safe": "operatorSafe",
+      "file": "activate-regular.json",
+      "fileSha256": "ac677ce1d4a787f0b02e2712848b539e3de9e576f58a9905680dbda5f2279d75",
+      "entries": 1,
+      "operation": "CALL",
+      "signatures": 2,
+      "payloadBytes": 153,
+      "plansMaxGas": "250000",
+      "maxGas": "410781",
+      "estimate": "147031",
+      "gasUsed": "145255",
+      "hash": "0x9d829dddddccb43ec379dffdf9ae384f2a1febab8ff4c89753bea4531d2d21a4",
+      "blockNumber": "128713152",
+      "safeNonce": "15"
+    },
+    {
+      "step": "renounce-nand",
+      "safe": "operatorSafe",
+      "file": "renounce-nand.json",
+      "fileSha256": "189c70cf5135cc1fcec51fd5c956f5fb37bf009667d8102d28f42e4e2561e9e4",
+      "entries": 1,
+      "operation": "CALL",
+      "signatures": 2,
+      "payloadBytes": 89,
+      "plansMaxGas": "100000",
+      "maxGas": "254757",
+      "estimate": "77882",
+      "gasUsed": "72382",
+      "hash": "0x9348bd4aa346fbc41101c936b3691e18ae2607483b44e4aba80ba975c738c341",
+      "blockNumber": "128713153",
+      "safeNonce": "16"
+    },
+    {
+      "step": "renounce-latch",
+      "safe": "operatorSafe",
+      "file": "renounce-latch.json",
+      "fileSha256": "cd9524c78f0c2a67ca16632ddf8d26e987e1a1b5dd40f317bc0190e3c6d40962",
+      "entries": 1,
+      "operation": "CALL",
+      "signatures": 2,
+      "payloadBytes": 89,
+      "plansMaxGas": "100000",
+      "maxGas": "254757",
+      "estimate": "77882",
+      "gasUsed": "72382",
+      "hash": "0x7a75aa88f8a70bea6e69c25f2c48569e0616645ea3764206ce7d5e963ed2ce39",
+      "blockNumber": "128713154",
+      "safeNonce": "17"
+    },
+    {
+      "step": "renounce-distributor",
+      "safe": "operatorSafe",
+      "file": "renounce-distributor.json",
+      "fileSha256": "8aa4acf7d9eb5a100de97ad11b917f5322a515bdd2d152e5a8056d8922c132a0",
+      "entries": 1,
+      "operation": "CALL",
+      "signatures": 2,
+      "payloadBytes": 89,
+      "plansMaxGas": "100000",
+      "maxGas": "254757",
+      "estimate": "77757",
+      "gasUsed": "72259",
+      "hash": "0x8f832ce1bbe38ba6c033c240826b98da1366c7282d2f1bbccbe2be387b8bd5ba",
+      "blockNumber": "128713155",
+      "safeNonce": "18"
+    },
+    {
+      "step": "renounce-optimal",
+      "safe": "operatorSafe",
+      "file": "renounce-optimal.json",
+      "fileSha256": "5c3cc6e4124401397e8902307506d753d11ab560a0019afaf6a5cc2eaed544e6",
+      "entries": 1,
+      "operation": "CALL",
+      "signatures": 2,
+      "payloadBytes": 89,
+      "plansMaxGas": "100000",
+      "maxGas": "254757",
+      "estimate": "78316",
+      "gasUsed": "72809",
+      "hash": "0xafa1e822d6de2bb71350f9647366524275ab363c8aa8c54d0358e1dca4f81b10",
+      "blockNumber": "128713156",
+      "safeNonce": "19"
+    },
+    {
+      "step": "renounce-regular",
+      "safe": "operatorSafe",
+      "file": "renounce-regular.json",
+      "fileSha256": "e991efe5cfb2c69bcfcceb3a83882c5fc4c7f7e6c703dc8b820b379cffb81014",
+      "entries": 1,
+      "operation": "CALL",
+      "signatures": 2,
+      "payloadBytes": 89,
+      "plansMaxGas": "100000",
+      "maxGas": "254757",
+      "estimate": "78304",
+      "gasUsed": "72797",
+      "hash": "0xc6d5e4e3d680eca976f7deb74f5da54e0b509364b0e515ad3487c786f172c9de",
+      "blockNumber": "128713157",
+      "safeNonce": "20"
+    },
+    {
+      "step": "deposit-first",
+      "safe": "memberSafe",
+      "file": "deposit-first.json",
+      "fileSha256": "2a3ed50924cc7e5554bd9e6e9ee97b34b7af6e4046994159ebd48d236cd3ea13",
+      "entries": 2,
+      "operation": "DELEGATECALL MultiSendCallOnly",
+      "signatures": 2,
+      "payloadBytes": 370,
+      "plansMaxGas": "1100000",
+      "maxGas": "1292586",
+      "estimate": "873842",
+      "gasUsed": "834403",
+      "hash": "0xa5b29a59557e0554638a3c64da8dcda31ab2e7d4cc6f7087c0d04f96a15dc9b7",
+      "blockNumber": "128713162",
+      "safeNonce": "0"
+    },
+    {
+      "step": "deposit-later",
+      "safe": "memberSafe",
+      "file": "deposit-later.json",
+      "fileSha256": "980aee08e18188bd271f2e33a8103c7e43ef3d1bd798c40b1433bb01398cb3b9",
+      "entries": 1,
+      "operation": "CALL",
+      "signatures": 2,
+      "payloadBytes": 217,
+      "plansMaxGas": "860000",
+      "maxGas": "1042138",
+      "estimate": "625807",
+      "gasUsed": "599987",
+      "hash": "0x875ceebcd42903e3d5ef084bd2c22447f41528e248c65e816a44343b4e9d8851",
+      "blockNumber": "128713164",
+      "safeNonce": "1"
+    },
+    {
+      "step": "member-claims-receipts",
+      "safe": "memberSafe",
+      "file": "member-claims-receipts.json",
+      "fileSha256": "1fb2c4db96a76b7b8c6e82d755863acd6bb063ec67fc83d7fc46e1b0d2becd11",
+      "entries": 1,
+      "operation": "CALL",
+      "signatures": 2,
+      "payloadBytes": 121,
+      "plansMaxGas": "2520000",
+      "maxGas": "2755936",
+      "estimate": "2358092",
+      "gasUsed": "1994481",
+      "hash": "0xbd06f5a1aa5daf591922e156b122cb86fa4f799e9777cd16a35c41622d1b6f12",
+      "blockNumber": "128713167",
+      "safeNonce": "2"
+    },
+    {
+      "step": "member-claims-bem",
+      "safe": "memberSafe",
+      "file": "member-claims-bem.json",
+      "fileSha256": "3fa1fe944269ea0cab1c85b156d9f8dc3c89883e5e2b28c2bd3d4549c338b55c",
+      "entries": 1,
+      "operation": "CALL",
+      "signatures": 2,
+      "payloadBytes": 2137,
+      "plansMaxGas": "2120000",
+      "maxGas": "2374858",
+      "estimate": "1960359",
+      "gasUsed": "1898479",
+      "hash": "0x6a9b3bf3c51328d15183e8622050dee1a848ec3a5038a4a830cd608242745ef7",
+      "blockNumber": "128713168",
+      "safeNonce": "3"
+    },
+    {
+      "step": "set-recipient-a",
+      "safe": "operatorSafe",
+      "file": "set-recipient-a.json",
+      "fileSha256": "36ee03663f985fc8c6a36a0fffe23582a528aea5e05bfb27f41d34f2ef3d4997",
+      "entries": 1,
+      "operation": "CALL",
+      "signatures": 2,
+      "payloadBytes": 153,
+      "plansMaxGas": "150000",
+      "maxGas": "307448",
+      "estimate": "78526",
+      "gasUsed": "77824",
+      "hash": "0x80a767f725a9be699660a75fec4336344dab50a3bb92a931fdb77dc83d6d1783",
+      "blockNumber": "128713171",
+      "safeNonce": "21"
+    },
+    {
+      "step": "set-recipient-b",
+      "safe": "recipientSafe",
+      "file": "set-recipient-b.json",
+      "fileSha256": "ccdfcb37b24368d988a4a83dfe1d852b0ad4b4a8a011848e890d085a3e9c3796",
+      "entries": 1,
+      "operation": "CALL",
+      "signatures": 10,
+      "payloadBytes": 153,
+      "plansMaxGas": "150000",
+      "maxGas": "307448",
+      "estimate": "158633",
+      "gasUsed": "156810",
+      "hash": "0xfaebdc71054e88db46017bf0a10720b65d9aadd95e126f4c3a644edfe12fe67d",
+      "blockNumber": "128713172",
+      "safeNonce": "0"
+    },
+    {
+      "step": "release-2-by-safe",
+      "safe": "operatorSafe",
+      "file": "release-2-by-safe.json",
+      "fileSha256": "9b9890b3423f2b3cceea9398bbf810862e67efed7e0836a9d1ad78dc017de739",
+      "entries": 2,
+      "operation": "DELEGATECALL MultiSendCallOnly",
+      "signatures": 2,
+      "payloadBytes": 178,
+      "plansMaxGas": "600000",
+      "maxGas": "772848",
+      "estimate": "233682",
+      "gasUsed": "221432",
+      "hash": "0xd2a1c6225ca80348c98a7107e492a5fd91e47b7fab41c4eadeaf9a2c93c87746",
+      "blockNumber": "128713175",
+      "safeNonce": "22"
+    }
+  ],
+  "checks": {
+    "safe1.4.1_singletonDeployed": true,
+    "safe1.4.1_factoryDeployed": true,
+    "safe1.4.1_multiSendCallOnlyDeployed": true,
+    "safe1.4.1_fallbackHandlerDeployed": true,
+    "safe1.4.1_singletonVersion": true,
+    "safe1.3.0_singletonDeployed": true,
+    "safe1.3.0_factoryDeployed": true,
+    "safe1.3.0_multiSendCallOnlyDeployed": true,
+    "safe1.3.0_fallbackHandlerDeployed": true,
+    "safe1.3.0_singletonVersion": true,
+    "operatorSafe_ownersAndThreshold": true,
+    "operatorSafe_version": true,
+    "operatorSafe_declaresErc1155Receiver": true,
+    "memberSafe_ownersAndThreshold": true,
+    "memberSafe_version": true,
+    "memberSafe_declaresErc1155Receiver": true,
+    "recipientSafe_ownersAndThreshold": true,
+    "recipientSafe_version": true,
+    "recipientSafe_declaresErc1155Receiver": true,
+    "deploymentRefusedAsSafeBatch": true,
+    "receiptsOwnedByOperatorSafe": true,
+    "issue-nand_plannedNotSent": true,
+    "issue-nand_filesHoldEveryPlanInOrder": true,
+    "issue-nand_filesWithinBudget": true,
+    "issue-nand#1_fileFormat": true,
+    "issue-nand#1_boundPlannedUnderCap": true,
+    "issue-nand#1_eip712HashMatchesSafe": true,
+    "issue-nand#1_estimateWithinPlannedBound": true,
+    "issue-nand#1_executedBySafe": true,
+    "issue-nand#1_nonceAdvanced": true,
+    "issue-nand#2_fileFormat": true,
+    "issue-nand#2_boundPlannedUnderCap": true,
+    "issue-nand#2_eip712HashMatchesSafe": true,
+    "issue-nand#2_estimateWithinPlannedBound": true,
+    "issue-nand#2_executedBySafe": true,
+    "issue-nand#2_nonceAdvanced": true,
+    "issue-nand#3_fileFormat": true,
+    "issue-nand#3_boundPlannedUnderCap": true,
+    "issue-nand#3_eip712HashMatchesSafe": true,
+    "issue-nand#3_estimateWithinPlannedBound": true,
+    "issue-nand#3_executedBySafe": true,
+    "issue-nand#3_nonceAdvanced": true,
+    "issueSplitIntoThreeSafeTransactions": true,
+    "issue-latch_plannedNotSent": true,
+    "issue-latch_filesHoldEveryPlanInOrder": true,
+    "issue-latch_filesWithinBudget": true,
+    "issue-latch_fileFormat": true,
+    "issue-latch_boundPlannedUnderCap": true,
+    "issue-latch_eip712HashMatchesSafe": true,
+    "issue-latch_estimateWithinPlannedBound": true,
+    "issue-latch_executedBySafe": true,
+    "issue-latch_nonceAdvanced": true,
+    "operatorSafeHoldsTheSupply": true,
+    "poolsAndDistributorOwnedByOperatorSafe": true,
+    "fund-nand_plannedNotSent": true,
+    "fund-nand_filesHoldEveryPlanInOrder": true,
+    "fund-nand_filesWithinBudget": true,
+    "fund-nand#1_fileFormat": true,
+    "fund-nand#1_boundPlannedUnderCap": true,
+    "fund-nand#1_eip712HashMatchesSafe": true,
+    "fund-nand#1_estimateWithinPlannedBound": true,
+    "fund-nand#1_executedBySafe": true,
+    "fund-nand#1_nonceAdvanced": true,
+    "fund-nand#2_fileFormat": true,
+    "fund-nand#2_boundPlannedUnderCap": true,
+    "fund-nand#2_eip712HashMatchesSafe": true,
+    "fund-nand#2_estimateWithinPlannedBound": true,
+    "fund-nand#2_executedBySafe": true,
+    "fund-nand#2_nonceAdvanced": true,
+    "fundingSplitIntoTwoSafeTransactions": true,
+    "fund-latch_plannedNotSent": true,
+    "fund-latch_filesHoldEveryPlanInOrder": true,
+    "fund-latch_filesWithinBudget": true,
+    "fund-latch_fileFormat": true,
+    "fund-latch_boundPlannedUnderCap": true,
+    "fund-latch_eip712HashMatchesSafe": true,
+    "fund-latch_estimateWithinPlannedBound": true,
+    "fund-latch_executedBySafe": true,
+    "fund-latch_nonceAdvanced": true,
+    "distributorHoldsTheSupply": true,
+    "finalize-issuance-nand_plannedNotSent": true,
+    "finalize-issuance-nand_filesHoldEveryPlanInOrder": true,
+    "finalize-issuance-nand_filesWithinBudget": true,
+    "finalize-issuance-nand_fileFormat": true,
+    "finalize-issuance-nand_boundPlannedUnderCap": true,
+    "finalize-issuance-nand_eip712HashMatchesSafe": true,
+    "finalize-issuance-nand_estimateWithinPlannedBound": true,
+    "finalize-issuance-nand_executedBySafe": true,
+    "finalize-issuance-nand_nonceAdvanced": true,
+    "finalize-issuance-latch_plannedNotSent": true,
+    "finalize-issuance-latch_filesHoldEveryPlanInOrder": true,
+    "finalize-issuance-latch_filesWithinBudget": true,
+    "finalize-issuance-latch_fileFormat": true,
+    "finalize-issuance-latch_boundPlannedUnderCap": true,
+    "finalize-issuance-latch_eip712HashMatchesSafe": true,
+    "finalize-issuance-latch_estimateWithinPlannedBound": true,
+    "finalize-issuance-latch_executedBySafe": true,
+    "finalize-issuance-latch_nonceAdvanced": true,
+    "issuanceFinalized": true,
+    "import-allocation_plannedNotSent": true,
+    "import-allocation_filesHoldEveryPlanInOrder": true,
+    "import-allocation_filesWithinBudget": true,
+    "import-allocation#1_fileFormat": true,
+    "import-allocation#1_boundPlannedUnderCap": true,
+    "import-allocation#1_eip712HashMatchesSafe": true,
+    "import-allocation#1_estimateWithinPlannedBound": true,
+    "import-allocation#1_executedBySafe": true,
+    "import-allocation#1_nonceAdvanced": true,
+    "import-allocation#2_fileFormat": true,
+    "import-allocation#2_boundPlannedUnderCap": true,
+    "import-allocation#2_eip712HashMatchesSafe": true,
+    "import-allocation#2_estimateWithinPlannedBound": true,
+    "import-allocation#2_executedBySafe": true,
+    "import-allocation#2_nonceAdvanced": true,
+    "allocationReadyToFinalize": true,
+    "finalize-allocation_plannedNotSent": true,
+    "finalize-allocation_filesHoldEveryPlanInOrder": true,
+    "finalize-allocation_filesWithinBudget": true,
+    "finalize-allocation_fileFormat": true,
+    "finalize-allocation_boundPlannedUnderCap": true,
+    "finalize-allocation_eip712HashMatchesSafe": true,
+    "finalize-allocation_estimateWithinPlannedBound": true,
+    "finalize-allocation_executedBySafe": true,
+    "finalize-allocation_nonceAdvanced": true,
+    "bind-distributor-optimal_plannedNotSent": true,
+    "bind-distributor-optimal_filesHoldEveryPlanInOrder": true,
+    "bind-distributor-optimal_filesWithinBudget": true,
+    "bind-distributor-optimal_fileFormat": true,
+    "bind-distributor-optimal_boundPlannedUnderCap": true,
+    "bind-distributor-optimal_eip712HashMatchesSafe": true,
+    "bind-distributor-optimal_estimateWithinPlannedBound": true,
+    "bind-distributor-optimal_executedBySafe": true,
+    "bind-distributor-optimal_nonceAdvanced": true,
+    "activate-optimal_plannedNotSent": true,
+    "activate-optimal_filesHoldEveryPlanInOrder": true,
+    "activate-optimal_filesWithinBudget": true,
+    "activate-optimal_fileFormat": true,
+    "activate-optimal_boundPlannedUnderCap": true,
+    "activate-optimal_eip712HashMatchesSafe": true,
+    "activate-optimal_estimateWithinPlannedBound": true,
+    "activate-optimal_executedBySafe": true,
+    "activate-optimal_nonceAdvanced": true,
+    "bind-distributor-regular_plannedNotSent": true,
+    "bind-distributor-regular_filesHoldEveryPlanInOrder": true,
+    "bind-distributor-regular_filesWithinBudget": true,
+    "bind-distributor-regular_fileFormat": true,
+    "bind-distributor-regular_boundPlannedUnderCap": true,
+    "bind-distributor-regular_eip712HashMatchesSafe": true,
+    "bind-distributor-regular_estimateWithinPlannedBound": true,
+    "bind-distributor-regular_executedBySafe": true,
+    "bind-distributor-regular_nonceAdvanced": true,
+    "activate-regular_plannedNotSent": true,
+    "activate-regular_filesHoldEveryPlanInOrder": true,
+    "activate-regular_filesWithinBudget": true,
+    "activate-regular_fileFormat": true,
+    "activate-regular_boundPlannedUnderCap": true,
+    "activate-regular_eip712HashMatchesSafe": true,
+    "activate-regular_estimateWithinPlannedBound": true,
+    "activate-regular_executedBySafe": true,
+    "activate-regular_nonceAdvanced": true,
+    "distributorBoundOnceInEachPool": true,
+    "poolActive": true,
+    "renounce-nand_plannedNotSent": true,
+    "renounce-nand_filesHoldEveryPlanInOrder": true,
+    "renounce-nand_filesWithinBudget": true,
+    "renounce-nand_fileFormat": true,
+    "renounce-nand_boundPlannedUnderCap": true,
+    "renounce-nand_eip712HashMatchesSafe": true,
+    "renounce-nand_estimateWithinPlannedBound": true,
+    "renounce-nand_executedBySafe": true,
+    "renounce-nand_nonceAdvanced": true,
+    "renounce-latch_plannedNotSent": true,
+    "renounce-latch_filesHoldEveryPlanInOrder": true,
+    "renounce-latch_filesWithinBudget": true,
+    "renounce-latch_fileFormat": true,
+    "renounce-latch_boundPlannedUnderCap": true,
+    "renounce-latch_eip712HashMatchesSafe": true,
+    "renounce-latch_estimateWithinPlannedBound": true,
+    "renounce-latch_executedBySafe": true,
+    "renounce-latch_nonceAdvanced": true,
+    "renounce-distributor_plannedNotSent": true,
+    "renounce-distributor_filesHoldEveryPlanInOrder": true,
+    "renounce-distributor_filesWithinBudget": true,
+    "renounce-distributor_fileFormat": true,
+    "renounce-distributor_boundPlannedUnderCap": true,
+    "renounce-distributor_eip712HashMatchesSafe": true,
+    "renounce-distributor_estimateWithinPlannedBound": true,
+    "renounce-distributor_executedBySafe": true,
+    "renounce-distributor_nonceAdvanced": true,
+    "renounce-optimal_plannedNotSent": true,
+    "renounce-optimal_filesHoldEveryPlanInOrder": true,
+    "renounce-optimal_filesWithinBudget": true,
+    "renounce-optimal_fileFormat": true,
+    "renounce-optimal_boundPlannedUnderCap": true,
+    "renounce-optimal_eip712HashMatchesSafe": true,
+    "renounce-optimal_estimateWithinPlannedBound": true,
+    "renounce-optimal_executedBySafe": true,
+    "renounce-optimal_nonceAdvanced": true,
+    "renounce-regular_plannedNotSent": true,
+    "renounce-regular_filesHoldEveryPlanInOrder": true,
+    "renounce-regular_filesWithinBudget": true,
+    "renounce-regular_fileFormat": true,
+    "renounce-regular_boundPlannedUnderCap": true,
+    "renounce-regular_eip712HashMatchesSafe": true,
+    "renounce-regular_estimateWithinPlannedBound": true,
+    "renounce-regular_executedBySafe": true,
+    "renounce-regular_nonceAdvanced": true,
+    "everyOwnershipRenounced": true,
+    "readyForFirstAdmission": true,
+    "regularPoolReadyForFirstAdmission": true,
+    "oneSignatureRefusedBySafe": true,
+    "deposit-first_plannedNotSent": true,
+    "deposit-first_filesHoldEveryPlanInOrder": true,
+    "deposit-first_filesWithinBudget": true,
+    "deposit-first_fileFormat": true,
+    "deposit-first_boundPlannedUnderCap": true,
+    "deposit-first_eip712HashMatchesSafe": true,
+    "deposit-first_estimateWithinPlannedBound": true,
+    "deposit-first_executedBySafe": true,
+    "deposit-first_nonceAdvanced": true,
+    "approvalAndDepositInOneSafeTransaction": true,
+    "firstAdmissionCarriesRealIncome": true,
+    "deposit-later_plannedNotSent": true,
+    "deposit-later_filesHoldEveryPlanInOrder": true,
+    "deposit-later_filesWithinBudget": true,
+    "deposit-later_fileFormat": true,
+    "deposit-later_boundPlannedUnderCap": true,
+    "deposit-later_eip712HashMatchesSafe": true,
+    "deposit-later_estimateWithinPlannedBound": true,
+    "deposit-later_executedBySafe": true,
+    "deposit-later_nonceAdvanced": true,
+    "laterDepositIsOneCall": true,
+    "oldIncomeSettledInsideSafeAdmission": true,
+    "everyMinerInPoolCustody": true,
+    "member-claims-receipts_plannedNotSent": true,
+    "member-claims-receipts_filesHoldEveryPlanInOrder": true,
+    "member-claims-receipts_filesWithinBudget": true,
+    "member-claims-receipts_fileFormat": true,
+    "member-claims-receipts_boundPlannedUnderCap": true,
+    "member-claims-receipts_eip712HashMatchesSafe": true,
+    "member-claims-receipts_estimateWithinPlannedBound": true,
+    "member-claims-receipts_executedBySafe": true,
+    "member-claims-receipts_nonceAdvanced": true,
+    "memberSafeHoldsItsReceipts": true,
+    "allocationMatchesAfterSafeDelivery": true,
+    "member-claims-bem_plannedNotSent": true,
+    "member-claims-bem_filesHoldEveryPlanInOrder": true,
+    "member-claims-bem_filesWithinBudget": true,
+    "member-claims-bem_fileFormat": true,
+    "member-claims-bem_boundPlannedUnderCap": true,
+    "member-claims-bem_eip712HashMatchesSafe": true,
+    "member-claims-bem_estimateWithinPlannedBound": true,
+    "member-claims-bem_executedBySafe": true,
+    "member-claims-bem_nonceAdvanced": true,
+    "memberSafeReceivedExactPayout": true,
+    "safeRecipientsPaidEqually": true,
+    "sinkPaidCsWeightWithTheRelease": true,
+    "set-recipient-a_plannedNotSent": true,
+    "set-recipient-a_filesHoldEveryPlanInOrder": true,
+    "set-recipient-a_filesWithinBudget": true,
+    "set-recipient-a_fileFormat": true,
+    "set-recipient-a_boundPlannedUnderCap": true,
+    "set-recipient-a_eip712HashMatchesSafe": true,
+    "set-recipient-a_estimateWithinPlannedBound": true,
+    "set-recipient-a_executedBySafe": true,
+    "set-recipient-a_nonceAdvanced": true,
+    "set-recipient-b_plannedNotSent": true,
+    "set-recipient-b_filesHoldEveryPlanInOrder": true,
+    "set-recipient-b_filesWithinBudget": true,
+    "set-recipient-b_fileFormat": true,
+    "set-recipient-b_boundPlannedUnderCap": true,
+    "set-recipient-b_eip712HashMatchesSafe": true,
+    "set-recipient-b_estimateWithinPlannedBound": true,
+    "set-recipient-b_executedBySafe": true,
+    "set-recipient-b_nonceAdvanced": true,
+    "rolesMovedBySafes": true,
+    "release-2-by-safe_plannedNotSent": true,
+    "release-2-by-safe_filesHoldEveryPlanInOrder": true,
+    "release-2-by-safe_filesWithinBudget": true,
+    "release-2-by-safe_fileFormat": true,
+    "release-2-by-safe_boundPlannedUnderCap": true,
+    "release-2-by-safe_eip712HashMatchesSafe": true,
+    "release-2-by-safe_estimateWithinPlannedBound": true,
+    "release-2-by-safe_executedBySafe": true,
+    "release-2-by-safe_nonceAdvanced": true,
+    "newRecipientsPaidAndSafesNoLonger": true,
+    "sinkPaidOnceForTheWholeBacklog": true,
+    "memberSafeTransferredAReceipt": true,
+    "newHolderClaimsAfterSafeTransfer": true,
+    "formerSafeHolderCannotClaimIt": true,
+    "reconcilePass": true,
+    "everySafeTransactionWithinItsBoundAndTheCap": true,
+    "callAndMultiSendBothExecuted": true,
+    "everySafeExecuted": true
+  },
+  "observations": {
+    "pool": "0x46FC7A2F9b26813558051804A0975C83f3415E4E",
+    "distributor": "0x9186c903d5f2D9D7B171BD725061AD31E696F8c6",
+    "nandReceipt": "0x51A4F7B47a86429b5747f02E09DD5982449B6cd7",
+    "latchReceipt": "0x7565d8d49F7a1Afc5209b76657D5855a489ccF46",
+    "moves": [
+      {
+        "id": "12733",
+        "holder": "0xb73C928D82926D58c4eC8d30b957e88FB973dBF5"
+      },
+      {
+        "id": "13948",
+        "holder": "0x637505a590c30073D6fFaA601784FcB31B9b6A98"
+      },
+      {
+        "id": "4183",
+        "holder": "0xFB9ed85bFC68a5f4d8bE0f5150CF0a63bCCe9471"
+      },
+      {
+        "id": "1574",
+        "holder": "0x5a434B78C6e41dD82Ab37E15859E7a73B695eF47"
+      }
+    ],
+    "firstAdmission": {
+      "depositor": "0xC38010E76E6B23B3CDAf04D34a27A08967974663",
+      "period": "1",
+      "count": "2",
+      "settledOldIncome": "0",
+      "carriedIncome": "21138931981",
+      "newPeriodIncome": "0",
+      "totalNandBurn": "90",
+      "totalLatchBurn": "64"
+    },
+    "laterAdmission": {
+      "depositor": "0xC38010E76E6B23B3CDAf04D34a27A08967974663",
+      "period": "2",
+      "count": "2",
+      "settledOldIncome": "28760611",
+      "carriedIncome": "9375123",
+      "newPeriodIncome": "0",
+      "totalNandBurn": "95",
+      "totalLatchBurn": "78"
+    },
+    "memberPayout": "2088028390",
+    "recipientPayments": {
+      "paidA": "252453078",
+      "paidB": "252453078",
+      "newA": "345417",
+      "newB": "345417"
+    },
+    "sinkPayments": {
+      "sink": "0x000000000000000000000000000000000000dEaD",
+      "sinkBalanceBefore": "244427231190",
+      "sinkPaidAfterFirstRelease": "504906156",
+      "sinkPaidAfterSafeRelease": "505596991",
+      "sinkBalanceAfter": "244932828181"
+    },
+    "reconciliation": {
+      "bemBalance": "18164789503",
+      "unrecognized": "0",
+      "deficit": "0",
+      "totalAccounted": "21264072554",
+      "totalPaid": "3099283051",
+      "recipientAAccrued": "253143720",
+      "recipientAPaid": "252798495",
+      "recipientBAccrued": "253143720",
+      "recipientBPaid": "252798495",
+      "sinkAccrued": "506287441",
+      "sinkPaid": "505596991",
+      "nandIncome": "19200529948",
+      "nandReceiptsAccrued": "19200529500",
+      "nandReceiptsPaid": "1917079630",
+      "latchIncome": "1050967722",
+      "latchReceiptsAccrued": "1050967680",
+      "latchReceiptsPaid": "171009440",
+      "residue": "493"
+    },
+    "gas": {
+      "safeTransactions": 28,
+      "largestEstimate": "11098058",
+      "largestPlannedBound": "12004688",
+      "largestPayloadBytes": 16690,
+      "smallestMargin": "148815",
+      "largestEstimateOverPlans": "8633"
+    }
+  },
+  "mainnetTransactionsSent": 0,
+  "liveSignaturesCreated": 0,
+  "forkTestKeySignatures": 67,
+  "actors": {
+    "deployer": "0xC6Ecd32137D992172e1EC67E69dBFaC9cacA9880",
+    "executor": "0x9C0507DF7AdDAB84677812E4BCCA72c0731903dc",
+    "keeper": "0xb11307e95E3C765B73A9049eE60c9fd2cf1422bb",
+    "alice": "0x013090F73B9e00639319c96aA845dBc2B2f5435A",
+    "bob": "0xb71a2644c3EF619c01D607CB2FD970F6FB809a23",
+    "newRecipientA": "0x77A918c4151C22937C08bc44361601a093ccef96",
+    "newRecipientB": "0x74b06b487fc760916b2d5FC94c47484D410d1e57"
+  },
+  "completedAt": "2026-10-29T17:20:58.419Z",
+  "localForkTransactions": 47
+}

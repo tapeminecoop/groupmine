@@ -55,6 +55,8 @@ abstract contract PoolForkBase is Test {
     TapeoutEntitlementReceipt internal nandReceipt;
     TapeoutEntitlementReceipt internal latchReceipt;
     TapeoutMinerPool internal pool;
+    /// @dev The processor's second pool (2.3.0): same receipts and distributor as `pool`.
+    TapeoutMinerPool internal regularPool;
     TapeoutReceiptDistributor internal distributor;
     uint256 internal forkBlock;
     uint256 internal nandMiner;
@@ -137,9 +139,15 @@ abstract contract PoolForkBase is Test {
             poolName: "Fork Pool"
         });
         pool = TapeoutMinerPool(_create(abi.encodePacked(_artifact("TapeoutMinerPool"), abi.encode(d))));
+        d.poolName = "Fork Regular Pool";
+        regularPool =
+            TapeoutMinerPool(_create(abi.encodePacked(_artifact("TapeoutMinerPool"), abi.encode(d))));
         distributor = TapeoutReceiptDistributor(
             _create(
-                abi.encodePacked(_artifact("TapeoutReceiptDistributor"), abi.encode(operator, address(pool)))
+                abi.encodePacked(
+                    _artifact("TapeoutReceiptDistributor"),
+                    abi.encode(operator, address(pool), address(regularPool))
+                )
             )
         );
         vm.startPrank(operator);

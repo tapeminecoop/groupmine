@@ -20,7 +20,10 @@ abstract contract SystemTestBase is Test {
     MockMining internal mining;
     TapeoutEntitlementReceipt internal nandReceipt;
     TapeoutEntitlementReceipt internal latchReceipt;
+    /// @dev The Optimal Pool: the pool every single-pool test exercises.
     TapeoutMinerPool internal pool;
+    /// @dev The processor's Regular Pool (2.3.0): the same receipts, protocol and distributor as `pool`.
+    TapeoutMinerPool internal regularPool;
     TapeoutReceiptDistributor internal distributor;
 
     address internal operator = makeAddr("operator");
@@ -44,7 +47,8 @@ abstract contract SystemTestBase is Test {
             LATCH_CATEGORY, "TapeOut LATCH Entitlement", "tLATCH", "", operator
         );
         pool = deployPool(whitelist());
-        distributor = new TapeoutReceiptDistributor(operator, pool);
+        regularPool = deployRegularPool(whitelist());
+        distributor = new TapeoutReceiptDistributor(operator, pool, regularPool);
     }
 
     function whitelist() internal view returns (address[] memory list) {
@@ -74,6 +78,13 @@ abstract contract SystemTestBase is Test {
 
     function deployPool(address[] memory depositors) internal returns (TapeoutMinerPool) {
         return new TapeoutMinerPool(deployment(depositors));
+    }
+
+    /// @dev A second pool of the same processor: same receipts and protocol, its own name.
+    function deployRegularPool(address[] memory depositors) internal returns (TapeoutMinerPool) {
+        TapeoutMinerPool.Deployment memory d = deployment(depositors);
+        d.poolName = "TapeOut Regular Pool Test";
+        return new TapeoutMinerPool(d);
     }
 
     function issue(TapeoutEntitlementReceipt receipt, address to, uint256 count) internal {

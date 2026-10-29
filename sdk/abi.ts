@@ -3229,7 +3229,12 @@ export const tapeoutReceiptDistributorAbi = [
         "internalType": "address"
       },
       {
-        "name": "pool_",
+        "name": "optimalPool_",
+        "type": "address",
+        "internalType": "contract TapeoutMinerPool"
+      },
+      {
+        "name": "regularPool_",
         "type": "address",
         "internalType": "contract TapeoutMinerPool"
       }
@@ -3393,6 +3398,25 @@ export const tapeoutReceiptDistributorAbi = [
   },
   {
     "type": "function",
+    "name": "isPool",
+    "inputs": [
+      {
+        "name": "candidate",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "latchReceipt",
     "inputs": [],
     "outputs": [
@@ -3516,6 +3540,19 @@ export const tapeoutReceiptDistributorAbi = [
   },
   {
     "type": "function",
+    "name": "optimalPool",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract TapeoutMinerPool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "owner",
     "inputs": [],
     "outputs": [
@@ -3566,19 +3603,6 @@ export const tapeoutReceiptDistributorAbi = [
   },
   {
     "type": "function",
-    "name": "pool",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "contract TapeoutMinerPool"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "rangesOf",
     "inputs": [
       {
@@ -3614,6 +3638,19 @@ export const tapeoutReceiptDistributorAbi = [
             "internalType": "uint64"
           }
         ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "regularPool",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract TapeoutMinerPool"
       }
     ],
     "stateMutability": "view"
@@ -3951,6 +3988,21 @@ export const tapeoutReceiptDistributorAbi = [
         "internalType": "uint256"
       }
     ]
+  },
+  {
+    "type": "error",
+    "name": "DuplicatePool",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "IncompatiblePoolProtocol",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "IncompatiblePoolReceipts",
+    "inputs": []
   },
   {
     "type": "error",

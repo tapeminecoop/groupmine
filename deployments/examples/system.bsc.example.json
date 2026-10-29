@@ -10,12 +10,21 @@
     "nand": { "name": "TapeOut Pool NAND Entitlement", "symbol": "TOPNAND", "uri": "" },
     "latch": { "name": "TapeOut Pool LATCH Entitlement", "symbol": "TOPLATCH", "uri": "" }
   },
-  "pool": {
-    "name": "TapeOut Pool 2026-10",
-    "owner": "0x00000000000000000000000000000000000000A1",
-    "recipientA": "0x00000000000000000000000000000000000000AA",
-    "recipientB": "0x00000000000000000000000000000000000000BB",
-    "depositors": ["0x00000000000000000000000000000000000000D1"]
+  "pools": {
+    "optimal": {
+      "name": "TapeOut Optimal Pool 2026-10",
+      "owner": "0x00000000000000000000000000000000000000A1",
+      "recipientA": "0x00000000000000000000000000000000000000AA",
+      "recipientB": "0x00000000000000000000000000000000000000BB",
+      "depositors": ["0x00000000000000000000000000000000000000D1"]
+    },
+    "regular": {
+      "name": "TapeOut Regular Pool 2026-10",
+      "owner": "0x00000000000000000000000000000000000000A1",
+      "recipientA": "0x00000000000000000000000000000000000000AA",
+      "recipientB": "0x00000000000000000000000000000000000000BB",
+      "depositors": ["0x00000000000000000000000000000000000000D1"]
+    }
   },
   "distributor": {
     "owner": "0x00000000000000000000000000000000000000A1"

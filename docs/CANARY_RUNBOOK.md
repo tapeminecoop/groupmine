@@ -129,6 +129,22 @@ and its independent arithmetic now attributes #12485's carried income by its own
 runtime is 24,439 bytes, 137 under the EIP-170 limit. Nothing about canary-3 is approved for mainnet, and
 the approved path still stops at the `c4bc022` pin.
 
+**2.3.0 (one distributor for two pools).** The `TapeoutMinerPool/2.3.0` source yields the next
+local-only candidate, `RecoverableTapeoutMinerPool/canary-4-local`. The patch list is unchanged; the
+only source difference from canary-3 is production's binding check (the distributor must count the pool
+among its two pools, `isPool`), and the diff is written to
+`reports/canary-local/canary-4-production-canary.diff` (the canary-2 and canary-3 diffs stay as they
+were). The production distributor now takes two pools, so the workflow deploys a second canary pool,
+`regularPool` ("RECOVERABLE CANARY REGULAR (NO MINERS)", the same receipts, recipients, whitelist and
+recovery controller), deploys the distributor for both, and binds, activates and renounces both pools
+before the first deposit. The second pool never admits a miner: recovery shuts it down as well
+(`permanent-shutdown-regular-pool`, no NFT return needed), the finalization checks it is closed and
+empty, and the local-candidate summary requires both pools closed after the interrupted run. `prepare`
+predicts the extra deployment address (nand, latch, helper, pool, regularPool, distributor) and counts
+both shutdowns in the recovery reserve, but like every approved-candidate entry point it stops at the
+`c4bc022` pin. Canary-4's runtime is 24,441 bytes, 135 under the EIP-170 limit. Nothing about canary-4
+is approved for mainnet.
+
 ## Emergency recovery after interruption
 
 Do not restart the live runner, redeploy or repeat a deposit. The journal records intent, nonce and

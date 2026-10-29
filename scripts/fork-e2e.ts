@@ -77,7 +77,10 @@ async function main() {
     await writeFile(systemFile, json({
       chainId: 56, protocol: BSC_PROTOCOL,
       receipts: { issuer: operator, nand: { name: 'Fork NAND Entitlement', symbol: 'fNAND', uri: '' }, latch: { name: 'Fork LATCH Entitlement', symbol: 'fLATCH', uri: '' } },
-      pool: { name: 'Fork E2E Pool', owner: operator, recipientA, recipientB, depositors: [depositor] },
+      pools: {
+        optimal: { name: 'Fork E2E Optimal Pool', owner: operator, recipientA, recipientB, depositors: [depositor] },
+        regular: { name: 'Fork E2E Regular Pool', owner: operator, recipientA, recipientB, depositors: [depositor] },
+      },
       distributor: { owner: operator },
     }));
     await step('deploy-receipts', ['deploy-receipts', '--system', systemFile, '--addresses-out', addressesFile, '--from', operator, '--send-local']);
@@ -85,9 +88,10 @@ async function main() {
     await step('issue-latch', ['issue', '--addresses', addressesFile, '--category', 'LATCH', '--to', operator, '--count', '12', '--from', operator, '--send-local']);
     await step('finalize-nand', ['finalize-issuance', '--addresses', addressesFile, '--category', 'NAND', '--from', operator, '--send-local']);
     await step('finalize-latch', ['finalize-issuance', '--addresses', addressesFile, '--category', 'LATCH', '--from', operator, '--send-local']);
-    await step('deploy-pool-and-distributor', ['deploy', '--system', systemFile, '--addresses', addressesFile, '--from', operator, '--send-local']);
+    await step('deploy-pools-and-distributor', ['deploy', '--system', systemFile, '--addresses', addressesFile, '--from', operator, '--send-local']);
     const addresses = JSON.parse(await readFile(addressesFile, 'utf8'));
-    const pool = addresses.pool as Address;
+    // 2.3.0: one receipt pair and one distributor serve both pools; the real miners go to the optimal pool.
+    const pool = addresses.optimalPool as Address;
     await step('fund-nand', ['fund-distributor', '--addresses', addressesFile, '--category', 'NAND', '--from', operator, '--all-held', '--send-local']);
     await step('fund-latch', ['fund-distributor', '--addresses', addressesFile, '--category', 'LATCH', '--from', operator, '--all-held', '--send-local']);
     const allocationFile = `${DIR}/allocation.json`;
@@ -98,14 +102,21 @@ async function main() {
     const verified = await step('verify-allocation', ['verify-allocation', '--addresses', addressesFile, '--artifact', `${DIR}/artifact.json`, '--allocation', allocationFile]);
     check('allocationVerified', verified.status === 'READY_TO_FINALIZE', verified);
     await step('finalize-allocation', ['finalize-allocation', '--addresses', addressesFile, '--artifact', `${DIR}/artifact.json`, '--allocation', allocationFile, '--from', operator, '--send-local']);
-    // 2.2.0 (SALUS #3): bind the distributor once, activate, then renounce all four owners before custody.
-    await step('bind-distributor', ['bind-distributor', '--addresses', addressesFile, '--from', operator, '--send-local']);
-    await step('activate', ['activate', '--addresses', addressesFile, '--nand-shares', '40', '--latch-shares', '12', '--from', operator, '--send-local']);
-    const closed = await step('finality-before-renouncing', ['finality', '--addresses', addressesFile]);
+    // SALUS #3, per pool (2.3.0): each pool binds the shared distributor once and activates; the shared
+    // receipts and distributor and both pools renounce before custody.
+    for (const role of ['optimal', 'regular']) {
+      await step(`bind-distributor-${role}`, ['bind-distributor', '--addresses', addressesFile, '--pool', role, '--from', operator, '--send-local']);
+      await step(`activate-${role}`, ['activate', '--addresses', addressesFile, '--pool', role, '--nand-shares', '40', '--latch-shares', '12', '--from', operator, '--send-local']);
+    }
+    const closed = await step('finality-before-renouncing', ['finality', '--addresses', addressesFile, '--pool', 'optimal']);
     check('custodyClosedWhileOwnersRemain', closed.status === 'NOT_FINAL' && (closed.missing as string[]).length === 4, closed);
-    for (const target of ['nand', 'latch', 'distributor', 'pool']) await step(`renounce-${target}`, ['renounce', '--addresses', addressesFile, '--target', target, '--from', operator, '--send-local']);
-    const ready = await step('finality-after-renouncing', ['finality', '--addresses', addressesFile]);
+    for (const [target, role] of [['nand'], ['latch'], ['distributor'], ['pool', 'optimal'], ['pool', 'regular']] as const) {
+      await step(`renounce-${role ?? target}`, ['renounce', '--addresses', addressesFile, '--target', target, ...(role ? ['--pool', role] : []), '--from', operator, '--send-local']);
+    }
+    const ready = await step('finality-after-renouncing', ['finality', '--addresses', addressesFile, '--pool', 'optimal']);
     check('readyForFirstAdmission', ready.status === 'READY_FOR_FIRST_ADMISSION', ready);
+    const regularReady = await step('finality-regular-after-renouncing', ['finality', '--addresses', addressesFile, '--pool', 'regular']);
+    check('regularPoolReadyOnTheSameDistributor', regularReady.status === 'READY_FOR_FIRST_ADMISSION' && regularReady.distributor === addresses.distributor, regularReady);
 
     // Real miners: holders -> depositor (fork impersonation only).
     const moves = [];
@@ -119,7 +130,7 @@ async function main() {
       moves.push({ id, holder });
       await rpc.request({ method: 'anvil_stopImpersonatingAccount', params: [holder] } as never);
     }
-    const comp = await step('composition', ['composition', '--addresses', addressesFile, '--token-ids', [nandMiner, latchMiner, ...extraMiners].join(',')]);
+    const comp = await step('composition', ['composition', '--addresses', addressesFile, '--pool', 'optimal', '--token-ids', [nandMiner, latchMiner, ...extraMiners].join(',')]);
     const byId = new Map((comp.miners as { tokenId: string | bigint; nandBurn: number; latchBurn: number; admissible: boolean }[]).map(m => [BigInt(m.tokenId), m]));
     check('realCompositionsAdmissible', [...byId.values()].every(m => m.admissible), comp.miners);
     check('nandMinerBurnsNoLatch', byId.get(nandMiner)!.latchBurn === 0 && byId.get(latchMiner)!.latchBurn > 0);
@@ -129,7 +140,7 @@ async function main() {
     check('outsiderDepositRevertsOnChain', !unauthorized.ok && unauthorized.error === `NotDepositor(${outsider})`, unauthorized);
 
     // Admission boundary on real Mining: NAND-only first, LATCH-burning miner one hour later.
-    const first = await step('deposit-nand-miner', ['deposit', '--addresses', addressesFile, '--token-ids', String(nandMiner), '--from', depositor, '--send-local']);
+    const first = await step('deposit-nand-miner', ['deposit', '--addresses', addressesFile, '--pool', 'optimal', '--token-ids', String(nandMiner), '--from', depositor, '--send-local']);
     const admitted = async (r: Record<string, unknown>) => {
       const receipt = await rpc.getTransactionReceipt({ hash: (r.transactions as { hash: Hex }[]).at(-1)!.hash });
       return parseEventLogs({ abi: tapeoutMinerPoolAbi as Abi, eventName: 'MinersAdmitted', logs: receipt.logs })[0].args as unknown as { settledOldIncome: bigint; carriedIncome: bigint; newPeriodIncome: bigint };
@@ -138,7 +149,7 @@ async function main() {
     check('carriedIncomeCollectedAtFirstAdmission', a1.carriedIncome > 0n);
     await rpc.request({ method: 'evm_increaseTime', params: [3600] } as never);
     await rpc.request({ method: 'evm_mine', params: [] } as never);
-    const second = await step('deposit-latch-miner', ['deposit', '--addresses', addressesFile, '--token-ids', String(latchMiner), '--from', depositor, '--send-local']);
+    const second = await step('deposit-latch-miner', ['deposit', '--addresses', addressesFile, '--pool', 'optimal', '--token-ids', String(latchMiner), '--from', depositor, '--send-local']);
     const a2 = await admitted(second);
     check('oldIncomeSettledInsideAdmission', a2.settledOldIncome > 0n);
     const n1 = BigInt(byId.get(nandMiner)!.nandBurn), n2 = BigInt(byId.get(latchMiner)!.nandBurn), l2 = BigInt(byId.get(latchMiner)!.latchBurn);
@@ -149,14 +160,14 @@ async function main() {
     const expected = accrue(afterSecond.total, afterSecond.state);
     const actual = await read<{ nandIncome: bigint; latchIncome: bigint; total: bigint }>(pool, tapeoutMinerPoolAbi as Abi, 'accrual');
     check('realBoundaryMatchesOldPeriodAndOwnBurnModel', actual.total === expected.total && actual.nandIncome === expected.nandIncome && actual.latchIncome === expected.latchIncome, { actual, expected });
-    await step('deposit-batch-after-renounce', ['deposit', '--addresses', addressesFile, '--token-ids', extraMiners.join(','), '--from', depositor, '--send-local']);
+    await step('deposit-batch-after-renounce', ['deposit', '--addresses', addressesFile, '--pool', 'optimal', '--token-ids', extraMiners.join(','), '--from', depositor, '--send-local']);
 
     // Users: late receipt claims, BEM claims, transfer, releases.
     await rpc.request({ method: 'evm_increaseTime', params: [3600] } as never);
     await rpc.request({ method: 'evm_mine', params: [] } as never);
-    await step('harvest-all', ['harvest', '--addresses', addressesFile, '--all', '--isolate-failures', '--from', keeper, '--send-local']);
+    await step('harvest-all', ['harvest', '--addresses', addressesFile, '--pool', 'optimal', '--all', '--isolate-failures', '--from', keeper, '--send-local']);
     await step('alice-claims-receipts', ['claim-receipts', '--addresses', addressesFile, '--from', alice, '--send-local']);
-    const aliceClaim = await step('alice-claims-bem', ['claim', '--addresses', addressesFile, '--from', alice, '--all', '--send-local']);
+    const aliceClaim = await step('alice-claims-bem', ['claim', '--addresses', addressesFile, '--pool', 'optimal', '--from', alice, '--all', '--send-local']);
     check('aliceExactPayout', await bemOf(alice) === BigInt(aliceClaim.expectedPayoutRaw as string | bigint));
     await step('deliver-to-bob', ['deliver', '--addresses', addressesFile, '--wallet', bob, '--from', outsider, '--send-local']);
     check('deliveryWentToBob', (await read<bigint>(addresses.nandReceipt, [{ type: 'function', name: 'balanceOf', stateMutability: 'view', inputs: [{ type: 'address' }, { type: 'uint256' }], outputs: [{ type: 'uint256' }] }] as Abi, 'balanceOf', [bob, 21n])) === 1n);
@@ -164,15 +175,15 @@ async function main() {
     // All receipts delivered: the artifact must still describe the whole (finalized) allocation.
     const afterDelivery = await step('verify-after-delivery', ['verify-allocation', '--addresses', addressesFile, '--artifact', `${DIR}/artifact.json`]);
     check('allocationMatchesAfterDelivery', afterDelivery.status === 'FINALIZED_AND_MATCHES', afterDelivery);
-    await step('carol-claims-bem', ['claim', '--addresses', addressesFile, '--from', carol, '--all', '--send-local']);
-    await step('bob-claims-bem', ['claim', '--addresses', addressesFile, '--from', bob, '--all', '--send-local']);
+    await step('carol-claims-bem', ['claim', '--addresses', addressesFile, '--pool', 'optimal', '--from', carol, '--all', '--send-local']);
+    await step('bob-claims-bem', ['claim', '--addresses', addressesFile, '--pool', 'optimal', '--from', bob, '--all', '--send-local']);
     // Release on real BEM: A and B each get floor(T/84) and C's floor(2T/84) goes to the fixed sink as an
     // ordinary BEM transfer. The sink already holds BEM on BSC, so only balance deltas are compared.
     const sink = await read<Address>(pool, tapeoutMinerPoolAbi as Abi, 'SINK');
     const totalSupply = () => read<bigint>(BSC_PROTOCOL.bem, erc20Abi as Abi, 'totalSupply');
     const [sinkBefore, poolBefore, supplyBefore, sinkPaidBefore] = [await bemOf(sink), await bemOf(pool), await totalSupply(), await read<bigint>(pool, tapeoutMinerPoolAbi as Abi, 'sinkPaid')];
     const [aBefore, bBefore] = [await bemOf(recipientA), await bemOf(recipientB)];
-    const release = await step('release', ['release', '--addresses', addressesFile, '--from', outsider, '--send-local']);
+    const release = await step('release', ['release', '--addresses', addressesFile, '--pool', 'optimal', '--from', outsider, '--send-local']);
     check('outsiderReceivedNothing', await bemOf(outsider) === 0n);
     check('recipientsPaidEqually', await bemOf(recipientA) === await bemOf(recipientB) && await bemOf(recipientA) > 0n);
     const releasedTotal = await read<bigint>(pool, tapeoutMinerPoolAbi as Abi, 'totalAccounted');
@@ -189,7 +200,7 @@ async function main() {
     // Observed, not assumed: whether BEM's totalSupply moves when the sink is paid.
     report.observations = { ...report.observations, sinkTransfer: { sink, sinkBalanceBefore: sinkBefore, sinkBalanceAfter: sinkAfter, sinkPaid, bemTotalSupplyBefore: supplyBefore, bemTotalSupplyAfter: supplyAfter, totalSupplyUnchanged: supplyBefore === supplyAfter, transaction: releaseReceipt.transactionHash } };
     check('bemTotalSupplyUnchangedByTheSinkTransfer', supplyAfter === supplyBefore, { supplyBefore, supplyAfter });
-    const reconcile = await step('reconcile-deep', ['reconcile', '--addresses', addressesFile, '--deep', '--out', 'reports/fork-e2e-reconcile.json']);
+    const reconcile = await step('reconcile-deep', ['reconcile', '--addresses', addressesFile, '--pool', 'optimal', '--deep', '--out', 'reports/fork-e2e-reconcile.json']);
     check('reconcilePass', reconcile.status === 'PASS', reconcile.checks);
     report.observations = { ...report.observations, pool, moves, firstAdmission: a1, secondAdmission: a2, expectedAfterBoundary: expected, composition: comp.miners };
     report.status = 'PASS';
