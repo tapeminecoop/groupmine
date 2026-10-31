@@ -38,8 +38,16 @@ forks: [docs/MINING_LIFECYCLE.md](docs/MINING_LIFECYCLE.md).
 The current candidate is `TapeoutMinerPool/2.3.0` (package `2.3.0-rc.1`): the 2.2.0 accounting with one
 `TapeoutReceiptDistributor` serving a processor's two custody pools that share one receipt pair. Design,
 the exact ABI, constructor and configuration changes, verification and what remains open:
-[docs/TWO_POOL_DISTRIBUTOR_CHANGE.md](docs/TWO_POOL_DISTRIBUTOR_CHANGE.md). This is new code: neither the
-SALUS assessment nor the internal reviews covered it.
+[docs/TWO_POOL_DISTRIBUTOR_CHANGE.md](docs/TWO_POOL_DISTRIBUTOR_CHANGE.md). Internal reviews of the
+frozen 2.3.0 candidate `02ef1f7`:
+
+- [Fable 5.1 review](docs/INTERNAL_TWO_POOL_DISTRIBUTOR_REVIEW_02ef1f7.md), with
+  [recorded evidence](reports/internal-review-02ef1f7-fable51/README.md) and review tests in `test/review-02ef1f7/`;
+- [ChatGPT / GPT-6 Astra Pro review (PDF)](INTERNAL_TWO_POOL_DISTRIBUTOR_REVIEW_02ef1f7.pdf), supplied by the owner and preserved unchanged.
+
+These internal reviews retain their own scope, evidence limits and release requirements; they do not
+constitute SALUS sign-off or production approval. The original SALUS assessment and the older internal
+reviews below cover earlier revisions.
 
 **Historical, for the 2.2.0 candidate (SALUS remediation).** The remediation of the SALUS Security
 assessment of 2026-10-28 (`Groupmine_audit_report_2026-10-28.pdf`, which covered `c3cb933`): carried
@@ -142,5 +150,5 @@ npm run pool -- preview --income 1050 --nand-burn 90 --latch-burn 10 --nand-shar
 ## Status
 
 Release candidate. SALUS Security assessed `c3cb933`; 2.1.0, the 2.2.0 remediation and the 2.3.0
-two-pool distributor have not been audited, and SALUS has been asked to confirm the remediation. Not
+two-pool distributor have not been audited by SALUS, and SALUS has been asked to confirm the remediation. Not
 deployed to BSC mainnet; no live-value transaction was made for 2.1.0, 2.2.0 or 2.3.0.
