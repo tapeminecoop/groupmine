@@ -1,0 +1,3 @@
+TapeoutMinerPool runtime 23170 initcode 35120 sdk sha256 match True
+TapeoutEntitlementReceipt runtime 8743 initcode 10361 sdk sha256 match True
+TapeoutReceiptDistributor runtime 8137 initcode 9597 sdk sha256 match True

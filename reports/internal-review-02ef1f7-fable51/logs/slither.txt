@@ -1,0 +1,835 @@
+/private/tmp/claude-501/-Users-jaychen-Desktop-tapemine--claude-worktrees-groupmine-audit-review-7a62c7/cf98fbd9-f64a-4d1a-a742-c6280c33922b/scratchpad/slither-venv/lib/python3.9/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+'forge clean' running (wd: /private/tmp/claude-501/-Users-jaychen-Desktop-tapemine--claude-worktrees-groupmine-audit-review-7a62c7/cf98fbd9-f64a-4d1a-a742-c6280c33922b/scratchpad/two-pool/slither-copy)
+'forge config --json' running
+'forge build --build-info --skip ./test/** ./script/** --force' running (wd: /private/tmp/claude-501/-Users-jaychen-Desktop-tapemine--claude-worktrees-groupmine-audit-review-7a62c7/cf98fbd9-f64a-4d1a-a742-c6280c33922b/scratchpad/two-pool/slither-copy)
+
+Math.mulDiv(uint256,uint256,uint256) (node_modules/@openzeppelin/contracts/utils/math/Math.sol#204-275) has bitwise-xor operator ^ instead of the exponentiation operator **: 
+	 - inverse = (3 * denominator) ^ 2 (node_modules/@openzeppelin/contracts/utils/math/Math.sol#257)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#incorrect-exponentiation
+
+Math.mulDiv(uint256,uint256,uint256) (node_modules/@openzeppelin/contracts/utils/math/Math.sol#204-275) performs a multiplication on the result of a division:
+	- denominator = denominator / twos (node_modules/@openzeppelin/contracts/utils/math/Math.sol#242)
+	- inverse = (3 * denominator) ^ 2 (node_modules/@openzeppelin/contracts/utils/math/Math.sol#257)
+Math.mulDiv(uint256,uint256,uint256) (node_modules/@openzeppelin/contracts/utils/math/Math.sol#204-275) performs a multiplication on the result of a division:
+	- denominator = denominator / twos (node_modules/@openzeppelin/contracts/utils/math/Math.sol#242)
+	- inverse *= 2 - denominator * inverse (node_modules/@openzeppelin/contracts/utils/math/Math.sol#261)
+Math.mulDiv(uint256,uint256,uint256) (node_modules/@openzeppelin/contracts/utils/math/Math.sol#204-275) performs a multiplication on the result of a division:
+	- denominator = denominator / twos (node_modules/@openzeppelin/contracts/utils/math/Math.sol#242)
+	- inverse *= 2 - denominator * inverse (node_modules/@openzeppelin/contracts/utils/math/Math.sol#262)
+Math.mulDiv(uint256,uint256,uint256) (node_modules/@openzeppelin/contracts/utils/math/Math.sol#204-275) performs a multiplication on the result of a division:
+	- denominator = denominator / twos (node_modules/@openzeppelin/contracts/utils/math/Math.sol#242)
+	- inverse *= 2 - denominator * inverse (node_modules/@openzeppelin/contracts/utils/math/Math.sol#263)
+Math.mulDiv(uint256,uint256,uint256) (node_modules/@openzeppelin/contracts/utils/math/Math.sol#204-275) performs a multiplication on the result of a division:
+	- denominator = denominator / twos (node_modules/@openzeppelin/contracts/utils/math/Math.sol#242)
+	- inverse *= 2 - denominator * inverse (node_modules/@openzeppelin/contracts/utils/math/Math.sol#264)
+Math.mulDiv(uint256,uint256,uint256) (node_modules/@openzeppelin/contracts/utils/math/Math.sol#204-275) performs a multiplication on the result of a division:
+	- denominator = denominator / twos (node_modules/@openzeppelin/contracts/utils/math/Math.sol#242)
+	- inverse *= 2 - denominator * inverse (node_modules/@openzeppelin/contracts/utils/math/Math.sol#265)
+Math.mulDiv(uint256,uint256,uint256) (node_modules/@openzeppelin/contracts/utils/math/Math.sol#204-275) performs a multiplication on the result of a division:
+	- denominator = denominator / twos (node_modules/@openzeppelin/contracts/utils/math/Math.sol#242)
+	- inverse *= 2 - denominator * inverse (node_modules/@openzeppelin/contracts/utils/math/Math.sol#266)
+Math.mulDiv(uint256,uint256,uint256) (node_modules/@openzeppelin/contracts/utils/math/Math.sol#204-275) performs a multiplication on the result of a division:
+	- low = low / twos (node_modules/@openzeppelin/contracts/utils/math/Math.sol#245)
+	- result = low * inverse (node_modules/@openzeppelin/contracts/utils/math/Math.sol#272)
+Math.invMod(uint256,uint256) (node_modules/@openzeppelin/contracts/utils/math/Math.sol#315-361) performs a multiplication on the result of a division:
+	- quotient = gcd / remainder (node_modules/@openzeppelin/contracts/utils/math/Math.sol#337)
+	- (gcd,remainder) = (remainder,gcd - remainder * quotient) (node_modules/@openzeppelin/contracts/utils/math/Math.sol#339-346)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#divide-before-multiply
+
+TapeoutMinerPool._collectCarried(uint256[],bytes32[],uint32[],uint32[]) (src/TapeoutMinerPool.sol#706-738) uses a dangerous strict equality:
+	- carried == 0 (src/TapeoutMinerPool.sol#729)
+TapeoutMinerPool._pay(address,uint256) (src/TapeoutMinerPool.sol#905-914) uses a dangerous strict equality:
+	- amount == 0 (src/TapeoutMinerPool.sol#906)
+TapeoutMinerPool._payWithSink(address,uint256,uint256) (src/TapeoutMinerPool.sol#889-902) uses a dangerous strict equality:
+	- outflow == 0 (src/TapeoutMinerPool.sol#891)
+RecoverableTapeoutMinerPool._collectCarried(uint256[],bytes32[],uint32[],uint32[]) (src/canary/RecoverableTapeoutMinerPool.sol#752-784) uses a dangerous strict equality:
+	- carried == 0 (src/canary/RecoverableTapeoutMinerPool.sol#775)
+RecoverableTapeoutMinerPool._pay(address,uint256) (src/canary/RecoverableTapeoutMinerPool.sol#951-960) uses a dangerous strict equality:
+	- amount == 0 (src/canary/RecoverableTapeoutMinerPool.sol#952)
+RecoverableTapeoutMinerPool._payWithSink(address,uint256,uint256) (src/canary/RecoverableTapeoutMinerPool.sol#935-948) uses a dangerous strict equality:
+	- outflow == 0 (src/canary/RecoverableTapeoutMinerPool.sol#937)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#dangerous-strict-equalities
+
+Reentrancy in TapeoutMinerPool._admit(uint256[],bool) (src/TapeoutMinerPool.sol#625-700):
+	External calls:
+	- _settleOld(i_scope_0) (src/TapeoutMinerPool.sol#663)
+		- mining.claim(key) (src/TapeoutMinerPool.sol#784-790)
+	State variables written after the call(s):
+	- _checkpoint() (src/TapeoutMinerPool.sol#668)
+		- ++ compositionPeriod (src/TapeoutMinerPool.sol#799)
+	TapeoutMinerPool.compositionPeriod (src/TapeoutMinerPool.sol#142) can be used in cross function reentrancies:
+	- TapeoutMinerPool.compositionPeriod (src/TapeoutMinerPool.sol#142)
+	- settled = _sync() (src/TapeoutMinerPool.sol#665)
+		- totalAccounted += received (src/TapeoutMinerPool.sol#880)
+	TapeoutMinerPool.totalAccounted (src/TapeoutMinerPool.sol#154) can be used in cross function reentrancies:
+	- TapeoutMinerPool.accrual() (src/TapeoutMinerPool.sol#502-504)
+	- TapeoutMinerPool.previewAccrual() (src/TapeoutMinerPool.sol#508-510)
+	- TapeoutMinerPool.reconciliation() (src/TapeoutMinerPool.sol#566-587)
+	- TapeoutMinerPool.totalAccounted (src/TapeoutMinerPool.sol#154)
+	- TapeoutMinerPool.unrecognizedBalance() (src/TapeoutMinerPool.sol#513-519)
+Reentrancy in TapeoutMinerPool._admit(uint256[],bool) (src/TapeoutMinerPool.sol#625-700):
+	External calls:
+	- _settleOld(i_scope_0) (src/TapeoutMinerPool.sol#663)
+		- mining.claim(key) (src/TapeoutMinerPool.sol#784-790)
+	- minerCollection.transferFrom(msg.sender,address(this),id_scope_2) (src/TapeoutMinerPool.sol#672)
+	State variables written after the call(s):
+	- _minerIds.push(id_scope_2) (src/TapeoutMinerPool.sol#684)
+	TapeoutMinerPool._minerIds (src/TapeoutMinerPool.sol#162) can be used in cross function reentrancies:
+	- TapeoutMinerPool.minerAt(uint256) (src/TapeoutMinerPool.sol#597-599)
+	- TapeoutMinerPool.minerCount() (src/TapeoutMinerPool.sol#589-591)
+	- TapeoutMinerPool.minersPage(uint256,uint256) (src/TapeoutMinerPool.sol#601-615)
+	- _minerKeys.push(keys[i_scope_1]) (src/TapeoutMinerPool.sol#685)
+	TapeoutMinerPool._minerKeys (src/TapeoutMinerPool.sol#163) can be used in cross function reentrancies:
+	- TapeoutMinerPool.minerAt(uint256) (src/TapeoutMinerPool.sol#597-599)
+	- TapeoutMinerPool.minersPage(uint256,uint256) (src/TapeoutMinerPool.sol#601-615)
+	- _miners[id_scope_2] = Miner({key:keys[i_scope_1],nandBurn:nands[i_scope_1],latchBurn:latches[i_scope_1],admittedInPeriod:uint64(period),registered:true,carriedIncome:0}) (src/TapeoutMinerPool.sol#676-683)
+	TapeoutMinerPool._miners (src/TapeoutMinerPool.sol#164) can be used in cross function reentrancies:
+	- TapeoutMinerPool.miner(uint256) (src/TapeoutMinerPool.sol#593-595)
+Reentrancy in TapeoutMinerPool._admit(uint256[],bool) (src/TapeoutMinerPool.sol#625-700):
+	External calls:
+	- _settleOld(i_scope_0) (src/TapeoutMinerPool.sol#663)
+		- mining.claim(key) (src/TapeoutMinerPool.sol#784-790)
+	- minerCollection.transferFrom(msg.sender,address(this),id_scope_2) (src/TapeoutMinerPool.sol#672)
+	- carried = _collectCarried(tokenIds,keys,nands,latches) (src/TapeoutMinerPool.sol#691)
+		- mining.claim(keys[i]) (src/TapeoutMinerPool.sol#716)
+	State variables written after the call(s):
+	- carried = _collectCarried(tokenIds,keys,nands,latches) (src/TapeoutMinerPool.sol#691)
+		- _miners[tokenIds[i]].carriedIncome = uint120(received) (src/TapeoutMinerPool.sol#723)
+	TapeoutMinerPool._miners (src/TapeoutMinerPool.sol#164) can be used in cross function reentrancies:
+	- TapeoutMinerPool.miner(uint256) (src/TapeoutMinerPool.sol#593-595)
+	- carried = _collectCarried(tokenIds,keys,nands,latches) (src/TapeoutMinerPool.sol#691)
+		- accountedBase = totalAccounted (src/TapeoutMinerPool.sol#732)
+	TapeoutMinerPool.accountedBase (src/TapeoutMinerPool.sol#146) can be used in cross function reentrancies:
+	- TapeoutMinerPool.ledgerState() (src/TapeoutMinerPool.sol#489-499)
+	- carried = _collectCarried(tokenIds,keys,nands,latches) (src/TapeoutMinerPool.sol#691)
+		- latchBaseUnits += toLatchTotal (src/TapeoutMinerPool.sol#734)
+	TapeoutMinerPool.latchBaseUnits (src/TapeoutMinerPool.sol#148) can be used in cross function reentrancies:
+	- TapeoutMinerPool.ledgerState() (src/TapeoutMinerPool.sol#489-499)
+	- carried = _collectCarried(tokenIds,keys,nands,latches) (src/TapeoutMinerPool.sol#691)
+		- nandBaseUnits += toNandTotal (src/TapeoutMinerPool.sol#733)
+	TapeoutMinerPool.nandBaseUnits (src/TapeoutMinerPool.sol#147) can be used in cross function reentrancies:
+	- TapeoutMinerPool.ledgerState() (src/TapeoutMinerPool.sol#489-499)
+	- carried = _collectCarried(tokenIds,keys,nands,latches) (src/TapeoutMinerPool.sol#691)
+		- totalAccounted += carried (src/TapeoutMinerPool.sol#731)
+	TapeoutMinerPool.totalAccounted (src/TapeoutMinerPool.sol#154) can be used in cross function reentrancies:
+	- TapeoutMinerPool.accrual() (src/TapeoutMinerPool.sol#502-504)
+	- TapeoutMinerPool.previewAccrual() (src/TapeoutMinerPool.sol#508-510)
+	- TapeoutMinerPool.reconciliation() (src/TapeoutMinerPool.sol#566-587)
+	- TapeoutMinerPool.totalAccounted (src/TapeoutMinerPool.sol#154)
+	- TapeoutMinerPool.unrecognizedBalance() (src/TapeoutMinerPool.sol#513-519)
+	- newPeriodIncome = _sync() (src/TapeoutMinerPool.sol#696)
+		- totalAccounted += received (src/TapeoutMinerPool.sol#880)
+	TapeoutMinerPool.totalAccounted (src/TapeoutMinerPool.sol#154) can be used in cross function reentrancies:
+	- TapeoutMinerPool.accrual() (src/TapeoutMinerPool.sol#502-504)
+	- TapeoutMinerPool.previewAccrual() (src/TapeoutMinerPool.sol#508-510)
+	- TapeoutMinerPool.reconciliation() (src/TapeoutMinerPool.sol#566-587)
+	- TapeoutMinerPool.totalAccounted (src/TapeoutMinerPool.sol#154)
+	- TapeoutMinerPool.unrecognizedBalance() (src/TapeoutMinerPool.sol#513-519)
+	- totalLatchBurn += addLatch (src/TapeoutMinerPool.sol#695)
+	TapeoutMinerPool.totalLatchBurn (src/TapeoutMinerPool.sol#141) can be used in cross function reentrancies:
+	- TapeoutMinerPool.ledgerState() (src/TapeoutMinerPool.sol#489-499)
+	- TapeoutMinerPool.totalLatchBurn (src/TapeoutMinerPool.sol#141)
+	- TapeoutMinerPool.unrecognizedBalance() (src/TapeoutMinerPool.sol#513-519)
+	- totalNandBurn += addNand (src/TapeoutMinerPool.sol#694)
+	TapeoutMinerPool.totalNandBurn (src/TapeoutMinerPool.sol#140) can be used in cross function reentrancies:
+	- TapeoutMinerPool.ledgerState() (src/TapeoutMinerPool.sol#489-499)
+	- TapeoutMinerPool.totalNandBurn (src/TapeoutMinerPool.sol#140)
+	- TapeoutMinerPool.unrecognizedBalance() (src/TapeoutMinerPool.sol#513-519)
+Reentrancy in RecoverableTapeoutMinerPool._admit(uint256[],bool) (src/canary/RecoverableTapeoutMinerPool.sol#669-746):
+	External calls:
+	- _settleOld(i_scope_0) (src/canary/RecoverableTapeoutMinerPool.sol#709)
+		- mining.claim(key) (src/canary/RecoverableTapeoutMinerPool.sol#830-836)
+	State variables written after the call(s):
+	- _checkpoint() (src/canary/RecoverableTapeoutMinerPool.sol#714)
+		- ++ compositionPeriod (src/canary/RecoverableTapeoutMinerPool.sol#845)
+	RecoverableTapeoutMinerPool.compositionPeriod (src/canary/RecoverableTapeoutMinerPool.sol#156) can be used in cross function reentrancies:
+	- RecoverableTapeoutMinerPool.compositionPeriod (src/canary/RecoverableTapeoutMinerPool.sol#156)
+	- settled = _sync() (src/canary/RecoverableTapeoutMinerPool.sol#711)
+		- totalAccounted += received (src/canary/RecoverableTapeoutMinerPool.sol#926)
+	RecoverableTapeoutMinerPool.totalAccounted (src/canary/RecoverableTapeoutMinerPool.sol#168) can be used in cross function reentrancies:
+	- RecoverableTapeoutMinerPool.accrual() (src/canary/RecoverableTapeoutMinerPool.sol#521-523)
+	- RecoverableTapeoutMinerPool.previewAccrual() (src/canary/RecoverableTapeoutMinerPool.sol#527-529)
+	- RecoverableTapeoutMinerPool.reconciliation() (src/canary/RecoverableTapeoutMinerPool.sol#585-606)
+	- RecoverableTapeoutMinerPool.totalAccounted (src/canary/RecoverableTapeoutMinerPool.sol#168)
+	- RecoverableTapeoutMinerPool.unrecognizedBalance() (src/canary/RecoverableTapeoutMinerPool.sol#532-538)
+Reentrancy in RecoverableTapeoutMinerPool._admit(uint256[],bool) (src/canary/RecoverableTapeoutMinerPool.sol#669-746):
+	External calls:
+	- _settleOld(i_scope_0) (src/canary/RecoverableTapeoutMinerPool.sol#709)
+		- mining.claim(key) (src/canary/RecoverableTapeoutMinerPool.sol#830-836)
+	- minerCollection.transferFrom(msg.sender,address(this),id_scope_2) (src/canary/RecoverableTapeoutMinerPool.sol#718)
+	State variables written after the call(s):
+	- _minerIds.push(id_scope_2) (src/canary/RecoverableTapeoutMinerPool.sol#730)
+	RecoverableTapeoutMinerPool._minerIds (src/canary/RecoverableTapeoutMinerPool.sol#176) can be used in cross function reentrancies:
+	- RecoverableTapeoutMinerPool.minerAt(uint256) (src/canary/RecoverableTapeoutMinerPool.sol#616-618)
+	- RecoverableTapeoutMinerPool.minerCount() (src/canary/RecoverableTapeoutMinerPool.sol#608-610)
+	- RecoverableTapeoutMinerPool.minersPage(uint256,uint256) (src/canary/RecoverableTapeoutMinerPool.sol#620-634)
+	- _minerKeys.push(keys[i_scope_1]) (src/canary/RecoverableTapeoutMinerPool.sol#731)
+	RecoverableTapeoutMinerPool._minerKeys (src/canary/RecoverableTapeoutMinerPool.sol#177) can be used in cross function reentrancies:
+	- RecoverableTapeoutMinerPool.minerAt(uint256) (src/canary/RecoverableTapeoutMinerPool.sol#616-618)
+	- RecoverableTapeoutMinerPool.minersPage(uint256,uint256) (src/canary/RecoverableTapeoutMinerPool.sol#620-634)
+	- _miners[id_scope_2] = Miner({key:keys[i_scope_1],nandBurn:nands[i_scope_1],latchBurn:latches[i_scope_1],admittedInPeriod:uint64(period),registered:true,carriedIncome:0}) (src/canary/RecoverableTapeoutMinerPool.sol#722-729)
+	RecoverableTapeoutMinerPool._miners (src/canary/RecoverableTapeoutMinerPool.sol#178) can be used in cross function reentrancies:
+	- RecoverableTapeoutMinerPool.miner(uint256) (src/canary/RecoverableTapeoutMinerPool.sol#612-614)
+Reentrancy in RecoverableTapeoutMinerPool._admit(uint256[],bool) (src/canary/RecoverableTapeoutMinerPool.sol#669-746):
+	External calls:
+	- _settleOld(i_scope_0) (src/canary/RecoverableTapeoutMinerPool.sol#709)
+		- mining.claim(key) (src/canary/RecoverableTapeoutMinerPool.sol#830-836)
+	- minerCollection.transferFrom(msg.sender,address(this),id_scope_2) (src/canary/RecoverableTapeoutMinerPool.sol#718)
+	- carried = _collectCarried(tokenIds,keys,nands,latches) (src/canary/RecoverableTapeoutMinerPool.sol#737)
+		- mining.claim(keys[i]) (src/canary/RecoverableTapeoutMinerPool.sol#762)
+	State variables written after the call(s):
+	- carried = _collectCarried(tokenIds,keys,nands,latches) (src/canary/RecoverableTapeoutMinerPool.sol#737)
+		- _miners[tokenIds[i]].carriedIncome = uint120(received) (src/canary/RecoverableTapeoutMinerPool.sol#769)
+	RecoverableTapeoutMinerPool._miners (src/canary/RecoverableTapeoutMinerPool.sol#178) can be used in cross function reentrancies:
+	- RecoverableTapeoutMinerPool.miner(uint256) (src/canary/RecoverableTapeoutMinerPool.sol#612-614)
+	- carried = _collectCarried(tokenIds,keys,nands,latches) (src/canary/RecoverableTapeoutMinerPool.sol#737)
+		- accountedBase = totalAccounted (src/canary/RecoverableTapeoutMinerPool.sol#778)
+	RecoverableTapeoutMinerPool.accountedBase (src/canary/RecoverableTapeoutMinerPool.sol#160) can be used in cross function reentrancies:
+	- RecoverableTapeoutMinerPool.ledgerState() (src/canary/RecoverableTapeoutMinerPool.sol#508-518)
+	- carried = _collectCarried(tokenIds,keys,nands,latches) (src/canary/RecoverableTapeoutMinerPool.sol#737)
+		- latchBaseUnits += toLatchTotal (src/canary/RecoverableTapeoutMinerPool.sol#780)
+	RecoverableTapeoutMinerPool.latchBaseUnits (src/canary/RecoverableTapeoutMinerPool.sol#162) can be used in cross function reentrancies:
+	- RecoverableTapeoutMinerPool.ledgerState() (src/canary/RecoverableTapeoutMinerPool.sol#508-518)
+	- carried = _collectCarried(tokenIds,keys,nands,latches) (src/canary/RecoverableTapeoutMinerPool.sol#737)
+		- nandBaseUnits += toNandTotal (src/canary/RecoverableTapeoutMinerPool.sol#779)
+	RecoverableTapeoutMinerPool.nandBaseUnits (src/canary/RecoverableTapeoutMinerPool.sol#161) can be used in cross function reentrancies:
+	- RecoverableTapeoutMinerPool.ledgerState() (src/canary/RecoverableTapeoutMinerPool.sol#508-518)
+	- carried = _collectCarried(tokenIds,keys,nands,latches) (src/canary/RecoverableTapeoutMinerPool.sol#737)
+		- totalAccounted += carried (src/canary/RecoverableTapeoutMinerPool.sol#777)
+	RecoverableTapeoutMinerPool.totalAccounted (src/canary/RecoverableTapeoutMinerPool.sol#168) can be used in cross function reentrancies:
+	- RecoverableTapeoutMinerPool.accrual() (src/canary/RecoverableTapeoutMinerPool.sol#521-523)
+	- RecoverableTapeoutMinerPool.previewAccrual() (src/canary/RecoverableTapeoutMinerPool.sol#527-529)
+	- RecoverableTapeoutMinerPool.reconciliation() (src/canary/RecoverableTapeoutMinerPool.sol#585-606)
+	- RecoverableTapeoutMinerPool.totalAccounted (src/canary/RecoverableTapeoutMinerPool.sol#168)
+	- RecoverableTapeoutMinerPool.unrecognizedBalance() (src/canary/RecoverableTapeoutMinerPool.sol#532-538)
+	- newPeriodIncome = _sync() (src/canary/RecoverableTapeoutMinerPool.sol#742)
+		- totalAccounted += received (src/canary/RecoverableTapeoutMinerPool.sol#926)
+	RecoverableTapeoutMinerPool.totalAccounted (src/canary/RecoverableTapeoutMinerPool.sol#168) can be used in cross function reentrancies:
+	- RecoverableTapeoutMinerPool.accrual() (src/canary/RecoverableTapeoutMinerPool.sol#521-523)
+	- RecoverableTapeoutMinerPool.previewAccrual() (src/canary/RecoverableTapeoutMinerPool.sol#527-529)
+	- RecoverableTapeoutMinerPool.reconciliation() (src/canary/RecoverableTapeoutMinerPool.sol#585-606)
+	- RecoverableTapeoutMinerPool.totalAccounted (src/canary/RecoverableTapeoutMinerPool.sol#168)
+	- RecoverableTapeoutMinerPool.unrecognizedBalance() (src/canary/RecoverableTapeoutMinerPool.sol#532-538)
+	- totalLatchBurn += addLatch (src/canary/RecoverableTapeoutMinerPool.sol#741)
+	RecoverableTapeoutMinerPool.totalLatchBurn (src/canary/RecoverableTapeoutMinerPool.sol#155) can be used in cross function reentrancies:
+	- RecoverableTapeoutMinerPool.ledgerState() (src/canary/RecoverableTapeoutMinerPool.sol#508-518)
+	- RecoverableTapeoutMinerPool.totalLatchBurn (src/canary/RecoverableTapeoutMinerPool.sol#155)
+	- RecoverableTapeoutMinerPool.unrecognizedBalance() (src/canary/RecoverableTapeoutMinerPool.sol#532-538)
+	- totalNandBurn += addNand (src/canary/RecoverableTapeoutMinerPool.sol#740)
+	RecoverableTapeoutMinerPool.totalNandBurn (src/canary/RecoverableTapeoutMinerPool.sol#154) can be used in cross function reentrancies:
+	- RecoverableTapeoutMinerPool.ledgerState() (src/canary/RecoverableTapeoutMinerPool.sol#508-518)
+	- RecoverableTapeoutMinerPool.totalNandBurn (src/canary/RecoverableTapeoutMinerPool.sol#154)
+	- RecoverableTapeoutMinerPool.unrecognizedBalance() (src/canary/RecoverableTapeoutMinerPool.sol#532-538)
+Reentrancy in TapeoutMinerPool._collectCarried(uint256[],bytes32[],uint32[],uint32[]) (src/TapeoutMinerPool.sol#706-738):
+	External calls:
+	- mining.claim(keys[i]) (src/TapeoutMinerPool.sol#716)
+	State variables written after the call(s):
+	- _miners[tokenIds[i]].carriedIncome = uint120(received) (src/TapeoutMinerPool.sol#723)
+	TapeoutMinerPool._miners (src/TapeoutMinerPool.sol#164) can be used in cross function reentrancies:
+	- TapeoutMinerPool.miner(uint256) (src/TapeoutMinerPool.sol#593-595)
+Reentrancy in RecoverableTapeoutMinerPool._collectCarried(uint256[],bytes32[],uint32[],uint32[]) (src/canary/RecoverableTapeoutMinerPool.sol#752-784):
+	External calls:
+	- mining.claim(keys[i]) (src/canary/RecoverableTapeoutMinerPool.sol#762)
+	State variables written after the call(s):
+	- _miners[tokenIds[i]].carriedIncome = uint120(received) (src/canary/RecoverableTapeoutMinerPool.sol#769)
+	RecoverableTapeoutMinerPool._miners (src/canary/RecoverableTapeoutMinerPool.sol#178) can be used in cross function reentrancies:
+	- RecoverableTapeoutMinerPool.miner(uint256) (src/canary/RecoverableTapeoutMinerPool.sol#612-614)
+Reentrancy in TapeoutReceiptDistributor._deliver(address,uint256) (src/TapeoutReceiptDistributor.sol#314-337):
+	External calls:
+	- _receipt(range.category).safeBatchTransferFrom(address(this),wallet,ids,values,) (src/TapeoutReceiptDistributor.sol#333)
+	State variables written after the call(s):
+	- _delivered[uint256(range.category)] += n (src/TapeoutReceiptDistributor.sol#324)
+	TapeoutReceiptDistributor._delivered (src/TapeoutReceiptDistributor.sol#53) can be used in cross function reentrancies:
+	- TapeoutReceiptDistributor.totals() (src/TapeoutReceiptDistributor.sol#276-282)
+	- _nextRange[wallet] = r + 1 (src/TapeoutReceiptDistributor.sol#326)
+	TapeoutReceiptDistributor._nextRange (src/TapeoutReceiptDistributor.sol#57) can be used in cross function reentrancies:
+	- TapeoutReceiptDistributor.nextRangeOf(address) (src/TapeoutReceiptDistributor.sol#257-259)
+	- TapeoutReceiptDistributor.pendingOf(address) (src/TapeoutReceiptDistributor.sol#246-253)
+Reentrancy in TapeoutMinerPool.harvest(uint256[]) (src/TapeoutMinerPool.sol#372-390):
+	External calls:
+	- (ok,balance) = _harvestOne(tokenIds[i],m.key,balance) (src/TapeoutMinerPool.sol#385)
+		- mining.claim(key) (src/TapeoutMinerPool.sol#807-814)
+	State variables written after the call(s):
+	- received = _sync() (src/TapeoutMinerPool.sol#388)
+		- totalAccounted += received (src/TapeoutMinerPool.sol#880)
+	TapeoutMinerPool.totalAccounted (src/TapeoutMinerPool.sol#154) can be used in cross function reentrancies:
+	- TapeoutMinerPool.accrual() (src/TapeoutMinerPool.sol#502-504)
+	- TapeoutMinerPool.previewAccrual() (src/TapeoutMinerPool.sol#508-510)
+	- TapeoutMinerPool.reconciliation() (src/TapeoutMinerPool.sol#566-587)
+	- TapeoutMinerPool.totalAccounted (src/TapeoutMinerPool.sol#154)
+	- TapeoutMinerPool.unrecognizedBalance() (src/TapeoutMinerPool.sol#513-519)
+Reentrancy in RecoverableTapeoutMinerPool.harvest(uint256[]) (src/canary/RecoverableTapeoutMinerPool.sol#389-408):
+	External calls:
+	- (ok,balance) = _harvestOne(tokenIds[i],m.key,balance) (src/canary/RecoverableTapeoutMinerPool.sol#403)
+		- mining.claim(key) (src/canary/RecoverableTapeoutMinerPool.sol#853-860)
+	State variables written after the call(s):
+	- received = _sync() (src/canary/RecoverableTapeoutMinerPool.sol#406)
+		- totalAccounted += received (src/canary/RecoverableTapeoutMinerPool.sol#926)
+	RecoverableTapeoutMinerPool.totalAccounted (src/canary/RecoverableTapeoutMinerPool.sol#168) can be used in cross function reentrancies:
+	- RecoverableTapeoutMinerPool.accrual() (src/canary/RecoverableTapeoutMinerPool.sol#521-523)
+	- RecoverableTapeoutMinerPool.previewAccrual() (src/canary/RecoverableTapeoutMinerPool.sol#527-529)
+	- RecoverableTapeoutMinerPool.reconciliation() (src/canary/RecoverableTapeoutMinerPool.sol#585-606)
+	- RecoverableTapeoutMinerPool.totalAccounted (src/canary/RecoverableTapeoutMinerPool.sol#168)
+	- RecoverableTapeoutMinerPool.unrecognizedBalance() (src/canary/RecoverableTapeoutMinerPool.sol#532-538)
+Reentrancy in TapeoutMinerPool.harvestRange(uint256,uint256) (src/TapeoutMinerPool.sol#393-411):
+	External calls:
+	- (ok,balance) = _harvestOne(_minerIds[i],_minerKeys[i],balance) (src/TapeoutMinerPool.sol#406)
+		- mining.claim(key) (src/TapeoutMinerPool.sol#807-814)
+	State variables written after the call(s):
+	- received = _sync() (src/TapeoutMinerPool.sol#409)
+		- totalAccounted += received (src/TapeoutMinerPool.sol#880)
+	TapeoutMinerPool.totalAccounted (src/TapeoutMinerPool.sol#154) can be used in cross function reentrancies:
+	- TapeoutMinerPool.accrual() (src/TapeoutMinerPool.sol#502-504)
+	- TapeoutMinerPool.previewAccrual() (src/TapeoutMinerPool.sol#508-510)
+	- TapeoutMinerPool.reconciliation() (src/TapeoutMinerPool.sol#566-587)
+	- TapeoutMinerPool.totalAccounted (src/TapeoutMinerPool.sol#154)
+	- TapeoutMinerPool.unrecognizedBalance() (src/TapeoutMinerPool.sol#513-519)
+Reentrancy in RecoverableTapeoutMinerPool.harvestRange(uint256,uint256) (src/canary/RecoverableTapeoutMinerPool.sol#411-430):
+	External calls:
+	- (ok,balance) = _harvestOne(_minerIds[i],_minerKeys[i],balance) (src/canary/RecoverableTapeoutMinerPool.sol#425)
+		- mining.claim(key) (src/canary/RecoverableTapeoutMinerPool.sol#853-860)
+	State variables written after the call(s):
+	- received = _sync() (src/canary/RecoverableTapeoutMinerPool.sol#428)
+		- totalAccounted += received (src/canary/RecoverableTapeoutMinerPool.sol#926)
+	RecoverableTapeoutMinerPool.totalAccounted (src/canary/RecoverableTapeoutMinerPool.sol#168) can be used in cross function reentrancies:
+	- RecoverableTapeoutMinerPool.accrual() (src/canary/RecoverableTapeoutMinerPool.sol#521-523)
+	- RecoverableTapeoutMinerPool.previewAccrual() (src/canary/RecoverableTapeoutMinerPool.sol#527-529)
+	- RecoverableTapeoutMinerPool.reconciliation() (src/canary/RecoverableTapeoutMinerPool.sol#585-606)
+	- RecoverableTapeoutMinerPool.totalAccounted (src/canary/RecoverableTapeoutMinerPool.sol#168)
+	- RecoverableTapeoutMinerPool.unrecognizedBalance() (src/canary/RecoverableTapeoutMinerPool.sol#532-538)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-1
+
+TapeoutMinerPool._admit(uint256[],bool).addNand (src/TapeoutMinerPool.sol#639) is a local variable never initialized
+TapeoutMinerPool._collectCarried(uint256[],bytes32[],uint32[],uint32[]).toNandTotal (src/TapeoutMinerPool.sol#712) is a local variable never initialized
+RecoverableTapeoutMinerPool._admit(uint256[],bool).addLatch (src/canary/RecoverableTapeoutMinerPool.sol#685) is a local variable never initialized
+RecoverableTapeoutMinerPool._collectCarried(uint256[],bytes32[],uint32[],uint32[]).toLatchTotal (src/canary/RecoverableTapeoutMinerPool.sol#759) is a local variable never initialized
+RecoverableTapeoutMinerPool._collectCarried(uint256[],bytes32[],uint32[],uint32[]).toNandTotal (src/canary/RecoverableTapeoutMinerPool.sol#758) is a local variable never initialized
+TapeoutReceiptDistributor.onERC1155BatchReceived(address,address,uint256[],uint256[],bytes).accepted (src/TapeoutReceiptDistributor.sol#137) is a local variable never initialized
+TapeoutMinerPool._admit(uint256[],bool).addLatch (src/TapeoutMinerPool.sol#640) is a local variable never initialized
+TapeoutMinerPool._collectCarried(uint256[],bytes32[],uint32[],uint32[]).toLatchTotal (src/TapeoutMinerPool.sol#713) is a local variable never initialized
+RecoverableTapeoutMinerPool._admit(uint256[],bool).addNand (src/canary/RecoverableTapeoutMinerPool.sol#684) is a local variable never initialized
+TapeoutReceiptDistributor.revokeWallet(address).removed (src/TapeoutReceiptDistributor.sol#186) is a local variable never initialized
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#uninitialized-local-variables
+
+Ownable2Step.transferOwnership(address).newOwner (node_modules/@openzeppelin/contracts/access/Ownable2Step.sol#43) lacks a zero-check on :
+		- _pendingOwner = newOwner (node_modules/@openzeppelin/contracts/access/Ownable2Step.sol#44)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#missing-zero-address-validation
+
+TapeoutMinerPool._admit(uint256[],bool) (src/TapeoutMinerPool.sol#625-700) has external calls inside a loop: holder = minerCollection.ownerOf(id) (src/TapeoutMinerPool.sol#647)
+	Calls stack containing the loop:
+		TapeoutMinerPool.depositMiners(uint256[])
+TapeoutMinerPool._readComposition(uint256) (src/TapeoutMinerPool.sol#759-775) has external calls inside a loop: key = mining.minerKey(address(minerCollection),tokenId) (src/TapeoutMinerPool.sol#760)
+	Calls stack containing the loop:
+		TapeoutMinerPool.depositMiners(uint256[])
+		TapeoutMinerPool._admit(uint256[],bool)
+TapeoutMinerPool._readComposition(uint256) (src/TapeoutMinerPool.sol#759-775) has external calls inside a loop: r = mining.getMiner(key) (src/TapeoutMinerPool.sol#761)
+	Calls stack containing the loop:
+		TapeoutMinerPool.depositMiners(uint256[])
+		TapeoutMinerPool._admit(uint256[],bool)
+TapeoutMinerPool._readComposition(uint256) (src/TapeoutMinerPool.sol#759-775) has external calls inside a loop: (cached,cachedNand,cachedLatch) = mining.cachedBurn(address(minerCollection),tokenId) (src/TapeoutMinerPool.sol#768-769)
+	Calls stack containing the loop:
+		TapeoutMinerPool.depositMiners(uint256[])
+		TapeoutMinerPool._admit(uint256[],bool)
+TapeoutMinerPool._settleOld(uint256) (src/TapeoutMinerPool.sol#782-791) has external calls inside a loop: mining.claim(key) (src/TapeoutMinerPool.sol#784-790)
+	Calls stack containing the loop:
+		TapeoutMinerPool.depositMiners(uint256[])
+		TapeoutMinerPool._admit(uint256[],bool)
+TapeoutMinerPool._settleOld(uint256) (src/TapeoutMinerPool.sol#782-791) has external calls inside a loop: mining.getMiner(key).status != MINER_REVOKED (src/TapeoutMinerPool.sol#786)
+	Calls stack containing the loop:
+		TapeoutMinerPool.depositMiners(uint256[])
+		TapeoutMinerPool._admit(uint256[],bool)
+TapeoutMinerPool._admit(uint256[],bool) (src/TapeoutMinerPool.sol#625-700) has external calls inside a loop: minerCollection.transferFrom(msg.sender,address(this),id_scope_2) (src/TapeoutMinerPool.sol#672)
+	Calls stack containing the loop:
+		TapeoutMinerPool.depositMiners(uint256[])
+TapeoutMinerPool._admit(uint256[],bool) (src/TapeoutMinerPool.sol#625-700) has external calls inside a loop: minerCollection.ownerOf(id_scope_2) != address(this) (src/TapeoutMinerPool.sol#673)
+	Calls stack containing the loop:
+		TapeoutMinerPool.depositMiners(uint256[])
+TapeoutMinerPool._admit(uint256[],bool) (src/TapeoutMinerPool.sol#625-700) has external calls inside a loop: revert MinerNotHeld(uint256,address)(id_scope_2,minerCollection.ownerOf(id_scope_2)) (src/TapeoutMinerPool.sol#674)
+	Calls stack containing the loop:
+		TapeoutMinerPool.depositMiners(uint256[])
+TapeoutMinerPool._collectCarried(uint256[],bytes32[],uint32[],uint32[]) (src/TapeoutMinerPool.sol#706-738) has external calls inside a loop: mining.claim(keys[i]) (src/TapeoutMinerPool.sol#716)
+	Calls stack containing the loop:
+		TapeoutMinerPool.depositMiners(uint256[])
+		TapeoutMinerPool._admit(uint256[],bool)
+TapeoutMinerPool._collectCarried(uint256[],bytes32[],uint32[],uint32[]) (src/TapeoutMinerPool.sol#706-738) has external calls inside a loop: afterClaim = bem.balanceOf(address(this)) (src/TapeoutMinerPool.sol#717)
+	Calls stack containing the loop:
+		TapeoutMinerPool.depositMiners(uint256[])
+		TapeoutMinerPool._admit(uint256[],bool)
+TapeoutMinerPool._admit(uint256[],bool) (src/TapeoutMinerPool.sol#625-700) has external calls inside a loop: holder = minerCollection.ownerOf(id) (src/TapeoutMinerPool.sol#647)
+	Calls stack containing the loop:
+		TapeoutMinerPool.registerMiners(uint256[])
+TapeoutMinerPool._readComposition(uint256) (src/TapeoutMinerPool.sol#759-775) has external calls inside a loop: key = mining.minerKey(address(minerCollection),tokenId) (src/TapeoutMinerPool.sol#760)
+	Calls stack containing the loop:
+		TapeoutMinerPool.registerMiners(uint256[])
+		TapeoutMinerPool._admit(uint256[],bool)
+TapeoutMinerPool._readComposition(uint256) (src/TapeoutMinerPool.sol#759-775) has external calls inside a loop: r = mining.getMiner(key) (src/TapeoutMinerPool.sol#761)
+	Calls stack containing the loop:
+		TapeoutMinerPool.registerMiners(uint256[])
+		TapeoutMinerPool._admit(uint256[],bool)
+TapeoutMinerPool._readComposition(uint256) (src/TapeoutMinerPool.sol#759-775) has external calls inside a loop: (cached,cachedNand,cachedLatch) = mining.cachedBurn(address(minerCollection),tokenId) (src/TapeoutMinerPool.sol#768-769)
+	Calls stack containing the loop:
+		TapeoutMinerPool.registerMiners(uint256[])
+		TapeoutMinerPool._admit(uint256[],bool)
+TapeoutMinerPool._settleOld(uint256) (src/TapeoutMinerPool.sol#782-791) has external calls inside a loop: mining.claim(key) (src/TapeoutMinerPool.sol#784-790)
+	Calls stack containing the loop:
+		TapeoutMinerPool.registerMiners(uint256[])
+		TapeoutMinerPool._admit(uint256[],bool)
+TapeoutMinerPool._settleOld(uint256) (src/TapeoutMinerPool.sol#782-791) has external calls inside a loop: mining.getMiner(key).status != MINER_REVOKED (src/TapeoutMinerPool.sol#786)
+	Calls stack containing the loop:
+		TapeoutMinerPool.registerMiners(uint256[])
+		TapeoutMinerPool._admit(uint256[],bool)
+TapeoutMinerPool._admit(uint256[],bool) (src/TapeoutMinerPool.sol#625-700) has external calls inside a loop: minerCollection.transferFrom(msg.sender,address(this),id_scope_2) (src/TapeoutMinerPool.sol#672)
+	Calls stack containing the loop:
+		TapeoutMinerPool.registerMiners(uint256[])
+TapeoutMinerPool._admit(uint256[],bool) (src/TapeoutMinerPool.sol#625-700) has external calls inside a loop: minerCollection.ownerOf(id_scope_2) != address(this) (src/TapeoutMinerPool.sol#673)
+	Calls stack containing the loop:
+		TapeoutMinerPool.registerMiners(uint256[])
+TapeoutMinerPool._admit(uint256[],bool) (src/TapeoutMinerPool.sol#625-700) has external calls inside a loop: revert MinerNotHeld(uint256,address)(id_scope_2,minerCollection.ownerOf(id_scope_2)) (src/TapeoutMinerPool.sol#674)
+	Calls stack containing the loop:
+		TapeoutMinerPool.registerMiners(uint256[])
+TapeoutMinerPool._collectCarried(uint256[],bytes32[],uint32[],uint32[]) (src/TapeoutMinerPool.sol#706-738) has external calls inside a loop: mining.claim(keys[i]) (src/TapeoutMinerPool.sol#716)
+	Calls stack containing the loop:
+		TapeoutMinerPool.registerMiners(uint256[])
+		TapeoutMinerPool._admit(uint256[],bool)
+TapeoutMinerPool._collectCarried(uint256[],bytes32[],uint32[],uint32[]) (src/TapeoutMinerPool.sol#706-738) has external calls inside a loop: afterClaim = bem.balanceOf(address(this)) (src/TapeoutMinerPool.sol#717)
+	Calls stack containing the loop:
+		TapeoutMinerPool.registerMiners(uint256[])
+		TapeoutMinerPool._admit(uint256[],bool)
+TapeoutMinerPool._harvestOne(uint256,bytes32,uint256) (src/TapeoutMinerPool.sol#803-815) has external calls inside a loop: mining.claim(key) (src/TapeoutMinerPool.sol#807-814)
+	Calls stack containing the loop:
+		TapeoutMinerPool.harvest(uint256[])
+TapeoutMinerPool._harvestOne(uint256,bytes32,uint256) (src/TapeoutMinerPool.sol#803-815) has external calls inside a loop: balance = bem.balanceOf(address(this)) (src/TapeoutMinerPool.sol#808)
+	Calls stack containing the loop:
+		TapeoutMinerPool.harvest(uint256[])
+TapeoutMinerPool._harvestOne(uint256,bytes32,uint256) (src/TapeoutMinerPool.sol#803-815) has external calls inside a loop: mining.claim(key) (src/TapeoutMinerPool.sol#807-814)
+	Calls stack containing the loop:
+		TapeoutMinerPool.harvestRange(uint256,uint256)
+TapeoutMinerPool._harvestOne(uint256,bytes32,uint256) (src/TapeoutMinerPool.sol#803-815) has external calls inside a loop: balance = bem.balanceOf(address(this)) (src/TapeoutMinerPool.sol#808)
+	Calls stack containing the loop:
+		TapeoutMinerPool.harvestRange(uint256,uint256)
+TapeoutMinerPool._claimOne(TapeoutMinerPool.Category,uint256,uint256,uint256) (src/TapeoutMinerPool.sol#829-840) has external calls inside a loop: receiptOf(category).balanceOf(msg.sender,id) != 1 (src/TapeoutMinerPool.sol#835)
+	Calls stack containing the loop:
+		TapeoutMinerPool.claimBatch(uint256[],uint256[])
+		TapeoutMinerPool._claimMany(TapeoutMinerPool.Category,uint256[],uint256)
+TapeoutReceiptDistributor._acceptOne(TapeoutMinerPool.Category,uint256,uint256) (src/TapeoutReceiptDistributor.sol#297-308) has external calls inside a loop: optimalPool.claimed(category,id) != 0 || regularPool.claimed(category,id) != 0 (src/TapeoutReceiptDistributor.sol#304)
+	Calls stack containing the loop:
+		TapeoutReceiptDistributor.onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)
+TapeoutReceiptDistributor.allocate(TapeoutReceiptDistributor.AllocationInput[]) (src/TapeoutReceiptDistributor.sol#153-180) has external calls inside a loop: holders = _receipt(a.category).holdersPage(a.firstId,a.count) (src/TapeoutReceiptDistributor.sol#163)
+TapeoutReceiptDistributor._deliver(address,uint256) (src/TapeoutReceiptDistributor.sol#314-337) has external calls inside a loop: _receipt(range.category).safeBatchTransferFrom(address(this),wallet,ids,values,) (src/TapeoutReceiptDistributor.sol#333)
+	Calls stack containing the loop:
+		TapeoutReceiptDistributor.claim(uint256)
+TapeoutReceiptDistributor._deliver(address,uint256) (src/TapeoutReceiptDistributor.sol#314-337) has external calls inside a loop: _receipt(range.category).safeBatchTransferFrom(address(this),wallet,ids,values,) (src/TapeoutReceiptDistributor.sol#333)
+	Calls stack containing the loop:
+		TapeoutReceiptDistributor.deliver(address,uint256)
+RecoverableTapeoutMinerPool._admit(uint256[],bool) (src/canary/RecoverableTapeoutMinerPool.sol#669-746) has external calls inside a loop: holder = minerCollection.ownerOf(id) (src/canary/RecoverableTapeoutMinerPool.sol#693)
+	Calls stack containing the loop:
+		RecoverableTapeoutMinerPool.depositMiners(uint256[])
+RecoverableTapeoutMinerPool._readComposition(uint256) (src/canary/RecoverableTapeoutMinerPool.sol#805-821) has external calls inside a loop: key = mining.minerKey(address(minerCollection),tokenId) (src/canary/RecoverableTapeoutMinerPool.sol#806)
+	Calls stack containing the loop:
+		RecoverableTapeoutMinerPool.depositMiners(uint256[])
+		RecoverableTapeoutMinerPool._admit(uint256[],bool)
+RecoverableTapeoutMinerPool._readComposition(uint256) (src/canary/RecoverableTapeoutMinerPool.sol#805-821) has external calls inside a loop: r = mining.getMiner(key) (src/canary/RecoverableTapeoutMinerPool.sol#807)
+	Calls stack containing the loop:
+		RecoverableTapeoutMinerPool.depositMiners(uint256[])
+		RecoverableTapeoutMinerPool._admit(uint256[],bool)
+RecoverableTapeoutMinerPool._readComposition(uint256) (src/canary/RecoverableTapeoutMinerPool.sol#805-821) has external calls inside a loop: (cached,cachedNand,cachedLatch) = mining.cachedBurn(address(minerCollection),tokenId) (src/canary/RecoverableTapeoutMinerPool.sol#814-815)
+	Calls stack containing the loop:
+		RecoverableTapeoutMinerPool.depositMiners(uint256[])
+		RecoverableTapeoutMinerPool._admit(uint256[],bool)
+RecoverableTapeoutMinerPool._settleOld(uint256) (src/canary/RecoverableTapeoutMinerPool.sol#828-837) has external calls inside a loop: mining.claim(key) (src/canary/RecoverableTapeoutMinerPool.sol#830-836)
+	Calls stack containing the loop:
+		RecoverableTapeoutMinerPool.depositMiners(uint256[])
+		RecoverableTapeoutMinerPool._admit(uint256[],bool)
+RecoverableTapeoutMinerPool._settleOld(uint256) (src/canary/RecoverableTapeoutMinerPool.sol#828-837) has external calls inside a loop: mining.getMiner(key).status != MINER_REVOKED (src/canary/RecoverableTapeoutMinerPool.sol#832)
+	Calls stack containing the loop:
+		RecoverableTapeoutMinerPool.depositMiners(uint256[])
+		RecoverableTapeoutMinerPool._admit(uint256[],bool)
+RecoverableTapeoutMinerPool._admit(uint256[],bool) (src/canary/RecoverableTapeoutMinerPool.sol#669-746) has external calls inside a loop: minerCollection.transferFrom(msg.sender,address(this),id_scope_2) (src/canary/RecoverableTapeoutMinerPool.sol#718)
+	Calls stack containing the loop:
+		RecoverableTapeoutMinerPool.depositMiners(uint256[])
+RecoverableTapeoutMinerPool._admit(uint256[],bool) (src/canary/RecoverableTapeoutMinerPool.sol#669-746) has external calls inside a loop: minerCollection.ownerOf(id_scope_2) != address(this) (src/canary/RecoverableTapeoutMinerPool.sol#719)
+	Calls stack containing the loop:
+		RecoverableTapeoutMinerPool.depositMiners(uint256[])
+RecoverableTapeoutMinerPool._admit(uint256[],bool) (src/canary/RecoverableTapeoutMinerPool.sol#669-746) has external calls inside a loop: revert MinerNotHeld(uint256,address)(id_scope_2,minerCollection.ownerOf(id_scope_2)) (src/canary/RecoverableTapeoutMinerPool.sol#720)
+	Calls stack containing the loop:
+		RecoverableTapeoutMinerPool.depositMiners(uint256[])
+RecoverableTapeoutMinerPool._collectCarried(uint256[],bytes32[],uint32[],uint32[]) (src/canary/RecoverableTapeoutMinerPool.sol#752-784) has external calls inside a loop: mining.claim(keys[i]) (src/canary/RecoverableTapeoutMinerPool.sol#762)
+	Calls stack containing the loop:
+		RecoverableTapeoutMinerPool.depositMiners(uint256[])
+		RecoverableTapeoutMinerPool._admit(uint256[],bool)
+RecoverableTapeoutMinerPool._collectCarried(uint256[],bytes32[],uint32[],uint32[]) (src/canary/RecoverableTapeoutMinerPool.sol#752-784) has external calls inside a loop: afterClaim = bem.balanceOf(address(this)) (src/canary/RecoverableTapeoutMinerPool.sol#763)
+	Calls stack containing the loop:
+		RecoverableTapeoutMinerPool.depositMiners(uint256[])
+		RecoverableTapeoutMinerPool._admit(uint256[],bool)
+RecoverableTapeoutMinerPool._admit(uint256[],bool) (src/canary/RecoverableTapeoutMinerPool.sol#669-746) has external calls inside a loop: holder = minerCollection.ownerOf(id) (src/canary/RecoverableTapeoutMinerPool.sol#693)
+	Calls stack containing the loop:
+		RecoverableTapeoutMinerPool.registerMiners(uint256[])
+RecoverableTapeoutMinerPool._readComposition(uint256) (src/canary/RecoverableTapeoutMinerPool.sol#805-821) has external calls inside a loop: key = mining.minerKey(address(minerCollection),tokenId) (src/canary/RecoverableTapeoutMinerPool.sol#806)
+	Calls stack containing the loop:
+		RecoverableTapeoutMinerPool.registerMiners(uint256[])
+		RecoverableTapeoutMinerPool._admit(uint256[],bool)
+RecoverableTapeoutMinerPool._readComposition(uint256) (src/canary/RecoverableTapeoutMinerPool.sol#805-821) has external calls inside a loop: r = mining.getMiner(key) (src/canary/RecoverableTapeoutMinerPool.sol#807)
+	Calls stack containing the loop:
+		RecoverableTapeoutMinerPool.registerMiners(uint256[])
+		RecoverableTapeoutMinerPool._admit(uint256[],bool)
+RecoverableTapeoutMinerPool._readComposition(uint256) (src/canary/RecoverableTapeoutMinerPool.sol#805-821) has external calls inside a loop: (cached,cachedNand,cachedLatch) = mining.cachedBurn(address(minerCollection),tokenId) (src/canary/RecoverableTapeoutMinerPool.sol#814-815)
+	Calls stack containing the loop:
+		RecoverableTapeoutMinerPool.registerMiners(uint256[])
+		RecoverableTapeoutMinerPool._admit(uint256[],bool)
+RecoverableTapeoutMinerPool._settleOld(uint256) (src/canary/RecoverableTapeoutMinerPool.sol#828-837) has external calls inside a loop: mining.claim(key) (src/canary/RecoverableTapeoutMinerPool.sol#830-836)
+	Calls stack containing the loop:
+		RecoverableTapeoutMinerPool.registerMiners(uint256[])
+		RecoverableTapeoutMinerPool._admit(uint256[],bool)
+RecoverableTapeoutMinerPool._settleOld(uint256) (src/canary/RecoverableTapeoutMinerPool.sol#828-837) has external calls inside a loop: mining.getMiner(key).status != MINER_REVOKED (src/canary/RecoverableTapeoutMinerPool.sol#832)
+	Calls stack containing the loop:
+		RecoverableTapeoutMinerPool.registerMiners(uint256[])
+		RecoverableTapeoutMinerPool._admit(uint256[],bool)
+RecoverableTapeoutMinerPool._admit(uint256[],bool) (src/canary/RecoverableTapeoutMinerPool.sol#669-746) has external calls inside a loop: minerCollection.transferFrom(msg.sender,address(this),id_scope_2) (src/canary/RecoverableTapeoutMinerPool.sol#718)
+	Calls stack containing the loop:
+		RecoverableTapeoutMinerPool.registerMiners(uint256[])
+RecoverableTapeoutMinerPool._admit(uint256[],bool) (src/canary/RecoverableTapeoutMinerPool.sol#669-746) has external calls inside a loop: minerCollection.ownerOf(id_scope_2) != address(this) (src/canary/RecoverableTapeoutMinerPool.sol#719)
+	Calls stack containing the loop:
+		RecoverableTapeoutMinerPool.registerMiners(uint256[])
+RecoverableTapeoutMinerPool._admit(uint256[],bool) (src/canary/RecoverableTapeoutMinerPool.sol#669-746) has external calls inside a loop: revert MinerNotHeld(uint256,address)(id_scope_2,minerCollection.ownerOf(id_scope_2)) (src/canary/RecoverableTapeoutMinerPool.sol#720)
+	Calls stack containing the loop:
+		RecoverableTapeoutMinerPool.registerMiners(uint256[])
+RecoverableTapeoutMinerPool._collectCarried(uint256[],bytes32[],uint32[],uint32[]) (src/canary/RecoverableTapeoutMinerPool.sol#752-784) has external calls inside a loop: mining.claim(keys[i]) (src/canary/RecoverableTapeoutMinerPool.sol#762)
+	Calls stack containing the loop:
+		RecoverableTapeoutMinerPool.registerMiners(uint256[])
+		RecoverableTapeoutMinerPool._admit(uint256[],bool)
+RecoverableTapeoutMinerPool._collectCarried(uint256[],bytes32[],uint32[],uint32[]) (src/canary/RecoverableTapeoutMinerPool.sol#752-784) has external calls inside a loop: afterClaim = bem.balanceOf(address(this)) (src/canary/RecoverableTapeoutMinerPool.sol#763)
+	Calls stack containing the loop:
+		RecoverableTapeoutMinerPool.registerMiners(uint256[])
+		RecoverableTapeoutMinerPool._admit(uint256[],bool)
+RecoverableTapeoutMinerPool._harvestOne(uint256,bytes32,uint256) (src/canary/RecoverableTapeoutMinerPool.sol#849-861) has external calls inside a loop: mining.claim(key) (src/canary/RecoverableTapeoutMinerPool.sol#853-860)
+	Calls stack containing the loop:
+		RecoverableTapeoutMinerPool.harvest(uint256[])
+RecoverableTapeoutMinerPool._harvestOne(uint256,bytes32,uint256) (src/canary/RecoverableTapeoutMinerPool.sol#849-861) has external calls inside a loop: balance = bem.balanceOf(address(this)) (src/canary/RecoverableTapeoutMinerPool.sol#854)
+	Calls stack containing the loop:
+		RecoverableTapeoutMinerPool.harvest(uint256[])
+RecoverableTapeoutMinerPool._harvestOne(uint256,bytes32,uint256) (src/canary/RecoverableTapeoutMinerPool.sol#849-861) has external calls inside a loop: mining.claim(key) (src/canary/RecoverableTapeoutMinerPool.sol#853-860)
+	Calls stack containing the loop:
+		RecoverableTapeoutMinerPool.harvestRange(uint256,uint256)
+RecoverableTapeoutMinerPool._harvestOne(uint256,bytes32,uint256) (src/canary/RecoverableTapeoutMinerPool.sol#849-861) has external calls inside a loop: balance = bem.balanceOf(address(this)) (src/canary/RecoverableTapeoutMinerPool.sol#854)
+	Calls stack containing the loop:
+		RecoverableTapeoutMinerPool.harvestRange(uint256,uint256)
+RecoverableTapeoutMinerPool._claimOne(RecoverableTapeoutMinerPool.Category,uint256,uint256,uint256) (src/canary/RecoverableTapeoutMinerPool.sol#875-886) has external calls inside a loop: receiptOf(category).balanceOf(msg.sender,id) != 1 (src/canary/RecoverableTapeoutMinerPool.sol#881)
+	Calls stack containing the loop:
+		RecoverableTapeoutMinerPool.claimBatch(uint256[],uint256[])
+		RecoverableTapeoutMinerPool._claimMany(RecoverableTapeoutMinerPool.Category,uint256[],uint256)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation/#calls-inside-a-loop
+
+Reentrancy in TapeoutMinerPool._admit(uint256[],bool) (src/TapeoutMinerPool.sol#625-700):
+	External calls:
+	- _settleOld(i_scope_0) (src/TapeoutMinerPool.sol#663)
+		- mining.claim(key) (src/TapeoutMinerPool.sol#784-790)
+	State variables written after the call(s):
+	- _checkpoint() (src/TapeoutMinerPool.sol#668)
+		- accountedBase = totalAccounted (src/TapeoutMinerPool.sol#796)
+	- _checkpoint() (src/TapeoutMinerPool.sol#668)
+		- latchBaseUnits = latchUnits (src/TapeoutMinerPool.sol#798)
+	- _checkpoint() (src/TapeoutMinerPool.sol#668)
+		- nandBaseUnits = nandUnits (src/TapeoutMinerPool.sol#797)
+Reentrancy in RecoverableTapeoutMinerPool._admit(uint256[],bool) (src/canary/RecoverableTapeoutMinerPool.sol#669-746):
+	External calls:
+	- _settleOld(i_scope_0) (src/canary/RecoverableTapeoutMinerPool.sol#709)
+		- mining.claim(key) (src/canary/RecoverableTapeoutMinerPool.sol#830-836)
+	State variables written after the call(s):
+	- _checkpoint() (src/canary/RecoverableTapeoutMinerPool.sol#714)
+		- accountedBase = totalAccounted (src/canary/RecoverableTapeoutMinerPool.sol#842)
+	- _checkpoint() (src/canary/RecoverableTapeoutMinerPool.sol#714)
+		- latchBaseUnits = latchUnits (src/canary/RecoverableTapeoutMinerPool.sol#844)
+	- _checkpoint() (src/canary/RecoverableTapeoutMinerPool.sol#714)
+		- nandBaseUnits = nandUnits (src/canary/RecoverableTapeoutMinerPool.sol#843)
+Reentrancy in TapeoutMinerPool._collectCarried(uint256[],bytes32[],uint32[],uint32[]) (src/TapeoutMinerPool.sol#706-738):
+	External calls:
+	- mining.claim(keys[i]) (src/TapeoutMinerPool.sol#716)
+	State variables written after the call(s):
+	- accountedBase = totalAccounted (src/TapeoutMinerPool.sol#732)
+	- carriedIncome += carried (src/TapeoutMinerPool.sol#735)
+	- carriedNandUnits += toNandTotal (src/TapeoutMinerPool.sol#736)
+	- latchBaseUnits += toLatchTotal (src/TapeoutMinerPool.sol#734)
+	- nandBaseUnits += toNandTotal (src/TapeoutMinerPool.sol#733)
+	- totalAccounted += carried (src/TapeoutMinerPool.sol#731)
+Reentrancy in RecoverableTapeoutMinerPool._collectCarried(uint256[],bytes32[],uint32[],uint32[]) (src/canary/RecoverableTapeoutMinerPool.sol#752-784):
+	External calls:
+	- mining.claim(keys[i]) (src/canary/RecoverableTapeoutMinerPool.sol#762)
+	State variables written after the call(s):
+	- accountedBase = totalAccounted (src/canary/RecoverableTapeoutMinerPool.sol#778)
+	- carriedIncome += carried (src/canary/RecoverableTapeoutMinerPool.sol#781)
+	- carriedNandUnits += toNandTotal (src/canary/RecoverableTapeoutMinerPool.sol#782)
+	- latchBaseUnits += toLatchTotal (src/canary/RecoverableTapeoutMinerPool.sol#780)
+	- nandBaseUnits += toNandTotal (src/canary/RecoverableTapeoutMinerPool.sol#779)
+	- totalAccounted += carried (src/canary/RecoverableTapeoutMinerPool.sol#777)
+Reentrancy in RecoverableTapeoutMinerPool.emergencyReturn(uint256) (src/canary/RecoverableTapeoutMinerPool.sol#648-660):
+	External calls:
+	- minerCollection.transferFrom(address(this),recoveryController,id) (src/canary/RecoverableTapeoutMinerPool.sol#656)
+	State variables written after the call(s):
+	- returned[id] = true (src/canary/RecoverableTapeoutMinerPool.sol#658)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-2
+
+Reentrancy in TapeoutEntitlementReceipt.issue(address,uint256) (src/TapeoutEntitlementReceipt.sol#58-70):
+	External calls:
+	- _mintBatch(to,ids,values,) (src/TapeoutEntitlementReceipt.sol#68)
+		- response = IERC1155Receiver(to).onERC1155Received(operator,from,id,value,data) (node_modules/@openzeppelin/contracts/token/ERC1155/utils/ERC1155Utils.sol#34-48)
+		- response = IERC1155Receiver(to).onERC1155BatchReceived(operator,from,ids,values,data) (node_modules/@openzeppelin/contracts/token/ERC1155/utils/ERC1155Utils.sol#69-85)
+		- ERC1155Utils.checkOnERC1155Received(operator,from,to,id,value,data) (node_modules/@openzeppelin/contracts/token/ERC1155/ERC1155.sol#194)
+		- ERC1155Utils.checkOnERC1155BatchReceived(operator,from,to,ids,values,data) (node_modules/@openzeppelin/contracts/token/ERC1155/ERC1155.sol#196)
+	Event emitted after the call(s):
+	- Issued(to,firstId,count,_supply) (src/TapeoutEntitlementReceipt.sol#69)
+Reentrancy in TapeoutEntitlementReceipt.retract(uint256) (src/TapeoutEntitlementReceipt.sol#74-87):
+	External calls:
+	- _burnBatch(msg.sender,ids,values) (src/TapeoutEntitlementReceipt.sol#85)
+		- response = IERC1155Receiver(to).onERC1155Received(operator,from,id,value,data) (node_modules/@openzeppelin/contracts/token/ERC1155/utils/ERC1155Utils.sol#34-48)
+		- response = IERC1155Receiver(to).onERC1155BatchReceived(operator,from,ids,values,data) (node_modules/@openzeppelin/contracts/token/ERC1155/utils/ERC1155Utils.sol#69-85)
+		- ERC1155Utils.checkOnERC1155Received(operator,from,to,id,value,data) (node_modules/@openzeppelin/contracts/token/ERC1155/ERC1155.sol#194)
+		- ERC1155Utils.checkOnERC1155BatchReceived(operator,from,to,ids,values,data) (node_modules/@openzeppelin/contracts/token/ERC1155/ERC1155.sol#196)
+	Event emitted after the call(s):
+	- Retracted(firstId,count,_supply) (src/TapeoutEntitlementReceipt.sol#86)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-3
+
+ERC1155._asSingletonArrays(uint256,uint256) (node_modules/@openzeppelin/contracts/token/ERC1155/ERC1155.sol#368-388) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/token/ERC1155/ERC1155.sol#372-387)
+ERC1155Utils.checkOnERC1155Received(address,address,address,uint256,uint256,bytes) (node_modules/@openzeppelin/contracts/token/ERC1155/utils/ERC1155Utils.sol#25-50) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/token/ERC1155/utils/ERC1155Utils.sol#44-46)
+ERC1155Utils.checkOnERC1155BatchReceived(address,address,address,uint256[],uint256[],bytes) (node_modules/@openzeppelin/contracts/token/ERC1155/utils/ERC1155Utils.sol#60-87) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/token/ERC1155/utils/ERC1155Utils.sol#81-83)
+SafeERC20._callOptionalReturn(IERC20,bytes) (node_modules/@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol#173-191) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol#176-186)
+SafeERC20._callOptionalReturnBool(IERC20,bytes) (node_modules/@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol#201-211) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol#205-209)
+Arrays._begin(uint256[]) (node_modules/@openzeppelin/contracts/utils/Arrays.sol#142-146) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/Arrays.sol#143-145)
+Arrays._mload(uint256) (node_modules/@openzeppelin/contracts/utils/Arrays.sol#161-165) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/Arrays.sol#162-164)
+Arrays._swap(uint256,uint256) (node_modules/@openzeppelin/contracts/utils/Arrays.sol#170-177) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/Arrays.sol#171-176)
+Arrays._castToUint256Array(address[]) (node_modules/@openzeppelin/contracts/utils/Arrays.sol#180-184) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/Arrays.sol#181-183)
+Arrays._castToUint256Array(bytes32[]) (node_modules/@openzeppelin/contracts/utils/Arrays.sol#187-191) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/Arrays.sol#188-190)
+Arrays._castToUint256Comp(function(address,address) returns(bool)) (node_modules/@openzeppelin/contracts/utils/Arrays.sol#194-200) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/Arrays.sol#197-199)
+Arrays._castToUint256Comp(function(bytes32,bytes32) returns(bool)) (node_modules/@openzeppelin/contracts/utils/Arrays.sol#203-209) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/Arrays.sol#206-208)
+Arrays.unsafeAccess(address[],uint256) (node_modules/@openzeppelin/contracts/utils/Arrays.sol#383-389) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/Arrays.sol#385-387)
+Arrays.unsafeAccess(bytes32[],uint256) (node_modules/@openzeppelin/contracts/utils/Arrays.sol#396-402) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/Arrays.sol#398-400)
+Arrays.unsafeAccess(uint256[],uint256) (node_modules/@openzeppelin/contracts/utils/Arrays.sol#409-415) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/Arrays.sol#411-413)
+Arrays.unsafeAccess(bytes[],uint256) (node_modules/@openzeppelin/contracts/utils/Arrays.sol#422-428) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/Arrays.sol#424-426)
+Arrays.unsafeAccess(string[],uint256) (node_modules/@openzeppelin/contracts/utils/Arrays.sol#435-441) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/Arrays.sol#437-439)
+Arrays.unsafeMemoryAccess(address[],uint256) (node_modules/@openzeppelin/contracts/utils/Arrays.sol#448-452) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/Arrays.sol#449-451)
+Arrays.unsafeMemoryAccess(bytes32[],uint256) (node_modules/@openzeppelin/contracts/utils/Arrays.sol#459-463) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/Arrays.sol#460-462)
+Arrays.unsafeMemoryAccess(uint256[],uint256) (node_modules/@openzeppelin/contracts/utils/Arrays.sol#470-474) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/Arrays.sol#471-473)
+Arrays.unsafeMemoryAccess(bytes[],uint256) (node_modules/@openzeppelin/contracts/utils/Arrays.sol#481-485) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/Arrays.sol#482-484)
+Arrays.unsafeMemoryAccess(string[],uint256) (node_modules/@openzeppelin/contracts/utils/Arrays.sol#492-496) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/Arrays.sol#493-495)
+Arrays.unsafeSetLength(address[],uint256) (node_modules/@openzeppelin/contracts/utils/Arrays.sol#503-507) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/Arrays.sol#504-506)
+Arrays.unsafeSetLength(bytes32[],uint256) (node_modules/@openzeppelin/contracts/utils/Arrays.sol#514-518) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/Arrays.sol#515-517)
+Arrays.unsafeSetLength(uint256[],uint256) (node_modules/@openzeppelin/contracts/utils/Arrays.sol#525-529) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/Arrays.sol#526-528)
+Arrays.unsafeSetLength(bytes[],uint256) (node_modules/@openzeppelin/contracts/utils/Arrays.sol#536-540) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/Arrays.sol#537-539)
+Arrays.unsafeSetLength(string[],uint256) (node_modules/@openzeppelin/contracts/utils/Arrays.sol#547-551) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/Arrays.sol#548-550)
+Panic.panic(uint256) (node_modules/@openzeppelin/contracts/utils/Panic.sol#50-56) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/Panic.sol#51-55)
+SlotDerivation.erc7201Slot(string) (node_modules/@openzeppelin/contracts/utils/SlotDerivation.sol#45-50) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/SlotDerivation.sol#46-49)
+SlotDerivation.deriveArray(bytes32) (node_modules/@openzeppelin/contracts/utils/SlotDerivation.sol#64-69) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/SlotDerivation.sol#65-68)
+SlotDerivation.deriveMapping(bytes32,address) (node_modules/@openzeppelin/contracts/utils/SlotDerivation.sol#74-80) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/SlotDerivation.sol#75-79)
+SlotDerivation.deriveMapping(bytes32,bool) (node_modules/@openzeppelin/contracts/utils/SlotDerivation.sol#85-91) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/SlotDerivation.sol#86-90)
+SlotDerivation.deriveMapping(bytes32,bytes32) (node_modules/@openzeppelin/contracts/utils/SlotDerivation.sol#96-102) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/SlotDerivation.sol#97-101)
+SlotDerivation.deriveMapping(bytes32,uint256) (node_modules/@openzeppelin/contracts/utils/SlotDerivation.sol#107-113) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/SlotDerivation.sol#108-112)
+SlotDerivation.deriveMapping(bytes32,int256) (node_modules/@openzeppelin/contracts/utils/SlotDerivation.sol#118-124) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/SlotDerivation.sol#119-123)
+SlotDerivation.deriveMapping(bytes32,string) (node_modules/@openzeppelin/contracts/utils/SlotDerivation.sol#129-139) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/SlotDerivation.sol#130-138)
+SlotDerivation.deriveMapping(bytes32,bytes) (node_modules/@openzeppelin/contracts/utils/SlotDerivation.sol#144-154) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/SlotDerivation.sol#145-153)
+StorageSlot.getAddressSlot(bytes32) (node_modules/@openzeppelin/contracts/utils/StorageSlot.sol#66-70) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/StorageSlot.sol#67-69)
+StorageSlot.getBooleanSlot(bytes32) (node_modules/@openzeppelin/contracts/utils/StorageSlot.sol#75-79) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/StorageSlot.sol#76-78)
+StorageSlot.getBytes32Slot(bytes32) (node_modules/@openzeppelin/contracts/utils/StorageSlot.sol#84-88) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/StorageSlot.sol#85-87)
+StorageSlot.getUint256Slot(bytes32) (node_modules/@openzeppelin/contracts/utils/StorageSlot.sol#93-97) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/StorageSlot.sol#94-96)
+StorageSlot.getInt256Slot(bytes32) (node_modules/@openzeppelin/contracts/utils/StorageSlot.sol#102-106) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/StorageSlot.sol#103-105)
+StorageSlot.getStringSlot(bytes32) (node_modules/@openzeppelin/contracts/utils/StorageSlot.sol#111-115) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/StorageSlot.sol#112-114)
+StorageSlot.getStringSlot(string) (node_modules/@openzeppelin/contracts/utils/StorageSlot.sol#120-124) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/StorageSlot.sol#121-123)
+StorageSlot.getBytesSlot(bytes32) (node_modules/@openzeppelin/contracts/utils/StorageSlot.sol#129-133) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/StorageSlot.sol#130-132)
+StorageSlot.getBytesSlot(bytes) (node_modules/@openzeppelin/contracts/utils/StorageSlot.sol#138-142) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/StorageSlot.sol#139-141)
+Math.add512(uint256,uint256) (node_modules/@openzeppelin/contracts/utils/math/Math.sol#25-30) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/math/Math.sol#26-29)
+Math.mul512(uint256,uint256) (node_modules/@openzeppelin/contracts/utils/math/Math.sol#37-46) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/math/Math.sol#41-45)
+Math.tryMul(uint256,uint256) (node_modules/@openzeppelin/contracts/utils/math/Math.sol#73-84) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/math/Math.sol#76-80)
+Math.tryDiv(uint256,uint256) (node_modules/@openzeppelin/contracts/utils/math/Math.sol#89-97) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/math/Math.sol#92-95)
+Math.tryMod(uint256,uint256) (node_modules/@openzeppelin/contracts/utils/math/Math.sol#102-110) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/math/Math.sol#105-108)
+Math.mulDiv(uint256,uint256,uint256) (node_modules/@openzeppelin/contracts/utils/math/Math.sol#204-275) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/math/Math.sol#227-234)
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/math/Math.sol#240-249)
+Math.tryModExp(uint256,uint256,uint256) (node_modules/@openzeppelin/contracts/utils/math/Math.sol#409-433) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/math/Math.sol#411-432)
+Math.tryModExp(bytes,bytes,bytes) (node_modules/@openzeppelin/contracts/utils/math/Math.sol#449-471) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/math/Math.sol#461-470)
+Math.log2(uint256) (node_modules/@openzeppelin/contracts/utils/math/Math.sol#612-651) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/math/Math.sol#648-650)
+SafeCast.toUint(bool) (node_modules/@openzeppelin/contracts/utils/math/SafeCast.sol#1157-1161) uses assembly
+	- INLINE ASM (node_modules/@openzeppelin/contracts/utils/math/SafeCast.sol#1158-1160)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#assembly-usage
+
+5 different versions of Solidity are used:
+	- Version constraint ^0.8.20 is used by:
+		-^0.8.20 (node_modules/@openzeppelin/contracts/access/Ownable.sol#4)
+		-^0.8.20 (node_modules/@openzeppelin/contracts/access/Ownable2Step.sol#4)
+		-^0.8.20 (node_modules/@openzeppelin/contracts/token/ERC1155/ERC1155.sol#4)
+		-^0.8.20 (node_modules/@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol#4)
+		-^0.8.20 (node_modules/@openzeppelin/contracts/token/ERC1155/utils/ERC1155Utils.sol#4)
+		-^0.8.20 (node_modules/@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol#4)
+		-^0.8.20 (node_modules/@openzeppelin/contracts/utils/Arrays.sol#5)
+		-^0.8.20 (node_modules/@openzeppelin/contracts/utils/Comparators.sol#4)
+		-^0.8.20 (node_modules/@openzeppelin/contracts/utils/Context.sol#4)
+		-^0.8.20 (node_modules/@openzeppelin/contracts/utils/Panic.sol#4)
+		-^0.8.20 (node_modules/@openzeppelin/contracts/utils/ReentrancyGuard.sol#4)
+		-^0.8.20 (node_modules/@openzeppelin/contracts/utils/SlotDerivation.sol#5)
+		-^0.8.20 (node_modules/@openzeppelin/contracts/utils/StorageSlot.sol#5)
+		-^0.8.20 (node_modules/@openzeppelin/contracts/utils/introspection/ERC165.sol#4)
+		-^0.8.20 (node_modules/@openzeppelin/contracts/utils/math/Math.sol#4)
+		-^0.8.20 (node_modules/@openzeppelin/contracts/utils/math/SafeCast.sol#5)
+	- Version constraint >=0.6.2 is used by:
+		->=0.6.2 (node_modules/@openzeppelin/contracts/interfaces/IERC1363.sol#4)
+		->=0.6.2 (node_modules/@openzeppelin/contracts/token/ERC1155/IERC1155.sol#4)
+		->=0.6.2 (node_modules/@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol#4)
+		->=0.6.2 (node_modules/@openzeppelin/contracts/token/ERC1155/extensions/IERC1155MetadataURI.sol#4)
+		->=0.6.2 (node_modules/@openzeppelin/contracts/token/ERC721/IERC721.sol#4)
+	- Version constraint >=0.4.16 is used by:
+		->=0.4.16 (node_modules/@openzeppelin/contracts/interfaces/IERC165.sol#4)
+		->=0.4.16 (node_modules/@openzeppelin/contracts/interfaces/IERC20.sol#4)
+		->=0.4.16 (node_modules/@openzeppelin/contracts/token/ERC20/IERC20.sol#4)
+		->=0.4.16 (node_modules/@openzeppelin/contracts/utils/introspection/IERC165.sol#4)
+	- Version constraint >=0.8.4 is used by:
+		->=0.8.4 (node_modules/@openzeppelin/contracts/interfaces/draft-IERC6093.sol#3)
+	- Version constraint 0.8.24 is used by:
+		-0.8.24 (src/PoolMath.sol#2)
+		-0.8.24 (src/TapeoutEntitlementReceipt.sol#2)
+		-0.8.24 (src/TapeoutMinerPool.sol#2)
+		-0.8.24 (src/TapeoutReceiptDistributor.sol#2)
+		-0.8.24 (src/canary/CanaryParticipant.sol#2)
+		-0.8.24 (src/canary/RecoverableTapeoutMinerPool.sol#2)
+		-0.8.24 (src/interfaces/IMining.sol#2)
+		-0.8.24 (src/interfaces/IReceiptDistributor.sol#2)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#different-pragma-directives-are-used
+
+TapeoutMinerPool._admit(uint256[],bool) (src/TapeoutMinerPool.sol#625-700) has a high cyclomatic complexity (16).
+RecoverableTapeoutMinerPool._admit(uint256[],bool) (src/canary/RecoverableTapeoutMinerPool.sol#669-746) has a high cyclomatic complexity (18).
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#cyclomatic-complexity
+
+Version constraint ^0.8.20 contains known severe issues (https://solidity.readthedocs.io/en/latest/bugs.html)
+	- VerbatimInvalidDeduplication
+	- FullInlinerNonExpressionSplitArgumentEvaluationOrder
+	- MissingSideEffectsOnSelectorAccess.
+It is used by:
+	- ^0.8.20 (node_modules/@openzeppelin/contracts/access/Ownable.sol#4)
+	- ^0.8.20 (node_modules/@openzeppelin/contracts/access/Ownable2Step.sol#4)
+	- ^0.8.20 (node_modules/@openzeppelin/contracts/token/ERC1155/ERC1155.sol#4)
+	- ^0.8.20 (node_modules/@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol#4)
+	- ^0.8.20 (node_modules/@openzeppelin/contracts/token/ERC1155/utils/ERC1155Utils.sol#4)
+	- ^0.8.20 (node_modules/@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol#4)
+	- ^0.8.20 (node_modules/@openzeppelin/contracts/utils/Arrays.sol#5)
+	- ^0.8.20 (node_modules/@openzeppelin/contracts/utils/Comparators.sol#4)
+	- ^0.8.20 (node_modules/@openzeppelin/contracts/utils/Context.sol#4)
+	- ^0.8.20 (node_modules/@openzeppelin/contracts/utils/Panic.sol#4)
+	- ^0.8.20 (node_modules/@openzeppelin/contracts/utils/ReentrancyGuard.sol#4)
+	- ^0.8.20 (node_modules/@openzeppelin/contracts/utils/SlotDerivation.sol#5)
+	- ^0.8.20 (node_modules/@openzeppelin/contracts/utils/StorageSlot.sol#5)
+	- ^0.8.20 (node_modules/@openzeppelin/contracts/utils/introspection/ERC165.sol#4)
+	- ^0.8.20 (node_modules/@openzeppelin/contracts/utils/math/Math.sol#4)
+	- ^0.8.20 (node_modules/@openzeppelin/contracts/utils/math/SafeCast.sol#5)
+Version constraint >=0.6.2 contains known severe issues (https://solidity.readthedocs.io/en/latest/bugs.html)
+	- MissingSideEffectsOnSelectorAccess
+	- AbiReencodingHeadOverflowWithStaticArrayCleanup
+	- DirtyBytesArrayToStorage
+	- NestedCalldataArrayAbiReencodingSizeValidation
+	- ABIDecodeTwoDimensionalArrayMemory
+	- KeccakCaching
+	- EmptyByteArrayCopy
+	- DynamicArrayCleanup
+	- MissingEscapingInFormatting
+	- ArraySliceDynamicallyEncodedBaseType
+	- ImplicitConstructorCallvalueCheck
+	- TupleAssignmentMultiStackSlotComponents
+	- MemoryArrayCreationOverflow.
+It is used by:
+	- >=0.6.2 (node_modules/@openzeppelin/contracts/interfaces/IERC1363.sol#4)
+	- >=0.6.2 (node_modules/@openzeppelin/contracts/token/ERC1155/IERC1155.sol#4)
+	- >=0.6.2 (node_modules/@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol#4)
+	- >=0.6.2 (node_modules/@openzeppelin/contracts/token/ERC1155/extensions/IERC1155MetadataURI.sol#4)
+	- >=0.6.2 (node_modules/@openzeppelin/contracts/token/ERC721/IERC721.sol#4)
+Version constraint >=0.4.16 contains known severe issues (https://solidity.readthedocs.io/en/latest/bugs.html)
+	- DirtyBytesArrayToStorage
+	- ABIDecodeTwoDimensionalArrayMemory
+	- KeccakCaching
+	- EmptyByteArrayCopy
+	- DynamicArrayCleanup
+	- ImplicitConstructorCallvalueCheck
+	- TupleAssignmentMultiStackSlotComponents
+	- MemoryArrayCreationOverflow
+	- privateCanBeOverridden
+	- SignedArrayStorageCopy
+	- ABIEncoderV2StorageArrayWithMultiSlotElement
+	- DynamicConstructorArgumentsClippedABIV2
+	- UninitializedFunctionPointerInConstructor_0.4.x
+	- IncorrectEventSignatureInLibraries_0.4.x
+	- ExpExponentCleanup
+	- NestedArrayFunctionCallDecoder
+	- ZeroFunctionSelector.
+It is used by:
+	- >=0.4.16 (node_modules/@openzeppelin/contracts/interfaces/IERC165.sol#4)
+	- >=0.4.16 (node_modules/@openzeppelin/contracts/interfaces/IERC20.sol#4)
+	- >=0.4.16 (node_modules/@openzeppelin/contracts/token/ERC20/IERC20.sol#4)
+	- >=0.4.16 (node_modules/@openzeppelin/contracts/utils/introspection/IERC165.sol#4)
+Version constraint >=0.8.4 contains known severe issues (https://solidity.readthedocs.io/en/latest/bugs.html)
+	- FullInlinerNonExpressionSplitArgumentEvaluationOrder
+	- MissingSideEffectsOnSelectorAccess
+	- AbiReencodingHeadOverflowWithStaticArrayCleanup
+	- DirtyBytesArrayToStorage
+	- DataLocationChangeInInternalOverride
+	- NestedCalldataArrayAbiReencodingSizeValidation
+	- SignedImmutables.
+It is used by:
+	- >=0.8.4 (node_modules/@openzeppelin/contracts/interfaces/draft-IERC6093.sol#3)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#incorrect-versions-of-solidity
+
+Math.log2(uint256) (node_modules/@openzeppelin/contracts/utils/math/Math.sol#612-651) uses literals with too many digits:
+	- r = r | byte(uint256,uint256)(x >> r,0x0000010102020202030303030303030300000000000000000000000000000000) (node_modules/@openzeppelin/contracts/utils/math/Math.sol#649)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#too-many-digits
+
+TapeoutEntitlementReceipt.category (src/TapeoutEntitlementReceipt.sol#22) should be immutable 
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#state-variables-that-could-be-declared-immutable
+. analyzed (34 contracts with 100 detectors), 170 result(s) found

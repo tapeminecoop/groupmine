@@ -1,0 +1,172 @@
+{
+  "scope": "LOCAL_ANVIL_MOCK_PROTOCOL_ONLY",
+  "status": "PASS",
+  "parameters": {
+    "largestWallet": {
+      "NAND": 1200,
+      "LATCH": 300
+    },
+    "otherWallet": {
+      "NAND": 10,
+      "LATCH": 5
+    }
+  },
+  "launchGate": "PENDING: run again with the actual largest allocation before finalization (these sizes are parameters, not launch inputs)",
+  "steps": [
+    {
+      "label": "deploy-receipts",
+      "transactions": 2,
+      "maxGasUsed": "2065878"
+    },
+    {
+      "label": "issue-nand",
+      "transactions": 6,
+      "maxGasUsed": "10347262"
+    },
+    {
+      "label": "issue-latch",
+      "transactions": 2,
+      "maxGasUsed": "10347262"
+    },
+    {
+      "label": "finalize-nand",
+      "transactions": 1,
+      "maxGasUsed": "48908"
+    },
+    {
+      "label": "finalize-latch",
+      "transactions": 1,
+      "maxGasUsed": "48908"
+    },
+    {
+      "label": "deploy",
+      "transactions": 3,
+      "maxGasUsed": "5442330"
+    },
+    {
+      "label": "fund-nand",
+      "transactions": 5,
+      "maxGasUsed": "10381720"
+    },
+    {
+      "label": "fund-latch",
+      "transactions": 2,
+      "maxGasUsed": "10381743"
+    },
+    {
+      "label": "import",
+      "transactions": 4,
+      "maxGasUsed": "10423302"
+    },
+    {
+      "label": "revoke-largest",
+      "transactions": 1,
+      "maxGasUsed": "6472015"
+    },
+    {
+      "label": "verify-after-revoke",
+      "transactions": 0,
+      "maxGasUsed": "0",
+      "status": "MISMATCH"
+    },
+    {
+      "label": "reimport",
+      "transactions": 4,
+      "maxGasUsed": "10341333"
+    },
+    {
+      "label": "verify",
+      "transactions": 0,
+      "maxGasUsed": "0",
+      "status": "READY_TO_FINALIZE"
+    },
+    {
+      "label": "finalize-allocation",
+      "transactions": 1,
+      "maxGasUsed": "69567"
+    },
+    {
+      "label": "bind-distributor-optimal",
+      "transactions": 1,
+      "maxGasUsed": "53027"
+    },
+    {
+      "label": "activate-optimal",
+      "transactions": 1,
+      "maxGasUsed": "98016"
+    },
+    {
+      "label": "bind-distributor-regular",
+      "transactions": 1,
+      "maxGasUsed": "53059"
+    },
+    {
+      "label": "activate-regular",
+      "transactions": 1,
+      "maxGasUsed": "98016"
+    },
+    {
+      "label": "renounce-nand",
+      "transactions": 1,
+      "maxGasUsed": "25688"
+    },
+    {
+      "label": "renounce-latch",
+      "transactions": 1,
+      "maxGasUsed": "25688"
+    },
+    {
+      "label": "renounce-distributor",
+      "transactions": 1,
+      "maxGasUsed": "25565"
+    },
+    {
+      "label": "renounce-optimal",
+      "transactions": 1,
+      "maxGasUsed": "26115"
+    },
+    {
+      "label": "renounce-regular",
+      "transactions": 1,
+      "maxGasUsed": "26115"
+    },
+    {
+      "label": "deposit",
+      "transactions": 2,
+      "maxGasUsed": "429165"
+    },
+    {
+      "label": "harvest",
+      "transactions": 1,
+      "maxGasUsed": "159503"
+    },
+    {
+      "label": "claim-receipts",
+      "transactions": 5,
+      "maxGasUsed": "9066271"
+    },
+    {
+      "label": "claim-bem",
+      "transactions": 8,
+      "maxGasUsed": "5725452"
+    },
+    {
+      "label": "reconcile",
+      "transactions": 0,
+      "maxGasUsed": "0",
+      "status": "PASS"
+    }
+  ],
+  "checks": {
+    "revokedWalletIsAMismatchUntilReimported": true,
+    "verifiedReadyWithReviewedJson": true,
+    "everyIdDelivered": true,
+    "exactPayoutForEveryId": true,
+    "reconcilePass": true
+  },
+  "startedAt": "2026-10-31T15:48:58.156Z",
+  "revocation": "FITS_ONE_TRANSACTION",
+  "deliveries": 5,
+  "claimTransactions": 8,
+  "completedAt": "2026-10-31T15:52:24.715Z"
+}

@@ -1,0 +1,13 @@
+{
+  "carriedOptimal": 20061449000,
+  "carriedRegular": 1078419271,
+  "forkBlock": 128713128,
+  "optimalMiner": 12733,
+  "optimalSinkPaid": 479617622,
+  "perNandOptimalAtLateDelivery": 956616478,
+  "perNandRegularAfterDelayedStart": 1557949,
+  "receivedOptimalFirstHour": 27497042,
+  "receivedRegularFirstHour": 1239621,
+  "regularMiner": 13948,
+  "regularSinkPaid": 25735678
+}
